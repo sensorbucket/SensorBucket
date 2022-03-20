@@ -1,0 +1,16 @@
+pages:
+  image:
+    name: squidfunk/mkdocs-material
+    entrypoint: ['/usr/bin/env']
+  script:
+    - 'mkdocs build -d public'
+  artifacts:
+    paths:
+      - public
+  only:
+    variables:
+      - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    changes:
+      - 'docs/*'
+      - 'mkdocs.yml'
+      - '.gitlab-ci.yml'

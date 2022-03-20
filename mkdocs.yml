@@ -1,0 +1,27 @@
+site_name: Sensorbucket
+theme:
+  name: material
+  features:
+    - navigation.tabs
+  palette:
+    - scheme: default
+      primary: blue grey
+      accent: blue grey
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue grey
+      accent: blue grey
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+
+markdown_extensions:
+  - pymdownx.highlight:
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
