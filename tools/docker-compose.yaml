@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  # workspace:
+  #   build:
+  #     dockerfile: Dockerfile
+  #     context: .
+  #   command: /bin/sh -c "while sleep 1000; do :; done"
+  #   volumes:
+  #     - .:/workspace:cached
+
+  # # Example service
+  # resource:
+  #   command: mage serve resource
+  #   build:
+  #     dockerfile: Dockerfile
+  #     context: .
+  #   environment:
+  #     HTTP_ADDR: 0.0.0.0
+  #     HTTP_PORT: 3000
+  #     DB_URL: postgresql://user:sensorbucket@db:5432/resource?sslmode=disable
+  #   ports:
+  #     - 3000:3000
+  #   volumes:
+  #     - ..:/workspace:cached
+
+  db:
+    image: timescale/timescaledb-postgis:latest-pg12
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: sensorbucket
+      POSTGRES_DB: sensorbucket
+
+  mq:
+    image: rabbitmq:3.8-management
+    ports:
+      - 15672:15672
+
+  docs:
+    image: squidfunk/mkdocs-material
+    ports:
+      - '8000:8000'
+    volumes:
+      - ..:/docs

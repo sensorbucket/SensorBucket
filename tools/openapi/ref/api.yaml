@@ -1,0 +1,37 @@
+openapi: 3.0.0
+info:
+  title: Sensorbucket API
+  version: '1.0'
+  license:
+    name: TBD
+  description: ''
+  contact:
+    name: Provincie Zeeland
+    url: 'https://zeeland.nl'
+servers:
+  - description: Local
+    url: 'http://localhost:3000'
+  - description: Local
+    url: 'http://localhost:3001'
+paths: 
+  /hello-world:
+    get:
+      description: Hello world!
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "Hello world!"
+
+components:
+  schemas: {}
+  securitySchemes:
+    Authorization:
+      type: http
+      scheme: bearer
+security:
+  - Authorization: []
+tags: []
