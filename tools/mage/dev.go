@@ -97,3 +97,12 @@ func (Dev) Openapi() error {
 	fmt.Println("Starting OpenAPI ui with automatic reload")
 	return sh.RunV("npx", "--yes", "swagger-ui-watcher", "-p", "8001", path.Join(wd, "tools/openapi/ref/api.yaml"))
 }
+
+func (Dev) Docs() error {
+	wd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("could not start docs: %w", err)
+	}
+
+	return sh.RunV("docker", "run", "--rm", "-it", "-p", "8000:8000", "-v", fmt.Sprintf("%s:/docs", wd), "squidfunk/mkdocs-material")
+}

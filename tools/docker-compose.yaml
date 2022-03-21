@@ -39,9 +39,9 @@ services:
     ports:
       - 15672:15672
 
-  docs:
-    image: squidfunk/mkdocs-material
-    ports:
-      - '8000:8000'
-    volumes:
-      - ..:/docs
+  # docs:
+  #   image: squidfunk/mkdocs-material
+  #   ports:
+  #     - '8000:8000'
+  #   volumes:
+  #     - ..:/docs

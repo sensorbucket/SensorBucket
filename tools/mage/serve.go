@@ -16,15 +16,15 @@ func Serve(ctx context.Context, service string) error {
 	_, err := os.Stat(path)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			return errors.New("no such service exists")
+			return fmt.Errorf("no such service exists, does the file (%s) exist?", path)
 		}
 		return err
 	}
 
 	fmt.Printf("Watching service: %s\n", service)
 	return sh.RunV("nodemon",
-		"--watch", path,
 		"--watch", "pkg",
+		"--watch", "internal",
 		"--watch", fmt.Sprintf("service/%s", service),
 		"--watch", fmt.Sprintf("cmd/%s", service),
 		"--ext", "go",

@@ -1,27 +1,34 @@
 site_name: Sensorbucket
+repo_url: https://gitlab.com/sensorbucket
+repo_name: Sensorbucket
 theme:
   name: material
   features:
     - navigation.tabs
+  icon:
+    repo: fontawesome/brands/git-alt 
   palette:
-    - scheme: default
-      primary: blue grey
-      accent: blue grey
-      toggle:
-        icon: material/toggle-switch
-        name: Switch to dark mode
     - scheme: slate
-      primary: blue grey
+      primary: deep orange
       accent: blue grey
       toggle:
         icon: material/toggle-switch-off-outline
         name: Switch to light mode
+    - scheme: default
+      primary: deep orange
+      accent: blue grey
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
 
 markdown_extensions:
-  - pymdownx.highlight:
+  - admonition
+  - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
 
 nav:
-  - Home: index.md
+  - Home:
+    - Introduction: index.md
+    - Getting started: getting-started.md

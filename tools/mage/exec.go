@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Exec Executes forwards a command to the service CLI
 func Exec(service, command string) error {
 	compose, err := WithCompose(true)
 	if err != nil {
