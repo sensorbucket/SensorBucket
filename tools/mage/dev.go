@@ -106,3 +106,12 @@ func (Dev) Docs() error {
 
 	return sh.RunV("docker", "run", "--rm", "-it", "-p", "8000:8000", "-v", fmt.Sprintf("%s:/docs", wd), "squidfunk/mkdocs-material")
 }
+
+func (Dev) Mongo() error {
+	return sh.RunV("docker", "run", "--rm", "-it", "-p", "8002:8081",
+		"-e", "ME_CONFIG_MONGODB_ADMINUSERNAME=admin",
+		"-e", "ME_CONFIG_MONGODB_ADMINPASSWORD=admin",
+		"-e", "ME_CONFIG_MONGODB_URL=mongodb://root:root@assetdb:27017/",
+		"--network", "sensorbucket_network",
+		"mongo-express")
+}

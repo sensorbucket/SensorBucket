@@ -1,0 +1,37 @@
+{
+  "sensor": {
+    "type": "object",
+    "required": [
+      "eui",
+      "index"
+    ],
+    "properties": {
+      "eui": {
+        "type": "string",
+        "pattern": "[a-fA-F0-9]{16}"
+      },
+      "index": {
+        "type": "number"
+      }
+    }
+  },
+  "connection": {
+    "type": "object",
+    "required": [
+      "hostname",
+      "username",
+      "password"
+    ],
+    "properties": {
+      "hostname": {
+        "type": "string"
+      },
+      "username": {
+        "type": "string"
+      },
+      "password": {
+        "type": "string"
+      }
+    }
+  }
+}

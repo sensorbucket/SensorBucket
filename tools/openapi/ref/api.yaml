@@ -11,8 +11,6 @@ info:
 servers:
   - description: Local
     url: 'http://localhost:3000'
-  - description: Local
-    url: 'http://localhost:3001'
 paths: 
   /hello-world:
     get:
@@ -25,6 +23,24 @@ paths:
               schema:
                 type: string
                 example: "Hello world!"
+  
+  /assets/{assetType}:
+    parameters:
+      - name: assetType
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      description: Create an asset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Created
 
 components:
   schemas: {}
