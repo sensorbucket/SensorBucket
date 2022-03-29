@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"sensorbucket.nl/service/helloworld"
+	"sensorbucket.nl/internal/helloworld"
 )
 
 func main() {
