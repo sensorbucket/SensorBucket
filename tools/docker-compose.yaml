@@ -11,6 +11,8 @@ services:
       - 3000:3000
     volumes:
       - ..:/workspace:cached
+    environment:
+      AM_PIPELINE_ID: mfm-grondwater
 
   assetdb:
     image: mongo

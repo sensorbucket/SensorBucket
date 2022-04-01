@@ -1,9 +1,14 @@
 package assetmanager
 
 import (
+	"crypto/rand"
 	"fmt"
 
 	"github.com/go-chi/chi/v5"
+)
+
+var (
+	ASSET_ID_LENGTH = 16
 )
 
 // iService ...
@@ -45,9 +50,10 @@ type URNGenerator interface {
 
 // Service ...
 type Service struct {
-	store     Store
-	validator AssetValidator
-	urn       URNGenerator
+	store      Store
+	validator  AssetValidator
+	urn        URNGenerator
+	pipelineID string
 
 	assetTypes []string
 	router     chi.Router
@@ -55,15 +61,16 @@ type Service struct {
 
 // Opts ...
 type Opts struct {
-	Store Store
+	Store      Store
+	PipelineID string
 }
 
 func New(opts Opts) *Service {
 	svc := &Service{
-		store:     opts.Store,
-		validator: newSchemaRegistry(),
-		urn:       newURNGenerator(),
-		router:    chi.NewRouter(),
+		store:      opts.Store,
+		pipelineID: opts.PipelineID,
+		validator:  newSchemaRegistry(),
+		router:     chi.NewRouter(),
 	}
 	svc.setupRoutes()
 
@@ -93,11 +100,8 @@ func (svc *Service) CreateAsset(asset *Asset) error {
 	}
 
 	// Generate a corresponding URN
-	urn, err := svc.urn.Generate(asset)
-	if err != nil {
-		return fmt.Errorf("could not create asset: %w", err)
-	}
-	asset.URN = urn.String()
+	asset.ID = randomString(ASSET_ID_LENGTH)
+	asset.Pipeline = svc.pipelineID
 
 	if err := svc.store.Create(asset); err != nil {
 		return fmt.Errorf("could not create asset: %w", err)
@@ -139,4 +143,15 @@ func (svc *Service) DeleteAsset(id string) error {
 		return fmt.Errorf("could not delete asset: %w", err)
 	}
 	return nil
+}
+
+var randomChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func randomString(length int) string {
+	b := make([]byte, length)
+	rand.Read(b)
+	for i, v := range b {
+		b[i] = randomChars[v%byte(len(randomChars))]
+	}
+	return string(b)
 }

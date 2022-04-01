@@ -24,7 +24,8 @@ func Run() error {
 	}
 
 	svc := assetmanager.New(assetmanager.Opts{
-		Store: store,
+		Store:      store,
+		PipelineID: os.Getenv("AM_PIPELINE_ID"),
 	})
 
 	// Register schemas

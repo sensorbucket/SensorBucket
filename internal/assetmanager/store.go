@@ -16,7 +16,6 @@ var (
 // assetModel ...
 type assetModel struct {
 	URN     string   `bson:"urn"`
-	Type    string   `bson:"type"`
 	Content bson.Raw `bson:"content"`
 }
 
@@ -129,8 +128,7 @@ func assetToModel(asset *Asset) (*assetModel, error) {
 	}
 
 	return &assetModel{
-		URN:     asset.URN,
-		Type:    asset.Type,
+		URN:     asset.URN(),
 		Content: content,
 	}, nil
 }
