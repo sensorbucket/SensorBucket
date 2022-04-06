@@ -17,8 +17,8 @@ type iService interface {
 	RegisterAssetType(AssetSchema) error
 	CreateAsset(*Asset) error
 	UpdateAsset(*Asset) error
-	GetAsset(id string) (*Asset, error)
-	DeleteAsset(id string) error
+	GetAsset(assetType, id string) (*Asset, error)
+	DeleteAsset(assetType, id string) error
 }
 
 var _ iService = (*Service)(nil)
@@ -120,10 +120,11 @@ func (svc *Service) UpdateAsset(asset *Asset) error {
 	return nil
 }
 
-func (svc *Service) GetAsset(id string) (*Asset, error) {
-	urn, err := ParseAssetURN(id)
-	if err != nil {
-		return nil, fmt.Errorf("could not get asset: %w", err)
+func (svc *Service) GetAsset(assetType, id string) (*Asset, error) {
+	urn := AssetURN{
+		PipelineName: svc.pipelineID,
+		AssetType:    assetType,
+		AssetID:      id,
 	}
 
 	asset, err := svc.store.Get(urn)
@@ -133,10 +134,11 @@ func (svc *Service) GetAsset(id string) (*Asset, error) {
 	return asset, nil
 }
 
-func (svc *Service) DeleteAsset(id string) error {
-	urn, err := ParseAssetURN(id)
-	if err != nil {
-		return fmt.Errorf("could not delete asset: %w", err)
+func (svc *Service) DeleteAsset(assetType, id string) error {
+	urn := AssetURN{
+		PipelineName: svc.pipelineID,
+		AssetType:    assetType,
+		AssetID:      id,
 	}
 
 	if err := svc.store.Delete(urn); err != nil {

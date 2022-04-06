@@ -41,6 +41,32 @@ paths:
       responses:
         201:
           description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+  
+  /assets/{assetType}/{assetID}:
+    parameters:
+      - name: assetType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: assetID
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      description: Retrieve an asset
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
 
 components:
   schemas: {}

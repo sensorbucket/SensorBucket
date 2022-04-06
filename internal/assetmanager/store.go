@@ -101,10 +101,17 @@ func (s *MongoDBStore) Get(urn AssetURN) (*Asset, error) {
 		return nil, fmt.Errorf("failed to update asset: %w", err)
 	}
 
-	var asset Asset
-	result.Decode(&asset)
+	var model assetModel
+	if err := result.Decode(&model); err != nil {
+		return nil, fmt.Errorf("could not decode db model to asset: %w", err)
+	}
 
-	return &asset, nil
+	asset, err := model.ToAsset()
+	if err != nil {
+		return nil, err
+	}
+
+	return asset, nil
 }
 
 func (s *MongoDBStore) Delete(urn AssetURN) error {
@@ -130,6 +137,25 @@ func assetToModel(asset *Asset) (*assetModel, error) {
 	return &assetModel{
 		URN:     asset.URN(),
 		Content: content,
+	}, nil
+}
+
+func (model *assetModel) ToAsset() (*Asset, error) {
+	urn, err := ParseAssetURN(model.URN)
+	if err != nil {
+		return nil, err
+	}
+
+	contentJSON, err := bson.MarshalExtJSON(model.Content, false, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal content: %w", err)
+	}
+
+	return &Asset{
+		ID:       urn.AssetID,
+		Pipeline: urn.PipelineName,
+		Type:     urn.AssetType,
+		Content:  contentJSON,
 	}, nil
 }
 
@@ -162,6 +188,7 @@ func assertAssetCollection(db *mongo.Database, assetType string) error {
 
 	return nil
 }
+
 func createIndex(db *mongo.Database, collection, key string) error {
 	indexes := db.Collection(collection).Indexes()
 

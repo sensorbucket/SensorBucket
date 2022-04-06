@@ -29,7 +29,7 @@ func ParseAssetURN(urn string) (AssetURN, error) {
 	}
 
 	parts := strings.Split(urn, ":")
-	if len(parts) != 4 {
+	if len(parts) != 5 {
 		return AssetURN{}, fmt.Errorf("%w: an asset URN must have the following format %s:<pipeline>:<asset>:<id>", ErrInvalidAssetURN, URN_PREFIX)
 	}
 

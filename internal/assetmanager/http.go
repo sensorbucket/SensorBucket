@@ -2,6 +2,7 @@ package assetmanager
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -23,6 +24,10 @@ func (svc *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (svc *Service) httpCreateAsset() http.HandlerFunc {
+	type response struct {
+		URN     string          `json:"urn,omitempty"`
+		Content json.RawMessage `json:"content,omitempty"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		asset := &Asset{
 			Type: chi.URLParam(r, "assetType"),
@@ -39,22 +44,44 @@ func (svc *Service) httpCreateAsset() http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusCreated)
+		sendJSON(w, response{
+			URN:     asset.URN(),
+			Content: asset.Content,
+		})
 	}
 }
 
 func (svc *Service) httpGetAsset() http.HandlerFunc {
+	type response struct {
+		URN     string          `json:"urn,omitempty"`
+		Content json.RawMessage `json:"content,omitempty"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		assetType := chi.URLParam(r, "assetType")
 		assetID := chi.URLParam(r, "assetID")
 
-		asset, err := svc.GetAsset(assetID)
+		asset, err := svc.GetAsset(assetType, assetID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		if err := json.NewEncoder(w).Encode(asset); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		fmt.Printf("asset: %v\n", asset)
+
+		sendJSON(w, response{
+			URN:     asset.URN(),
+			Content: asset.Content,
+		})
 	}
+}
+
+func sendJSON(w http.ResponseWriter, v interface{}) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
 }
