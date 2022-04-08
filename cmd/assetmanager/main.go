@@ -24,19 +24,14 @@ func Run() error {
 	}
 
 	svc := assetmanager.New(assetmanager.Opts{
-		Store:      store,
-		PipelineID: os.Getenv("AM_PIPELINE_ID"),
+		AssetStore:     store,
+		AssetTypeStore: store,
+		PipelineID:     os.Getenv("AM_PIPELINE_ID"),
 	})
 
-	// Register schemas
-	schemas, err := readSchemas()
-	if err != nil {
+	// Register asset types
+	if err := registerAssetTypes(svc); err != nil {
 		return err
-	}
-	for _, schema := range schemas {
-		if err := svc.RegisterAssetType(schema); err != nil {
-			return err
-		}
 	}
 
 	// Start http server
@@ -44,25 +39,37 @@ func Run() error {
 	return http.ListenAndServe(":3000", cors.AllowAll().Handler(svc))
 }
 
-func readSchemas() ([]assetmanager.AssetSchema, error) {
+// assetTypeFile ...
+type assetTypeFile struct {
+	Version int             `json:"version,omitempty"`
+	Labels  []string        `json:"labels,omitempty"`
+	Schema  json.RawMessage `json:"schema,omitempty"`
+}
+
+func registerAssetTypes(svc *assetmanager.Service) error {
 	wd, _ := os.Getwd()
-	file, err := os.Open(path.Join(wd, "tools/seed/assetmanager/schemas.json"))
+	file, err := os.Open(path.Join(wd, "tools/seed/assetmanager/assettypes.json"))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var schemas map[string]json.RawMessage
-	if err := json.NewDecoder(file).Decode(&schemas); err != nil {
-		return nil, err
+	var ats map[string]assetTypeFile
+	if err := json.NewDecoder(file).Decode(&ats); err != nil {
+		return err
 	}
 
-	var result []assetmanager.AssetSchema
-	for name, schema := range schemas {
-		result = append(result, assetmanager.AssetSchema{
-			Type:   name,
-			Schema: schema,
+	for name, at := range ats {
+		err := svc.RegisterAssetType(assetmanager.RegisterAssetTypeOpts{
+			Name:       name,
+			Labels:     at.Labels,
+			Version:    at.Version,
+			Schema:     at.Schema,
+			PipelineID: os.Getenv("AM_PIPELINE_ID"),
 		})
+		if err != nil {
+			return fmt.Errorf("could not register asset type %s: %w", name, err)
+		}
 	}
 
-	return result, nil
+	return nil
 }

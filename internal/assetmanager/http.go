@@ -2,8 +2,8 @@ package assetmanager
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -12,11 +12,8 @@ func (svc *Service) setupRoutes() {
 	// TODO: Implement http routes
 	r := svc.router
 
-	r.Post("/assets/{assetType}", svc.httpCreateAsset())
-
-	// TODO: Do we use the URN here? Or do we just use the assetID?
-	// This choice affects the service API as well.
-	r.Get("/assets/{assetType}/{assetID}", svc.httpGetAsset())
+	r.Post("/assets", svc.httpCreateAsset())
+	r.Get("/assets/{assetURN}", svc.httpGetAsset())
 }
 
 func (svc *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -24,28 +21,34 @@ func (svc *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (svc *Service) httpCreateAsset() http.HandlerFunc {
+	type request struct {
+		Content json.RawMessage `json:"content,omitempty"`
+		Type    string          `json:"type,omitempty"`
+	}
 	type response struct {
 		URN     string          `json:"urn,omitempty"`
 		Content json.RawMessage `json:"content,omitempty"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		asset := &Asset{
-			Type: chi.URLParam(r, "assetType"),
-		}
-
-		if err := json.NewDecoder(r.Body).Decode(&asset.Content); err != nil {
+		var req request
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		if err := svc.CreateAsset(asset); err != nil {
+		opts := CreateAssetOpts{
+			Type:    req.Type,
+			Content: req.Content,
+		}
+		asset, err := svc.CreateAsset(opts)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		w.WriteHeader(http.StatusCreated)
 		sendJSON(w, response{
-			URN:     asset.URN(),
+			URN:     asset.URN().String(),
 			Content: asset.Content,
 		})
 	}
@@ -57,19 +60,20 @@ func (svc *Service) httpGetAsset() http.HandlerFunc {
 		Content json.RawMessage `json:"content,omitempty"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		assetType := chi.URLParam(r, "assetType")
-		assetID := chi.URLParam(r, "assetID")
+		assetURN, err := url.PathUnescape(chi.URLParam(r, "assetURN"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
-		asset, err := svc.GetAsset(assetType, assetID)
+		asset, err := svc.GetAsset(assetURN)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		fmt.Printf("asset: %v\n", asset)
-
 		sendJSON(w, response{
-			URN:     asset.URN(),
+			URN:     asset.URN().String(),
 			Content: asset.Content,
 		})
 	}

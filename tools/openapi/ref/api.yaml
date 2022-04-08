@@ -24,13 +24,7 @@ paths:
                 type: string
                 example: "Hello world!"
   
-  /assets/{assetType}:
-    parameters:
-      - name: assetType
-        in: path
-        required: true
-        schema:
-          type: string
+  /assets:
     post:
       description: Create an asset
       requestBody:
@@ -38,6 +32,13 @@ paths:
           application/json:
             schema:
               type: object
+              required: [type, body]
+              properties:
+                type:
+                  type: string
+                  example: sensor
+                body:
+                  type: object
       responses:
         201:
           description: Created
@@ -46,14 +47,9 @@ paths:
               schema:
                 type: object
   
-  /assets/{assetType}/{assetID}:
+  /assets/{assetURN}:
     parameters:
-      - name: assetType
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: assetID
+      - name: assetURN
         in: path
         required: true
         schema:
@@ -67,6 +63,12 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  urn:
+                    type: string
+                    example: "sb:pipelineasset:mfm-waterlevel:sensor:12345678"
+                  body:
+                    type: object
 
 components:
   schemas: {}

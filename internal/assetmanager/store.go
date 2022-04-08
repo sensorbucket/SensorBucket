@@ -2,6 +2,7 @@ package assetmanager
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,14 +11,11 @@ import (
 )
 
 var (
-	_ Store = (*MongoDBStore)(nil)
-)
+	_ AssetStore = (*MongoDBStore)(nil)
 
-// assetModel ...
-type assetModel struct {
-	URN     string   `bson:"urn"`
-	Content bson.Raw `bson:"content"`
-}
+	ASSET_COLLECTION      = "assets"
+	ASSET_TYPE_COLLECTION = "asset_types"
+)
 
 // MongoDBStore ...
 type MongoDBStore struct {
@@ -43,175 +41,149 @@ func (s *MongoDBStore) Connect(uri, database string) error {
 
 	s.db = s.client.Database(database)
 
-	return nil
-}
-
-func (s *MongoDBStore) Register(asset AssetSchema) error {
-	if err := assertAssetCollection(s.db, asset.Type); err != nil {
-		return fmt.Errorf("failed to create collection: %w", err)
-	}
-	if err := assertAssetIndex(s.db, asset.Type); err != nil {
-		return fmt.Errorf("failed to create index: %w", err)
+	if err := s.migrate(); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (s *MongoDBStore) Create(asset *Asset) error {
-	col := s.getCollection(asset.Type)
+func (s *MongoDBStore) CreateAsset(asset *Asset) error {
+	col := s.db.Collection(ASSET_COLLECTION)
 
-	model, err := assetToModel(asset)
-	if err != nil {
-		return fmt.Errorf("failed to marshal asset to model: %w", err)
+	var model assetModel
+	if err := model.From(asset); err != nil {
+		return fmt.Errorf("could not create asset model: %w", err)
 	}
 
-	result, err := col.InsertOne(context.Background(), model)
-	if err != nil {
-		return fmt.Errorf("failed to create asset: %w", err)
-	}
-
-	// TODO: is this required? Should be use the ID?
-	if result.InsertedID == nil {
-		return fmt.Errorf("failed to create asset: no id returned")
+	if _, err := col.InsertOne(context.Background(), model); err != nil {
+		return fmt.Errorf("could not insert asset: %w", err)
 	}
 
 	return nil
 }
 
-func (s *MongoDBStore) Update(asset *Asset) error {
-	col := s.getCollection(asset.Type)
+func (s *MongoDBStore) UpdateAsset(asset *Asset) error {
+	col := s.db.Collection(ASSET_COLLECTION)
 
-	model, err := assetToModel(asset)
-	if err != nil {
-		return fmt.Errorf("failed to marshal asset to model: %w", err)
+	var model assetModel
+	if err := model.From(asset); err != nil {
+		return fmt.Errorf("could not create asset model: %w", err)
 	}
 
-	if _, err := col.UpdateOne(context.Background(), bson.D{{"urn", asset.URN}}, model); err != nil {
-		return fmt.Errorf("failed to update asset: %w", err)
+	if _, err := col.UpdateOne(context.Background(), bson.D{{"type_urn", model.TypeURN}}, model); err != nil {
+		return fmt.Errorf("could not update asset: %w", err)
 	}
 
 	return nil
 }
 
-func (s *MongoDBStore) Get(urn AssetURN) (*Asset, error) {
-	col := s.getCollection(urn.AssetType)
+func (s *MongoDBStore) GetAsset(urn AssetURN) (*Asset, error) {
+	col := s.db.Collection(ASSET_COLLECTION)
 
-	result := col.FindOne(context.Background(), bson.D{{"urn", urn.String()}})
+	result := col.FindOne(context.Background(), bson.M{"urn": urn.String()})
 	if err := result.Err(); err != nil {
-		return nil, fmt.Errorf("failed to update asset: %w", err)
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrAssetNotFound
+		}
+		return nil, fmt.Errorf("failed to find asset: %w", err)
 	}
 
 	var model assetModel
 	if err := result.Decode(&model); err != nil {
-		return nil, fmt.Errorf("could not decode db model to asset: %w", err)
+		return nil, fmt.Errorf("could not decode asset model: %w", err)
 	}
 
-	asset, err := model.ToAsset()
+	// Fetch corresponding asset type
+	atURN, err := ParseAssetURN(model.TypeURN)
+	atURN.AssetID = "" // We don't need the asset ID since we're referencing the asset type
+	atModel, err := s.getAssetType(atURN)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not get asset type: %w", err)
+	}
+	model.at = atModel
+
+	asset, err := model.To()
+	if err != nil {
+		return nil, fmt.Errorf("could not convert db model to asset: %w", err)
 	}
 
 	return asset, nil
 }
 
-func (s *MongoDBStore) Delete(urn AssetURN) error {
-	col := s.getCollection(urn.AssetType)
+func (s *MongoDBStore) DeleteAsset(urn AssetURN) error {
+	col := s.db.Collection(ASSET_COLLECTION)
 
-	if _, err := col.DeleteOne(context.Background(), bson.D{{"urn", urn.String()}}); err != nil {
-		return fmt.Errorf("failed to update asset: %w", err)
+	if _, err := col.DeleteOne(context.Background(), bson.M{"urn": urn.String()}); err != nil {
+		return fmt.Errorf("could not delete asset: %w", err)
 	}
 
 	return nil
 }
 
-//
-// Helper functions
-//
+func (s *MongoDBStore) CreateAssetType(at *AssetType) error {
+	col := s.db.Collection(ASSET_TYPE_COLLECTION)
 
-func assetToModel(asset *Asset) (*assetModel, error) {
-	var content bson.Raw
-	if err := bson.UnmarshalExtJSON([]byte(asset.Content), true, &content); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal content: %w", err)
+	var model assetTypeModel
+	if err := model.From(at); err != nil {
+		return fmt.Errorf("could not create asset type model: %w", err)
 	}
 
-	return &assetModel{
-		URN:     asset.URN(),
-		Content: content,
-	}, nil
+	if _, err := col.InsertOne(context.Background(), model); err != nil {
+		return fmt.Errorf("could not insert asset type: %w", err)
+	}
+
+	return nil
 }
 
-func (model *assetModel) ToAsset() (*Asset, error) {
-	urn, err := ParseAssetURN(model.URN)
+func (s *MongoDBStore) getAssetType(urn AssetURN) (*assetTypeModel, error) {
+	col := s.db.Collection(ASSET_TYPE_COLLECTION)
+
+	result := col.FindOne(context.Background(), bson.M{"urn": urn.String()})
+	if err := result.Err(); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrAssetTypeNotFound
+		}
+		return nil, fmt.Errorf("failed to find asset type: %w", err)
+	}
+
+	var model assetTypeModel
+	if err := result.Decode(&model); err != nil {
+		return nil, fmt.Errorf("could not decode asset type model: %w", err)
+	}
+
+	return &model, nil
+}
+
+func (s *MongoDBStore) GetAssetType(urn AssetURN) (*AssetType, error) {
+	model, err := s.getAssetType(urn)
 	if err != nil {
 		return nil, err
 	}
 
-	contentJSON, err := bson.MarshalExtJSON(model.Content, false, false)
+	at, err := model.To()
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal content: %w", err)
+		return nil, fmt.Errorf("could not convert db model to asset type: %w", err)
 	}
 
-	return &Asset{
-		ID:       urn.AssetID,
-		Pipeline: urn.PipelineName,
-		Type:     urn.AssetType,
-		Content:  contentJSON,
-	}, nil
+	return at, nil
 }
 
-func createCollection(db *mongo.Database, name string) error {
-	if err := db.CreateCollection(context.Background(), name); err != nil {
-		return fmt.Errorf("failed to create collection %T: %w ", err, err)
+func (s *MongoDBStore) migrate() error {
+	if err := s.assertCollection(ASSET_COLLECTION); err != nil {
+		return fmt.Errorf("could not assert asset collection: %w", err)
 	}
-	return nil
-}
-
-func collectionExists(db *mongo.Database, name string) (bool, error) {
-	collections, err := db.ListCollectionNames(context.Background(), bson.D{{"name", name}})
-	if err != nil {
-		return false, fmt.Errorf("failed to list collections: %w", err)
+	if err := s.assertCollection(ASSET_TYPE_COLLECTION); err != nil {
+		return fmt.Errorf("could not assert asset types collection: %w", err)
 	}
 
-	return len(collections) > 0, nil
-}
-
-func assertAssetCollection(db *mongo.Database, assetType string) error {
-	collectionName := createAssetCollectionName(assetType)
-	exists, err := collectionExists(db, collectionName)
-	if err != nil {
-		return fmt.Errorf("failed to check if collection exists: %w", err)
+	// Assert indices
+	if err := s.assertIndex(ASSET_COLLECTION, "urn"); err != nil {
+		return fmt.Errorf("could not assert index on asset collection: %w", err)
 	}
-
-	if !exists {
-		return createCollection(db, collectionName)
+	if err := s.assertIndex(ASSET_TYPE_COLLECTION, "urn"); err != nil {
+		return fmt.Errorf("could not assert index on asset types collection: %w", err)
 	}
 
 	return nil
-}
-
-func createIndex(db *mongo.Database, collection, key string) error {
-	indexes := db.Collection(collection).Indexes()
-
-	opts := mongo.IndexModel{
-		Keys: bson.D{{key, 1}},
-	}
-
-	if _, err := indexes.CreateOne(context.Background(), opts); err != nil {
-		return fmt.Errorf("failed to create index: %w", err)
-	}
-
-	return nil
-}
-
-func assertAssetIndex(db *mongo.Database, assetType string) error {
-	collectionName := createAssetCollectionName(assetType)
-	return createIndex(db, collectionName, "urn")
-}
-
-func (s *MongoDBStore) getCollection(assetType string) *mongo.Collection {
-	return s.db.Collection(createAssetCollectionName(assetType))
-}
-
-func createAssetCollectionName(assetType string) string {
-	return "asset_" + assetType
 }
