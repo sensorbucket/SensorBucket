@@ -14,7 +14,7 @@ var (
 	ErrAssetNotFound             = errors.New("asset not found")
 	ErrExistingAssetTypeMismatch = errors.New("provided asset type schema does not match the existing asset type in the database")
 
-	ASSET_ID_LENGTH = 16
+	ASSET_ID_LENGTH = 8
 )
 
 // iService ...
@@ -212,3 +212,11 @@ func (svc *Service) FindAssets(typeURN string, filter map[string]interface{}) ([
 func randomString(length int) string {
 	return gonanoid.Must(length)
 }
+
+/*
+
+64 ^ 8
+
+
+
+*/
