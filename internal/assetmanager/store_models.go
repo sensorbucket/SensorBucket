@@ -92,13 +92,16 @@ func (model *assetModel) From(asset *Asset) error {
 
 func (model *assetModel) To() (*Asset, error) {
 	// Convert asset type first
+	if model.at == nil {
+		return nil, fmt.Errorf("asset type in asset model is nil")
+	}
 	at, err := model.at.To()
 	if err != nil {
 		return nil, err
 	}
 
 	// MongoDB works with bson, so convert bson to JSON
-	jsonContent, err := bson.MarshalExtJSON(model.Content, true, false)
+	jsonContent, err := bson.MarshalExtJSON(model.Content, false, false)
 	if err != nil {
 		return nil, err
 	}

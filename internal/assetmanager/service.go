@@ -27,6 +27,7 @@ type iService interface {
 	UpdateAsset(UpdateAssetOpts) error
 	GetAsset(urnString string) (*Asset, error)
 	DeleteAsset(urnString string) error
+	FindAssets(typeURN string, filter map[string]interface{}) ([]Asset, error)
 }
 
 var _ iService = (*Service)(nil)
@@ -43,6 +44,7 @@ type AssetStore interface {
 	UpdateAsset(*Asset) error
 	GetAsset(urn AssetURN) (*Asset, error)
 	DeleteAsset(urn AssetURN) error
+	FindFilter(typeURN AssetURN, filter map[string]interface{}) ([]Asset, error)
 }
 
 // Service ...
@@ -184,6 +186,17 @@ func (svc *Service) DeleteAsset(urnString string) error {
 		return fmt.Errorf("could not delete asset: %w", err)
 	}
 	return nil
+}
+
+// FindAssets uses a filter to find specific assets where the content matches the filter
+// The filter is a key value map, where the key is a top level key in the asset's content
+func (svc *Service) FindAssets(typeURN string, filter map[string]interface{}) ([]Asset, error) {
+	urn, err := ParseAssetURN(typeURN)
+	if err != nil {
+		return nil, err
+	}
+
+	return svc.aStore.FindFilter(urn, filter)
 }
 
 // var randomChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

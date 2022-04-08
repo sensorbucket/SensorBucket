@@ -45,7 +45,30 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/assetResponse"
+    get:
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+        - in: query
+          name: filter
+          schema:
+            type: array
+            items:
+              type: string
+      description: List and filter assets
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/assetResponse"
+
   
   /assets/{assetURN}:
     parameters:
@@ -62,16 +85,18 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  urn:
-                    type: string
-                    example: "sb:pipelineasset:mfm-waterlevel:sensor:12345678"
-                  body:
-                    type: object
+                $ref: "#/components/schemas/assetResponse"
 
 components:
-  schemas: {}
+  schemas: 
+    assetResponse:
+      type: object
+      properties:
+        urn:
+          type: string
+          example: "sb:pipelineasset:mfm-waterlevel:sensor:12345678"
+        content:
+          type: object
   securitySchemes:
     Authorization:
       type: http

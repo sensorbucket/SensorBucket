@@ -2,8 +2,10 @@ package assetmanager
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -13,6 +15,7 @@ func (svc *Service) setupRoutes() {
 	r := svc.router
 
 	r.Post("/assets", svc.httpCreateAsset())
+	r.Get("/assets", svc.httpListAssets())
 	r.Get("/assets/{assetURN}", svc.httpGetAsset())
 }
 
@@ -76,6 +79,66 @@ func (svc *Service) httpGetAsset() http.HandlerFunc {
 			URN:     asset.URN().String(),
 			Content: asset.Content,
 		})
+	}
+}
+
+func (svc *Service) httpListAssets() http.HandlerFunc {
+	type response struct {
+		URN     string          `json:"urn,omitempty"`
+		Content json.RawMessage `json:"content,omitempty"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		assetType, err := url.PathUnescape(q.Get("type"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if assetType == "" {
+			http.Error(w, "must specify asset type through 'type' query parameter", http.StatusBadRequest)
+			return
+		}
+
+		// Create asset filter from query parameters
+		filter := make(map[string]interface{})
+		for k, v := range q {
+			if k != "filter" {
+				continue
+			}
+
+			for _, f := range v {
+				parts := strings.Split(f, "=")
+				if len(parts) != 2 {
+					http.Error(w, "invalid filter format", http.StatusBadRequest)
+					return
+				}
+
+				// parse value as json so we can handle complex types
+				var value interface{}
+				if err := json.Unmarshal([]byte(parts[1]), &value); err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+				}
+
+				filter[parts[0]] = value
+			}
+		}
+		fmt.Printf("filter: %#v\n", filter)
+
+		assets, err := svc.FindAssets(assetType, filter)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var resp []response
+		for _, asset := range assets {
+			resp = append(resp, response{
+				URN:     asset.URN().String(),
+				Content: asset.Content,
+			})
+		}
+
+		sendJSON(w, resp)
 	}
 }
 

@@ -96,6 +96,9 @@ func (s *MongoDBStore) GetAsset(urn AssetURN) (*Asset, error) {
 
 	// Fetch corresponding asset type
 	atURN, err := ParseAssetURN(model.TypeURN)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse asset type urn: %w", err)
+	}
 	atURN.AssetID = "" // We don't need the asset ID since we're referencing the asset type
 	atModel, err := s.getAssetType(atURN)
 	if err != nil {
@@ -119,6 +122,52 @@ func (s *MongoDBStore) DeleteAsset(urn AssetURN) error {
 	}
 
 	return nil
+}
+
+func (s *MongoDBStore) FindFilter(typeURN AssetURN, cf map[string]interface{}) ([]Asset, error) {
+	col := s.db.Collection(ASSET_COLLECTION)
+
+	// Create mongo query filter
+	filter := bson.M{
+		"type_urn": typeURN.String(),
+	}
+	for key, value := range cf {
+		filter["content."+key] = value
+	}
+
+	cursor, err := col.Find(context.Background(), filter)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrAssetNotFound
+		}
+		return nil, fmt.Errorf("error finding asset: %w", err)
+	}
+
+	// Fetch corresponding asset type
+	atModel, err := s.getAssetType(typeURN)
+	if err != nil {
+		return nil, fmt.Errorf("could not get asset type: %w", err)
+	}
+
+	// Decode all models and convert to asset
+	var models []assetModel
+	if err := cursor.All(context.Background(), &models); err != nil {
+		return nil, fmt.Errorf("error decoding asset models: %w", err)
+	}
+
+	var assets = make([]Asset, len(models))
+	for ix, model := range models {
+		model.at = atModel
+
+		asset, err := model.To()
+		if err != nil {
+			return nil, fmt.Errorf("could not convert db model to asset: %w", err)
+		}
+
+		assets[ix] = *asset
+	}
+
+	return assets, nil
 }
 
 func (s *MongoDBStore) CreateAssetType(at *AssetType) error {
