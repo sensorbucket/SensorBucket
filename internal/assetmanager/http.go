@@ -2,7 +2,6 @@ package assetmanager
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -122,7 +121,6 @@ func (svc *Service) httpListAssets() http.HandlerFunc {
 				filter[parts[0]] = value
 			}
 		}
-		fmt.Printf("filter: %#v\n", filter)
 
 		assets, err := svc.FindAssets(assetType, filter)
 		if err != nil {
