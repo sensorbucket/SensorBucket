@@ -10,32 +10,32 @@ import (
 )
 
 var (
-	ErrAssetTypeNotFound         = errors.New("asset type not found")
-	ErrAssetNotFound             = errors.New("asset not found")
-	ErrExistingAssetTypeMismatch = errors.New("provided asset type schema does not match the existing asset type in the database")
+	ErrAssetDefinitionNotFound         = errors.New("asset definition not found")
+	ErrAssetNotFound                   = errors.New("asset not found")
+	ErrExistingAssetDefinitionMismatch = errors.New("provided asset definition schema does not match the existing asset definition in the database")
 
 	ASSET_ID_LENGTH = 8
 )
 
 // iService ...
 type iService interface {
-	ListAssetTypes() ([]string, error)
-	RegisterAssetType(RegisterAssetTypeOpts) error
-	GetAssetType(name string) (*AssetType, error)
+	ListAssetDefinitions() ([]string, error)
+	RegisterAssetDefinition(RegisterAssetDefinitionOpts) error
+	GetAssetDefinition(name string) (*AssetDefinition, error)
 
 	CreateAsset(CreateAssetOpts) (*Asset, error)
 	UpdateAsset(UpdateAssetOpts) error
 	GetAsset(urnString string) (*Asset, error)
 	DeleteAsset(urnString string) error
-	FindAssets(typeURN string, filter map[string]interface{}) ([]Asset, error)
+	FindAssets(definitionURN string, filter map[string]interface{}) ([]Asset, error)
 }
 
 var _ iService = (*Service)(nil)
 
-// AssetTypeStore ...
-type AssetTypeStore interface {
-	CreateAssetType(*AssetType) error
-	GetAssetType(urn AssetURN) (*AssetType, error)
+// AssetDefinitionStore ...
+type AssetDefinitionStore interface {
+	CreateAssetDefinition(*AssetDefinition) error
+	GetAssetDefinition(urn AssetURN) (*AssetDefinition, error)
 }
 
 // AssetStore ...
@@ -44,30 +44,30 @@ type AssetStore interface {
 	UpdateAsset(*Asset) error
 	GetAsset(urn AssetURN) (*Asset, error)
 	DeleteAsset(urn AssetURN) error
-	FindFilter(typeURN AssetURN, filter map[string]interface{}) ([]Asset, error)
+	FindFilter(definitionURN AssetURN, filter map[string]interface{}) ([]Asset, error)
 }
 
 // Service ...
 type Service struct {
-	atStore    AssetTypeStore
+	atStore    AssetDefinitionStore
 	aStore     AssetStore
 	pipelineID string
 
-	assetTypes []string
-	router     chi.Router
+	assetDefinitions []string
+	router           chi.Router
 }
 
 // Opts ...
 type Opts struct {
-	AssetStore     AssetStore
-	AssetTypeStore AssetTypeStore
-	PipelineID     string
+	AssetStore           AssetStore
+	AssetDefinitionStore AssetDefinitionStore
+	PipelineID           string
 }
 
 func New(opts Opts) *Service {
 	svc := &Service{
 		aStore:     opts.AssetStore,
-		atStore:    opts.AssetTypeStore,
+		atStore:    opts.AssetDefinitionStore,
 		pipelineID: opts.PipelineID,
 		router:     chi.NewRouter(),
 	}
@@ -76,8 +76,8 @@ func New(opts Opts) *Service {
 	return svc
 }
 
-// RegisterAssetTypeOpts ...
-type RegisterAssetTypeOpts struct {
+// RegisterAssetDefinitionOpts ...
+type RegisterAssetDefinitionOpts struct {
 	Name       string
 	PipelineID string // Shouldn't the service specify the PipelineID
 	Labels     []string
@@ -85,8 +85,8 @@ type RegisterAssetTypeOpts struct {
 	Schema     json.RawMessage
 }
 
-func (svc *Service) RegisterAssetType(opts RegisterAssetTypeOpts) error {
-	at, err := newAssetType(newAssetTypeOpts{
+func (svc *Service) RegisterAssetDefinition(opts RegisterAssetDefinitionOpts) error {
+	at, err := newAssetDefinition(newAssetDefinitionOpts{
 		Name:       opts.Name,
 		PipelineID: opts.PipelineID,
 		Labels:     []string{},
@@ -95,46 +95,46 @@ func (svc *Service) RegisterAssetType(opts RegisterAssetTypeOpts) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("could not create asset type: %w", err)
+		return fmt.Errorf("could not create asset definition: %w", err)
 	}
 
-	// Assert the asset type
-	existingAT, err := svc.atStore.GetAssetType(at.URN())
-	if err != nil && !errors.Is(err, ErrAssetTypeNotFound) {
+	// Assert the asset definition
+	existingAT, err := svc.atStore.GetAssetDefinition(at.URN())
+	if err != nil && !errors.Is(err, ErrAssetDefinitionNotFound) {
 		return err
 	}
-	if errors.Is(err, ErrAssetTypeNotFound) {
-		return svc.atStore.CreateAssetType(at)
+	if errors.Is(err, ErrAssetDefinitionNotFound) {
+		return svc.atStore.CreateAssetDefinition(at)
 	}
 	if !existingAT.Equals(at) {
-		return ErrExistingAssetTypeMismatch
+		return ErrExistingAssetDefinitionMismatch
 	}
 
-	svc.assetTypes = append(svc.assetTypes, at.Name)
+	svc.assetDefinitions = append(svc.assetDefinitions, at.Name)
 
 	return nil
 }
 
-func (svc *Service) GetAssetType(urnString string) (*AssetType, error) {
+func (svc *Service) GetAssetDefinition(urnString string) (*AssetDefinition, error) {
 	urn, err := ParseAssetURN(urnString)
 	if err != nil {
 		return nil, err
 	}
 
-	return svc.atStore.GetAssetType(urn)
+	return svc.atStore.GetAssetDefinition(urn)
 }
 
-func (svc *Service) ListAssetTypes() ([]string, error) {
-	return svc.assetTypes, nil
+func (svc *Service) ListAssetDefinitions() ([]string, error) {
+	return svc.assetDefinitions, nil
 }
 
 type CreateAssetOpts struct {
-	Type    string
-	Content json.RawMessage
+	AssetDefinition string
+	Content         json.RawMessage
 }
 
 func (svc *Service) CreateAsset(opts CreateAssetOpts) (*Asset, error) {
-	at, err := svc.GetAssetType(opts.Type)
+	at, err := svc.GetAssetDefinition(opts.AssetDefinition)
 	if err != nil {
 		return nil, err
 	}
@@ -190,8 +190,8 @@ func (svc *Service) DeleteAsset(urnString string) error {
 
 // FindAssets uses a filter to find specific assets where the content matches the filter
 // The filter is a key value map, where the key is a top level key in the asset's content
-func (svc *Service) FindAssets(typeURN string, filter map[string]interface{}) ([]Asset, error) {
-	urn, err := ParseAssetURN(typeURN)
+func (svc *Service) FindAssets(definitionURN string, filter map[string]interface{}) ([]Asset, error) {
+	urn, err := ParseAssetURN(definitionURN)
 	if err != nil {
 		return nil, err
 	}

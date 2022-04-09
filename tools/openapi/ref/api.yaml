@@ -32,12 +32,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [type, body]
+              required: [asset_definition, body]
               properties:
-                type:
+                asset_definition:
                   type: string
-                  example: sensor
-                body:
+                  example: srn:asset:mfm-waterlevel:sensor
+                content:
                   type: object
       responses:
         201:
@@ -49,7 +49,7 @@ paths:
     get:
       parameters:
         - in: query
-          name: type
+          name: assetDefinition
           schema:
             type: string
         - in: query
@@ -94,7 +94,7 @@ components:
       properties:
         urn:
           type: string
-          example: "sb:pipelineasset:mfm-waterlevel:sensor:12345678"
+          example: "srn:asset:mfm-waterlevel:sensor:12345678"
         content:
           type: object
   securitySchemes:

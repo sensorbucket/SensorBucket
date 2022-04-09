@@ -6,25 +6,25 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-// assetTypeModel ...
-type assetTypeModel struct {
+// assetDefinitionModel ...
+type assetDefinitionModel struct {
 	URN     string   `bson:"urn"`
 	Labels  []string `bson:"labels"`
 	Version int      `bson:"version"`
 	Schema  bson.Raw `bson:"schema"`
 }
 
-func (model *assetTypeModel) From(assetType *AssetType) error {
+func (model *assetDefinitionModel) From(assetDefinition *AssetDefinition) error {
 	// MongoDB works with bson, so convert JSON to bson
 	var bsonSchema bson.Raw
-	if err := bson.UnmarshalExtJSON(assetType.Schema, true, &bsonSchema); err != nil {
+	if err := bson.UnmarshalExtJSON(assetDefinition.Schema, true, &bsonSchema); err != nil {
 		return err
 	}
 
-	newModel := assetTypeModel{
-		URN:     assetType.URN().String(),
-		Labels:  assetType.Labels,
-		Version: assetType.Version,
+	newModel := assetDefinitionModel{
+		URN:     assetDefinition.URN().String(),
+		Labels:  assetDefinition.Labels,
+		Version: assetDefinition.Version,
 		Schema:  bsonSchema,
 	}
 	*model = newModel
@@ -32,7 +32,7 @@ func (model *assetTypeModel) From(assetType *AssetType) error {
 	return nil
 }
 
-func (model *assetTypeModel) To() (*AssetType, error) {
+func (model *assetDefinitionModel) To() (*AssetDefinition, error) {
 	// MongoDB works with bson, so convert bson to JSON
 	jsonSchema, err := bson.MarshalExtJSON(model.Schema, true, false)
 	if err != nil {
@@ -45,8 +45,8 @@ func (model *assetTypeModel) To() (*AssetType, error) {
 		return nil, err
 	}
 
-	at, err := newAssetType(newAssetTypeOpts{
-		Name:       urn.AssetType,
+	at, err := newAssetDefinition(newAssetDefinitionOpts{
+		Name:       urn.AssetDefinition,
 		PipelineID: urn.PipelineID,
 		Labels:     model.Labels,
 		Version:    model.Version,
@@ -61,10 +61,10 @@ func (model *assetTypeModel) To() (*AssetType, error) {
 
 // assetModel ...
 type assetModel struct {
-	URN     string          `bson:"urn"`
-	TypeURN string          `bson:"type_urn"`
-	Content bson.Raw        `bson:"content"`
-	at      *assetTypeModel `bson:"at"` // Not stored in database, should be joined
+	URN           string                `bson:"urn"`
+	DefinitionURN string                `bson:"definition_urn"`
+	Content       bson.Raw              `bson:"content"`
+	at            *assetDefinitionModel `bson:"at"` // Not stored in database, should be joined
 }
 
 func (model *assetModel) From(asset *Asset) error {
@@ -74,16 +74,16 @@ func (model *assetModel) From(asset *Asset) error {
 		return fmt.Errorf("could not unmarshal asset content to bson: %w", err)
 	}
 
-	var atModel assetTypeModel
+	var atModel assetDefinitionModel
 	if err := atModel.From(asset.at); err != nil {
-		return fmt.Errorf("could not convert asset type to model: %w", err)
+		return fmt.Errorf("could not convert asset definition to model: %w", err)
 	}
 
 	newModel := assetModel{
-		URN:     asset.URN().String(),
-		TypeURN: asset.at.URN().String(),
-		Content: bsonContent,
-		at:      &atModel,
+		URN:           asset.URN().String(),
+		DefinitionURN: asset.at.URN().String(),
+		Content:       bsonContent,
+		at:            &atModel,
 	}
 	*model = newModel
 
@@ -91,9 +91,9 @@ func (model *assetModel) From(asset *Asset) error {
 }
 
 func (model *assetModel) To() (*Asset, error) {
-	// Convert asset type first
+	// Convert asset definition first
 	if model.at == nil {
-		return nil, fmt.Errorf("asset type in asset model is nil")
+		return nil, fmt.Errorf("asset definition in asset model is nil")
 	}
 	at, err := model.at.To()
 	if err != nil {

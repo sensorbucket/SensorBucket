@@ -24,8 +24,8 @@ func (svc *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (svc *Service) httpCreateAsset() http.HandlerFunc {
 	type request struct {
-		Content json.RawMessage `json:"content,omitempty"`
-		Type    string          `json:"type,omitempty"`
+		Content         json.RawMessage `json:"content,omitempty"`
+		AssetDefinition string          `json:"asset_definition,omitempty"`
 	}
 	type response struct {
 		URN     string          `json:"urn,omitempty"`
@@ -39,8 +39,8 @@ func (svc *Service) httpCreateAsset() http.HandlerFunc {
 		}
 
 		opts := CreateAssetOpts{
-			Type:    req.Type,
-			Content: req.Content,
+			AssetDefinition: req.AssetDefinition,
+			Content:         req.Content,
 		}
 		asset, err := svc.CreateAsset(opts)
 		if err != nil {
@@ -88,13 +88,13 @@ func (svc *Service) httpListAssets() http.HandlerFunc {
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
-		assetType, err := url.PathUnescape(q.Get("type"))
+		assetDefinition, err := url.PathUnescape(q.Get("assetDefinition"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if assetType == "" {
-			http.Error(w, "must specify asset type through 'type' query parameter", http.StatusBadRequest)
+		if assetDefinition == "" {
+			http.Error(w, "must specify asset definition urn through 'assetDefinition' query parameter", http.StatusBadRequest)
 			return
 		}
 
@@ -122,7 +122,7 @@ func (svc *Service) httpListAssets() http.HandlerFunc {
 			}
 		}
 
-		assets, err := svc.FindAssets(assetType, filter)
+		assets, err := svc.FindAssets(assetDefinition, filter)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

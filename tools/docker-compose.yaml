@@ -12,7 +12,7 @@ services:
     volumes:
       - ..:/workspace:cached
     environment:
-      AM_PIPELINE_ID: mfm-grondwater
+      AM_PIPELINE_ID: mfm-waterlevel
 
   assetdb:
     image: mongo

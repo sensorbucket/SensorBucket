@@ -14,8 +14,8 @@ var (
 	ErrValidationFailed = errors.New("validation failed")
 )
 
-// AssetType ...
-type AssetType struct {
+// AssetDefinition ...
+type AssetDefinition struct {
 	Name       string
 	PipelineID string
 	Labels     []string
@@ -26,8 +26,8 @@ type AssetType struct {
 	schemaSync sync.Once
 }
 
-// newAssetTypeOpts ...
-type newAssetTypeOpts struct {
+// newAssetDefinitionOpts ...
+type newAssetDefinitionOpts struct {
 	Name       string
 	PipelineID string
 	Labels     []string
@@ -35,8 +35,8 @@ type newAssetTypeOpts struct {
 	Schema     json.RawMessage
 }
 
-func newAssetType(opts newAssetTypeOpts) (*AssetType, error) {
-	at := &AssetType{
+func newAssetDefinition(opts newAssetDefinitionOpts) (*AssetDefinition, error) {
+	at := &AssetDefinition{
 		Name:       opts.Name,
 		PipelineID: opts.PipelineID,
 		Labels:     opts.Labels,
@@ -50,7 +50,7 @@ func newAssetType(opts newAssetTypeOpts) (*AssetType, error) {
 	loader := gojsonschema.NewBytesLoader(at.Schema)
 	schema, err := gojsonschema.NewSchema(loader)
 	if err != nil {
-		return nil, fmt.Errorf("failed to compile asset type schema: %w", err)
+		return nil, fmt.Errorf("failed to compile asset definition schema: %w", err)
 	}
 
 	at.schema = schema
@@ -58,14 +58,14 @@ func newAssetType(opts newAssetTypeOpts) (*AssetType, error) {
 	return at, nil
 }
 
-func (at *AssetType) URN() AssetURN {
+func (at *AssetDefinition) URN() AssetURN {
 	return AssetURN{
-		PipelineID: at.PipelineID,
-		AssetType:  at.Name,
+		PipelineID:      at.PipelineID,
+		AssetDefinition: at.Name,
 	}
 }
 
-func (at *AssetType) Validate(c json.RawMessage) error {
+func (at *AssetDefinition) Validate(c json.RawMessage) error {
 	var err error
 
 	// Parse schema only once and then store results
@@ -100,20 +100,20 @@ func (at *AssetType) Validate(c json.RawMessage) error {
 	return nil
 }
 
-func (at *AssetType) Equals(other *AssetType) bool {
+func (at *AssetDefinition) Equals(other *AssetDefinition) bool {
 	return at.Name == other.Name && at.PipelineID == other.PipelineID && at.Version == other.Version
 }
 
 // Asset ...
 type Asset struct {
 	id      string
-	at      *AssetType
+	at      *AssetDefinition
 	Content json.RawMessage
 }
 
-func newAsset(at *AssetType, content json.RawMessage) (*Asset, error) {
+func newAsset(at *AssetDefinition, content json.RawMessage) (*Asset, error) {
 	if at == nil {
-		return nil, errors.New("asset type cannot be nil when creating newAsset")
+		return nil, errors.New("asset definition cannot be nil when creating newAsset")
 	}
 
 	return &Asset{

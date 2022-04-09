@@ -13,8 +13,8 @@ import (
 var (
 	_ AssetStore = (*MongoDBStore)(nil)
 
-	ASSET_COLLECTION      = "assets"
-	ASSET_TYPE_COLLECTION = "asset_types"
+	ASSET_COLLECTION            = "assets"
+	ASSET_DEFINITION_COLLECTION = "asset_definitions"
 )
 
 // MongoDBStore ...
@@ -71,7 +71,7 @@ func (s *MongoDBStore) UpdateAsset(asset *Asset) error {
 		return fmt.Errorf("could not create asset model: %w", err)
 	}
 
-	if _, err := col.UpdateOne(context.Background(), bson.D{{"type_urn", model.TypeURN}}, model); err != nil {
+	if _, err := col.UpdateOne(context.Background(), bson.D{{"definition_urn", model.DefinitionURN}}, model); err != nil {
 		return fmt.Errorf("could not update asset: %w", err)
 	}
 
@@ -94,15 +94,15 @@ func (s *MongoDBStore) GetAsset(urn AssetURN) (*Asset, error) {
 		return nil, fmt.Errorf("could not decode asset model: %w", err)
 	}
 
-	// Fetch corresponding asset type
-	atURN, err := ParseAssetURN(model.TypeURN)
+	// Fetch corresponding asset definition
+	atURN, err := ParseAssetURN(model.DefinitionURN)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse asset type urn: %w", err)
+		return nil, fmt.Errorf("could not parse asset definition urn: %w", err)
 	}
-	atURN.AssetID = "" // We don't need the asset ID since we're referencing the asset type
-	atModel, err := s.getAssetType(atURN)
+	atURN.AssetID = "" // We don't need the asset ID since we're referencing the asset definition
+	atModel, err := s.getAssetDefinition(atURN)
 	if err != nil {
-		return nil, fmt.Errorf("could not get asset type: %w", err)
+		return nil, fmt.Errorf("could not get asset definition: %w", err)
 	}
 	model.at = atModel
 
@@ -124,12 +124,12 @@ func (s *MongoDBStore) DeleteAsset(urn AssetURN) error {
 	return nil
 }
 
-func (s *MongoDBStore) FindFilter(typeURN AssetURN, cf map[string]interface{}) ([]Asset, error) {
+func (s *MongoDBStore) FindFilter(definitionURN AssetURN, cf map[string]interface{}) ([]Asset, error) {
 	col := s.db.Collection(ASSET_COLLECTION)
 
 	// Create mongo query filter
 	filter := bson.M{
-		"type_urn": typeURN.String(),
+		"definition_urn": definitionURN.String(),
 	}
 	for key, value := range cf {
 		filter["content."+key] = value
@@ -143,10 +143,10 @@ func (s *MongoDBStore) FindFilter(typeURN AssetURN, cf map[string]interface{}) (
 		return nil, fmt.Errorf("error finding asset: %w", err)
 	}
 
-	// Fetch corresponding asset type
-	atModel, err := s.getAssetType(typeURN)
+	// Fetch corresponding asset definition
+	atModel, err := s.getAssetDefinition(definitionURN)
 	if err != nil {
-		return nil, fmt.Errorf("could not get asset type: %w", err)
+		return nil, fmt.Errorf("could not get asset definition: %w", err)
 	}
 
 	// Decode all models and convert to asset
@@ -170,49 +170,49 @@ func (s *MongoDBStore) FindFilter(typeURN AssetURN, cf map[string]interface{}) (
 	return assets, nil
 }
 
-func (s *MongoDBStore) CreateAssetType(at *AssetType) error {
-	col := s.db.Collection(ASSET_TYPE_COLLECTION)
+func (s *MongoDBStore) CreateAssetDefinition(at *AssetDefinition) error {
+	col := s.db.Collection(ASSET_DEFINITION_COLLECTION)
 
-	var model assetTypeModel
+	var model assetDefinitionModel
 	if err := model.From(at); err != nil {
-		return fmt.Errorf("could not create asset type model: %w", err)
+		return fmt.Errorf("could not create asset definition model: %w", err)
 	}
 
 	if _, err := col.InsertOne(context.Background(), model); err != nil {
-		return fmt.Errorf("could not insert asset type: %w", err)
+		return fmt.Errorf("could not insert asset definition: %w", err)
 	}
 
 	return nil
 }
 
-func (s *MongoDBStore) getAssetType(urn AssetURN) (*assetTypeModel, error) {
-	col := s.db.Collection(ASSET_TYPE_COLLECTION)
+func (s *MongoDBStore) getAssetDefinition(urn AssetURN) (*assetDefinitionModel, error) {
+	col := s.db.Collection(ASSET_DEFINITION_COLLECTION)
 
 	result := col.FindOne(context.Background(), bson.M{"urn": urn.String()})
 	if err := result.Err(); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrAssetTypeNotFound
+			return nil, ErrAssetDefinitionNotFound
 		}
-		return nil, fmt.Errorf("failed to find asset type: %w", err)
+		return nil, fmt.Errorf("failed to find asset definition: %w", err)
 	}
 
-	var model assetTypeModel
+	var model assetDefinitionModel
 	if err := result.Decode(&model); err != nil {
-		return nil, fmt.Errorf("could not decode asset type model: %w", err)
+		return nil, fmt.Errorf("could not decode asset definition model: %w", err)
 	}
 
 	return &model, nil
 }
 
-func (s *MongoDBStore) GetAssetType(urn AssetURN) (*AssetType, error) {
-	model, err := s.getAssetType(urn)
+func (s *MongoDBStore) GetAssetDefinition(urn AssetURN) (*AssetDefinition, error) {
+	model, err := s.getAssetDefinition(urn)
 	if err != nil {
 		return nil, err
 	}
 
 	at, err := model.To()
 	if err != nil {
-		return nil, fmt.Errorf("could not convert db model to asset type: %w", err)
+		return nil, fmt.Errorf("could not convert db model to asset definition: %w", err)
 	}
 
 	return at, nil
@@ -222,16 +222,16 @@ func (s *MongoDBStore) migrate() error {
 	if err := s.assertCollection(ASSET_COLLECTION); err != nil {
 		return fmt.Errorf("could not assert asset collection: %w", err)
 	}
-	if err := s.assertCollection(ASSET_TYPE_COLLECTION); err != nil {
-		return fmt.Errorf("could not assert asset types collection: %w", err)
+	if err := s.assertCollection(ASSET_DEFINITION_COLLECTION); err != nil {
+		return fmt.Errorf("could not assert asset definitions collection: %w", err)
 	}
 
 	// Assert indices
 	if err := s.assertIndex(ASSET_COLLECTION, "urn"); err != nil {
 		return fmt.Errorf("could not assert index on asset collection: %w", err)
 	}
-	if err := s.assertIndex(ASSET_TYPE_COLLECTION, "urn"); err != nil {
-		return fmt.Errorf("could not assert index on asset types collection: %w", err)
+	if err := s.assertIndex(ASSET_DEFINITION_COLLECTION, "urn"); err != nil {
+		return fmt.Errorf("could not assert index on asset definitions collection: %w", err)
 	}
 
 	return nil

@@ -24,13 +24,13 @@ func Run() error {
 	}
 
 	svc := assetmanager.New(assetmanager.Opts{
-		AssetStore:     store,
-		AssetTypeStore: store,
-		PipelineID:     os.Getenv("AM_PIPELINE_ID"),
+		AssetStore:           store,
+		AssetDefinitionStore: store,
+		PipelineID:           os.Getenv("AM_PIPELINE_ID"),
 	})
 
-	// Register asset types
-	if err := registerAssetTypes(svc); err != nil {
+	// Register asset definitions
+	if err := registerAssetDefinitions(svc); err != nil {
 		return err
 	}
 
@@ -39,27 +39,27 @@ func Run() error {
 	return http.ListenAndServe(":3000", cors.AllowAll().Handler(svc))
 }
 
-// assetTypeFile ...
-type assetTypeFile struct {
+// assetDefinitionFile ...
+type assetDefinitionFile struct {
 	Version int             `json:"version,omitempty"`
 	Labels  []string        `json:"labels,omitempty"`
 	Schema  json.RawMessage `json:"schema,omitempty"`
 }
 
-func registerAssetTypes(svc *assetmanager.Service) error {
+func registerAssetDefinitions(svc *assetmanager.Service) error {
 	wd, _ := os.Getwd()
-	file, err := os.Open(path.Join(wd, "tools/seed/assetmanager/assettypes.json"))
+	file, err := os.Open(path.Join(wd, "tools/seed/assetmanager/assetdefinitions.json"))
 	if err != nil {
 		return err
 	}
 
-	var ats map[string]assetTypeFile
+	var ats map[string]assetDefinitionFile
 	if err := json.NewDecoder(file).Decode(&ats); err != nil {
 		return err
 	}
 
 	for name, at := range ats {
-		err := svc.RegisterAssetType(assetmanager.RegisterAssetTypeOpts{
+		err := svc.RegisterAssetDefinition(assetmanager.RegisterAssetDefinitionOpts{
 			Name:       name,
 			Labels:     at.Labels,
 			Version:    at.Version,
@@ -67,7 +67,7 @@ func registerAssetTypes(svc *assetmanager.Service) error {
 			PipelineID: os.Getenv("AM_PIPELINE_ID"),
 		})
 		if err != nil {
-			return fmt.Errorf("could not register asset type %s: %w", name, err)
+			return fmt.Errorf("could not register asset definition %s: %w", name, err)
 		}
 	}
 

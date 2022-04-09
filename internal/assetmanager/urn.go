@@ -14,13 +14,13 @@ var (
 
 // AssetURN URN specifically for assets in an asset manager
 type AssetURN struct {
-	PipelineID string
-	AssetType  string
-	AssetID    string
+	PipelineID      string
+	AssetDefinition string
+	AssetID         string
 }
 
 func (u AssetURN) String() string {
-	parts := []string{URN_PREFIX, u.PipelineID, u.AssetType}
+	parts := []string{URN_PREFIX, u.PipelineID, u.AssetDefinition}
 	if u.AssetID != "" {
 		parts = append(parts, u.AssetID)
 	}
@@ -39,8 +39,8 @@ func ParseAssetURN(urnString string) (AssetURN, error) {
 	}
 
 	urn := AssetURN{
-		PipelineID: parts[2],
-		AssetType:  parts[3],
+		PipelineID:      parts[2],
+		AssetDefinition: parts[3],
 	}
 
 	// Append ID if it exists
