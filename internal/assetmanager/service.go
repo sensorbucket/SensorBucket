@@ -163,7 +163,6 @@ func (svc *Service) UpdateAsset(opts UpdateAssetOpts) error {
 }
 
 func (svc *Service) GetAsset(urnString string) (*Asset, error) {
-	fmt.Printf("urnString: %v\n", urnString)
 	urn, err := ParseAssetURN(urnString)
 	if err != nil {
 		return nil, err
