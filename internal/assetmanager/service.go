@@ -110,7 +110,7 @@ func (svc *Service) RegisterAssetDefinition(opts RegisterAssetDefinitionOpts) er
 		return ErrExistingAssetDefinitionMismatch
 	}
 
-	svc.assetDefinitions = append(svc.assetDefinitions, at.Name)
+	svc.assetDefinitions = append(svc.assetDefinitions, at.URN().String())
 
 	return nil
 }

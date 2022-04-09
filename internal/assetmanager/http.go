@@ -16,6 +16,7 @@ func (svc *Service) setupRoutes() {
 	r.Post("/assets", svc.httpCreateAsset())
 	r.Get("/assets", svc.httpListAssets())
 	r.Get("/assets/{assetURN}", svc.httpGetAsset())
+	r.Get("/asset-definitions", svc.httpListAssetDefinitions())
 }
 
 func (svc *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -137,6 +138,18 @@ func (svc *Service) httpListAssets() http.HandlerFunc {
 		}
 
 		sendJSON(w, resp)
+	}
+}
+
+func (svc *Service) httpListAssetDefinitions() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		assetDefinitions, err := svc.ListAssetDefinitions()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		sendJSON(w, assetDefinitions)
 	}
 }
 

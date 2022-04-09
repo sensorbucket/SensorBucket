@@ -24,9 +24,23 @@ paths:
                 type: string
                 example: "Hello world!"
   
+  /asset-definitions:
+    get:
+      description: List asset definitions for this AM service
+      tags: ["Asset Management"]
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
   /assets:
     post:
       description: Create an asset
+      tags: ["Asset Management"]
       requestBody:
         content:
           application/json:
@@ -59,6 +73,7 @@ paths:
             items:
               type: string
       description: List and filter assets
+      tags: ["Asset Management"]
       responses:
         200:
           description: OK
@@ -79,6 +94,7 @@ paths:
           type: string
     get:
       description: Retrieve an asset
+      tags: ["Asset Management"]
       responses:
         200:
           description: ok
@@ -103,4 +119,5 @@ components:
       scheme: bearer
 security:
   - Authorization: []
-tags: []
+tags:
+  - name: Asset Management
