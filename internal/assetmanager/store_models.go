@@ -8,10 +8,11 @@ import (
 
 // assetDefinitionModel ...
 type assetDefinitionModel struct {
-	URN     string   `bson:"urn"`
-	Labels  []string `bson:"labels"`
-	Version int      `bson:"version"`
-	Schema  bson.Raw `bson:"schema"`
+	URN        string   `bson:"urn"`
+	Labels     []string `bson:"labels"`
+	Version    int      `bson:"version"`
+	PrimaryKey string   `bson:"primary_key"`
+	Schema     bson.Raw `bson:"schema"`
 }
 
 func (model *assetDefinitionModel) From(assetDefinition *AssetDefinition) error {
@@ -22,10 +23,11 @@ func (model *assetDefinitionModel) From(assetDefinition *AssetDefinition) error 
 	}
 
 	newModel := assetDefinitionModel{
-		URN:     assetDefinition.URN().String(),
-		Labels:  assetDefinition.Labels,
-		Version: assetDefinition.Version,
-		Schema:  bsonSchema,
+		URN:        assetDefinition.URN().String(),
+		Labels:     assetDefinition.Labels,
+		Version:    assetDefinition.Version,
+		PrimaryKey: assetDefinition.PrimaryKey,
+		Schema:     bsonSchema,
 	}
 	*model = newModel
 
@@ -50,6 +52,7 @@ func (model *assetDefinitionModel) To() (*AssetDefinition, error) {
 		PipelineID: urn.PipelineID,
 		Labels:     model.Labels,
 		Version:    model.Version,
+		PrimaryKey: model.PrimaryKey,
 		Schema:     jsonSchema,
 	})
 	if err != nil {
@@ -75,13 +78,13 @@ func (model *assetModel) From(asset *Asset) error {
 	}
 
 	var atModel assetDefinitionModel
-	if err := atModel.From(asset.at); err != nil {
+	if err := atModel.From(asset.Definition); err != nil {
 		return fmt.Errorf("could not convert asset definition to model: %w", err)
 	}
 
 	newModel := assetModel{
 		URN:           asset.URN().String(),
-		DefinitionURN: asset.at.URN().String(),
+		DefinitionURN: asset.Definition.URN().String(),
 		Content:       bsonContent,
 		at:            &atModel,
 	}
@@ -113,9 +116,9 @@ func (model *assetModel) To() (*Asset, error) {
 	}
 
 	asset := &Asset{
-		id:      urn.AssetID,
-		at:      at,
-		Content: jsonContent,
+		ID:         urn.AssetID,
+		Definition: at,
+		Content:    jsonContent,
 	}
 
 	if err := asset.Validate(); err != nil {

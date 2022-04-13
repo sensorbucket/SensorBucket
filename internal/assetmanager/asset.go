@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 
+	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -18,6 +20,7 @@ var (
 type AssetDefinition struct {
 	Name       string
 	PipelineID string
+	PrimaryKey string
 	Labels     []string
 	Version    int
 	Schema     json.RawMessage
@@ -32,6 +35,7 @@ type newAssetDefinitionOpts struct {
 	PipelineID string
 	Labels     []string
 	Version    int
+	PrimaryKey string
 	Schema     json.RawMessage
 }
 
@@ -39,6 +43,7 @@ func newAssetDefinition(opts newAssetDefinitionOpts) (*AssetDefinition, error) {
 	at := &AssetDefinition{
 		Name:       opts.Name,
 		PipelineID: opts.PipelineID,
+		PrimaryKey: opts.PrimaryKey,
 		Labels:     opts.Labels,
 		Version:    opts.Version,
 		Schema:     opts.Schema,
@@ -51,6 +56,13 @@ func newAssetDefinition(opts newAssetDefinitionOpts) (*AssetDefinition, error) {
 	schema, err := gojsonschema.NewSchema(loader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile asset definition schema: %w", err)
+	}
+
+	// Validate PrimaryKey
+	if at.PrimaryKey != "" {
+		if err := validatePrimaryKey(at.PrimaryKey); err != nil {
+			return nil, fmt.Errorf("%w: %s", ErrValidationFailed, err)
+		}
 	}
 
 	at.schema = schema
@@ -106,29 +118,75 @@ func (at *AssetDefinition) Equals(other *AssetDefinition) bool {
 
 // Asset ...
 type Asset struct {
-	id      string
-	at      *AssetDefinition
-	Content json.RawMessage
+	ID         string
+	Definition *AssetDefinition
+	Content    json.RawMessage
 }
 
 func newAsset(at *AssetDefinition, content json.RawMessage) (*Asset, error) {
+	var err error
+
 	if at == nil {
 		return nil, errors.New("asset definition cannot be nil when creating newAsset")
 	}
 
+	// Use primary key as asset id if available
+	var id string
+	if at.PrimaryKey != "" {
+		id, err = generateIDFromPK(at.PrimaryKey, content)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate asset ID: %w", err)
+		}
+	}
+
+	if id == "" {
+		id = randomString(ASSET_ID_LENGTH)
+	}
+
 	return &Asset{
-		id:      randomString(ASSET_ID_LENGTH),
-		at:      at,
-		Content: content,
+		ID:         id,
+		Definition: at,
+		Content:    content,
 	}, nil
 }
 
 func (a *Asset) URN() AssetURN {
-	urn := a.at.URN()
-	urn.AssetID = a.id
+	urn := a.Definition.URN()
+	urn.AssetID = a.ID
 	return urn
 }
 
 func (a *Asset) Validate() error {
-	return a.at.Validate(a.Content)
+	return a.Definition.Validate(a.Content)
+}
+
+var R_PK_FIELD = regexp.MustCompile("(?miU)(\\${.+})")
+
+func generateIDFromPK(pk string, content json.RawMessage) (string, error) {
+	keys := R_PK_FIELD.FindAllString(pk, -1)
+	if len(keys) == 0 {
+		return "", errors.New("primary key must contain atleast one field")
+	}
+
+	for _, key := range keys {
+		value := gjson.GetBytes(content, strings.Trim(key, "${}"))
+		if !value.Exists() {
+			return "", fmt.Errorf("primary key field (%s) does not exist in content", key)
+		}
+		pk = strings.ReplaceAll(pk, key, value.String())
+	}
+
+	return pk, nil
+}
+
+func validatePrimaryKey(pk string) error {
+	if strings.ContainsAny(pk, " #:") {
+		return errors.New("primary key contains illegal characters")
+	}
+
+	if !strings.HasPrefix(pk, "${") || !strings.HasSuffix(pk, "}") {
+		return errors.New("primary key must have at least one temlat")
+	}
+
+	return nil
 }

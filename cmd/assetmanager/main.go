@@ -41,9 +41,10 @@ func Run() error {
 
 // assetDefinitionFile ...
 type assetDefinitionFile struct {
-	Version int             `json:"version,omitempty"`
-	Labels  []string        `json:"labels,omitempty"`
-	Schema  json.RawMessage `json:"schema,omitempty"`
+	Version    int             `json:"version,omitempty"`
+	Labels     []string        `json:"labels,omitempty"`
+	Schema     json.RawMessage `json:"schema,omitempty"`
+	PrimaryKey string          `json:"primary_key,omitempty"`
 }
 
 func registerAssetDefinitions(svc *assetmanager.Service) error {
@@ -64,6 +65,7 @@ func registerAssetDefinitions(svc *assetmanager.Service) error {
 			Labels:     at.Labels,
 			Version:    at.Version,
 			Schema:     at.Schema,
+			PrimaryKey: at.PrimaryKey,
 			PipelineID: os.Getenv("AM_PIPELINE_ID"),
 		})
 		if err != nil {

@@ -1,12 +1,12 @@
 # Asset Management Service
 
-The Asset Management (AM) service manages asset types within a pipeline and exposing CRUD endpoints and publishes events for the workers in the pipeline.
+The Asset Management (AM) service manages asset definitions within a pipeline and exposing CRUD endpoints and publishes events for the workers in the pipeline.
 
 !!! note
-    - **Asset Types**  
-      An asset type / model / definition. For example: device, sensor, connection-information
+    - **Asset Definitions**  
+      An asset definition. For example: device, sensor, connection-information
     - **Assets**  
-      An instance of an asset type. There can be multiple assets of the same type. For example: there are three assets of type sensor.
+      An instance of an asset definition. There can be multiple assets of the same type. For example: there are three assets (instances) of sensor (definition).
 
 ## Asset Definition File
 
@@ -15,9 +15,9 @@ Asset types are defined by an Asset Definition file injected in the service.
 Each worker in the pipeline will define their own assets, the Pipeline Orchestrator merges these definitions and injects them in the AM service.
 
 !!! warning "Avoid naming collisions"
-    As each worker defines their own asset types it is crucial that each asset type name is unique within the pipeline.
+    As each worker defines their own definitions it is crucial that each definition name is unique within the pipeline.
 
-    Perhaps assets URNs should also contain the worker which defined the asset type.
+    Perhaps assets URNs should also contain the worker which defined the definition.
 
 Assets in the AM service can be defined by providing a json file. This json file contains one object where each key defines an asset, a key `sensor` will define the `sensor` asset. The value for this key must be an object with the following properties:
 
@@ -38,6 +38,8 @@ Assets in the AM service can be defined by providing a json file. This json file
     "version": 1,
     // Assets from differente pipelines can be grouped together by label
     "labels": ["measurementsource"],
+    // An optional templated primary key that will be used in the URN
+    "primary_key": "${device_id}_${sensor_index}",
     // A JSON schema defining what the asset contents should adhere to
     "schema": {
       "type": "object",

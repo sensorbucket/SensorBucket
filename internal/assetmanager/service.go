@@ -12,6 +12,7 @@ import (
 var (
 	ErrAssetDefinitionNotFound         = errors.New("asset definition not found")
 	ErrAssetNotFound                   = errors.New("asset not found")
+	ErrDuplicateAssetID                = errors.New("duplicate asset id")
 	ErrExistingAssetDefinitionMismatch = errors.New("provided asset definition schema does not match the existing asset definition in the database")
 
 	ASSET_ID_LENGTH = 8
@@ -80,6 +81,7 @@ func New(opts Opts) *Service {
 type RegisterAssetDefinitionOpts struct {
 	Name       string
 	PipelineID string // Shouldn't the service specify the PipelineID
+	PrimaryKey string // A path to the key in the asset that will be used in the URN, defaults to random string
 	Labels     []string
 	Version    int
 	Schema     json.RawMessage
@@ -89,6 +91,7 @@ func (svc *Service) RegisterAssetDefinition(opts RegisterAssetDefinitionOpts) er
 	at, err := newAssetDefinition(newAssetDefinitionOpts{
 		Name:       opts.Name,
 		PipelineID: opts.PipelineID,
+		PrimaryKey: opts.PrimaryKey,
 		Labels:     []string{},
 		Version:    opts.Version,
 		Schema:     opts.Schema,
@@ -148,10 +151,27 @@ func (svc *Service) CreateAsset(opts CreateAssetOpts) (*Asset, error) {
 		return nil, fmt.Errorf("could not validate asset: %w", err)
 	}
 
+	if exists, err := svc.assetExists(asset.URN()); err != nil {
+		return nil, err
+	} else if exists {
+		return nil, ErrDuplicateAssetID
+	}
+
 	if err := svc.aStore.CreateAsset(asset); err != nil {
 		return nil, fmt.Errorf("could not create asset: %w", err)
 	}
 	return asset, nil
+}
+
+func (svc *Service) assetExists(urn AssetURN) (bool, error) {
+	_, err := svc.aStore.GetAsset(urn)
+	if err != nil {
+		if errors.Is(err, ErrAssetNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 // UpdateAssetOpts ...

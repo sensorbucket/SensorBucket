@@ -2,6 +2,7 @@
   "sensor": {
     "version": 0,
     "labels": [],
+    "primary_key": "${eui}_${index}",
     "schema": {
       "type": "object",
       "required": [
@@ -22,6 +23,7 @@
   "connection": {
     "version": 0,
     "labels": [],
+    "primary_key": "${eui}_${index}",
     "schema": {
       "type": "object",
       "required": [
