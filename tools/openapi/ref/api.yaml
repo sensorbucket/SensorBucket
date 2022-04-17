@@ -11,8 +11,6 @@ info:
 servers:
   - description: Local
     url: 'http://localhost:3000'
-  - description: Local
-    url: 'http://localhost:3001'
 paths: 
   /hello-world:
     get:
@@ -25,13 +23,120 @@ paths:
               schema:
                 type: string
                 example: "Hello world!"
+  
+  /asset-definitions:
+    get:
+      description: List asset definitions for this AM service
+      tags: ["Asset Management"]
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /assets:
+    post:
+      description: Create an asset
+      tags: ["Asset Management"]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_definition, content]
+              properties:
+                asset_definition:
+                  type: string
+                  example: srn:asset:mfm-waterlevel:sensor
+                content:
+                  type: object
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/assetResponse"
+    get:
+      parameters:
+        - in: query
+          name: assetDefinition
+          schema:
+            type: string
+        - in: query
+          name: filter
+          schema:
+            type: array
+            items:
+              type: string
+      description: List and filter assets
+      tags: ["Asset Management"]
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/assetResponse"
+
+  
+  /assets/{assetURN}:
+    parameters:
+      - name: assetURN
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      description: Retrieve an asset
+      tags: ["Asset Management"]
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/assetResponse"
+    put:
+      description: Replace an asset definition
+      tags: ["Asset Management"]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: object
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/assetResponse"
 
 components:
-  schemas: {}
+  schemas: 
+    assetResponse:
+      type: object
+      properties:
+        urn:
+          type: string
+          example: "srn:asset:mfm-waterlevel:sensor:12345678"
+        content:
+          type: object
   securitySchemes:
     Authorization:
       type: http
       scheme: bearer
 security:
   - Authorization: []
-tags: []
+tags:
+  - name: Asset Management

@@ -26,9 +26,15 @@ markdown_extensions:
   - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
 
 nav:
   - Home:
     - Introduction: index.md
     - Getting started: getting-started.md
+  - Services:
+    - Asset Manager: assetmanager/index.md

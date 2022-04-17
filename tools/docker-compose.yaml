@@ -1,28 +1,29 @@
 version: '3'
 
 services:
-  # workspace:
-  #   build:
-  #     dockerfile: Dockerfile
-  #     context: .
-  #   command: /bin/sh -c "while sleep 1000; do :; done"
-  #   volumes:
-  #     - .:/workspace:cached
+  # Example service
+  assetmanager:
+    command: mage serve assetmanager
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - 3000:3000
+    volumes:
+      - ..:/workspace:cached
+    environment:
+      AM_PIPELINE_ID: mfm-waterlevel
+      AM_DEFINITION_PATH: /workspace/tools/seed/assetmanager/assetdefinitions.json
+      AM_HTTP_ADDR: :3000
+      AM_MONGO_DSN: mongodb://root:root@assetdb:27017
 
-  # # Example service
-  # resource:
-  #   command: mage serve resource
-  #   build:
-  #     dockerfile: Dockerfile
-  #     context: .
-  #   environment:
-  #     HTTP_ADDR: 0.0.0.0
-  #     HTTP_PORT: 3000
-  #     DB_URL: postgresql://user:sensorbucket@db:5432/resource?sslmode=disable
-  #   ports:
-  #     - 3000:3000
-  #   volumes:
-  #     - ..:/workspace:cached
+  assetdb:
+    image: mongo
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
 
   db:
     image: timescale/timescaledb-postgis:latest-pg12
@@ -45,3 +46,7 @@ services:
   #     - '8000:8000'
   #   volumes:
   #     - ..:/docs
+
+networks:
+  default:
+    name: sensorbucket_network
