@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"sync"
 
+	"github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/tidwall/gjson"
-	"github.com/xeipuuv/gojsonschema"
 )
 
 const (
@@ -22,15 +21,13 @@ var (
 
 // AssetDefinition contains the asset structure, such as schema, labels, keys, etc.
 type AssetDefinition struct {
-	Name       string
-	PipelineID string
-	PrimaryKey string
-	Labels     []string
-	Version    int
-	Schema     json.RawMessage
-
-	schema     *gojsonschema.Schema
-	schemaSync sync.Once
+	Name           string
+	PipelineID     string
+	PrimaryKey     string
+	Labels         []string
+	Version        int
+	Schema         json.RawMessage
+	compiledSchema *jsonschema.Schema
 }
 
 type newAssetDefinitionOpts struct {
@@ -50,15 +47,6 @@ func newAssetDefinition(opts newAssetDefinitionOpts) (*AssetDefinition, error) {
 		Labels:     opts.Labels,
 		Version:    opts.Version,
 		Schema:     opts.Schema,
-
-		schemaSync: sync.Once{},
-	}
-
-	// Verify schema
-	loader := gojsonschema.NewBytesLoader(at.Schema)
-	schema, err := gojsonschema.NewSchema(loader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to compile asset definition schema: %w", err)
 	}
 
 	// Validate PrimaryKey
@@ -68,7 +56,10 @@ func newAssetDefinition(opts newAssetDefinitionOpts) (*AssetDefinition, error) {
 		}
 	}
 
-	at.schema = schema
+	// Verify schema
+	if err := at.compileSchema(); err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrValidationFailed, err)
+	}
 
 	return at, nil
 }
@@ -82,35 +73,27 @@ func (at *AssetDefinition) URN() AssetURN {
 
 // Validate checks if the given json content adheres to this asset definition
 func (at *AssetDefinition) Validate(c json.RawMessage) error {
-	var err error
+	// Unmarshal raw message into item
+	var content interface{}
+	if err := json.Unmarshal(c, &content); err != nil {
+		return fmt.Errorf("failed to unmarshal content: %w", err)
+	}
 
 	// Parse schema only once and then store results
-	at.schemaSync.Do(func() {
-		schemaLoader := gojsonschema.NewStringLoader(string(at.Schema))
-		at.schema, err = gojsonschema.NewSchema(schemaLoader)
-	})
+	schema, err := at.schema()
 	if err != nil {
 		return fmt.Errorf("%w: failed to parse asset schema for (%s): %s", ErrValidationFailed, at.URN(), err)
 	}
 
 	// Validate the content
-	contentLoader := gojsonschema.NewBytesLoader(c)
-	result, err := at.schema.Validate(contentLoader)
-	if err != nil {
-		return fmt.Errorf("%w: failed to validate asset content: %s", ErrValidationFailed, err)
-	}
-
-	// Create readable error message if failed
-	if !result.Valid() {
-		validationErrs := result.Errors()
-		errorStrings := make([]string, 0, len(validationErrs))
-
-		for _, err := range validationErrs {
-			errorStrings = append(errorStrings,
-				err.Field()+": "+err.Description(),
-			)
+	if err := schema.Validate(content); err != nil {
+		var validationErr *jsonschema.ValidationError
+		if errors.As(err, &validationErr) {
+			// Format readable error message
+			return fmt.Errorf("%w: %s", ErrValidationFailed, validationErr.Error())
 		}
-		return fmt.Errorf("%w: (%v)", ErrValidationFailed, strings.Join(errorStrings, ", "))
+
+		return fmt.Errorf("%w: failed to validate asset content: %s", ErrValidationFailed, err)
 	}
 
 	return nil
@@ -118,6 +101,24 @@ func (at *AssetDefinition) Validate(c json.RawMessage) error {
 
 func (at *AssetDefinition) Equals(other *AssetDefinition) bool {
 	return at.Name == other.Name && at.PipelineID == other.PipelineID && at.Version == other.Version
+}
+
+func (at *AssetDefinition) compileSchema() error {
+	schema, err := jsonschema.CompileString(fmt.Sprintf("%s_schema", at.Name), string(at.Schema))
+	if err != nil {
+		return fmt.Errorf("failed to compile asset definition schema: %w", err)
+	}
+	at.compiledSchema = schema
+	return nil
+}
+
+func (at *AssetDefinition) schema() (*jsonschema.Schema, error) {
+	if at.compiledSchema == nil {
+		if err := at.compileSchema(); err != nil {
+			return nil, err
+		}
+	}
+	return at.compiledSchema, nil
 }
 
 // Asset contains the asset content in json, and references its definition

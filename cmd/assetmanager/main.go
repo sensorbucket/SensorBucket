@@ -49,7 +49,7 @@ func Run() error {
 	}
 
 	// Start http server
-	fmt.Printf("Starting http server on %s", AM_HTTP_ADDR)
+	fmt.Printf("Starting http server on %s\n", AM_HTTP_ADDR)
 	return http.ListenAndServe(AM_HTTP_ADDR, cors.AllowAll().Handler(svc))
 }
 

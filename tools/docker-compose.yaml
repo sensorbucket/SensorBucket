@@ -13,6 +13,9 @@ services:
       - ..:/workspace:cached
     environment:
       AM_PIPELINE_ID: mfm-waterlevel
+      AM_DEFINITION_PATH: /workspace/tools/seed/assetmanager/assetdefinitions.json
+      AM_HTTP_ADDR: :3000
+      AM_MONGO_DSN: mongodb://root:root@assetdb:27017
 
   assetdb:
     image: mongo
