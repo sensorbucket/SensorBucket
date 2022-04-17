@@ -10,7 +10,6 @@ import (
 )
 
 func (svc *Service) setupRoutes() {
-	// TODO: Implement http routes
 	r := svc.router
 
 	r.Post("/assets", svc.httpCreateAsset())

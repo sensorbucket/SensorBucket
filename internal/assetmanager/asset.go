@@ -12,11 +12,15 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
+const (
+	ILLEGAL_PK_CHARACTERS = " #:"
+)
+
 var (
 	ErrValidationFailed = errors.New("validation failed")
 )
 
-// AssetDefinition ...
+// AssetDefinition contains the asset structure, such as schema, labels, keys, etc.
 type AssetDefinition struct {
 	Name       string
 	PipelineID string
@@ -29,7 +33,6 @@ type AssetDefinition struct {
 	schemaSync sync.Once
 }
 
-// newAssetDefinitionOpts ...
 type newAssetDefinitionOpts struct {
 	Name       string
 	PipelineID string
@@ -77,6 +80,7 @@ func (at *AssetDefinition) URN() AssetURN {
 	}
 }
 
+// Validate checks if the given json content adheres to this asset definition
 func (at *AssetDefinition) Validate(c json.RawMessage) error {
 	var err error
 
@@ -116,7 +120,7 @@ func (at *AssetDefinition) Equals(other *AssetDefinition) bool {
 	return at.Name == other.Name && at.PipelineID == other.PipelineID && at.Version == other.Version
 }
 
-// Asset ...
+// Asset contains the asset content in json, and references its definition
 type Asset struct {
 	ID         string
 	Definition *AssetDefinition
@@ -160,7 +164,7 @@ func (a *Asset) Validate() error {
 	return a.Definition.Validate(a.Content)
 }
 
-var R_PK_FIELD = regexp.MustCompile("(?miU)(\\${.+})")
+var R_PK_FIELD = regexp.MustCompile(`(?miU)(\${.+})`)
 
 func generateIDFromPK(pk string, content json.RawMessage) (string, error) {
 	keys := R_PK_FIELD.FindAllString(pk, -1)
@@ -180,12 +184,12 @@ func generateIDFromPK(pk string, content json.RawMessage) (string, error) {
 }
 
 func validatePrimaryKey(pk string) error {
-	if strings.ContainsAny(pk, " #:") {
+	if strings.ContainsAny(pk, ILLEGAL_PK_CHARACTERS) {
 		return errors.New("primary key contains illegal characters")
 	}
 
 	if !strings.HasPrefix(pk, "${") || !strings.HasSuffix(pk, "}") {
-		return errors.New("primary key must have at least one temlat")
+		return errors.New("primary key must have at least one template")
 	}
 
 	return nil

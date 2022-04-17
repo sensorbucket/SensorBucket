@@ -17,16 +17,19 @@ var (
 	ASSET_DEFINITION_COLLECTION = "asset_definitions"
 )
 
-// MongoDBStore ...
+// MongoDBStore implements the AssetStore interface using a MongoDB backend.
 type MongoDBStore struct {
 	client *mongo.Client
 	db     *mongo.Database
 }
 
+// NewMongoDBStore creates a new MongoDBStore instance.
 func NewMongoDBStore() *MongoDBStore {
 	return &MongoDBStore{}
 }
 
+// Connect connects to the MongoDB backend with the given database and returns an error if the connection fails.
+// Will also migrate the database if possible.
 func (s *MongoDBStore) Connect(uri, database string) error {
 	var err error
 

@@ -9,16 +9,18 @@ import (
 	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
+const (
+	ASSET_ID_LENGTH = 8
+)
+
 var (
 	ErrAssetDefinitionNotFound         = errors.New("asset definition not found")
 	ErrAssetNotFound                   = errors.New("asset not found")
 	ErrDuplicateAssetID                = errors.New("duplicate asset id")
 	ErrExistingAssetDefinitionMismatch = errors.New("provided asset definition schema does not match the existing asset definition in the database")
-
-	ASSET_ID_LENGTH = 8
 )
 
-// iService ...
+// iService is the interface for this service. It is not used except for the developer to get a quick overview of existing functions
 type iService interface {
 	ListAssetDefinitions() ([]string, error)
 	RegisterAssetDefinition(RegisterAssetDefinitionOpts) error
@@ -31,15 +33,16 @@ type iService interface {
 	FindAssets(definitionURN string, filter map[string]interface{}) ([]Asset, error)
 }
 
+// Validate that Service implements this interface
 var _ iService = (*Service)(nil)
 
-// AssetDefinitionStore ...
+// AssetDefinitionStore stores asset definitions
 type AssetDefinitionStore interface {
 	CreateAssetDefinition(*AssetDefinition) error
 	GetAssetDefinition(urn AssetURN) (*AssetDefinition, error)
 }
 
-// AssetStore ...
+// AssetStore stores assets
 type AssetStore interface {
 	CreateAsset(*Asset) error
 	UpdateAsset(*Asset) error
@@ -48,7 +51,7 @@ type AssetStore interface {
 	FindFilter(definitionURN AssetURN, filter map[string]interface{}) ([]Asset, error)
 }
 
-// Service ...
+// Service is the AssetManager service that allows custom assets to be defined and allows CRUD operations on them
 type Service struct {
 	atStore    AssetDefinitionStore
 	aStore     AssetStore
@@ -58,13 +61,14 @@ type Service struct {
 	router           chi.Router
 }
 
-// Opts ...
+// Opts Options required during creation of the service
 type Opts struct {
 	AssetStore           AssetStore
 	AssetDefinitionStore AssetDefinitionStore
 	PipelineID           string
 }
 
+// New creates a new asset manager service
 func New(opts Opts) *Service {
 	svc := &Service{
 		aStore:     opts.AssetStore,
@@ -77,7 +81,7 @@ func New(opts Opts) *Service {
 	return svc
 }
 
-// RegisterAssetDefinitionOpts ...
+// RegisterAssetDefinitionOpts Options required to register a new asset definition
 type RegisterAssetDefinitionOpts struct {
 	Name       string
 	PipelineID string // Shouldn't the service specify the PipelineID
@@ -87,6 +91,7 @@ type RegisterAssetDefinitionOpts struct {
 	Schema     json.RawMessage
 }
 
+// RegisterAssetDefinition registers a new asset definition
 func (svc *Service) RegisterAssetDefinition(opts RegisterAssetDefinitionOpts) error {
 	at, err := newAssetDefinition(newAssetDefinitionOpts{
 		Name:       opts.Name,
@@ -174,12 +179,16 @@ func (svc *Service) assetExists(urn AssetURN) (bool, error) {
 	return true, nil
 }
 
-// UpdateAssetOpts ...
+// UpdateAssetOpts options required for updating an asset
 type UpdateAssetOpts struct {
+	URN     string
+	Content json.RawMessage
 }
 
 func (svc *Service) UpdateAsset(opts UpdateAssetOpts) error {
-	return fmt.Errorf("not implemented")
+	// TODO: Patch new contents
+	// TODO: Introduce immutable properties
+	return errors.New("not implemented")
 }
 
 func (svc *Service) GetAsset(urnString string) (*Asset, error) {
@@ -218,24 +227,6 @@ func (svc *Service) FindAssets(definitionURN string, filter map[string]interface
 	return svc.aStore.FindFilter(urn, filter)
 }
 
-// var randomChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-// func randomString(length int) string {
-// 	b := make([]byte, length)
-// 	rand.Read(b)
-// 	for i, v := range b {
-// 		b[i] = randomChars[v%byte(len(randomChars))]
-// 	}
-// 	return string(b)
-// }
-
 func randomString(length int) string {
 	return gonanoid.Must(length)
 }
-
-/*
-
-64 ^ 8
-
-
-
-*/

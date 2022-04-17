@@ -5,11 +5,25 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path"
 
 	"github.com/rs/cors"
 	"sensorbucket.nl/internal/assetmanager"
 )
+
+var (
+	AM_PIPELINE_ID     = mustEnv("AM_PIPELINE_ID")
+	AM_DEFINITION_PATH = mustEnv("AM_DEFINITION_PATH")
+	AM_HTTP_ADDR       = mustEnv("AM_HTTP_ADDR")
+	AM_MONGO_DSN       = mustEnv("AM_MONGO_DSN")
+)
+
+func mustEnv(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		panic(fmt.Sprintf("%s must be set", key))
+	}
+	return val
+}
 
 func main() {
 	if err := Run(); err != nil {
@@ -19,14 +33,14 @@ func main() {
 
 func Run() error {
 	store := assetmanager.NewMongoDBStore()
-	if err := store.Connect("mongodb://root:root@assetdb:27017/", "assets"); err != nil {
+	if err := store.Connect(AM_MONGO_DSN, "assets"); err != nil {
 		return err
 	}
 
 	svc := assetmanager.New(assetmanager.Opts{
 		AssetStore:           store,
 		AssetDefinitionStore: store,
-		PipelineID:           os.Getenv("AM_PIPELINE_ID"),
+		PipelineID:           AM_PIPELINE_ID,
 	})
 
 	// Register asset definitions
@@ -35,8 +49,8 @@ func Run() error {
 	}
 
 	// Start http server
-	fmt.Println("Starting http server on :3000")
-	return http.ListenAndServe(":3000", cors.AllowAll().Handler(svc))
+	fmt.Printf("Starting http server on %s", AM_HTTP_ADDR)
+	return http.ListenAndServe(AM_HTTP_ADDR, cors.AllowAll().Handler(svc))
 }
 
 // assetDefinitionFile ...
@@ -48,8 +62,7 @@ type assetDefinitionFile struct {
 }
 
 func registerAssetDefinitions(svc *assetmanager.Service) error {
-	wd, _ := os.Getwd()
-	file, err := os.Open(path.Join(wd, "tools/seed/assetmanager/assetdefinitions.json"))
+	file, err := os.Open(AM_DEFINITION_PATH)
 	if err != nil {
 		return err
 	}
@@ -66,7 +79,7 @@ func registerAssetDefinitions(svc *assetmanager.Service) error {
 			Version:    at.Version,
 			Schema:     at.Schema,
 			PrimaryKey: at.PrimaryKey,
-			PipelineID: os.Getenv("AM_PIPELINE_ID"),
+			PipelineID: AM_PIPELINE_ID,
 		})
 		if err != nil {
 			return fmt.Errorf("could not register asset definition %s: %w", name, err)
