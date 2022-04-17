@@ -1,7 +1,6 @@
 version: '3'
 
 services:
-  # Example service
   assetmanager:
     command: mage serve assetmanager
     build:
@@ -16,6 +15,19 @@ services:
       AM_DEFINITION_PATH: /workspace/tools/seed/assetmanager/assetdefinitions.json
       AM_HTTP_ADDR: :3000
       AM_MONGO_DSN: mongodb://root:root@assetdb:27017
+
+  measurements:
+    command: mage serve measurements
+    build:
+      dockerfile: Dockerfile
+      context: .
+    volumes:
+      - ..:/workspace:cached
+    environment:
+      MS_DB_DSN: postgresql://user:sensorbucket@db:5432/sensorbucket
+      MS_AMQP_URL: amqp://guest:guest@mq:5672/
+      MS_AMQP_EXCHANGE: pipeline.measurement.tx
+      MS_AMQP_QUEUE: measurement_service_q
 
   assetdb:
     image: mongo
