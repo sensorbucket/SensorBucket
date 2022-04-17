@@ -74,7 +74,7 @@ func (s *MongoDBStore) UpdateAsset(asset *Asset) error {
 		return fmt.Errorf("could not create asset model: %w", err)
 	}
 
-	if _, err := col.UpdateOne(context.Background(), bson.D{{"definition_urn", model.DefinitionURN}}, model); err != nil {
+	if _, err := col.UpdateOne(context.Background(), bson.D{{"urn", model.URN}}, bson.D{{"$set", bson.D{{"content", model.Content}}}}); err != nil {
 		return fmt.Errorf("could not update asset: %w", err)
 	}
 

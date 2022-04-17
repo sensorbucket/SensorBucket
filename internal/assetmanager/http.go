@@ -15,6 +15,7 @@ func (svc *Service) setupRoutes() {
 	r.Post("/assets", svc.httpCreateAsset())
 	r.Get("/assets", svc.httpListAssets())
 	r.Get("/assets/{assetURN}", svc.httpGetAsset())
+	r.Put("/assets/{assetURN}", svc.httpPutAsset())
 	r.Get("/asset-definitions", svc.httpListAssetDefinitions())
 }
 
@@ -149,6 +150,31 @@ func (svc *Service) httpListAssetDefinitions() http.HandlerFunc {
 		}
 
 		sendJSON(w, assetDefinitions)
+	}
+}
+
+func (svc *Service) httpPutAsset() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		assetURN, err := url.PathUnescape(chi.URLParam(r, "assetURN"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		var req struct {
+			Content json.RawMessage `json:"content,omitempty"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := svc.UpdateAsset(assetURN, req.Content); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 

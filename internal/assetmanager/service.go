@@ -27,7 +27,7 @@ type iService interface {
 	GetAssetDefinition(name string) (*AssetDefinition, error)
 
 	CreateAsset(CreateAssetOpts) (*Asset, error)
-	UpdateAsset(UpdateAssetOpts) error
+	UpdateAsset(urn string, content json.RawMessage) error
 	GetAsset(urnString string) (*Asset, error)
 	DeleteAsset(urnString string) error
 	FindAssets(definitionURN string, filter map[string]interface{}) ([]Asset, error)
@@ -185,10 +185,23 @@ type UpdateAssetOpts struct {
 	Content json.RawMessage
 }
 
-func (svc *Service) UpdateAsset(opts UpdateAssetOpts) error {
-	// TODO: Patch new contents
-	// TODO: Introduce immutable properties
-	return errors.New("not implemented")
+func (svc *Service) UpdateAsset(urn string, content json.RawMessage) error {
+	asset, err := svc.GetAsset(urn)
+	if err != nil {
+		return err
+	}
+
+	asset.Content = content
+
+	if err := asset.Validate(); err != nil {
+		return fmt.Errorf("could not validate asset: %w", err)
+	}
+
+	if err := svc.aStore.UpdateAsset(asset); err != nil {
+		return fmt.Errorf("could not update asset: %w", err)
+	}
+
+	return nil
 }
 
 func (svc *Service) GetAsset(urnString string) (*Asset, error) {

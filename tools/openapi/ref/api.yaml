@@ -46,7 +46,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [asset_definition, body]
+              required: [asset_definition, content]
               properties:
                 asset_definition:
                   type: string
@@ -95,6 +95,25 @@ paths:
     get:
       description: Retrieve an asset
       tags: ["Asset Management"]
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/assetResponse"
+    put:
+      description: Replace an asset definition
+      tags: ["Asset Management"]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: object
       responses:
         200:
           description: ok
