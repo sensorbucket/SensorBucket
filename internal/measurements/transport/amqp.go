@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"sensorbucket.nl/internal/measurements"
@@ -34,6 +35,13 @@ func NewAMQP(opts OptsAMQP) *TransportAMQP {
 	}
 }
 
+// dto
+type dto struct {
+	Time        int     `json:"timestamp,omitempty"`
+	Measurement float32 `json:"measurements,omitempty"`
+	Serial      string  `json:"serial,omitempty"`
+}
+
 func (t *TransportAMQP) Connect(addr string) error {
 	// Connect
 	conn, err := amqp.Dial(addr)
@@ -53,6 +61,9 @@ func (t *TransportAMQP) Connect(addr string) error {
 	if _, err := ch.QueueDeclare(t.q, true, false, false, false, nil); err != nil {
 		return fmt.Errorf("error declaring queue: %w", err)
 	}
+	if err := ch.QueueBind(t.q, "#", t.xchg, false, nil); err != nil {
+		return fmt.Errorf("error binding queue: %w", err)
+	}
 
 	// Start receiving messages
 	c, err := ch.Consume(t.q, "", false, false, false, false, nil)
@@ -69,16 +80,27 @@ func (t *TransportAMQP) Connect(addr string) error {
 		// Process message
 		case msg := <-c:
 			{
-				var measurement measurements.Measurement
+				var measurement dto
 				if err := json.Unmarshal(msg.Body, &measurement); err != nil {
 					log.Printf("Error unmarshalling measurement from amqp message: %v", err)
-					msg.Nack(false, false)
+					msg.Ack(false)
 					continue
 				}
+				if measurement.Serial == "" {
+					log.Println("Error: Serial is empty")
+					msg.Ack(false)
+					continue
+				}
+				// log.Printf("[AMQP] Received: %s", msg.Body)
+				log.Printf("[AMQP] Received: %+v", measurement)
 
-				if err := t.svc.StoreMeasurement(&measurement); err != nil {
+				if err := t.svc.StoreMeasurement(&measurements.Measurement{
+					Timestamp:   time.Unix(int64(measurement.Time), 0),
+					Measurement: measurement.Measurement,
+					Serial:      measurement.Serial,
+				}); err != nil {
 					log.Printf("Error storing measurement: %v", err)
-					msg.Nack(false, false)
+					msg.Ack(false)
 					continue
 				}
 			}
