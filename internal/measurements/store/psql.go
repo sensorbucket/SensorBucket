@@ -1,6 +1,8 @@
 package store
 
 import (
+	"database/sql"
+
 	"github.com/jmoiron/sqlx"
 	"sensorbucket.nl/internal/measurements"
 )
@@ -19,25 +21,30 @@ func NewPSQL(db *sqlx.DB) *MeasurementStorePSQL {
 	}
 }
 
-var SQL_INSERT = "INSERT INTO measurements (timestamp, subject, value) VALUES ($1, $2, $3)"
-
 func (s *MeasurementStorePSQL) Insert(m *measurements.Measurement) error {
-	if _, err := s.db.Exec(SQL_INSERT, m.Timestamp, m.Serial, m.Measurement); err != nil {
-		return err
+	var locID sql.NullInt64
+	if m.LocationID != nil {
+		locID.Int64 = int64(*m.LocationID)
+		locID.Valid = true
 	}
-	return nil
-}
 
-func (s *MeasurementStorePSQL) Migrate() error {
-	_, err := s.db.Exec(`
-		CREATE TABLE IF NOT EXISTS measurements (
-			timestamp TIMESTAMP NOT NULL,
-			subject VARCHAR(255) NOT NULL,
-			value FLOAT NOT NULL,
-			PRIMARY KEY (timestamp, subject)
-		);
-		SELECT create_hypertable('measurements', 'timestamp');
-	`)
-
+	_, err := s.db.Exec(`INSERT INTO measurements (
+			thing_urn,
+			timestamp,
+			value,
+			measurement_type,
+			measurement_type_unit,
+			location_id,
+			ST_SetSRID(ST_MakePoint($7, $8),4326)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		m.ThingURN,
+		m.Timestamp,
+		m.Value,
+		m.MeasurementType,
+		m.MeasurementTypeUnit,
+		locID,
+		m.Coordinates[0],
+		m.Coordinates[1],
+	)
 	return err
 }

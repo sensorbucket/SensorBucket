@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -20,8 +19,6 @@ var (
 	MS_AMQP_URL      = mustEnv("MS_AMQP_URL")
 	MS_AMQP_EXCHANGE = mustEnv("MS_AMQP_EXCHANGE")
 	MS_AMQP_QUEUE    = mustEnv("MS_AMQP_QUEUE")
-
-	migrate = flag.Bool("migrate", false, "migrate the database")
 )
 
 func mustEnv(key string) string {
@@ -44,12 +41,6 @@ func Run() error {
 		return fmt.Errorf("failed to open database: %s", err)
 	}
 	store := store.NewPSQL(db)
-	if *migrate {
-		if err := store.Migrate(); err != nil {
-			return fmt.Errorf("failed to migrate database: %s", err)
-		}
-		log.Println("database migrated")
-	}
 
 	svc := measurements.New(store)
 	t := transport.NewAMQP(transport.OptsAMQP{
