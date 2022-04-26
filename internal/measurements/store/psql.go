@@ -28,15 +28,7 @@ func (s *MeasurementStorePSQL) Insert(m *measurements.Measurement) error {
 		locID.Valid = true
 	}
 
-	_, err := s.db.Exec(`INSERT INTO measurements (
-			thing_urn,
-			timestamp,
-			value,
-			measurement_type,
-			measurement_type_unit,
-			location_id,
-			ST_SetSRID(ST_MakePoint($7, $8),4326)
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+	_, err := s.db.Exec("INSERT INTO measurements (thing_urn,timestamp,value,measurement_type,measurement_type_unit,location_id,coordinates,metadata) VALUES ($1, $2, $3, $4, $5, $6, ST_SetSRID(ST_MakePoint($7, $8),4326), $9)",
 		m.ThingURN,
 		m.Timestamp,
 		m.Value,
@@ -45,6 +37,7 @@ func (s *MeasurementStorePSQL) Insert(m *measurements.Measurement) error {
 		locID,
 		m.Coordinates[0],
 		m.Coordinates[1],
+		m.Metadata,
 	)
 	return err
 }
