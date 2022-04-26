@@ -37,9 +37,17 @@ func (m *Measurement) Validate() error {
 	return nil
 }
 
+// QueryFilters represents the available filters for querying measurements
+type QueryFilters struct {
+	ThingURNs        []string
+	LocationIDs      []int
+	MeasurementTypes []string
+}
+
 // iService is an interface for the service's exported interface, it can be used as a developer reference
 type iService interface {
 	StoreMeasurement(*Measurement) error
+	QueryMeasurements(start, end time.Time, filters QueryFilters) ([]Measurement, error)
 }
 
 // Ensure Service implements iService
@@ -48,6 +56,7 @@ var _ iService = (*Service)(nil)
 // MeasurementStore stores measurement data
 type MeasurementStore interface {
 	Insert(*Measurement) error
+	Query(start, end time.Time, filters QueryFilters) ([]Measurement, error)
 }
 
 // Service is the measurement service which stores measurement data.
@@ -63,4 +72,8 @@ func New(store MeasurementStore) *Service {
 
 func (s *Service) StoreMeasurement(m *Measurement) error {
 	return s.store.Insert(m)
+}
+
+func (s *Service) QueryMeasurements(start, end time.Time, filters QueryFilters) ([]Measurement, error) {
+	return s.store.Query(start, end, filters)
 }

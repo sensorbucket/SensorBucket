@@ -2,10 +2,14 @@ package store
 
 import (
 	"database/sql"
+	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"sensorbucket.nl/internal/measurements"
 )
+
+var pq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 // Ensure MeasurementStorePSQL implements MeasurementStore
 var _ measurements.MeasurementStore = (*MeasurementStorePSQL)(nil)
@@ -40,4 +44,38 @@ func (s *MeasurementStorePSQL) Insert(m *measurements.Measurement) error {
 		m.Metadata,
 	)
 	return err
+}
+
+func (s *MeasurementStorePSQL) Query(start, end time.Time, filters measurements.QueryFilters) ([]measurements.Measurement, error) {
+	q := pq.Select("thing_urn", "timestamp", "value", "measurement_type", "measurement_type_unit", "location_id", "ST_X(coordinates::geometry) as lon", "ST_Y(coordinates::geometry) as lat").
+		From("measurements").
+		Where("timestamp >= ? AND timestamp <= ?", start, end)
+
+	if len(filters.ThingURNs) > 0 {
+		q = q.Where(sq.Eq{"thing_urn": filters.ThingURNs})
+	}
+	if len(filters.MeasurementTypes) > 0 {
+		q = q.Where(sq.Eq{"measurement_type": filters.MeasurementTypes})
+	}
+	if len(filters.LocationIDs) > 0 {
+		q = q.Where(sq.Eq{"location_id": filters.LocationIDs})
+	}
+
+	rows, err := q.RunWith(s.db).Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []measurements.Measurement
+	for rows.Next() {
+		var m measurements.Measurement
+		err = rows.Scan(&m.ThingURN, &m.Timestamp, &m.Value, &m.MeasurementType, &m.MeasurementTypeUnit, &m.LocationID, &m.Coordinates[0], &m.Coordinates[1])
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, m)
+	}
+
+	return list, nil
 }
