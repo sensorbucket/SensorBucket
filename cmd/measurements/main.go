@@ -53,7 +53,7 @@ func Run() error {
 	// Start receiving messages in coroutine
 	errC := make(chan error)
 	go func() {
-		if err := t.Connect(MS_AMQP_URL); err != nil {
+		if err := t.Start(MS_AMQP_URL); err != nil {
 			errC <- fmt.Errorf("failed to connect to AMQP: %s", err)
 		}
 	}()
