@@ -19,6 +19,7 @@ import (
 )
 
 var (
+	MS_HTTP_BASE     = mustEnv("MS_HTTP_BASE")
 	MS_HTTP_ADDR     = mustEnv("MS_HTTP_ADDR")
 	MS_DB_DSN        = mustEnv("MS_DB_DSN")
 	MS_AMQP_URL      = mustEnv("MS_AMQP_URL")
@@ -66,7 +67,7 @@ func Run() error {
 	defer log.Println("Processing stopped...")
 
 	// Start http server
-	httpTransport := transport.NewHTTP(svc)
+	httpTransport := transport.NewHTTP(svc, MS_HTTP_BASE)
 	httpSRV := &http.Server{
 		Addr:    MS_HTTP_ADDR,
 		Handler: cors.AllowAll().Handler(httpTransport),

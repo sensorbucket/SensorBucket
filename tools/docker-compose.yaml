@@ -26,6 +26,7 @@ services:
     volumes:
       - ..:/workspace:cached
     environment:
+      MS_HTTP_BASE: http://localhost:3001
       MS_HTTP_ADDR: :3001
       MS_DB_DSN: postgresql://user:sensorbucket@db:5432/sensorbucket
       MS_AMQP_URL: amqp://guest:guest@mq:5672/

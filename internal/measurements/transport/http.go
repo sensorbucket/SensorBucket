@@ -16,12 +16,14 @@ import (
 type HTTPTransport struct {
 	router chi.Router
 	svc    *measurements.Service
+	url    string
 }
 
-func NewHTTP(svc *measurements.Service) *HTTPTransport {
+func NewHTTP(svc *measurements.Service, url string) *HTTPTransport {
 	t := &HTTPTransport{
 		router: chi.NewRouter(),
 		svc:    svc,
+		url:    url,
 	}
 
 	t.router.Get("/{start}/{end}", t.httpGetMeasurements())
@@ -47,13 +49,30 @@ func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
 			return
 		}
 
-		measurements, err := t.svc.QueryMeasurements(start, end, filters)
+		pagination, err := parsePagination(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		measurements, nextPage, err := t.svc.QueryMeasurements(measurements.Query{
+			Start:   start,
+			End:     end,
+			Filters: filters,
+		}, pagination)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		sendJSON(w, measurements)
+		response := paginatedResponse{
+			Data:  measurements,
+			Count: len(measurements),
+		}
+		if nextPage != nil {
+			response.Next = t.buildNextURL(r, *nextPage)
+		}
+		sendJSON(w, response)
 	}
 }
 
@@ -119,6 +138,45 @@ func parseFilters(r *http.Request) (measurements.QueryFilters, error) {
 	}
 
 	return filters, nil
+}
+
+// paginatedResponse is a paginated response.
+type paginatedResponse struct {
+	Next  string      `json:"next"`
+	Count int         `json:"count"`
+	Data  interface{} `json:"data"`
+}
+
+func parsePagination(r *http.Request) (measurements.Pagination, error) {
+	var err error
+	pagination := measurements.Pagination{
+		Limit: 100,
+	}
+	q := r.URL.Query()
+
+	if q.Has("cursor") {
+		pagination.Cursor, err = url.QueryUnescape(r.URL.Query().Get("cursor"))
+		if err != nil {
+			return measurements.Pagination{}, fmt.Errorf("invalid cursor: %w", err)
+		}
+	}
+
+	if q.Has("limit") {
+		limitQ := r.URL.Query().Get("limit")
+		pagination.Limit, err = strconv.Atoi(limitQ)
+		if err != nil {
+			return measurements.Pagination{}, fmt.Errorf("limit must be a number: %w", err)
+		}
+	}
+
+	return pagination, nil
+}
+
+func (t *HTTPTransport) buildNextURL(r *http.Request, nextPage measurements.Pagination) string {
+	q := r.URL.Query()
+	q.Set("cursor", nextPage.Cursor)
+	q.Set("limit", strconv.Itoa(nextPage.Limit))
+	return fmt.Sprintf("%s%s?%s", t.url, r.URL.Path, q.Encode())
 }
 
 func sendJSON(w http.ResponseWriter, v interface{}) {

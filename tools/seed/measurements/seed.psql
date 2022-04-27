@@ -1,0 +1,22 @@
+TRUNCATE TABLE measurements;
+
+---
+
+INSERT INTO measurements (
+  "thing_urn",
+  "timestamp",
+  "value",
+  "measurement_type",
+  "measurement_type_unit",
+  "location_id",
+  "coordinates"
+)
+SELECT 
+  'srn:asset:grondwater:sensor:12938190827',
+  NOW() + random() * interval '20 days' - interval '10 days',
+  random() * 500 - 100,
+  'pressure',
+  'millivolt',
+  NULL, 
+  ST_SetSRID(ST_MakePoint(4.027862 + random(), 51.457032 + random()),4326)
+ FROM generate_series(1,1000) AS g(i);

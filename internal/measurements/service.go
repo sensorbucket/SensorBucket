@@ -44,10 +44,23 @@ type QueryFilters struct {
 	MeasurementTypes []string
 }
 
+// Query contains query information for a list of measurements
+type Query struct {
+	Start   time.Time
+	End     time.Time
+	Filters QueryFilters
+}
+
+// Pagination represents the pagination information for the measurements query.
+type Pagination struct {
+	Limit  int
+	Cursor string
+}
+
 // iService is an interface for the service's exported interface, it can be used as a developer reference
 type iService interface {
 	StoreMeasurement(*Measurement) error
-	QueryMeasurements(start, end time.Time, filters QueryFilters) ([]Measurement, error)
+	QueryMeasurements(Query, Pagination) ([]Measurement, *Pagination, error)
 }
 
 // Ensure Service implements iService
@@ -56,7 +69,7 @@ var _ iService = (*Service)(nil)
 // MeasurementStore stores measurement data
 type MeasurementStore interface {
 	Insert(*Measurement) error
-	Query(start, end time.Time, filters QueryFilters) ([]Measurement, error)
+	Query(Query, Pagination) ([]Measurement, *Pagination, error)
 }
 
 // Service is the measurement service which stores measurement data.
@@ -74,6 +87,13 @@ func (s *Service) StoreMeasurement(m *Measurement) error {
 	return s.store.Insert(m)
 }
 
-func (s *Service) QueryMeasurements(start, end time.Time, filters QueryFilters) ([]Measurement, error) {
-	return s.store.Query(start, end, filters)
+func (s *Service) QueryMeasurements(q Query, p Pagination) ([]Measurement, *Pagination, error) {
+	measurements, nextPage, err := s.store.Query(q, p)
+	if err != nil {
+		return nil, nil, err
+	}
+	if nextPage != nil {
+		nextPage.Limit = p.Limit
+	}
+	return measurements, nextPage, nil
 }

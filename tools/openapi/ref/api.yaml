@@ -145,6 +145,16 @@ paths:
       tags: ["Measurements"]
       parameters:
         - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+        - in: query
           name: thing_urn
           required: false
           schema:
