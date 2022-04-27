@@ -22,6 +22,9 @@ theme:
         name: Switch to dark mode
 
 markdown_extensions:
+  - attr_list
+  - md_in_html
+  - footnotes
   - admonition
   - pymdownx.highlight
   - pymdownx.inlinehilite
@@ -38,3 +41,4 @@ nav:
     - Getting started: getting-started.md
   - Services:
     - Asset Manager: assetmanager/index.md
+    - Measurements: measurements/index.md
