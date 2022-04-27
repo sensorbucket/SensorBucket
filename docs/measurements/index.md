@@ -46,17 +46,23 @@ The measurements service uses the default measurement data model expressed in sn
 
 ```json
 {
-  "thing_urn": "srn:asset:grondwater:sensor:12938190827",
-  "timestamp": "2022-05-07T18:48:13Z",
-  "value": 304.6,
-  "measurement_type": "pressure",
-  "measurement_type_unit": "millivolt",
-  "location_id": null,
-  "coordinates": [
-    4.411849659716389,
-    51.519481521531034
-  ],
-  "metadata": {}
+  "next": "http://localhost:3001/2021-04-20T15:00:00+02:00/2023-04-21T15:00:00+02:00?limit=100",
+  "count": 1,
+  "data": [
+    {
+      "thing_urn": "srn:asset:grondwater:sensor:12938190827",
+      "timestamp": "2022-05-07T18:48:13Z",
+      "value": 304.66941197870733,
+      "measurement_type": "pressure",
+      "measurement_type_unit": "millivolt",
+      "location_id": null,
+      "coordinates": [
+        4.411849659716389,
+        51.519481521531034
+      ],
+      "metadata": {}
+    }
+  ]
 }
 ```
 
