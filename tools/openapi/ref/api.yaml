@@ -132,12 +132,14 @@ paths:
         schema:
           type: string
           format: iso8601
+          example: "2022-04-26T15:00:00+02:00"
       - in: path
         name: end
         required: true
         schema:
           type: string
           format: iso8601
+          example: "2022-04-26T16:00:00+02:00"
     get:
       description: query measurements
       tags: ["Measurements"]
@@ -147,19 +149,16 @@ paths:
           required: false
           schema:
             type: string
-            example: "srn:asset:mfm-waterlevel:sensor:12345678"
         - in: query
           name: location_id
           required: false
           schema:
             type: number
-            example: 12
         - in: query
           name: measurement_type
           required: false
           schema:
             type: string
-            example: "air_temperature"
       responses:
         200:
           description: ok

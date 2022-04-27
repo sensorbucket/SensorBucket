@@ -47,7 +47,7 @@ func (s *MeasurementStorePSQL) Insert(m *measurements.Measurement) error {
 }
 
 func (s *MeasurementStorePSQL) Query(start, end time.Time, filters measurements.QueryFilters) ([]measurements.Measurement, error) {
-	q := pq.Select("thing_urn", "timestamp", "value", "measurement_type", "measurement_type_unit", "location_id", "ST_X(coordinates::geometry) as lon", "ST_Y(coordinates::geometry) as lat").
+	q := pq.Select("thing_urn", "timestamp", "value", "measurement_type", "measurement_type_unit", "location_id", "ST_X(coordinates::geometry) as lon", "ST_Y(coordinates::geometry) as lat", "metadata").
 		From("measurements").
 		Where("timestamp >= ? AND timestamp <= ?", start, end)
 
@@ -70,7 +70,7 @@ func (s *MeasurementStorePSQL) Query(start, end time.Time, filters measurements.
 	var list []measurements.Measurement
 	for rows.Next() {
 		var m measurements.Measurement
-		err = rows.Scan(&m.ThingURN, &m.Timestamp, &m.Value, &m.MeasurementType, &m.MeasurementTypeUnit, &m.LocationID, &m.Coordinates[0], &m.Coordinates[1])
+		err = rows.Scan(&m.ThingURN, &m.Timestamp, &m.Value, &m.MeasurementType, &m.MeasurementTypeUnit, &m.LocationID, &m.Coordinates[0], &m.Coordinates[1], &m.Metadata)
 		if err != nil {
 			return nil, err
 		}

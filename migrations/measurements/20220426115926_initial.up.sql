@@ -8,6 +8,6 @@ CREATE TABLE measurements (
   measurement_type_unit VARCHAR NOT NULL,
   location_id INTEGER,
   coordinates GEOGRAPHY(POINT,4326) NOT NULL,
-  metadata JSONB
+  metadata JSONB NOT NULL DEFAULT '{}',
 );
 SELECT create_hypertable('measurements', 'timestamp');
