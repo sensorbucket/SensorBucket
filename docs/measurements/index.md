@@ -28,7 +28,25 @@ The following environment variables must be set
 
 Data can be fetched from the measurements service using the HTTP API. This API requires a start and end datetime between which measurements will be fetched. See the OpenAPI specification for more information.
 
-### pagination
+### Endpoint
+
+The API Endpoint is as follows:
+
+```
+http://localhost:3001/<start_iso8601>/<end_iso8601>
+```
+
+Optional query parameters can be used to filter results:
+
+| Query parameter  | Description                                           |
+| ---------------- | ----------------------------------------------------- |
+| thing_urn        | The URN from a thing that produces measurements       |
+| location_id      | The ID of a static location                           |
+| measurement_type | The ID of a measurement type                          |
+| limit            | The maximum amount of measurements to return per page |
+| cursor           | A string used to fetch the next page                  |
+
+### Pagination
 
 Because the amount of measurements in the database are constantly growing, offset-based pagination is not an option as it would cause page-shifting. Therefore cursor-based pagination is used. The API will return a link with the new cursor value in the query which can be used to fetch the next page without page-shifting. This method also improves query efficiency as the database does not need to scan up to the given offset. [^1]
 
