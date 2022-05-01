@@ -37,7 +37,7 @@ func mustEnv(key string) string {
 
 func main() {
 	if err := Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s\n", err)
+		log.Fatalf("Fatal error: %s", err)
 	}
 }
 
