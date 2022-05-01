@@ -9,8 +9,10 @@ info:
     name: Provincie Zeeland
     url: 'https://zeeland.nl'
 servers:
-  - description: Local
+  - description: Asset Manager
     url: 'http://localhost:3000'
+  - description: Measurements
+    url: 'http://localhost:3001'
 paths: 
   /hello-world:
     get:
@@ -122,6 +124,62 @@ paths:
               schema:
                 $ref: "#/components/schemas/assetResponse"
 
+  /{start}/{end}:
+    parameters:
+      - in: path
+        name: start
+        required: true
+        schema:
+          type: string
+          format: iso8601
+          example: "2022-04-26T15:00:00+02:00"
+      - in: path
+        name: end
+        required: true
+        schema:
+          type: string
+          format: iso8601
+          example: "2022-04-26T16:00:00+02:00"
+    get:
+      description: query measurements
+      tags: ["Measurements"]
+      parameters:
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: thing_urn
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: location_id
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: measurement_type
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/measurementResponse"
+        
+
 components:
   schemas: 
     assetResponse:
@@ -131,6 +189,34 @@ components:
           type: string
           example: "srn:asset:mfm-waterlevel:sensor:12345678"
         content:
+          type: object
+    measurementResponse:
+      type: object
+      properties:
+        thing_urn:
+          type: string
+          example: "srn:asset:mfm-waterlevel:sensor:12345678"
+        timestamp:
+          type: string
+          example: "2022-02-01T12:14:00+02:00"
+        value:
+          type: number
+          example: 21.325
+        measurement_type:
+          type: string
+          example: air_temperature
+        measurement_type_unit:
+          type: string
+          example: degrees celsius
+        location_id:
+          type: number
+          example: 12
+        coordinates:
+          type: array
+          items: 
+            type: number
+          example: [5.47, 51.46]
+        metadata:
           type: object
   securitySchemes:
     Authorization:
