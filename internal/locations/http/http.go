@@ -74,7 +74,8 @@ func (r *Router) GetThingLocationByUrn(w http.ResponseWriter, req *http.Request)
 	}
 
 	if location.URN == "" {
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 
 	json.NewEncoder(w).Encode(location)
