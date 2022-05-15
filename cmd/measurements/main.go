@@ -57,7 +57,6 @@ func Run() error {
 		Exchange: MS_AMQP_EXCHANGE,
 		Queue:    MS_AMQP_QUEUE,
 	})
-	defer amqpTransport.Shutdown()
 
 	// Start receiving messages in coroutine
 	errC := make(chan error)
