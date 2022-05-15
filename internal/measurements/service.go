@@ -3,6 +3,7 @@ package measurements
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -72,18 +73,35 @@ type MeasurementStore interface {
 	Query(Query, Pagination) ([]Measurement, *Pagination, error)
 }
 
-// Service is the measurement service which stores measurement data.
-type Service struct {
-	store MeasurementStore
+// LocationService is used to fetch location for an asset
+type LocationService interface {
+	FindLocationID(thingURN string) (*int, error)
 }
 
-func New(store MeasurementStore) *Service {
+// Service is the measurement service which stores measurement data.
+type Service struct {
+	store     MeasurementStore
+	locations LocationService
+}
+
+func New(store MeasurementStore, locs LocationService) *Service {
 	return &Service{
-		store: store,
+		store:     store,
+		locations: locs,
 	}
 }
 
 func (s *Service) StoreMeasurement(m *Measurement) error {
+	if err := m.Validate(); err != nil {
+		return fmt.Errorf("validation failed for measurement: %s", err)
+	}
+
+	locID, err := s.locations.FindLocationID(m.ThingURN)
+	if err != nil {
+		return fmt.Errorf("failed to find location for thing %s: %s", m.ThingURN, err)
+	}
+	m.LocationID = locID
+
 	return s.store.Insert(m)
 }
 
