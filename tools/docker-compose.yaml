@@ -16,6 +16,21 @@ services:
       AM_HTTP_ADDR: :3000
       AM_MONGO_DSN: mongodb://root:root@assetdb:27017
 
+  zmqbridge:
+    command: mage serve zmqbridge
+    build:
+      dockerfile: Dockerfile
+      context: .
+    environment:
+      WORKER_AMQP_HOST: amqp://mq:5672
+      WORKER_AMQP_XCHG: pipeline.measurement.tx
+      WORKER_AMQP_ROUTE_KEY: grondwater
+      WORKER_ZMQ_BIND: "tcp://*:5555"
+    ports:
+      - 5555:5555
+    volumes:
+      - ..:/workspace:cached
+      
   measurements:
     command: mage serve measurements
     build:
@@ -54,6 +69,7 @@ services:
   mq:
     image: rabbitmq:3.8-management
     ports:
+      - 5672:5672
       - 15672:15672
 
   # docs:

@@ -1,6 +1,6 @@
 module sensorbucket.nl
 
-go 1.17
+go 1.18
 
 require (
 	github.com/go-chi/chi/v5 v5.0.7
@@ -17,7 +17,7 @@ require (
 )
 
 require (
-	github.com/Masterminds/squirrel v1.5.2 // indirect
+	github.com/Masterminds/squirrel v1.5.2
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
@@ -44,3 +44,5 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
+
+require github.com/pebbe/zmq4 v1.2.8
