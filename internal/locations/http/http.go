@@ -25,7 +25,6 @@ func New(store store.Store) Router {
 	}
 
 	muxRouter.HandleFunc("/api/location/create", router.CreateLocation)
-	muxRouter.HandleFunc("/api/location/delete", router.CreateLocation)
 	muxRouter.HandleFunc("/api/location/delete", router.DeleteLocation)
 	muxRouter.HandleFunc("/api/location/all", router.GetAllLocations)
 	muxRouter.HandleFunc("/api/location/thing", router.GetThingLocationByUrn)
