@@ -48,6 +48,19 @@ services:
       MS_AMQP_EXCHANGE: pipeline.measurement.tx
       MS_AMQP_QUEUE: measurement_service_q
 
+  locations:
+    command: mage serve locations
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - 3002:3000
+    volumes:
+      - ..:/workspace:cached
+    environment:
+      LOCATION_SVC_HTTP_HOST: ":3000"
+      LOCATION_SVC_WORKER_DB_DSN: postgresql://user:sensorbucket@db:5432/locations
+
   assetdb:
     image: mongo
     ports:
