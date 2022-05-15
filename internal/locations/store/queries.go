@@ -31,6 +31,10 @@ func DeleteThingLocation(urn string) (string, string) {
 	return "DELETE FROM thing_locations WHERE urn = $1;", urn
 }
 
+func DeleteThingLocations(locationId int) (string, int) {
+	return "DELETE FROM thing_locations WHERE location_id = $1;", locationId
+}
+
 func UpdateThingLocation(urn string, locationId int) (string, int, string) {
 	return "UPDATE thing_locations SET location_id = $1 WHERE urn = $2;", locationId, urn
 }

@@ -140,6 +140,13 @@ func DeleteLocation(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "location does not exist", http.StatusBadRequest)
 		return
 	}
+
+	err = store.DeleteThingLocationsByLocationId(int(locationCheck.Id))
+	if err != nil {
+		logrus.WithError(err).Info("erred while interacting with db")
+		http.Error(w, "error occured while deleting location", http.StatusInternalServerError)
+		return
+	}
 	err = store.DeleteLocationById(locationId)
 	if err != nil {
 		logrus.WithError(err).Info("erred while interacting with db")

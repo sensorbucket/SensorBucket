@@ -87,6 +87,10 @@ func CreateLocationOfThing(thingLocation models.ThingLocation) error {
 	return exec(InsertThingLocation(thingLocation.URN, thingLocation.LocationId))
 }
 
+func DeleteThingLocationsByLocationId(locationId int) error {
+	return exec(DeleteThingLocations(locationId))
+}
+
 func exec(cmd string, args ...any) error {
 	db, err := sql.Open("postgres", ConnString)
 	if err != nil {
