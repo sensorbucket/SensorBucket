@@ -12,26 +12,39 @@ import (
 	"sensorbucket.nl/internal/locations/store"
 )
 
-func New() Handler {
-	return mux.NewRouter()
+type Router struct {
+	handler http.Handler
+	store   store.Store
 }
 
-type Handler interface {
-	HandleFunc(path string, f func(http.ResponseWriter, *http.Request)) *mux.Route
-	ServeHTTP(http.ResponseWriter, *http.Request)
+func New(store store.Store) Router {
+	muxRouter := mux.NewRouter()
+	router := Router{
+		handler: muxRouter,
+		store:   store,
+	}
+
+	muxRouter.HandleFunc("/api/location/create", router.CreateLocation)
+	muxRouter.HandleFunc("/api/location/delete", router.CreateLocation)
+	muxRouter.HandleFunc("/api/location/delete", router.DeleteLocation)
+	muxRouter.HandleFunc("/api/location/all", router.GetAllLocations)
+	muxRouter.HandleFunc("/api/location/thing", router.GetThingLocationByUrn)
+	muxRouter.HandleFunc("/api/location/thing/delete", router.DeleteLocationOfURN)
+	muxRouter.HandleFunc("/api/location/thing/set", router.SetLocationOfUrn)
+	return router
 }
 
-func ListenAndServe(addr string, handler Handler) error {
-	return http.ListenAndServe(addr, handler)
+func (r *Router) ListenAndServe(addr string) error {
+	return http.ListenAndServe(addr, r.handler)
 }
 
-func GetAllLocations(w http.ResponseWriter, req *http.Request) {
+func (r *Router) GetAllLocations(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
-	locations, err := store.GetAllLocations()
+	locations, err := r.store.GetAllLocations()
 	if err != nil {
 		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while retrieving locations", http.StatusInternalServerError)
@@ -41,7 +54,7 @@ func GetAllLocations(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(locations)
 }
 
-func GetThingLocationByUrn(w http.ResponseWriter, req *http.Request) {
+func (r *Router) GetThingLocationByUrn(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -54,7 +67,7 @@ func GetThingLocationByUrn(w http.ResponseWriter, req *http.Request) {
 	}
 
 	thingUrn := q["thing_urn"][0]
-	location, err := store.GetLocationOfThingByUrn(thingUrn)
+	location, err := r.store.GetLocationOfThingByUrn(thingUrn)
 	if err != nil {
 		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while retrieving location", http.StatusInternalServerError)
@@ -68,7 +81,7 @@ func GetThingLocationByUrn(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(location)
 }
 
-func CreateLocation(w http.ResponseWriter, req *http.Request) {
+func (r *Router) CreateLocation(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -91,7 +104,7 @@ func CreateLocation(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	locationCheck, err := store.GetLocationByName(locationBody.Name)
+	locationCheck, err := r.store.GetLocationByName(locationBody.Name)
 	if err != nil {
 		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while accessing storage", http.StatusInternalServerError)
@@ -102,7 +115,7 @@ func CreateLocation(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = store.CreateLocation(locationBody)
+	err = r.store.CreateLocation(locationBody)
 	if err != nil {
 		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while storing location", http.StatusInternalServerError)
@@ -112,7 +125,7 @@ func CreateLocation(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func DeleteLocation(w http.ResponseWriter, req *http.Request) {
+func (r *Router) DeleteLocation(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodDelete {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -130,7 +143,7 @@ func DeleteLocation(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	locationCheck, err := store.GetLocationById(locationId)
+	locationCheck, err := r.store.GetLocationById(locationId)
 	if err != nil {
 		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while accessing storage", http.StatusInternalServerError)
@@ -141,13 +154,13 @@ func DeleteLocation(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = store.DeleteThingLocationsByLocationId(int(locationCheck.Id))
+	err = r.store.DeleteThingLocationsByLocationId(int(locationCheck.Id))
 	if err != nil {
 		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while deleting location", http.StatusInternalServerError)
 		return
 	}
-	err = store.DeleteLocationById(locationId)
+	err = r.store.DeleteLocationById(locationId)
 	if err != nil {
 		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while deleting location", http.StatusInternalServerError)
@@ -156,7 +169,7 @@ func DeleteLocation(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func DeleteLocationOfURN(w http.ResponseWriter, req *http.Request) {
+func (r *Router) DeleteLocationOfURN(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodDelete {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -169,7 +182,7 @@ func DeleteLocationOfURN(w http.ResponseWriter, req *http.Request) {
 	}
 
 	thingUrn := q["thing_urn"][0]
-	err := store.DeleteThingLocationByUrn(thingUrn)
+	err := r.store.DeleteThingLocationByUrn(thingUrn)
 	if err != nil {
 		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while deleting location", http.StatusInternalServerError)
@@ -179,7 +192,7 @@ func DeleteLocationOfURN(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func SetLocationOfUrn(w http.ResponseWriter, req *http.Request) {
+func (r *Router) SetLocationOfUrn(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPatch {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -202,7 +215,7 @@ func SetLocationOfUrn(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	locationCheck, err := store.GetLocationById(thingLocationBody.LocationId)
+	locationCheck, err := r.store.GetLocationById(thingLocationBody.LocationId)
 	if err != nil {
 		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while accessing storage", http.StatusInternalServerError)
@@ -213,14 +226,14 @@ func SetLocationOfUrn(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	urnLocation, err := store.GetLocationOfThingByUrn(thingLocationBody.URN)
+	urnLocation, err := r.store.GetLocationOfThingByUrn(thingLocationBody.URN)
 	if err != nil {
 		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while accessing storage", http.StatusInternalServerError)
 		return
 	}
 	if urnLocation.URN == "" {
-		err = store.CreateLocationOfThing(thingLocationBody)
+		err = r.store.CreateLocationOfThing(thingLocationBody)
 		if err != nil {
 			logrus.WithError(err).Info("erred while interacting with db")
 			http.Error(w, "error occured while setting location", http.StatusInternalServerError)
@@ -230,7 +243,7 @@ func SetLocationOfUrn(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = store.UpdateLocationOfThing(thingLocationBody)
+	err = r.store.UpdateLocationOfThing(thingLocationBody)
 	if err != nil {
 		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while setting location", http.StatusInternalServerError)

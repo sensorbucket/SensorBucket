@@ -3,23 +3,25 @@ package main
 import (
 	"os"
 
+	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
 	"sensorbucket.nl/internal/locations/http"
 	"sensorbucket.nl/internal/locations/store"
 )
 
 const (
-	WORKER_HTTP_HOST = "WORKER_HTTP_HOST" // :8080
-	WORKER_DB_CONN   = "WORKER_DB_CONN"   // postgresql://root:root@localhost:5432/todos?sslmode=disable
+	LOCATION_SVC_HTTP_HOST     = "LOCATION_SVC_HTTP_HOST"     // :8080
+	LOCATION_SVC_WORKER_DB_DSN = "LOCATION_SVC_WORKER_DB_DSN" // postgresql://root:root@localhost:5432/todos?sslmode=disable
 )
 
 func main() {
-	store.ConnString = os.Getenv(WORKER_DB_CONN)
-	router := http.New()
-	router.HandleFunc("/api/location/create", http.CreateLocation)
-	router.HandleFunc("/api/location/delete", http.DeleteLocation)
-	router.HandleFunc("/api/location/all", http.GetAllLocations)
-	router.HandleFunc("/api/location/thing", http.GetThingLocationByUrn)
-	router.HandleFunc("/api/location/thing/delete", http.DeleteLocationOfURN)
-	router.HandleFunc("/api/location/thing/set", http.SetLocationOfUrn)
-	http.ListenAndServe(os.Getenv(WORKER_HTTP_HOST), router)
+	db, err := sqlx.Open("pgx", os.Getenv(LOCATION_SVC_WORKER_DB_DSN))
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to open database")
+	}
+
+	store := store.New(db)
+	router := http.New(store)
+	router.ListenAndServe(os.Getenv(LOCATION_SVC_HTTP_HOST))
 }
