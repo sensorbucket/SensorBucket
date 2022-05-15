@@ -32,17 +32,19 @@ func (l *LocationService) FindLocationID(thingURN string) (*int, error) {
 		return nil, err
 	}
 
-	req.URL.Path = "/locations/thing"
+	req.URL.Path = "/api/location/thing"
 	q := req.URL.Query()
 	q.Set("thing_urn", thingURN)
 	req.URL.RawQuery = q.Encode()
+
+	fmt.Printf("%s\n", req.URL.String())
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusNotFound {
+	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil
 	}
 	if resp.StatusCode != http.StatusOK {
