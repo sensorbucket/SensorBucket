@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 	"sensorbucket.nl/internal/locations/models"
 	"sensorbucket.nl/internal/locations/store"
 )
@@ -32,6 +33,7 @@ func GetAllLocations(w http.ResponseWriter, req *http.Request) {
 
 	locations, err := store.GetAllLocations()
 	if err != nil {
+		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while retrieving locations", http.StatusInternalServerError)
 		return
 	}
@@ -54,6 +56,7 @@ func GetThingLocationByUrn(w http.ResponseWriter, req *http.Request) {
 	thingUrn := q["thing_urn"][0]
 	location, err := store.GetLocationOfThingByUrn(thingUrn)
 	if err != nil {
+		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while retrieving location", http.StatusInternalServerError)
 		return
 	}
@@ -90,6 +93,7 @@ func CreateLocation(w http.ResponseWriter, req *http.Request) {
 
 	locationCheck, err := store.GetLocationByName(locationBody.Name)
 	if err != nil {
+		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while accessing storage", http.StatusInternalServerError)
 		return
 	}
@@ -100,6 +104,7 @@ func CreateLocation(w http.ResponseWriter, req *http.Request) {
 
 	err = store.CreateLocation(locationBody)
 	if err != nil {
+		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while storing location", http.StatusInternalServerError)
 		return
 	}
@@ -127,6 +132,7 @@ func DeleteLocation(w http.ResponseWriter, req *http.Request) {
 
 	locationCheck, err := store.GetLocationById(locationId)
 	if err != nil {
+		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while accessing storage", http.StatusInternalServerError)
 		return
 	}
@@ -136,9 +142,33 @@ func DeleteLocation(w http.ResponseWriter, req *http.Request) {
 	}
 	err = store.DeleteLocationById(locationId)
 	if err != nil {
+		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while deleting location", http.StatusInternalServerError)
 		return
 	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func DeleteLocationOfURN(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodDelete {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	q := req.URL.Query()
+	if len(q["thing_urn"]) != 1 || q["thing_urn"][0] == "" {
+		http.Error(w, "invalid query parameters", http.StatusBadRequest)
+		return
+	}
+
+	thingUrn := q["thing_urn"][0]
+	err := store.DeleteThingLocationByUrn(thingUrn)
+	if err != nil {
+		logrus.WithError(err).Info("erred while interacting with db")
+		http.Error(w, "error occured while deleting location", http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -167,6 +197,7 @@ func SetLocationOfUrn(w http.ResponseWriter, req *http.Request) {
 
 	locationCheck, err := store.GetLocationById(thingLocationBody.LocationId)
 	if err != nil {
+		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while accessing storage", http.StatusInternalServerError)
 		return
 	}
@@ -177,12 +208,14 @@ func SetLocationOfUrn(w http.ResponseWriter, req *http.Request) {
 
 	urnLocation, err := store.GetLocationOfThingByUrn(thingLocationBody.URN)
 	if err != nil {
+		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while accessing storage", http.StatusInternalServerError)
 		return
 	}
 	if urnLocation.URN == "" {
 		err = store.CreateLocationOfThing(thingLocationBody)
 		if err != nil {
+			logrus.WithError(err).Info("erred while interacting with db")
 			http.Error(w, "error occured while setting location", http.StatusInternalServerError)
 			return
 		}
@@ -192,6 +225,7 @@ func SetLocationOfUrn(w http.ResponseWriter, req *http.Request) {
 
 	err = store.UpdateLocationOfThing(thingLocationBody)
 	if err != nil {
+		logrus.WithError(err).Info("erred while interacting with db")
 		http.Error(w, "error occured while setting location", http.StatusInternalServerError)
 		return
 	}

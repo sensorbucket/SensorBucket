@@ -1,0 +1,2 @@
+export WORKER_HTTP_HOST=":8080"
+export WORKER_DB_CONN="host=localhost port=5432 user=root password=root dbname=postgres sslmode=disable"

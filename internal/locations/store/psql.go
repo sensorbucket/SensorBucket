@@ -7,7 +7,7 @@ import (
 	"sensorbucket.nl/internal/locations/models"
 )
 
-const connStr = "postgresql://root:root@localhost:5432/todos?sslmode=disable"
+var ConnString = ""
 
 func GetAllLocations() (locations []models.Location, err error) {
 	result, err := query(AllLocations())
@@ -88,12 +88,12 @@ func CreateLocationOfThing(thingLocation models.ThingLocation) error {
 }
 
 func exec(cmd string, args ...any) error {
-	db, err := sql.Open("postgres", connStr)
+	db, err := sql.Open("postgres", ConnString)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(cmd, args)
+	_, err = db.Exec(cmd, args...)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func exec(cmd string, args ...any) error {
 }
 
 func query(query string, args ...any) (*sql.Rows, error) {
-	db, err := sql.Open("postgres", connStr)
+	db, err := sql.Open("postgres", ConnString)
 	if err != nil {
 		return nil, err
 	}
