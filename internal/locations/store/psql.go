@@ -1,107 +1,108 @@
 package store
 
 import (
+	"database/sql"
+	"errors"
+
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 	"sensorbucket.nl/internal/locations/models"
+	"sensorbucket.nl/internal/locations/transport"
 )
+
+var _ transport.Store = (*Store)(nil)
 
 type Store struct {
 	db *sqlx.DB
 }
 
-func New(db *sqlx.DB) Store {
-	return Store{
+func New(db *sqlx.DB) *Store {
+	return &Store{
 		db: db,
 	}
 }
 
-func (s *Store) GetAllLocations() (locations []models.Location, err error) {
-	result, err := s.db.Query(AllLocations())
-	if err != nil {
-		return
+func (s *Store) GetAllLocations() ([]models.Location, error) {
+	locations := make([]models.Location, 0)
+
+	if err := s.db.Select(&locations, AllLocations()); err != nil {
+		return nil, err
 	}
-	defer result.Close()
-	for result.Next() {
-		loc := models.Location{}
-		err = result.Scan(
-			&loc.Id,
-			&loc.Name,
-			&loc.Lat,
-			&loc.Lng,
-		)
-		if err != nil {
-			return
+
+	return locations, nil
+}
+
+func (s *Store) GetLocationByName(name string) (*models.Location, error) {
+	var location models.Location
+	q, p1 := LocationByName(name)
+	if err := s.db.Get(&location, q, p1); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, transport.ErrLocationNotFound
 		}
-		locations = append(locations, loc)
+		return nil, err
 	}
-	return
+	return &location, nil
 }
 
-func (s *Store) GetLocationByName(name string) (location models.Location, err error) {
-	result, err := s.db.Query(LocationByName(name))
-	if err != nil {
-		return
+func (s *Store) GetLocationById(id int) (*models.Location, error) {
+	var location models.Location
+	q, p1 := LocationById(id)
+	if err := s.db.Get(&location, q, p1); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, transport.ErrLocationNotFound
+		}
+		return nil, err
 	}
-	defer result.Close()
-	if result.Next() {
-		err = result.Scan(&location.Id, &location.Name, &location.Lat, &location.Lng)
-	}
-	return
+	return &location, nil
 }
 
-func (s *Store) GetLocationById(id int) (location models.Location, err error) {
-	result, err := s.db.Query(LocationById(id))
-	if err != nil {
-		return
-	}
-	defer result.Close()
-	if result.Next() {
-		err = result.Scan(&location.Id, &location.Name, &location.Lat, &location.Lng)
-	}
-	return
-}
+func (s *Store) GetLocationOfThingByUrn(thingURN string) (*models.ThingLocation, error) {
+	var thingLoc models.ThingLocation
+	q, p1 := LocationOfThing(thingURN)
 
-func (s *Store) GetLocationOfThingByUrn(urn string) (location models.ThingLocation, err error) {
-	result, err := s.db.Query(LocationOfThing(urn))
-	if err != nil {
-		return
+	if err := s.db.Get(&thingLoc, q, p1); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, transport.ErrThingLocationNotFound
+		}
+		return nil, err
 	}
-	defer result.Close()
-	if result.Next() {
-		err = result.Scan(&location.URN, &location.LocationId)
-	}
-	return
+	return &thingLoc, nil
 }
 
 func (s *Store) CreateLocation(location models.Location) error {
-	return s.exec(InsertLocation(location.Name, location.Lat, location.Lng))
+	_, err := s.db.Exec(InsertLocation(location.Name, location.Lat, location.Lng))
+	if err != nil {
+		if perr, ok := err.(*pgconn.PgError); ok {
+			if perr.Code == pgerrcode.UniqueViolation {
+				return transport.ErrDuplicateLocationName
+			}
+		}
+	}
+	return err
 }
 
 func (s *Store) DeleteLocationById(locationId int) error {
-	return s.exec(DeleteLocation(locationId))
+	_, err := s.db.Exec(DeleteLocation(locationId))
+	return err
 }
 
 func (s *Store) DeleteThingLocationByUrn(urn string) error {
-	return s.exec(DeleteThingLocation(urn))
+	_, err := s.db.Exec(DeleteThingLocation(urn))
+	return err
 }
 
-func (s *Store) UpdateLocationOfThing(thingLocation models.ThingLocation) error {
-	return s.exec(UpdateThingLocation(thingLocation.URN, thingLocation.LocationId))
+func (s *Store) UpdateLocationOfThing(thingURN string, locationID int) error {
+	_, err := s.db.Exec(UpdateThingLocation(thingURN, locationID))
+	return err
 }
 
-func (s *Store) CreateLocationOfThing(thingLocation models.ThingLocation) error {
-	return s.exec(InsertThingLocation(thingLocation.URN, thingLocation.LocationId))
+func (s *Store) CreateLocationOfThing(thingURN string, locationID int) error {
+	_, err := s.db.Exec(InsertThingLocation(thingURN, locationID))
+	return err
 }
 
 func (s *Store) DeleteThingLocationsByLocationId(locationId int) error {
-	return s.exec(DeleteThingLocations(locationId))
-}
-
-func (s *Store) exec(cmd string, args ...any) error {
-	_, err := s.db.Exec(cmd, args...)
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err := s.db.Exec(DeleteThingLocations(locationId))
+	return err
 }

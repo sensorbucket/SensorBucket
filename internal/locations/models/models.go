@@ -1,12 +1,15 @@
 package models
 
 type ThingLocation struct {
-	URN        string `json:"urn"`
-	LocationId int    `json:"location_id"`
+	ThingURN          string  `json:"thing_urn" db:"thing_urn"`
+	LocationID        int     `json:"location_id" db:"location_id"`
+	LocationName      string  `json:"location_name" db:"location_name"`
+	LocationLatitude  float64 `json:"location_latitude" db:"location_latitude"`
+	LocationLongitude float64 `json:"location_longitude" db:"location_longitude"`
 }
 
 type Location struct {
-	Id   int64   `json:"id"`
+	ID   int64   `json:"id"`
 	Name string  `json:"name"`
 	Lat  float64 `json:"lat"`
 	Lng  float64 `json:"lng"`
