@@ -43,7 +43,7 @@ services:
     environment:
       MS_HTTP_BASE: http://localhost:3001
       MS_HTTP_ADDR: :3001
-      MS_DB_DSN: postgresql://user:sensorbucket@db:5432/sensorbucket
+      MS_DB_DSN: postgresql://user:sensorbucket@db:5432/sensorbucket?sslmode=disable
       MS_AMQP_URL: amqp://guest:guest@mq:5672/
       MS_AMQP_EXCHANGE: pipeline.measurement.tx
       MS_AMQP_QUEUE: measurement_service_q
@@ -61,6 +61,19 @@ services:
     environment:
       LOCATION_SVC_HTTP_HOST: ":3000"
       LOCATION_SVC_WORKER_DB_DSN: postgresql://user:sensorbucket@db:5432/locations
+
+  locations:
+    command: mage serve locations
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - 3002:3002
+    volumes:
+      - ..:/workspace:cached
+    environment:
+      LOCATION_SVC_HTTP_HOST: :3002
+      LOCATION_SVC_WORKER_DB_DSN: postgresql://user:sensorbucket@db:5432/locations?sslmode=disable
 
   assetdb:
     image: mongo

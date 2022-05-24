@@ -13,6 +13,8 @@ servers:
     url: 'http://localhost:3000'
   - description: Measurements
     url: 'http://localhost:3001'
+  - description: Locations
+    url: 'http://localhost:3002'
 paths: 
   /hello-world:
     get:
@@ -178,7 +180,100 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/measurementResponse"
-        
+
+  /locations:
+    post:
+      description: Create a location
+      tags: ["locations"]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Harborside 3A
+                lat:
+                  type: number
+                  example: 5.123123
+                lng:
+                  type: number
+                  example: 51.23123
+      responses:
+        201:
+          description: created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/locationResponse"
+    get:
+      description: List all locations
+      tags: ["locations"]
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/locationResponse"
+  /locations/{id}:
+    parameters:
+      - in: path
+        required: true
+        name: id
+        schema:
+          type: number
+    delete:
+      description: Delete a location
+      tags: ["locations"]
+      responses:
+        200:
+          description: ok
+  /locations/things:
+    put:
+      description: Set thing location
+      tags: ["locations"]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/setThingLocationRequest"
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/thingLocationResponse"
+  /locations/things/{thingURN}:
+    parameters:
+      - in: path
+        required: true
+        name: thingURN
+        schema:
+          type: string
+          example: "srn:asset:mfm-waterlevel:sensor:AABBCCDDEEFFGGHH"
+    get:
+      description: get the location of a thing
+      tags: ["locations"]
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/thingLocationResponse"
+        404:
+          description: thing does not have a location
+    delete:
+      description: remove thing from a location
+      tags: ["locations"]
+      responses:
+        200:
+          description: ok
 
 components:
   schemas: 
@@ -218,6 +313,46 @@ components:
           example: [5.47, 51.46]
         metadata:
           type: object
+    locationResponse:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 1
+        name:
+          type: string
+          example: Harborside 3A
+        lat:
+          type: number
+          example: 5.123123
+        lng:
+          type: number
+          example: 51.23123
+    thingLocationResponse:
+      type: object
+      properties:
+        thing_urn:
+          type: string
+          example: "srn:asset:mfm-waterlevel:sensor:AABBCCDDEEFFGGHH"
+        location_id:
+          type: number
+        location_name:
+          type: string
+          example: Harborside 3A
+        location_lat:
+          type: number
+          example: 5.123123
+        location_lng:
+          type: number
+          example: 51.23123
+    setThingLocationRequest:
+      type: object
+      properties:
+        thing_urn:
+          type: string
+          example: "srn:asset:mfm-waterlevel:sensor:AABBCCDDEEFFGGHH"
+        location_id:
+          type: number
   securitySchemes:
     Authorization:
       type: http
