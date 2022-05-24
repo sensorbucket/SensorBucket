@@ -1,0 +1,2 @@
+export LOCATION_SVC_HTTP_HOST=":8080"
+export LOCATION_SVC_WORKER_DB_DSN="host=localhost port=5432 user=root password=root dbname=postgres sslmode=disable"
