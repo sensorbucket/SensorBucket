@@ -44,7 +44,7 @@ func (l *LocationService) FindLocationID(thingURN string) (measurements.Location
 	}
 
 	if resp.StatusCode == http.StatusNotFound {
-		return location, nil
+		return location, measurements.ErrLocationNotFound
 	}
 	if resp.StatusCode != http.StatusOK {
 		return location, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
