@@ -1,8 +1,8 @@
 CREATE TABLE locations (
    id serial PRIMARY KEY,
    name VARCHAR UNIQUE NOT NULL,
-   lat float8 DEFAULT 0,
-   lng float8 DEFAULT 0
+   latitude float8 DEFAULT 0,
+   longitude float8 DEFAULT 0
 );
 
 CREATE TABLE thing_locations (
