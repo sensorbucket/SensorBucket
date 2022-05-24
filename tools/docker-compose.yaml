@@ -1,13 +1,18 @@
 version: '3'
 
 services:
+  apigateway:
+    image: nginx:alpine
+    ports:
+      - 3000:80
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+
   assetmanager:
     command: mage serve assetmanager
     build:
       dockerfile: Dockerfile
       context: .
-    ports:
-      - 3000:3000
     volumes:
       - ..:/workspace:cached
     environment:
@@ -36,13 +41,11 @@ services:
     build:
       dockerfile: Dockerfile
       context: .
-    ports:
-      - 3001:3001
     volumes:
       - ..:/workspace:cached
     environment:
-      MS_HTTP_BASE: http://localhost:3001
-      MS_HTTP_ADDR: :3001
+      MS_HTTP_BASE: http://localhost:3000/locations
+      MS_HTTP_ADDR: :3000
       MS_DB_DSN: postgresql://user:sensorbucket@db:5432/measurements?sslmode=disable
       MS_AMQP_URL: amqp://guest:guest@mq:5672/
       MS_AMQP_EXCHANGE: pipeline.measurement.tx
@@ -54,8 +57,6 @@ services:
     build:
       dockerfile: Dockerfile
       context: .
-    ports:
-      - 3002:3000
     volumes:
       - ..:/workspace:cached
     environment:

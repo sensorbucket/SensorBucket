@@ -9,12 +9,8 @@ info:
     name: Provincie Zeeland
     url: 'https://zeeland.nl'
 servers:
-  - description: Asset Manager
+  - description: Local
     url: 'http://localhost:3000'
-  - description: Measurements
-    url: 'http://localhost:3001'
-  - description: Locations
-    url: 'http://localhost:3002'
 paths: 
   /hello-world:
     get:
@@ -70,6 +66,7 @@ paths:
           name: assetDefinition
           schema:
             type: string
+            example: srn:asset:mfm-waterlevel:sensor
         - in: query
           name: filter
           schema:
@@ -126,7 +123,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/assetResponse"
 
-  /{start}/{end}:
+  /measurements/{start}/{end}:
     parameters:
       - in: path
         name: start
@@ -134,14 +131,14 @@ paths:
         schema:
           type: string
           format: iso8601
-          example: "2022-04-26T15:00:00+02:00"
+          example: "2022-01-01T00:00:00Z"
       - in: path
         name: end
         required: true
         schema:
           type: string
           format: iso8601
-          example: "2022-04-26T16:00:00+02:00"
+          example: "2022-12-31T23:59:59Z"
     get:
       description: query measurements
       tags: ["Measurements"]
