@@ -13,22 +13,22 @@ var (
 
 // IntermediateMeasurement is a struct that contains the data for a measurement.
 type IntermediateMeasurement struct {
-	ThingURN            string          `json:"thing_urn,omitempty"`
-	Timestamp           time.Time       `json:"timestamp,omitempty"`
-	Value               float64         `json:"value,omitempty"`
-	MeasurementType     string          `json:"measurement_type,omitempty"`
-	MeasurementTypeUnit string          `json:"measurement_type_unit,omitempty"`
-	Metadata            json.RawMessage `json:"metadata,omitempty"`
-	Longitude           *float64        `json:"longitude,omitempty"`
-	Latitude            *float64        `json:"latitude,omitempty"`
+	ThingURN            string          `json:"thing_urn"`
+	Timestamp           time.Time       `json:"timestamp"`
+	Value               float64         `json:"value"`
+	MeasurementType     string          `json:"measurement_type"`
+	MeasurementTypeUnit string          `json:"measurement_type_unit"`
+	Metadata            json.RawMessage `json:"metadata"`
+	Longitude           *float64        `json:"longitude"`
+	Latitude            *float64        `json:"latitude"`
 }
 
 type Measurement struct {
 	IntermediateMeasurement
-	LocationID        *int64   `json:"location_id,omitempty"`
-	LocationName      *string  `json:"location_name,omitempty"`
-	LocationLongitude *float64 `json:"location_longitude,omitempty"`
-	LocationLatitude  *float64 `json:"location_latitude,omitempty"`
+	LocationID        *int64   `json:"location_id"`
+	LocationName      *string  `json:"location_name"`
+	LocationLongitude *float64 `json:"location_longitude"`
+	LocationLatitude  *float64 `json:"location_latitude"`
 }
 
 func (m *IntermediateMeasurement) Validate() error {
