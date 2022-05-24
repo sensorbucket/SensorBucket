@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
+	locationModels "sensorbucket.nl/internal/locations/models"
 	"sensorbucket.nl/internal/measurements"
 )
 
@@ -26,35 +28,37 @@ type DTO struct {
 	LocationId int `json:"location_id"`
 }
 
-func (l *LocationService) FindLocationID(thingURN string) (*int, error) {
+func (l *LocationService) FindLocationID(thingURN string) (measurements.LocationData, error) {
+	var location measurements.LocationData
+
 	req, err := http.NewRequest(http.MethodGet, l.base, nil)
 	if err != nil {
-		return nil, err
+		return location, err
 	}
 
-	req.URL.Path = "/api/location/thing"
-	q := req.URL.Query()
-	q.Set("thing_urn", thingURN)
-	req.URL.RawQuery = q.Encode()
-
-	fmt.Printf("%s\n", req.URL.String())
+	req.URL.Path = "/locations/things/" + url.PathEscape(thingURN)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return location, err
 	}
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, nil
+		return location, nil
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return location, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	var dto DTO
+	var dto locationModels.ThingLocation
 	if err := json.NewDecoder(resp.Body).Decode(&dto); err != nil {
-		return nil, err
+		return location, err
 	}
 
-	return &dto.LocationId, nil
+	return measurements.LocationData{
+		ID:        dto.LocationID,
+		Name:      dto.LocationName,
+		Longitude: dto.LocationLongitude,
+		Latitude:  dto.LocationLatitude,
+	}, nil
 }

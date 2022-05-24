@@ -1,9 +1,9 @@
 package store
 
 import (
-	"database/sql"
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -26,24 +26,37 @@ func NewPSQL(db *sqlx.DB) *MeasurementStorePSQL {
 	}
 }
 
-func (s *MeasurementStorePSQL) Insert(m *measurements.Measurement) error {
-	var locID sql.NullInt64
-	if m.LocationID != nil {
-		locID.Int64 = int64(*m.LocationID)
-		locID.Valid = true
+func (s *MeasurementStorePSQL) Insert(m measurements.Measurement) error {
+	model := toModel(m)
+
+	values := map[string]interface{}{
+		"thing_urn":             model.ThingURN,
+		"timestamp":             model.Timestamp,
+		"value":                 model.Value,
+		"measurement_type":      model.MeasurementType,
+		"measurement_type_unit": model.MeasurementTypeUnit,
+		"metadata":              model.Metadata,
 	}
 
-	_, err := s.db.Exec("INSERT INTO measurements (thing_urn,timestamp,value,measurement_type,measurement_type_unit,location_id,coordinates,metadata) VALUES ($1, $2, $3, $4, $5, $6, ST_SetSRID(ST_MakePoint($7, $8),4326), $9)",
-		m.ThingURN,
-		m.Timestamp,
-		m.Value,
-		m.MeasurementType,
-		m.MeasurementTypeUnit,
-		locID,
-		m.Coordinates[0],
-		m.Coordinates[1],
-		m.Metadata,
-	)
+	if model.LocationID.Valid {
+		values["location_id"] = model.LocationID.Int64
+	}
+	if model.LocationName.Valid {
+		values["location_name"] = model.LocationName.String
+	}
+	if model.LocationLongitude.Valid && model.LocationLatitude.Valid {
+		values["location_coordinates"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", model.LocationLongitude.Float64, model.LocationLatitude.Float64)
+	}
+	if model.Longitude.Valid && model.Latitude.Valid {
+		values["coordinates"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", model.Longitude.Float64, model.Latitude.Float64)
+	}
+
+	query, params, err := pq.Insert("measurements").SetMap(values).ToSql()
+	if err != nil {
+		return fmt.Errorf("could not generate query: %w", err)
+	}
+
+	_, err = s.db.Exec(query, params...)
 	return err
 }
 
@@ -56,7 +69,20 @@ func (s *MeasurementStorePSQL) Insert(m *measurements.Measurement) error {
 //   know that there is a next page available and we use this entry to populate the cursor.
 //   The cursor holds the timestamp of the first entry of the next page as seconds since epoch base64
 func (s *MeasurementStorePSQL) Query(query measurements.Query, p measurements.Pagination) ([]measurements.Measurement, *measurements.Pagination, error) {
-	q := pq.Select("thing_urn", "timestamp", "value", "measurement_type", "measurement_type_unit", "location_id", "ST_X(coordinates::geometry) as lon", "ST_Y(coordinates::geometry) as lat", "metadata").
+	q := pq.Select(
+		"thing_urn",
+		"timestamp",
+		"value",
+		"measurement_type",
+		"measurement_type_unit",
+		"ST_X(coordinates::geometry) as lng",
+		"ST_Y(coordinates::geometry) as lat",
+		"location_id",
+		"location_name",
+		"ST_X(location_coordinates::geometry) as location_lng",
+		"ST_Y(location_coordinates::geometry) as location_lat",
+		"metadata",
+	).
 		From("measurements").
 		Where("timestamp >= ?", query.Start).
 		OrderBy("timestamp DESC").
@@ -92,14 +118,27 @@ func (s *MeasurementStorePSQL) Query(query measurements.Query, p measurements.Pa
 	list := make([]measurements.Measurement, 0, p.Limit)
 	var nextPage *measurements.Pagination
 	for rows.Next() {
-		var m measurements.Measurement
-		err = rows.Scan(&m.ThingURN, &m.Timestamp, &m.Value, &m.MeasurementType, &m.MeasurementTypeUnit, &m.LocationID, &m.Coordinates[0], &m.Coordinates[1], &m.Metadata)
+		var m model
+		err = rows.Scan(
+			&m.ThingURN,
+			&m.Timestamp,
+			&m.Value,
+			&m.MeasurementType,
+			&m.MeasurementTypeUnit,
+			&m.Longitude,
+			&m.Latitude,
+			&m.LocationID,
+			&m.LocationName,
+			&m.LocationLongitude,
+			&m.LocationLatitude,
+			&m.Metadata,
+		)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		if len(list) < p.Limit {
-			list = append(list, m)
+			list = append(list, m.toValue())
 		} else {
 			ts := m.Timestamp.Unix()
 			nextPage = &measurements.Pagination{

@@ -7,8 +7,10 @@ CREATE TABLE measurements (
   value DOUBLE PRECISION NOT NULL,
   measurement_type VARCHAR NOT NULL,
   measurement_type_unit VARCHAR NOT NULL,
+  coordinates GEOGRAPHY(POINT,4326),
   location_id INTEGER,
-  coordinates GEOGRAPHY(POINT,4326) NOT NULL,
+  location_name VARCHAR,
+  location_coordinates GEOGRAPHY(POINT,4326),
   metadata JSONB NOT NULL DEFAULT '{}',
 
   CONSTRAINT measurements_pkey PRIMARY KEY (id, "timestamp")
