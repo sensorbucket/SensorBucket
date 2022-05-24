@@ -27,28 +27,27 @@ func NewPSQL(db *sqlx.DB) *MeasurementStorePSQL {
 }
 
 func (s *MeasurementStorePSQL) Insert(m measurements.Measurement) error {
-	values := map[string]interface{}{
-		"thing_urn":             m.ThingURN,
-		"timestamp":             m.Timestamp,
-		"value":                 m.Value,
-		"measurement_type":      m.MeasurementType,
-		"measurement_type_unit": m.MeasurementTypeUnit,
-		"metadata":              m.Metadata,
-		"location_id":           m.LocationID,
-		"location_name":         m.LocationName,
-	}
+	builder := newInsertBuilder().
+		SetThingURN(m.ThingURN).
+		SetTimestamp(m.Timestamp).
+		SetValue(m.Value).
+		SetMeasurementType(m.MeasurementType, m.MeasurementTypeUnit).
+		SetMetadata(m.Metadata)
 
-	if m.LocationLongitude != nil && m.LocationLatitude != nil {
-		values["location_coordinates"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.LocationLongitude, m.LocationLatitude)
+	// Set optional location and coordinates
+	if m.LocationID != nil && m.LocationName != nil && m.LocationLongitude != nil && m.LocationLatitude != nil {
+		builder = builder.SetLocation(*m.LocationID, *m.LocationName, *m.LocationLongitude, *m.LocationLatitude)
 	}
 	if m.Longitude != nil && m.Latitude != nil {
-		values["coordinates"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.Longitude, m.Latitude)
+		builder = builder.SetCoordinates(*m.Longitude, *m.Latitude)
 	}
 
-	query, params, err := pq.Insert("measurements").SetMap(values).ToSql()
+	query, params, err := builder.Build()
 	if err != nil {
 		return fmt.Errorf("could not generate query: %w", err)
 	}
+
+	fmt.Printf("query: %v\n%v\n", query, params)
 
 	_, err = s.db.Exec(query, params...)
 	return err
