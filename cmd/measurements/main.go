@@ -25,6 +25,7 @@ var (
 	MS_AMQP_URL      = mustEnv("MS_AMQP_URL")
 	MS_AMQP_EXCHANGE = mustEnv("MS_AMQP_EXCHANGE")
 	MS_AMQP_QUEUE    = mustEnv("MS_AMQP_QUEUE")
+	MS_LOCATIONS_URL = mustEnv("MS_LOCATIONS_URL")
 )
 
 func mustEnv(key string) string {
@@ -48,13 +49,14 @@ func Run() error {
 	}
 	store := store.NewPSQL(db)
 
-	svc := measurements.New(store)
+	locations := transport.NewLocationService(MS_LOCATIONS_URL)
+
+	svc := measurements.New(store, locations)
 	amqpTransport := transport.NewAMQP(transport.OptsAMQP{
 		Service:  svc,
 		Exchange: MS_AMQP_EXCHANGE,
 		Queue:    MS_AMQP_QUEUE,
 	})
-	defer amqpTransport.Shutdown()
 
 	// Start receiving messages in coroutine
 	errC := make(chan error)

@@ -112,7 +112,7 @@ func (t *TransportAMQP) connect(addr string) error {
 }
 
 func (t *TransportAMQP) processDelivery(d amqp091.Delivery) error {
-	var measurement measurements.Measurement
+	var measurement measurements.IntermediateMeasurement
 	if err := json.Unmarshal(d.Body, &measurement); err != nil {
 		return fmt.Errorf("error unmarshalling measurement from amqp message: %v", err)
 	}
@@ -121,7 +121,7 @@ func (t *TransportAMQP) processDelivery(d amqp091.Delivery) error {
 		return fmt.Errorf("error validating measurement: %v", err)
 	}
 
-	if err := t.svc.StoreMeasurement(&measurement); err != nil {
+	if err := t.svc.StoreMeasurement(measurement); err != nil {
 		return fmt.Errorf("error storing measurement: %v", err)
 	}
 
