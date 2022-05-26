@@ -27,31 +27,15 @@ func NewPSQL(db *sqlx.DB) *MeasurementStorePSQL {
 }
 
 func (s *MeasurementStorePSQL) Insert(m measurements.Measurement) error {
-	model := toModel(m)
-
-	values := map[string]interface{}{
-		"thing_urn":             model.ThingURN,
-		"timestamp":             model.Timestamp,
-		"value":                 model.Value,
-		"measurement_type":      model.MeasurementType,
-		"measurement_type_unit": model.MeasurementTypeUnit,
-		"metadata":              model.Metadata,
-	}
-
-	if model.LocationID.Valid {
-		values["location_id"] = model.LocationID.Int64
-	}
-	if model.LocationName.Valid {
-		values["location_name"] = model.LocationName.String
-	}
-	if model.LocationLongitude.Valid && model.LocationLatitude.Valid {
-		values["location_coordinates"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", model.LocationLongitude.Float64, model.LocationLatitude.Float64)
-	}
-	if model.Longitude.Valid && model.Latitude.Valid {
-		values["coordinates"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", model.Longitude.Float64, model.Latitude.Float64)
-	}
-
-	query, params, err := pq.Insert("measurements").SetMap(values).ToSql()
+	query, params, err := newInsertBuilder().
+		SetThingURN(m.ThingURN).
+		SetTimestamp(m.Timestamp).
+		SetValue(m.Value).
+		SetMeasurementType(m.MeasurementType, m.MeasurementTypeUnit).
+		SetMetadata(m.Metadata).
+		TrySetLocation(m.LocationID, m.LocationName, m.LocationLongitude, m.LocationLatitude).
+		TrySetCoordinates(m.Longitude, m.Latitude).
+		Build()
 	if err != nil {
 		return fmt.Errorf("could not generate query: %w", err)
 	}
@@ -118,7 +102,7 @@ func (s *MeasurementStorePSQL) Query(query measurements.Query, p measurements.Pa
 	list := make([]measurements.Measurement, 0, p.Limit)
 	var nextPage *measurements.Pagination
 	for rows.Next() {
-		var m model
+		var m measurements.Measurement
 		err = rows.Scan(
 			&m.ThingURN,
 			&m.Timestamp,
@@ -138,7 +122,7 @@ func (s *MeasurementStorePSQL) Query(query measurements.Query, p measurements.Pa
 		}
 
 		if len(list) < p.Limit {
-			list = append(list, m.toValue())
+			list = append(list, m)
 		} else {
 			ts := m.Timestamp.Unix()
 			nextPage = &measurements.Pagination{

@@ -16,7 +16,9 @@ require (
 	go.mongodb.org/mongo-driver v1.9.0
 )
 
-require golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
+require golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
+
+require golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 
 require (
 	github.com/Masterminds/squirrel v1.5.2
@@ -53,4 +55,5 @@ require (
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/jackc/pgx/v5 v5.0.0-alpha.3
 	github.com/pebbe/zmq4 v1.2.8
+	github.com/samber/lo v1.21.0
 )

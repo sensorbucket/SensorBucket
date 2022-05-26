@@ -49,7 +49,7 @@ func New(store Store) HTTPTransport {
 	}
 
 	r.Post("/locations", t.CreateLocation())
-	r.Delete("/location/{locationID}", t.DeleteLocation())
+	r.Delete("/locations/{locationID}", t.DeleteLocation())
 	r.Get("/locations", t.GetLocations())
 	r.Get("/locations/things/{thingURN}", t.GetLocationForThing())
 	r.Delete("/locations/things/{thingURN}", t.DeleteThingLocation())
