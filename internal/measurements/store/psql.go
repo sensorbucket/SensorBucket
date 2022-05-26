@@ -27,27 +27,18 @@ func NewPSQL(db *sqlx.DB) *MeasurementStorePSQL {
 }
 
 func (s *MeasurementStorePSQL) Insert(m measurements.Measurement) error {
-	builder := newInsertBuilder().
+	query, params, err := newInsertBuilder().
 		SetThingURN(m.ThingURN).
 		SetTimestamp(m.Timestamp).
 		SetValue(m.Value).
 		SetMeasurementType(m.MeasurementType, m.MeasurementTypeUnit).
-		SetMetadata(m.Metadata)
-
-	// Set optional location and coordinates
-	if m.LocationID != nil && m.LocationName != nil && m.LocationLongitude != nil && m.LocationLatitude != nil {
-		builder = builder.SetLocation(*m.LocationID, *m.LocationName, *m.LocationLongitude, *m.LocationLatitude)
-	}
-	if m.Longitude != nil && m.Latitude != nil {
-		builder = builder.SetCoordinates(*m.Longitude, *m.Latitude)
-	}
-
-	query, params, err := builder.Build()
+		SetMetadata(m.Metadata).
+		TrySetLocation(m.LocationID, m.LocationName, m.LocationLongitude, m.LocationLatitude).
+		TrySetCoordinates(m.Longitude, m.Latitude).
+		Build()
 	if err != nil {
 		return fmt.Errorf("could not generate query: %w", err)
 	}
-
-	fmt.Printf("query: %v\n%v\n", query, params)
 
 	_, err = s.db.Exec(query, params...)
 	return err
