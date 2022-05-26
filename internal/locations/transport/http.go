@@ -31,6 +31,11 @@ type Store interface {
 	DeleteThingLocationsByLocationId(locationId int) error
 }
 
+type apiResponse struct {
+	Message string `json:"message,omitempty"`
+	Data    any    `json:"data,omitempty"`
+}
+
 type HTTPTransport struct {
 	router http.Handler
 	store  Store
@@ -65,7 +70,10 @@ func (t *HTTPTransport) GetLocations() http.HandlerFunc {
 			return
 		}
 
-		sendJSON(w, http.StatusOK, locations)
+		sendJSON(w, http.StatusOK, apiResponse{
+			Message: "Locations listed",
+			Data:    locations,
+		})
 	}
 }
 
@@ -84,23 +92,23 @@ func (r *HTTPTransport) GetLocationForThing() http.HandlerFunc {
 			return
 		}
 
-		sendJSON(w, http.StatusOK, location)
+		sendJSON(w, http.StatusOK, apiResponse{Message: "Location fetched", Data: location})
 	}
 }
 
 func (t *HTTPTransport) CreateLocation() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		var locationBody models.Location
-		if err := json.NewDecoder(req.Body).Decode(&locationBody); err != nil {
+		var location models.Location
+		if err := json.NewDecoder(req.Body).Decode(&location); err != nil {
 			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
-		if locationBody.Name == "" {
+		if location.Name == "" {
 			http.Error(w, "invalid request body, name cannot be empty", http.StatusBadRequest)
 			return
 		}
 
-		err := t.store.CreateLocation(locationBody)
+		err := t.store.CreateLocation(location)
 		if err != nil {
 			logrus.WithError(err).Info("erred creating location")
 			if errors.Is(err, ErrDuplicateLocationName) {
@@ -111,7 +119,7 @@ func (t *HTTPTransport) CreateLocation() http.HandlerFunc {
 			return
 		}
 
-		sendJSON(w, http.StatusCreated, locationBody)
+		sendJSON(w, http.StatusCreated, apiResponse{Message: "Location was succesfully created", Data: location})
 	}
 }
 
@@ -146,7 +154,7 @@ func (t *HTTPTransport) DeleteLocation() http.HandlerFunc {
 			http.Error(w, "error occured while deleting location", http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
+		sendJSON(w, http.StatusOK, apiResponse{Message: "Location was succesfully deleted"})
 	}
 }
 
@@ -160,7 +168,7 @@ func (r *HTTPTransport) DeleteThingLocation() http.HandlerFunc {
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
+		sendJSON(w, http.StatusOK, apiResponse{Message: "Thing was succesfully deleted from location"})
 	}
 }
 
@@ -214,7 +222,7 @@ func (t *HTTPTransport) SetThingLocation() http.HandlerFunc {
 			http.Error(w, "error occured while setting location", http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
+		sendJSON(w, http.StatusOK, apiResponse{Message: "Thing was succesfully added to location"})
 	}
 }
 

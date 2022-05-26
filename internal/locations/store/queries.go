@@ -1,8 +1,8 @@
 package store
 
-// Retrieves in order of id, name, lat, lng
+// Retrieves in order of id, name, latitude, longitude
 func AllLocations() string {
-	return "SELECT id, name, lat, lng FROM locations;"
+	return "SELECT id, name, latitude, longitude FROM locations;"
 }
 
 // Retrieves in order of urn, location_Id
@@ -10,17 +10,17 @@ func LocationOfThing(thingURN string) (string, string) {
 	return "SELECT tl.thing_urn, tl.location_id, locs.name AS location_name, locs.lat AS location_latitude, locs.lng AS location_longitude FROM thing_locations tl LEFT JOIN locations locs ON tl.location_id=locs.id WHERE thing_urn = $1;", thingURN
 }
 
-// Retrieves in order of id, name, lat, lng
+// Retrieves in order of id, name, latitude, longitude
 func LocationByName(name string) (string, string) {
-	return "SELECT id, name, lat, lng FROM locations WHERE name=$1;", name
+	return "SELECT id, name, latitude, longitude FROM locations WHERE name=$1;", name
 }
 
 func LocationById(id int) (string, int) {
-	return "SELECT id, name, lat, lng FROM locations WHERE id=$1;", id
+	return "SELECT id, name, latitude, longitude FROM locations WHERE id=$1;", id
 }
 
 func InsertLocation(name string, lat float64, lng float64) (string, string, float64, float64) {
-	return "INSERT INTO locations (name, lat, lng) VALUES ($1, $2, $3);", name, lat, lng
+	return "INSERT INTO locations (name, latitude, longitude) VALUES ($1, $2, $3);", name, lat, lng
 }
 
 func InsertThingLocation(thingURN string, location_id int) (string, string, int) {

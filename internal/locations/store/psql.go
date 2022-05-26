@@ -71,7 +71,7 @@ func (s *Store) GetLocationOfThingByUrn(thingURN string) (*models.ThingLocation,
 }
 
 func (s *Store) CreateLocation(location models.Location) error {
-	_, err := s.db.Exec(InsertLocation(location.Name, location.Lat, location.Lng))
+	_, err := s.db.Exec(InsertLocation(location.Name, location.Latitude, location.Longitude))
 	if err != nil {
 		if perr, ok := err.(*pgconn.PgError); ok {
 			if perr.Code == pgerrcode.UniqueViolation {

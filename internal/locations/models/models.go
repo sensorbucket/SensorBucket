@@ -9,8 +9,8 @@ type ThingLocation struct {
 }
 
 type Location struct {
-	ID   int64   `json:"id"`
-	Name string  `json:"name"`
-	Lat  float64 `json:"lat"`
-	Lng  float64 `json:"lng"`
+	ID        int64   `json:"id"`
+	Name      string  `json:"name"`
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
 }
