@@ -16,10 +16,9 @@ require (
 	go.mongodb.org/mongo-driver v1.9.0
 )
 
-require (
-	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
-	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
-)
+require golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
+
+require golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 
 require (
 	github.com/Masterminds/squirrel v1.5.2

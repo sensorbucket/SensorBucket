@@ -43,7 +43,7 @@ services:
     environment:
       MS_HTTP_BASE: http://localhost:3001
       MS_HTTP_ADDR: :3001
-      MS_DB_DSN: postgresql://user:sensorbucket@db:5432/measurements?sslmode=disable
+      MS_DB_DSN: postgresql://user:sensorbucket@db:5432/sensorbucket?sslmode=disable
       MS_AMQP_URL: amqp://guest:guest@mq:5672/
       MS_AMQP_EXCHANGE: pipeline.measurement.tx
       MS_AMQP_QUEUE: measurement_service_q
