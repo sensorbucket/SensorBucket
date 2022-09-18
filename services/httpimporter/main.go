@@ -80,7 +80,7 @@ func httpPostUplink(xchg *mq.AMQPPublisher) http.HandlerFunc {
 		// TODO: Fetch pipeline steps based on pipeline UUID from pipeline service
 		// instead of having them hardcoded like here
 		msg := pipeline.NewMessage(pipelineID.String(), HARDCODED_PIPELINE_STEPS)
-		msg.SetPayload(payload)
+		msg.SetPayload(string(payload))
 		step, err := msg.NextStep()
 		if err != nil {
 			web.HTTPError(rw, err)
