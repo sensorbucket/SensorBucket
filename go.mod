@@ -12,9 +12,14 @@ require (
 	github.com/stretchr/testify v1.7.0
 )
 
-require golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
+require golang.org/x/sys v0.0.0-20220317061510-51cd9980dadf // indirect
 
-require golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
+require (
+	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
+)
 
 require (
 	github.com/Masterminds/squirrel v1.5.2
@@ -29,7 +34,6 @@ require (
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lib/pq v1.10.5 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/crypto v0.0.0-20220408190544-5352b0902921 // indirect
@@ -38,6 +42,7 @@ require (
 )
 
 require (
+	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/jackc/pgx/v5 v5.0.0-alpha.3
