@@ -6,7 +6,17 @@ services:
     ports:
       - 3000:80
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./tools/nginx/nginx.conf:/etc/nginx/nginx.conf
+
+  httpimporter:
+    build: .
+    volumes:
+      - .:/workspace:cached
+    environment:
+    - DEVSVC=httpimporter
+    - HTTP_ADDR=:3000
+    - AMQP_HOST=amqp://guest:guest@mq:5672/
+    - AMQP_XCHG=pipeline.messages
 
   measurements:
     build: .
