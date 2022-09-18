@@ -42,6 +42,4 @@ nav:
     - Introduction: index.md
     - Getting started: getting-started.md
   - Services:
-    - ZMQ AMQP Bridge: zmq-bridge/index.md
-    - Asset Manager: assetmanager/index.md
     - Measurements: measurements/index.md

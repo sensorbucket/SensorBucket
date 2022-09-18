@@ -25,9 +25,9 @@ func WithCompose(output bool) (func(args ...string) error, error) {
 	}
 
 	if output {
-		return RunVCmd("docker-compose", "-f", fmt.Sprintf("%s/tools/docker-compose.yaml", wd)), nil
+		return RunVCmd("docker-compose", "-f", fmt.Sprintf("%s/docker-compose.yaml", wd)), nil
 	}
-	return sh.RunCmd("docker-compose", "-f", fmt.Sprintf("%s/tools/docker-compose.yaml", wd)), nil
+	return sh.RunCmd("docker-compose", "-f", fmt.Sprintf("%s/docker-compose.yaml", wd)), nil
 }
 
 // Start Starts or updates the development environment
