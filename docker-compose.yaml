@@ -8,6 +8,14 @@ services:
     volumes:
       - ./tools/nginx/nginx.conf:/etc/nginx/nginx.conf
 
+  device:
+    build: .
+    environment:
+    - DEVSVC=device
+    - DB_DSN=postgresql://deviceservice:deviceservice@db:5432/deviceservice?sslmode=disable
+    volumes:
+      - ./:/workspace:cached
+
   httpimporter:
     build: .
     volumes:
@@ -50,19 +58,23 @@ services:
     - POSTGRES_USER=user
     - POSTGRES_PASSWORD=sensorbucket
     - POSTGRES_DB=sensorbucket
+  dbweb:
+    image: michalhosna/adminer
+    ports:
+        - 15432:8080
+    environment:
+        ADMINER_DRIVER: pgsql
+        ADMINER_SERVER: db
+        ADMINER_DB: sensorbucket
+        ADMINER_USERNAME: user
+        ADMINER_PASSWORD: sensorbucket
+        ADMINER_AUTOLOGIN: 1
 
   mq:
     image: rabbitmq:3.8-management
     ports:
       - 5672:5672
       - 15672:15672
-
-  # docs:
-  #   image: squidfunk/mkdocs-material
-  #   ports:
-  #     - '8000:8000'
-  #   volumes:
-  #     - ..:/docs
 
 networks:
   default:
