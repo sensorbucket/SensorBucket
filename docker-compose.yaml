@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+  apigateway:
+    image: nginx:alpine
+    ports:
+      - 3000:80
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+
+  measurements:
+    build: .
+    volumes:
+      - ..:/workspace:cached
+    environment:
+    - DEVSVC=measurements
+    - MS_HTTP_BASE=http://localhost:3000/locations
+    - MS_HTTP_ADDR=:3000
+    - MS_DB_DSN=postgresql://user:sensorbucket@db:5432/measurements?sslmode=disable
+    - MS_AMQP_URL=amqp://guest:guest@mq:5672/
+    - MS_AMQP_EXCHANGE=pipeline.measurement.tx
+    - MS_AMQP_QUEUE=measurement_service_q
+    - MS_LOCATIONS_URL=http://locations:3000
+
+  locations:
+    build: .
+    volumes:
+      - ..:/workspace:cached
+    environment:
+    - DEVSVC=locations
+    - LOCATION_SVC_HTTP_HOST=:3000
+    - LOCATION_SVC_WORKER_DB_DSN=postgresql://user:sensorbucket@db:5432/locations?sslmode=disable
+
+  db:
+    image: timescale/timescaledb-postgis:latest-pg12
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    environment:
+    - POSTGRES_USER=user
+    - POSTGRES_PASSWORD=sensorbucket
+    - POSTGRES_DB=sensorbucket
+
+  mq:
+    image: rabbitmq:3.8-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+
+  # docs:
+  #   image: squidfunk/mkdocs-material
+  #   ports:
+  #     - '8000:8000'
+  #   volumes:
+  #     - ..:/docs
+
+networks:
+  default:
+    name: sensorbucket_network
