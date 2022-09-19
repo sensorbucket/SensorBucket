@@ -26,6 +26,7 @@ var (
 	HARDCODED_PIPELINE_STEPS = []string{
 		"sensorbucket/ttn-worker@0.0.1",
 		"sensorbucket/mfm-worker@0.0.1",
+		"service.measurements",
 	}
 
 	ErrInvalidUUID = web.NewError(
