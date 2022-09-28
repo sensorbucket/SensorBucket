@@ -26,7 +26,10 @@ func NewHTTP(svc *service.Service, url string) *HTTPTransport {
 		url:    url,
 	}
 
-	t.router.Get("/{start}/{end}", t.httpGetMeasurements())
+	t.router.Get("/health", func(rw http.ResponseWriter, r *http.Request) {
+		rw.Write([]byte("healthy"))
+	})
+	t.router.Get("/", t.httpGetMeasurements())
 
 	return t
 }
@@ -78,8 +81,9 @@ func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
 
 func parseTimeRange(r *http.Request) (time.Time, time.Time, error) {
 	var zero time.Time
+	q := r.URL.Query()
 
-	startStr, err := url.PathUnescape(chi.URLParam(r, "start"))
+	startStr, err := url.PathUnescape(q.Get("start"))
 	if err != nil {
 		return zero, zero, fmt.Errorf("invalid start: %w", err)
 	}
@@ -91,7 +95,7 @@ func parseTimeRange(r *http.Request) (time.Time, time.Time, error) {
 		return zero, zero, fmt.Errorf("start time is required")
 	}
 
-	endStr, err := url.PathUnescape(chi.URLParam(r, "end"))
+	endStr, err := url.PathUnescape(q.Get("end"))
 	if err != nil {
 		return zero, zero, fmt.Errorf("invalid end: %w", err)
 	}
@@ -114,8 +118,8 @@ func parseFilters(r *http.Request) (service.QueryFilters, error) {
 	var filters service.QueryFilters
 	q := r.URL.Query()
 
-	if len(q["thing_urn"]) > 0 {
-		filters.ThingURNs = q["thing_urn"]
+	if len(q["device_id"]) > 0 {
+		filters.DeviceIDs = q["device_id"]
 	}
 
 	if len(q["location_id"]) > 0 {

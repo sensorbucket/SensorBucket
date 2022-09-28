@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -11,9 +12,12 @@ var (
 	ErrLocationNotFound = errors.New("location not found")
 )
 
-// IntermediateMeasurement is a struct that contains the data for a measurement.
-type IntermediateMeasurement struct {
-	ThingURN            string          `json:"thing_urn"`
+type Measurement struct {
+	UplinkMessageID     string          `json:"uplink_message_id"`
+	DeviceID            int             `json:"device_id"`
+	DeviceCode          string          `json:"device_code"`
+	DeviceDescription   string          `json:"device_description"`
+	DeviceConfiguration json.RawMessage `json:"device_configuration"`
 	Timestamp           time.Time       `json:"timestamp"`
 	Value               float64         `json:"value"`
 	MeasurementType     string          `json:"measurement_type"`
@@ -21,19 +25,19 @@ type IntermediateMeasurement struct {
 	Metadata            json.RawMessage `json:"metadata"`
 	Longitude           *float64        `json:"longitude"`
 	Latitude            *float64        `json:"latitude"`
+	LocationID          *int64          `json:"location_id"`
+	LocationName        *string         `json:"location_name"`
+	LocationLongitude   *float64        `json:"location_longitude"`
+	LocationLatitude    *float64        `json:"location_latitude"`
+	SensorCode          *string         `json:"sensor_code"`
+	SensorDescription   *string         `json:"sensor_description"`
+	SensorExternalID    *string         `json:"sensor_external_id"`
+	SensorConfiguration json.RawMessage `json:"sensor_configuration"`
 }
 
-type Measurement struct {
-	IntermediateMeasurement
-	LocationID        *int64   `json:"location_id"`
-	LocationName      *string  `json:"location_name"`
-	LocationLongitude *float64 `json:"location_longitude"`
-	LocationLatitude  *float64 `json:"location_latitude"`
-}
-
-func (m *IntermediateMeasurement) Validate() error {
-	if m.ThingURN == "" {
-		return errors.New("thing_urn is required")
+func (m *Measurement) Validate() error {
+	if m.DeviceID == 0 {
+		return errors.New("Pipeline message must have a device attached to it")
 	}
 	if m.Timestamp.IsZero() {
 		return errors.New("timestamp is required")
@@ -41,15 +45,16 @@ func (m *IntermediateMeasurement) Validate() error {
 	if m.MeasurementType == "" {
 		return errors.New("measurement_type is required")
 	}
-	if m.MeasurementTypeUnit == "" {
-		return errors.New("measurement_type_unit is required")
-	}
+	//if m.MeasurementTypeUnit == "" {
+	//	return errors.New("measurement_type_unit is required")
+	//}
 	return nil
 }
 
 // QueryFilters represents the available filters for querying measurements
 type QueryFilters struct {
-	ThingURNs        []string
+	DeviceIDs        []string
+	SensorCodes      []string
 	LocationIDs      []int
 	MeasurementTypes []string
 }
@@ -69,7 +74,7 @@ type Pagination struct {
 
 // iService is an interface for the service's exported interface, it can be used as a developer reference
 type iService interface {
-	StoreMeasurement(IntermediateMeasurement) error
+	StoreMeasurement(Measurement) error
 	QueryMeasurements(Query, Pagination) ([]Measurement, *Pagination, error)
 }
 
@@ -100,31 +105,16 @@ type Service struct {
 	locations LocationService
 }
 
-func New(store MeasurementStore, locs LocationService) *Service {
+func New(store MeasurementStore) *Service {
 	return &Service{
-		store:     store,
-		locations: locs,
+		store: store,
 	}
 }
 
-func (s *Service) StoreMeasurement(im IntermediateMeasurement) error {
-	if err := im.Validate(); err != nil {
+func (s *Service) StoreMeasurement(m Measurement) error {
+	log.Printf("Inserting measurements: %+v\n", m)
+	if err := m.Validate(); err != nil {
 		return fmt.Errorf("validation failed for measurement: %s", err)
-	}
-
-	m := Measurement{
-		IntermediateMeasurement: im,
-	}
-
-	location, err := s.locations.FindLocationID(im.ThingURN)
-	if err != nil && !errors.Is(err, ErrLocationNotFound) {
-		return fmt.Errorf("failed to find location for thing %s: %s", im.ThingURN, err)
-	} else if err == nil {
-		// Location found, set properties
-		m.LocationID = &location.ID
-		m.LocationName = &location.Name
-		m.LocationLatitude = &location.Latitude
-		m.LocationLongitude = &location.Longitude
 	}
 
 	return s.store.Insert(m)

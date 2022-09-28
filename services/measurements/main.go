@@ -12,64 +12,57 @@ import (
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
+	"github.com/rabbitmq/amqp091-go"
 	"github.com/rs/cors"
+	"sensorbucket.nl/internal/env"
+	"sensorbucket.nl/pkg/mq"
+	"sensorbucket.nl/services/measurements/migrations"
 	"sensorbucket.nl/services/measurements/service"
 	"sensorbucket.nl/services/measurements/store"
 	"sensorbucket.nl/services/measurements/transport"
 )
 
 var (
-	MS_HTTP_BASE     = mustEnv("MS_HTTP_BASE")
-	MS_HTTP_ADDR     = mustEnv("MS_HTTP_ADDR")
-	MS_DB_DSN        = mustEnv("MS_DB_DSN")
-	MS_AMQP_URL      = mustEnv("MS_AMQP_URL")
-	MS_AMQP_EXCHANGE = mustEnv("MS_AMQP_EXCHANGE")
-	MS_AMQP_QUEUE    = mustEnv("MS_AMQP_QUEUE")
-	MS_LOCATIONS_URL = mustEnv("MS_LOCATIONS_URL")
+	HTTP_BASE  = env.Must("HTTP_BASE")
+	HTTP_ADDR  = env.Must("HTTP_ADDR")
+	DB_DSN     = env.Must("DB_DSN")
+	AMQP_HOST  = env.Must("AMQP_URL")
+	AMQP_QUEUE = env.Must("AMQP_QUEUE")
 )
-
-func mustEnv(key string) string {
-	val := os.Getenv(key)
-	if val == "" {
-		panic(fmt.Sprintf("%s environment variable not set", key))
-	}
-	return val
-}
 
 func main() {
 	if err := Run(); err != nil {
-		log.Fatalf("Fatal error: %s", err)
+		log.Fatalf("Fatal error: %s\n", err)
 	}
 }
 
 func Run() error {
-	db, err := sqlx.Open("pgx", MS_DB_DSN)
+	db, err := sqlx.Open("pgx", DB_DSN)
 	if err != nil {
-		return fmt.Errorf("failed to open database: %s", err)
+		return fmt.Errorf("failed to open database: %w", err)
+	}
+	if err := migrations.MigratePostgres(db.DB); err != nil {
+		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 	store := store.NewPSQL(db)
-	locations := transport.NewLocationService(MS_LOCATIONS_URL)
-	svc := service.New(store, locations)
-	amqpTransport := transport.NewAMQP(transport.OptsAMQP{
-		Service:  svc,
-		Exchange: MS_AMQP_EXCHANGE,
-		Queue:    MS_AMQP_QUEUE,
-	})
+	svc := service.New(store)
 
 	// Start receiving messages in coroutine
+	consumer := mq.NewAMQPConsumer(AMQP_HOST, AMQP_QUEUE, func(c *amqp091.Channel) error {
+		return nil
+	})
+	go consumer.Start()
+
 	errC := make(chan error)
-	go func() {
-		if err := amqpTransport.Start(MS_AMQP_URL); err != nil {
-			errC <- fmt.Errorf("failed to connect to AMQP: %s", err)
-		}
-	}()
+	mqTransport := transport.NewMQ(svc, consumer)
+	go mqTransport.Start()
 	log.Println("Processing started...")
 	defer log.Println("Processing stopped...")
 
 	// Start http server
-	httpTransport := transport.NewHTTP(svc, MS_HTTP_BASE)
+	httpTransport := transport.NewHTTP(svc, HTTP_BASE)
 	httpSRV := &http.Server{
-		Addr:    MS_HTTP_ADDR,
+		Addr:    HTTP_ADDR,
 		Handler: cors.AllowAll().Handler(httpTransport),
 	}
 	go func() {
@@ -77,7 +70,7 @@ func Run() error {
 			errC <- fmt.Errorf("http server failed: %s", err)
 		}
 	}()
-	log.Printf("HTTP API started on %s", MS_HTTP_ADDR)
+	log.Printf("HTTP API started on %s\n", HTTP_ADDR)
 	defer log.Println("HTTP API stopped...")
 
 	// Wait for error or SIGINT
@@ -89,7 +82,7 @@ func Run() error {
 	}
 
 	// Shutdown transports
-	amqpTransport.Shutdown()
+	consumer.Shutdown()
 	httpSRV.Shutdown(context.Background())
 
 	return err
