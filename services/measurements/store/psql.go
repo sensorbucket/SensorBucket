@@ -28,11 +28,13 @@ func NewPSQL(db *sqlx.DB) *MeasurementStorePSQL {
 
 func (s *MeasurementStorePSQL) Insert(m service.Measurement) error {
 	query, params, err := newInsertBuilder().
-		SetThingURN(m.ThingURN).
+		SetUplinkMessageID(m.UplinkMessageID).
+		SetDevice(m.DeviceID, m.DeviceCode, m.DeviceDescription).
 		SetTimestamp(m.Timestamp).
 		SetValue(m.Value).
 		SetMeasurementType(m.MeasurementType, m.MeasurementTypeUnit).
 		SetMetadata(m.Metadata).
+		TrySetSensor(m.SensorCode, m.SensorDescription, m.SensorExternalID).
 		TrySetLocation(m.LocationID, m.LocationName, m.LocationLongitude, m.LocationLatitude).
 		TrySetCoordinates(m.Longitude, m.Latitude).
 		Build()
@@ -54,13 +56,17 @@ func (s *MeasurementStorePSQL) Insert(m service.Measurement) error {
 //     The cursor holds the timestamp of the first entry of the next page as seconds since epoch base64
 func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) ([]service.Measurement, *service.Pagination, error) {
 	q := pq.Select(
-		"thing_urn",
+		"uplink_message_id",
+		"device_id",
+		"device_code",
+		"device_description",
+		"sensor_code",
+		"sensor_description",
+		"sensor_external_id",
 		"timestamp",
 		"value",
 		"measurement_type",
 		"measurement_type_unit",
-		"ST_X(coordinates::geometry) as lng",
-		"ST_Y(coordinates::geometry) as lat",
 		"location_id",
 		"location_name",
 		"ST_X(location_coordinates::geometry) as location_lng",
@@ -83,8 +89,8 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 		q = q.Where("timestamp <= ?", query.End)
 	}
 
-	if len(query.Filters.ThingURNs) > 0 {
-		q = q.Where(sq.Eq{"thing_urn": query.Filters.ThingURNs})
+	if len(query.Filters.DeviceIDs) > 0 {
+		q = q.Where(sq.Eq{"device_id": query.Filters.DeviceIDs})
 	}
 	if len(query.Filters.MeasurementTypes) > 0 {
 		q = q.Where(sq.Eq{"measurement_type": query.Filters.MeasurementTypes})
@@ -104,13 +110,17 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 	for rows.Next() {
 		var m service.Measurement
 		err = rows.Scan(
-			&m.ThingURN,
+			&m.UplinkMessageID,
+			&m.DeviceID,
+			&m.DeviceCode,
+			&m.DeviceDescription,
+			&m.SensorCode,
+			&m.SensorDescription,
+			&m.SensorExternalID,
 			&m.Timestamp,
 			&m.Value,
 			&m.MeasurementType,
 			&m.MeasurementTypeUnit,
-			&m.Longitude,
-			&m.Latitude,
 			&m.LocationID,
 			&m.LocationName,
 			&m.LocationLongitude,

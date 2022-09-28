@@ -17,8 +17,14 @@ func newInsertBuilder() *insertBuilder {
 	}
 }
 
-func (ib *insertBuilder) SetThingURN(thingURN string) *insertBuilder {
-	ib.values["thing_urn"] = thingURN
+func (ib *insertBuilder) SetUplinkMessageID(id string) *insertBuilder {
+	ib.values["uplink_message_id"] = id
+	return ib
+}
+func (ib *insertBuilder) SetDevice(id int, code, description string) *insertBuilder {
+	ib.values["device_id"] = id
+	ib.values["device_code"] = code
+	ib.values["device_description"] = description
 	return ib
 }
 func (ib *insertBuilder) SetTimestamp(timestamp time.Time) *insertBuilder {
@@ -36,6 +42,13 @@ func (ib *insertBuilder) SetMeasurementType(typ, unit string) *insertBuilder {
 }
 func (ib *insertBuilder) SetMetadata(metadata json.RawMessage) *insertBuilder {
 	ib.values["metadata"] = metadata
+	return ib
+}
+func (ib *insertBuilder) TrySetSensor(code, description, externalID *string) *insertBuilder {
+	// hmmmmm
+	ib.values["sensor_code"] = code
+	ib.values["sensor_description"] = description
+	ib.values["sensor_external_id"] = externalID
 	return ib
 }
 func (ib *insertBuilder) TrySetLocation(id *int64, name *string, longitude, latitude *float64) *insertBuilder {

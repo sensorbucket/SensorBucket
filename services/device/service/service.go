@@ -7,6 +7,7 @@ import (
 
 type Store interface {
 	List(DeviceFilter) ([]Device, error)
+	ListLocations() ([]Location, error)
 	Find(id int) (*Device, error)
 	Save(dev *Device) error
 	Delete(dev *Device) error
@@ -97,4 +98,12 @@ func (s *Service) DeleteDevice(ctx context.Context, dev *Device) error {
 		return err
 	}
 	return nil
+}
+
+func (s *Service) ListLocations(ctx context.Context) ([]Location, error) {
+	locations, err := s.store.ListLocations()
+	if err != nil {
+		return nil, err
+	}
+	return locations, nil
 }

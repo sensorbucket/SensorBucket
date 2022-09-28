@@ -61,6 +61,7 @@ func (t *HTTPTransport) setupRoutes() {
 			r.Delete("/{sensor_code}", t.httpDeleteSensor())
 		})
 	})
+	r.Get("/locations", t.httpListLocations())
 }
 
 //
@@ -208,6 +209,21 @@ func (t *HTTPTransport) httpDeleteSensor() http.HandlerFunc {
 
 		web.HTTPResponse(rw, http.StatusOK, &web.APIResponse{
 			Message: "Deleted sensor from device",
+		})
+	}
+}
+
+func (t *HTTPTransport) httpListLocations() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		locations, err := t.svc.ListLocations(r.Context())
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+
+		web.HTTPResponse(rw, http.StatusOK, &web.APIResponse{
+			Message: "Listed locations",
+			Data:    locations,
 		})
 	}
 }

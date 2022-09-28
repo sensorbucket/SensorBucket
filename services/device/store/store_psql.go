@@ -125,6 +125,14 @@ func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) 
 	return devices, nil
 }
 
+func (s *PSQLStore) ListLocations() ([]service.Location, error) {
+	var locs []service.Location
+	if err := s.db.Select(&locs, `SELECT "id", "name", ST_X(location::geometry) AS latitude, ST_Y(location::geometry) as longitude FROM locations`); err != nil {
+		return nil, err
+	}
+	return locs, nil
+}
+
 func (s *PSQLStore) createDevice(dev *service.Device) error {
 	if err := s.db.Get(&dev.ID, "INSERT INTO devices (code, description, organisation, configuration) VALUES ($1, $2, $3, $4) RETURNING id", dev.Code, dev.Description, dev.Organisation, dev.Configuration); err != nil {
 		return err

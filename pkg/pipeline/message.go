@@ -19,8 +19,8 @@ type Device struct {
 	Organisation  string          `json:"organisation"`
 	Configuration json.RawMessage `json:"configuration"`
 	Sensors       []Sensor        `json:"sensors"`
-	Location      struct {
-		ID        int     `json:"id"`
+	Location      *struct {
+		ID        int64   `json:"id"`
 		Name      string  `json:"name"`
 		Longitude float64 `json:"longitude"`
 		Latitude  float64 `json:"latitude"`
@@ -36,11 +36,11 @@ type Sensor struct {
 }
 
 type Measurement struct {
-	Timestamp         int64             `json:"timestamp"`
-	Value             float64           `json:"value"`
-	Properties        map[string]string `json:"properties"`
-	MeasurementTypeId string            `json:"measurement_type_id"`
-	SensorCode        *string           `json:"sensor_code"`
+	Timestamp         int64          `json:"timestamp"`
+	Value             float64        `json:"value"`
+	Metadata          map[string]any `json:"metadata"`
+	MeasurementTypeID string         `json:"measurement_type_id"`
+	SensorCode        *string        `json:"sensor_code"`
 }
 type Message struct {
 	ID            string        `json:"id"`
@@ -49,7 +49,7 @@ type Message struct {
 	Device        *Device       `json:"device"`
 	Timestamp     int64         `json:"timestamp"`
 	Measurements  []Measurement `json:"measurements"`
-	Payload       string        `json:"payload"`
+	Payload       []byte        `json:"payload"`
 }
 
 func NewMessage(pipelineID string, steps []string) *Message {
@@ -62,7 +62,7 @@ func NewMessage(pipelineID string, steps []string) *Message {
 	}
 }
 
-func (m *Message) SetPayload(p string) *Message {
+func (m *Message) SetPayload(p []byte) *Message {
 	m.Payload = p
 	return m
 }
