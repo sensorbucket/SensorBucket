@@ -95,6 +95,9 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 	if len(query.Filters.MeasurementTypes) > 0 {
 		q = q.Where(sq.Eq{"measurement_type": query.Filters.MeasurementTypes})
 	}
+	if len(query.Filters.SensorCodes) > 0 {
+		q = q.Where(sq.Eq{"sensor_code": query.Filters.SensorCodes})
+	}
 	if len(query.Filters.LocationIDs) > 0 {
 		q = q.Where(sq.Eq{"location_id": query.Filters.LocationIDs})
 	}
