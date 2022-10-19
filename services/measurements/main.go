@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -23,11 +24,12 @@ import (
 )
 
 var (
-	HTTP_BASE  = env.Must("HTTP_BASE")
-	HTTP_ADDR  = env.Must("HTTP_ADDR")
-	DB_DSN     = env.Must("DB_DSN")
-	AMQP_HOST  = env.Must("AMQP_URL")
-	AMQP_QUEUE = env.Must("AMQP_QUEUE")
+	HTTP_BASE     = env.Must("HTTP_BASE")
+	HTTP_ADDR     = env.Must("HTTP_ADDR")
+	DB_DSN        = env.Must("DB_DSN")
+	AMQP_HOST     = env.Must("AMQP_URL")
+	AMQP_QUEUE    = env.Must("AMQP_QUEUE")
+	AMQP_PREFETCH = env.Must("AMQP_PREFETCH")
 )
 
 func main() {
@@ -37,6 +39,10 @@ func main() {
 }
 
 func Run() error {
+	mqPrefetch, err := strconv.Atoi(AMQP_PREFETCH)
+	if err != nil {
+		return fmt.Errorf("MQ_PREFETCH environment variable is not an integer: %v", err)
+	}
 	db, err := sqlx.Open("pgx", DB_DSN)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
@@ -49,6 +55,7 @@ func Run() error {
 
 	// Start receiving messages in coroutine
 	consumer := mq.NewAMQPConsumer(AMQP_HOST, AMQP_QUEUE, func(c *amqp091.Channel) error {
+		c.Qos(mqPrefetch, 0, true)
 		return nil
 	})
 	go consumer.Start()
