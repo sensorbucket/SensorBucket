@@ -56,7 +56,8 @@ func Run() error {
 	// Start receiving messages in coroutine
 	consumer := mq.NewAMQPConsumer(AMQP_HOST, AMQP_QUEUE, func(c *amqp091.Channel) error {
 		c.Qos(mqPrefetch, 0, true)
-		return nil
+		_, err := c.QueueDeclare(AMQP_QUEUE, true, false, false, false, amqp091.Table{})
+		return err
 	})
 	go consumer.Start()
 
