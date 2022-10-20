@@ -79,15 +79,12 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 		Limit(uint64(p.Limit + 1))
 
 	// Use cursor otherwise end time
-	if p.Cursor != "" {
-		cursorTime, err := decodeCursor(p.Cursor)
-		if err != nil {
-			return nil, nil, err
-		}
-		q = q.Where("timestamp <= to_timestamp(?)", cursorTime)
+	if !p.Timestamp.IsZero() {
+		q = q.Where("timestamp <= to_timestamp(?)", p.Timestamp.Unix())
 	} else {
 		q = q.Where("timestamp <= ?", query.End)
 	}
+	q = q.Offset(uint64(p.Skip))
 
 	if len(query.Filters.DeviceIDs) > 0 {
 		q = q.Where(sq.Eq{"device_id": query.Filters.DeviceIDs})
@@ -108,8 +105,8 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 	}
 	defer rows.Close()
 
-	list := make([]service.Measurement, 0, p.Limit)
 	var nextPage *service.Pagination
+	list := make([]service.Measurement, 0, p.Limit)
 	for rows.Next() {
 		var m service.Measurement
 		err = rows.Scan(
@@ -134,12 +131,24 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 			return nil, nil, err
 		}
 
+		// We limit the query to p.limit + 1. As long as the list has not reached p.limit
+		// we keep appending it. Once we get our +1 we will use that to  update the pagination
 		if len(list) < p.Limit {
 			list = append(list, m)
 		} else {
-			ts := m.Timestamp.Unix()
-			nextPage = &service.Pagination{
-				Cursor: encodeCursor(p, uint64(ts)),
+			nextPage = &service.Pagination{}
+			nextPage.Limit = p.Limit
+			nextPage.Timestamp = m.Timestamp
+			nextPage.Skip = 0
+			// If our timestamp stayed the same then we have to skip more
+			if nextPage.Timestamp == p.Timestamp {
+				nextPage.Skip = p.Skip
+			}
+			for i := len(list) - 1; i >= 0; i-- {
+				if list[i].Timestamp != nextPage.Timestamp {
+					break
+				}
+				nextPage.Skip++
 			}
 		}
 	}
