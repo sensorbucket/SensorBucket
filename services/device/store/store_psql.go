@@ -27,7 +27,6 @@ func NewPSQLStore(db *sqlx.DB) *PSQLStore {
 
 type DeviceModel struct {
 	service.Device
-	LocationID int `db:"location_id"`
 }
 
 type SensorModel struct {
@@ -36,30 +35,21 @@ type SensorModel struct {
 	DeviceID int `db:"device_id"`
 }
 
-func createLocationToDeviceMap(devs []DeviceModel) ([]int, map[int][]*DeviceModel) {
-	ids := []int{}
-	m := map[int][]*DeviceModel{}
-	for ix := range devs {
-		dev := &devs[ix]
-		if dev.LocationID == 0 {
-			continue
-		}
-		set, ok := m[dev.LocationID]
-		if !ok {
-			set = []*DeviceModel{}
-			ids = append(ids, dev.LocationID)
-		}
-		set = append(set, dev)
-		m[dev.LocationID] = set
-	}
-
-	return ids, m
-}
-
 func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) {
 	deviceModels := []DeviceModel{}
 
-	q := pq.Select("*").From("devices")
+	q := pq.Select(
+		"dev.id",
+		"dev.code",
+		"dev.description",
+		"dev.organisation",
+		"dev.configuration",
+		"loc.id",
+		"loc.name",
+		"loc.organisation",
+		"ST_X(loc.location::geometry) AS loc_longitude",
+		"ST_Y(loc.location::geometry) AS loc_latitude",
+	).From("devices dev").LeftJoin("locations loc ON dev.location_id = loc.id")
 	if filter.Configuration != nil {
 		q = q.Where("configuration::jsonb @> ?::jsonb", filter.Configuration)
 	}
@@ -69,8 +59,28 @@ func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) 
 	}
 
 	// Fetch devices
-	if err := s.db.Select(&deviceModels, query, params...); err != nil {
+	row, err := s.db.Queryx(query, params...)
+	if err != nil {
 		return nil, err
+	}
+	for row.Next() {
+		dev := DeviceModel{}
+		dev.Location = &service.Location{}
+		if err := row.Scan(
+			&dev.ID,
+			&dev.Code,
+			&dev.Description,
+			&dev.Organisation,
+			&dev.Configuration,
+			&dev.Location.ID,
+			&dev.Location.Name,
+			&dev.Location.Organisation,
+			&dev.Location.Longitude,
+			&dev.Location.Latitude,
+		); err != nil {
+			return nil, err
+		}
+		deviceModels = append(deviceModels, dev)
 	}
 
 	ids := make([]int, len(deviceModels))
@@ -95,26 +105,10 @@ func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) 
 	if err := s.db.Select(&sensorModels, query, params...); err != nil {
 		return nil, err
 	}
-	for _, model := range sensorModels {
+	for ix := range sensorModels {
+		model := sensorModels[ix]
 		dev := devMap[model.DeviceID]
 		dev.Sensors = append(dev.Sensors, model.Sensor)
-	}
-
-	// Fetch location for each device
-	locIDs, devLoc := createLocationToDeviceMap(deviceModels)
-	locations := []service.Location{}
-	query, params, err = pq.Select("id", "name", "ST_X(location::geometry) AS latitude", "ST_Y(location::geometry) AS longitude").From("locations").Where(sq.Eq{"id": locIDs}).ToSql()
-	if err != nil {
-		return nil, err
-	}
-	if err := s.db.Select(&locations, query, params...); err != nil {
-		return nil, err
-	}
-	for _, loc := range locations {
-		devicesAtLocation := devLoc[loc.ID]
-		for ix := range devicesAtLocation {
-			devicesAtLocation[ix].Location = &loc
-		}
 	}
 
 	devices := make([]service.Device, len(deviceModels))
