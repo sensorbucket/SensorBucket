@@ -110,10 +110,11 @@ func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) 
 	if err := s.db.Select(&locations, query, params...); err != nil {
 		return nil, err
 	}
-	for _, loc := range locations {
+	for ix := range locations {
+		loc := &locations[ix]
 		devicesAtLocation := devLoc[loc.ID]
 		for ix := range devicesAtLocation {
-			devicesAtLocation[ix].Location = &loc
+			devicesAtLocation[ix].Location = loc
 		}
 	}
 
