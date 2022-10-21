@@ -68,8 +68,9 @@ type Query struct {
 
 // Pagination represents the pagination information for the measurements query.
 type Pagination struct {
-	Limit  int
-	Cursor string
+	Limit     int
+	Skip      int
+	Timestamp time.Time
 }
 
 // iService is an interface for the service's exported interface, it can be used as a developer reference
@@ -124,9 +125,6 @@ func (s *Service) QueryMeasurements(q Query, p Pagination) ([]Measurement, *Pagi
 	measurements, nextPage, err := s.store.Query(q, p)
 	if err != nil {
 		return nil, nil, err
-	}
-	if nextPage != nil {
-		nextPage.Limit = p.Limit
 	}
 	return measurements, nextPage, nil
 }

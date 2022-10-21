@@ -20,7 +20,7 @@ import (
 
 var (
 	HTTP_ADDR = env.Could("HTTP_ADDR", ":3000")
-	AMQP_HOST = env.Must("AMQP_HOST")
+	AMQP_URL  = env.Must("AMQP_URL")
 	AMQP_XCHG = env.Must("AMQP_XCHG")
 
 	HARDCODED_PIPELINE_STEPS = []string{
@@ -44,7 +44,7 @@ func main() {
 
 func Run() error {
 	// Setup AMQP Producer
-	xchg := mq.NewAMQPPublisher(AMQP_HOST, AMQP_XCHG, func(c *amqp.Channel) error {
+	xchg := mq.NewAMQPPublisher(AMQP_URL, AMQP_XCHG, func(c *amqp.Channel) error {
 		return c.ExchangeDeclare(AMQP_XCHG, "topic", true, false, false, false, nil)
 	})
 	go xchg.Start()

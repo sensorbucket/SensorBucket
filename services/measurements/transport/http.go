@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -73,7 +74,11 @@ func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
 			Count: len(measurements),
 		}
 		if nextPage != nil {
-			response.Next = t.buildNextURL(r, *nextPage)
+			response.Next, err = t.buildNextURL(r, *nextPage)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 		sendJSON(w, response)
 	}
@@ -163,12 +168,19 @@ func parsePagination(r *http.Request) (service.Pagination, error) {
 	q := r.URL.Query()
 
 	if q.Has("cursor") {
-		pagination.Cursor, err = url.QueryUnescape(r.URL.Query().Get("cursor"))
+		// TODO: Decode cursor to pagination struct
+		cursor, err := url.QueryUnescape(r.URL.Query().Get("cursor"))
 		if err != nil {
-			return service.Pagination{}, fmt.Errorf("invalid cursor: %w", err)
+			return pagination, fmt.Errorf("could not get cursor query parameter: %w", err)
 		}
+		pagination, err = decodePagination(cursor)
+		if err != nil {
+			return pagination, err
+		}
+		return pagination, nil
 	}
 
+	//
 	if q.Has("limit") {
 		limitQ := r.URL.Query().Get("limit")
 		pagination.Limit, err = strconv.Atoi(limitQ)
@@ -180,11 +192,36 @@ func parsePagination(r *http.Request) (service.Pagination, error) {
 	return pagination, nil
 }
 
-func (t *HTTPTransport) buildNextURL(r *http.Request, nextPage service.Pagination) string {
+func encodePagination(p service.Pagination) (string, error) {
+	jsonData, err := json.Marshal(p)
+	if err != nil {
+		return "", fmt.Errorf("could not encode pagination: %w", err)
+	}
+	b64Data := base64.StdEncoding.EncodeToString(jsonData)
+	return b64Data, nil
+}
+
+func decodePagination(cursor string) (service.Pagination, error) {
+	jsonData, err := base64.StdEncoding.DecodeString(cursor)
+	if err != nil {
+		return service.Pagination{}, fmt.Errorf("could not decode pagination cursor: %w", err)
+	}
+	var p service.Pagination
+	if err := json.Unmarshal(jsonData, &p); err != nil {
+		return service.Pagination{}, fmt.Errorf("could not decode pagination cursor: %w", err)
+	}
+
+	return p, nil
+}
+
+func (t *HTTPTransport) buildNextURL(r *http.Request, nextPage service.Pagination) (string, error) {
+	cursor, err := encodePagination(nextPage)
+	if err != nil {
+		return "", err
+	}
 	q := r.URL.Query()
-	q.Set("cursor", nextPage.Cursor)
-	q.Set("limit", strconv.Itoa(nextPage.Limit))
-	return fmt.Sprintf("%s%s?%s", t.url, r.URL.Path, q.Encode())
+	q.Set("cursor", cursor)
+	return fmt.Sprintf("%s%s?%s", t.url, r.URL.Path, q.Encode()), nil
 }
 
 func sendJSON(w http.ResponseWriter, v interface{}) {
