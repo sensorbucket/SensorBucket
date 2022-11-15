@@ -121,7 +121,7 @@ func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) 
 
 func (s *PSQLStore) ListLocations() ([]service.Location, error) {
 	var locs []service.Location
-	if err := s.db.Select(&locs, `SELECT "id", "name", ST_X(location::geometry) AS latitude, ST_Y(location::geometry) as longitude FROM locations`); err != nil {
+	if err := s.db.Select(&locs, `SELECT "id", "name", ST_X(location::geometry) AS longitude, ST_Y(location::geometry) as latitude FROM locations`); err != nil {
 		return nil, err
 	}
 	return locs, nil
