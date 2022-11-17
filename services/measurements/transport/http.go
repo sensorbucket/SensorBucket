@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"sensorbucket.nl/services/measurements/service"
+	"sensorbucket.nl/sensorbucket/services/measurements/service"
 )
 
 // HTTPTransport exposes API endpoints to query measurements.

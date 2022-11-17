@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/rabbitmq/amqp091-go"
-	"sensorbucket.nl/pkg/mq"
-	"sensorbucket.nl/pkg/pipeline"
-	"sensorbucket.nl/services/measurements/service"
+	"sensorbucket.nl/sensorbucket/pkg/mq"
+	"sensorbucket.nl/sensorbucket/pkg/pipeline"
+	"sensorbucket.nl/sensorbucket/services/measurements/service"
 )
 
 type MQTransport struct {

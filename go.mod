@@ -1,4 +1,4 @@
-module sensorbucket.nl
+module sensorbucket.nl/sensorbucket
 
 go 1.18
 
