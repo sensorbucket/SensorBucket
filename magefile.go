@@ -5,5 +5,5 @@ package main
 
 import (
 	// mage:import
-	_ "sensorbucket.nl/tools/mage"
+	_ "sensorbucket.nl/sensorbucket/tools/mage"
 )

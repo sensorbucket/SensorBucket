@@ -15,12 +15,12 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/rs/cors"
-	"sensorbucket.nl/internal/env"
-	"sensorbucket.nl/pkg/mq"
-	"sensorbucket.nl/services/measurements/migrations"
-	"sensorbucket.nl/services/measurements/service"
-	"sensorbucket.nl/services/measurements/store"
-	"sensorbucket.nl/services/measurements/transport"
+	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/pkg/mq"
+	"sensorbucket.nl/sensorbucket/services/measurements/migrations"
+	"sensorbucket.nl/sensorbucket/services/measurements/service"
+	"sensorbucket.nl/sensorbucket/services/measurements/store"
+	"sensorbucket.nl/sensorbucket/services/measurements/transport"
 )
 
 var (

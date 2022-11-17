@@ -6,7 +6,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"sensorbucket.nl/services/device/service"
+	"sensorbucket.nl/sensorbucket/services/device/service"
 )
 
 var (
