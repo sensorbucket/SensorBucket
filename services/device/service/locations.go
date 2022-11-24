@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"sensorbucket.nl/internal/web"
+	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"sensorbucket.nl/internal/web"
+	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
 var (

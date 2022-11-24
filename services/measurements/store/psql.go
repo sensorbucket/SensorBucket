@@ -7,7 +7,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"sensorbucket.nl/services/measurements/service"
+	"sensorbucket.nl/sensorbucket/services/measurements/service"
 )
 
 var pq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)

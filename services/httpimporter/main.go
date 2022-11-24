@@ -12,10 +12,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"sensorbucket.nl/internal/env"
-	"sensorbucket.nl/internal/web"
-	"sensorbucket.nl/pkg/mq"
-	"sensorbucket.nl/pkg/pipeline"
+	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/mq"
+	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
 
 var (

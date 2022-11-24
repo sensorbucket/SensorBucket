@@ -13,10 +13,10 @@ import (
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
-	"sensorbucket.nl/internal/env"
-	"sensorbucket.nl/services/device/migrations"
-	"sensorbucket.nl/services/device/service"
-	"sensorbucket.nl/services/device/store"
+	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/services/device/migrations"
+	"sensorbucket.nl/sensorbucket/services/device/service"
+	"sensorbucket.nl/sensorbucket/services/device/store"
 )
 
 var (
