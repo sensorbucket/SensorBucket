@@ -12,3 +12,8 @@ GRANT ALL PRIVILEGES ON DATABASE measurementservice TO measurementservice;
 \c measurementservice
 CREATE EXTENSION timescaledb;
 CREATE EXTENSION postgis;
+
+-- Create Pipeline Service database
+CREATE DATABASE pipelineservice;
+CREATE USER pipelineservice WITH ENCRYPTED PASSWORD 'pipelineservice';
+GRANT ALL PRIVILEGES ON DATABASE pipelineservice TO pipelineservice;

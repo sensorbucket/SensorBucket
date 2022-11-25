@@ -51,6 +51,71 @@ func (s *PSQLStore) CreatePipeline(p *service.Pipeline) error {
 	return tx.Commit()
 }
 
+func (s *PSQLStore) ListPipelines() ([]service.Pipeline, error) {
+	//
+	// Fetch pipelines
+	row, err := s.db.Queryx("SELECT id, description FROM pipelines")
+	if err != nil {
+		return nil, err
+	}
+	// Map rows to model
+	pIDs := make([]string, 0)
+	pipelines := make([]service.Pipeline, 0)
+	for row.Next() {
+		p := service.Pipeline{
+			Steps: []string{},
+		}
+		if err := row.Scan(&p.ID, &p.Description); err != nil {
+			return nil, err
+		}
+		pIDs = append(pIDs, p.ID)
+		pipelines = append(pipelines, p)
+	}
+	if len(pipelines) == 0 {
+		return pipelines, nil
+	}
+
+	//
+	// Fetch steps
+	query, params, _ := pq.
+		Select("pipeline_id", "image").
+		From("pipeline_steps").
+		Where(sq.Eq{"pipeline_id": pIDs}).
+		OrderBy("pipeline_step ASC").
+		ToSql()
+	row, err = s.db.Queryx(query, params...)
+	if err != nil {
+		return nil, err
+	}
+	// Map steps to pipeline
+	stepMap := make(map[string][]string)
+	for row.Next() {
+		var pID string
+		var pStep string
+		if err := row.Scan(&pID, &pStep); err != nil {
+			return nil, err
+		}
+
+		m, ok := stepMap[pID]
+		if !ok {
+			m = []string{}
+		}
+		m = append(m, pStep)
+		stepMap[pID] = m
+	}
+
+	for ix := range pipelines {
+		p := &pipelines[ix]
+		steps, ok := stepMap[p.ID]
+		if !ok {
+			continue
+		}
+		p.Steps = steps
+	}
+
+	return pipelines, nil
+}
+
 func (s *PSQLStore) GetPipeline(id string) (*service.Pipeline, error) {
 	var p service.Pipeline
 	if err := s.db.QueryRow(`SELECT id, description FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Description); err != nil {

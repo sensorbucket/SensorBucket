@@ -18,6 +18,7 @@ var (
 
 type Store interface {
 	CreatePipeline(*Pipeline) error
+	ListPipelines() ([]Pipeline, error)
 	GetPipeline(string) (*Pipeline, error)
 }
 
@@ -31,6 +32,7 @@ func New(store Store) *Service {
 	s := &Service{r, store}
 
 	r.Post("/pipelines", s.httpCreatePipeline())
+	r.Get("/pipelines", s.httpListPipelines())
 	r.Get("/pipelines/{id}", s.httpGetPipeline())
 
 	return s
@@ -67,6 +69,19 @@ func (s *Service) httpCreatePipeline() http.HandlerFunc {
 		}
 
 		web.HTTPResponse(rw, http.StatusCreated, web.APIResponse{Message: "Created pipeline", Data: p})
+	}
+}
+
+func (s *Service) httpListPipelines() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		p, err := s.store.ListPipelines()
+		if err != nil {
+			log.Printf("Store failed to GetPipeline: %v", err)
+			web.HTTPResponse(rw, http.StatusInternalServerError, web.APIResponse{Message: "Internal error"})
+			return
+		}
+
+		web.HTTPResponse(rw, http.StatusOK, web.APIResponse{Message: "Listed pipelines", Data: p})
 	}
 }
 
