@@ -14,6 +14,7 @@ servers:
 paths: 
   /devices:
     get:
+      operationId: ListDevices
       summary: Fetch list of devices
       tags: ["Devices"]
       responses:
@@ -32,6 +33,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/deviceDTO'
     post:
+      operationId: CreateDevice
       summary: Create a new device
       tags: ["Devices"]
       requestBody: 
@@ -64,6 +66,7 @@ paths:
                     example: Referenced location was not found
   /devices/{id}:
     get:
+      operationId: GetDevice
       summary: Get a device
       tags: ["Devices"]
       parameters: 
@@ -71,6 +74,8 @@ paths:
           description: The numeric ID of the device
           in: path
           required: true
+          schema:
+            type: number
       responses:
         200:
           description: Fetched device
@@ -95,6 +100,7 @@ paths:
                     type: string
                     example: Device not found
     patch:
+      operationId: UpdateDevice
       summary: Update device properties
       tags: ["Devices"]
       parameters: 
@@ -102,6 +108,8 @@ paths:
           description: The numeric ID of the device
           in: path
           required: true
+          schema:
+            type: number
       requestBody: 
         content:
           application/json:
@@ -131,6 +139,7 @@ paths:
 
   /devices/{device_id}/sensors:
     get:
+      operationId: ListDeviceSensors
       summary: List sensors on a device
       tags: ["Devices"]
       parameters: 
@@ -138,6 +147,8 @@ paths:
           description: The numeric ID of the device
           in: path
           required: true
+          schema:
+            type: number
       responses:
         200:
           description: Listed device sensors
@@ -164,6 +175,7 @@ paths:
                     type: string
                     example: Device not found
     post:
+      operationId: CreateDeviceSensor
       summary: Create new sensor for device
       tags: ["Devices"]
       parameters: 
@@ -171,6 +183,8 @@ paths:
           description: The numeric ID of the device
           in: path
           required: true
+          schema:
+            type: number
       requestBody: 
         content:
           application/json:
@@ -199,6 +213,7 @@ paths:
                     example: Device not found
   /device/{device_id}/sensors/{sensor_code}:
     delete:
+      operationId: DeleteDeviceSensor
       summary: Delete a sensor from a device
       tags: ["Devices"]
       parameters: 
@@ -206,10 +221,14 @@ paths:
           description: The numeric ID of the device
           in: path
           required: true
+          schema:
+            type: number
         - name: sensor_code
           description: The code of the sensor
           in: path
           required: true
+          schema:
+            type: string
       responses:
         200:
           description: Deleted sensor from device
@@ -233,6 +252,7 @@ paths:
                     example: Device not found
   /locations:
     get:
+      operationId: ListLocations
       summary: List all locations
       tags: ["Locations"]
       responses:
@@ -253,6 +273,7 @@ paths:
 
   /measurements:
     get:
+      operationId: QueryMeasurements
       summary: query measurements
       tags: ["Measurements"]
       parameters:
@@ -324,6 +345,7 @@ paths:
 
   /pipelines:
     get:
+      operationId: ListPipelines
       summary: List existing pipelines
       tags: ["Pipelines"]
       responses:
@@ -342,6 +364,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/pipelineDTO'
     post:
+      operationId: CreatePipeline
       summary: Create a new pipeline
       tags: ["Pipelines"]
       requestBody: 
@@ -365,8 +388,17 @@ paths:
 
   /pipelines/{id}:
     get:
+      operationId: GetPipeline
       summary: Fetch pipeline by ID
       tags: ["Pipelines"]
+      parameters:
+        - name: id
+          description: The UUID of the pipeline
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         200:
           description: Fetched pipeline
@@ -381,8 +413,17 @@ paths:
                   data:
                     $ref: '#/components/schemas/pipelineDTO'
     patch:
+      operationId: UpdatePipeline
       summary: Update a pipeline
       tags: ["Pipelines"]
+      parameters:
+        - name: id
+          description: The UUID of the pipeline
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody: 
         content: 
           application/json:
@@ -412,8 +453,8 @@ components:
           type: string
           example: mfm1000
         description:
-          type: number
-          example: 1
+          type: string
+          example: Grasfield pipe 24
         organisation:
           type: string
           example: provincie_zeeland
@@ -441,8 +482,8 @@ components:
           type: string
           example: mfm1000
         description:
-          type: number
-          example: 1
+          type: string
+          example: Grasfield pipe 24
         organisation:
           type: string
           example: provincie_zeeland
@@ -523,8 +564,8 @@ components:
           type: string
           example: mfm1000
         device_description:
-          type: number
-          example: 1
+          type: string
+          example: Grasfield pipe 24
         device_configuration:
           type: object
           example:
@@ -616,3 +657,8 @@ components:
       scheme: bearer
 security:
   - Authorization: []
+tags:
+  - name: Devices
+  - name: Locations
+  - name: Pipelines
+  - name: Measurements
