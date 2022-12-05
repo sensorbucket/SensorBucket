@@ -29,21 +29,11 @@ func (s *PSQLStore) CreatePipeline(p *service.Pipeline) error {
 		return err
 	}
 
-	if _, err := tx.Exec(`INSERT INTO "pipelines" ("id", "description") VALUES ($1, $2)`, p.ID, p.Description); err != nil {
-		return tx.Rollback()
-	}
-
-	q := pq.Insert("pipeline_steps").Columns("pipeline_id", "pipeline_step", "image")
-	for step, image := range p.Steps {
-		q = q.Values(p.ID, step, image)
-	}
-	query, params, err := q.ToSql()
-	if err != nil {
+	if err := createPipeline(tx, p.ID, p.Description); err != nil {
 		tx.Rollback()
 		return err
 	}
-
-	if _, err := tx.Exec(query, params...); err != nil {
+	if err := createPipelineSteps(tx, p.ID, p.Steps); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -57,28 +47,22 @@ func (s *PSQLStore) UpdatePipeline(id string, p service.UpdatePipelineDTO) error
 		return err
 	}
 
-	// TODO: Implement checks if property should be updated. (IF p.Description != nil)
-	if _, err := tx.Exec(`UPDATE "pipelines" SET "description" = $1 WHERE "id" = $2`, p.Description, id); err != nil {
-		return tx.Rollback()
+	if p.Description != nil {
+		if _, err := tx.Exec(`UPDATE "pipelines" SET "description" = $1 WHERE "id" = $2`, p.Description, id); err != nil {
+			return tx.Rollback()
+		}
 	}
 
-	if _, err := tx.Exec(`DELETE FROM "pipeline_steps" WHERE "pipeline_id" = $1`, id); err != nil {
-		return tx.Rollback()
-	}
+	if p.Steps != nil {
+		if _, err := tx.Exec(`DELETE FROM "pipeline_steps" WHERE "pipeline_id" = $1`, id); err != nil {
+			tx.Rollback()
+			return err
+		}
 
-	q := pq.Insert("pipeline_steps").Columns("pipeline_id", "pipeline_step", "image")
-	for step, image := range p.Steps {
-		q = q.Values(id, step, image)
-	}
-	query, params, err := q.ToSql()
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if _, err := tx.Exec(query, params...); err != nil {
-		tx.Rollback()
-		return err
+		if err := createPipelineSteps(tx, id, p.Steps); err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 
 	return tx.Commit()
@@ -150,16 +134,21 @@ func (s *PSQLStore) ListPipelines() ([]service.Pipeline, error) {
 }
 
 func (s *PSQLStore) GetPipeline(id string) (*service.Pipeline, error) {
+	return getPipeline(s.db, id)
+}
+
+// Private methods which have DB interface injected. Allows for transactional queries
+func getPipeline(db DB, id string) (*service.Pipeline, error) {
 	var p service.Pipeline
-	if err := s.db.QueryRow(`SELECT id, description FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Description); err != nil {
+	if err := db.QueryRowx(`SELECT id, description FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Description); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, service.ErrPipelineNotFound
 		}
 		return nil, err
 	}
-	p.Steps = make([]string, 0)
+	p.Steps = []string{}
 
-	if err := s.db.Select(
+	if err := db.Select(
 		&p.Steps,
 		`SELECT image FROM pipeline_steps WHERE pipeline_id=$1 ORDER BY pipeline_step ASC`,
 		id,
@@ -168,4 +157,33 @@ func (s *PSQLStore) GetPipeline(id string) (*service.Pipeline, error) {
 	}
 
 	return &p, nil
+}
+
+func createPipeline(db DB, id, description string) error {
+	if _, err := db.Exec(`INSERT INTO "pipelines" ("id", "description") VALUES ($1, $2)`, id, description); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createPipelineSteps(db DB, id string, steps []string) error {
+	if len(steps) == 0 {
+		return nil
+	}
+
+	q := pq.Insert("pipeline_steps").Columns("pipeline_id", "pipeline_step", "image")
+	for step, image := range steps {
+		q = q.Values(id, step, image)
+	}
+	query, params, err := q.ToSql()
+	if err != nil {
+		return err
+	}
+
+	if _, err := db.Exec(query, params...); err != nil {
+		return err
+	}
+
+	return nil
 }

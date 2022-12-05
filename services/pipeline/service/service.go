@@ -45,9 +45,9 @@ func (s Service) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 }
 
 type Pipeline struct {
-	ID          string   `json:"id,omitempty"`
-	Description string   `json:"description,omitempty"`
-	Steps       []string `json:"steps,omitempty"`
+	ID          string   `json:"id"`
+	Description string   `json:"description"`
+	Steps       []string `json:"steps"`
 }
 
 func (s *Service) httpCreatePipeline() http.HandlerFunc {
