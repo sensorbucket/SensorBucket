@@ -51,6 +51,39 @@ func (s *PSQLStore) CreatePipeline(p *service.Pipeline) error {
 	return tx.Commit()
 }
 
+func (s *PSQLStore) UpdatePipeline(id string, p service.UpdatePipelineDTO) error {
+	tx, err := s.db.BeginTxx(context.Background(), &sql.TxOptions{})
+	if err != nil {
+		return err
+	}
+
+	// TODO: Implement checks if property should be updated. (IF p.Description != nil)
+	if _, err := tx.Exec(`UPDATE "pipelines" SET "description" = $1 WHERE "id" = $2`, p.Description, id); err != nil {
+		return tx.Rollback()
+	}
+
+	if _, err := tx.Exec(`DELETE FROM "pipeline_steps" WHERE "pipeline_id" = $1`, id); err != nil {
+		return tx.Rollback()
+	}
+
+	q := pq.Insert("pipeline_steps").Columns("pipeline_id", "pipeline_step", "image")
+	for step, image := range p.Steps {
+		q = q.Values(id, step, image)
+	}
+	query, params, err := q.ToSql()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if _, err := tx.Exec(query, params...); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
+}
+
 func (s *PSQLStore) ListPipelines() ([]service.Pipeline, error) {
 	//
 	// Fetch pipelines
