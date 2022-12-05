@@ -35,7 +35,7 @@ func New(store Store) *Service {
 	r.Post("/pipelines", s.httpCreatePipeline())
 	r.Get("/pipelines", s.httpListPipelines())
 	r.Get("/pipelines/{id}", s.httpGetPipeline())
-	r.Put("/pipelines/{id}", s.httpUpdatePipeline())
+	r.Patch("/pipelines/{id}", s.httpUpdatePipeline())
 
 	return s
 }
