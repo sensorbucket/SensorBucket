@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -12,7 +11,7 @@ import (
 )
 
 var (
-	ErrPipelineNotFound      = errors.New("pipeline not found")
+	ErrPipelineNotFound      = web.NewError(http.StatusNotFound, "pipeline was not found", "PIPELINE_NOT_FOUND")
 	ErrPipelineNotActive     = web.NewError(http.StatusNotFound, "pipeline is currently not active", "PIPELINE_NOT_ACTIVE")
 	ErrPipelineNotInactive   = web.NewError(http.StatusBadRequest, "pipeline is currently not disabled", "PIPELINE_NOT_DISABLED")
 	ErrPipelineInvalidStep   = web.NewError(http.StatusBadRequest, "pipeline step is invalid", "PIPELINE_INVALID_STEP")

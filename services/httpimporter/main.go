@@ -19,15 +19,10 @@ import (
 )
 
 var (
-	HTTP_ADDR = env.Could("HTTP_ADDR", ":3000")
-	AMQP_URL  = env.Must("AMQP_URL")
-	AMQP_XCHG = env.Must("AMQP_XCHG")
-
-	HARDCODED_PIPELINE_STEPS = []string{
-		"sensorbucket/ttn-worker@0.0.1",
-		"sensorbucket/mfm-worker@0.0.1",
-		"service.measurements",
-	}
+	HTTP_ADDR    = env.Could("HTTP_ADDR", ":3000")
+	AMQP_URL     = env.Must("AMQP_URL")
+	AMQP_XCHG    = env.Must("AMQP_XCHG")
+	SVC_PIPELINE = env.Must("SVC_PIPELINE")
 
 	ErrInvalidUUID = web.NewError(
 		http.StatusBadRequest,
@@ -64,6 +59,39 @@ func Run() error {
 	return srv.ListenAndServe()
 }
 
+type Pipeline struct {
+	Data struct {
+		Steps []string `json:"steps"`
+	} `json:"data"`
+}
+
+func getPipelineSteps(id string) ([]string, error) {
+	res, err := http.Get(fmt.Sprintf("%s/pipelines/%s", SVC_PIPELINE, id))
+	if err != nil {
+		return nil, fmt.Errorf("could not get pipeline definition: %w", err)
+	}
+	defer res.Body.Close()
+
+	// if error status, then pipeline service should have responded with APIError
+	// We forward that error to the requester.
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		var err web.APIError
+		if err := json.NewDecoder(res.Body).Decode(&err); err != nil {
+			return nil, fmt.Errorf("could not read pipline service response: %w", err)
+		}
+		err.HTTPStatus = res.StatusCode
+		log.Printf("Error status: %v\n", err)
+		return nil, &err
+	}
+
+	var p Pipeline
+	if err := json.NewDecoder(res.Body).Decode(&p); err != nil {
+		return nil, fmt.Errorf("could not parse pipeline service response: %w", err)
+	}
+
+	return p.Data.Steps, nil
+}
+
 func httpPostUplink(xchg *mq.AMQPPublisher) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		pipelineID, err := uuid.Parse(chi.URLParam(r, "uuid"))
@@ -74,13 +102,17 @@ func httpPostUplink(xchg *mq.AMQPPublisher) http.HandlerFunc {
 
 		payload, err := io.ReadAll(r.Body)
 		if err != nil {
-			web.HTTPError(rw, nil)
+			web.HTTPError(rw, err)
 			return
 		}
 
-		// TODO: Fetch pipeline steps based on pipeline UUID from pipeline service
-		// instead of having them hardcoded like here
-		msg := pipeline.NewMessage(pipelineID.String(), HARDCODED_PIPELINE_STEPS)
+		steps, err := getPipelineSteps(pipelineID.String())
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+
+		msg := pipeline.NewMessage(pipelineID.String(), steps)
 		msg.SetPayload(payload)
 		step, err := msg.NextStep()
 		if err != nil {
