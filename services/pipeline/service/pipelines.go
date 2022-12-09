@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"time"
 
 	"github.com/google/uuid"
 	"sensorbucket.nl/sensorbucket/internal/web"
@@ -26,10 +27,11 @@ const (
 )
 
 type Pipeline struct {
-	ID          string         `json:"id"`
-	Description string         `json:"description"`
-	Status      PipelineStatus `json:"status"`
-	Steps       []string       `json:"steps"`
+	ID               string         `json:"id"`
+	Description      string         `json:"description"`
+	Status           PipelineStatus `json:"status"`
+	Steps            []string       `json:"steps"`
+	LastStatusChange time.Time      `json:"last_status_change"`
 }
 
 func NewPipeline(description string, steps []string) (*Pipeline, error) {
@@ -64,6 +66,7 @@ func (p *Pipeline) Disable() error {
 		return fmt.Errorf("cannot disable pipeline: %w", ErrPipelineNotActive)
 	}
 	p.Status = PipelineInactive
+	p.LastStatusChange = time.Now()
 	return nil
 }
 
@@ -72,6 +75,7 @@ func (p *Pipeline) Enable() error {
 		return fmt.Errorf("cannot enable pipeline: %w", ErrPipelineNotInactive)
 	}
 	p.Status = PipelineActive
+	p.LastStatusChange = time.Now()
 	return nil
 }
 

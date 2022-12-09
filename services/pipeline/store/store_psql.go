@@ -47,8 +47,12 @@ func (s *PSQLStore) UpdatePipeline(p *service.Pipeline) error {
 		return err
 	}
 
-	if _, err := tx.Exec(`UPDATE "pipelines" SET "description" = $1, "status" = $2 WHERE "id" = $3`, p.Description, p.Status, p.ID); err != nil {
-		return tx.Rollback()
+	if _, err := tx.Exec(
+		`UPDATE "pipelines" SET "description" = $1, "status" = $2, "last_status_change" = $3 WHERE "id" = $4`,
+		p.Description, p.Status, p.LastStatusChange, p.ID,
+	); err != nil {
+		tx.Rollback()
+		return err
 	}
 
 	if _, err := tx.Exec(`DELETE FROM "pipeline_steps" WHERE "pipeline_id" = $1`, p.ID); err != nil {
@@ -68,7 +72,7 @@ func (s *PSQLStore) ListPipelines(filter service.PipelinesFilter) ([]service.Pip
 	//
 	// Fetch pipelines
 	// Create query
-	q := pq.Select("id", "description", "status").From("pipelines")
+	q := pq.Select("id", "description", "status", "last_status_change").From("pipelines")
 	if filter.OnlyInactive {
 		q = q.Where(sq.Eq{"status": service.PipelineInactive})
 	} else {
@@ -90,7 +94,7 @@ func (s *PSQLStore) ListPipelines(filter service.PipelinesFilter) ([]service.Pip
 		p := service.Pipeline{
 			Steps: []string{},
 		}
-		if err := row.Scan(&p.ID, &p.Description, &p.Status); err != nil {
+		if err := row.Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange); err != nil {
 			return nil, err
 		}
 		pIDs = append(pIDs, p.ID)
@@ -153,7 +157,7 @@ func (s *PSQLStore) GetPipeline(id string) (*service.Pipeline, error) {
 // Private methods which have DB interface injected. Allows for transactional queries
 func getPipeline(db DB, id string) (*service.Pipeline, error) {
 	var p service.Pipeline
-	if err := db.QueryRowx(`SELECT id, description, status FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Description, &p.Status); err != nil {
+	if err := db.QueryRowx(`SELECT id, description, status, last_status_change FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, service.ErrPipelineNotFound
 		}
@@ -173,7 +177,7 @@ func getPipeline(db DB, id string) (*service.Pipeline, error) {
 }
 
 func createPipeline(db DB, p *service.Pipeline) error {
-	if _, err := db.Exec(`INSERT INTO "pipelines" ("id", "description", "status") VALUES ($1, $2, $3)`, p.ID, p.Description, p.Status); err != nil {
+	if _, err := db.Exec(`INSERT INTO "pipelines" ("id", "description", "status", "last_status_change") VALUES ($1, $2, $3, $4)`, p.ID, p.Description, p.Status, p.LastStatusChange); err != nil {
 		return err
 	}
 
