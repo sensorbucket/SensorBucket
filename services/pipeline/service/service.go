@@ -1,141 +1,124 @@
 package service
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"log"
-	"net/http"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
-	"sensorbucket.nl/sensorbucket/internal/web"
-)
-
-var (
-	ErrPipelineNotFound = errors.New("pipeline not found")
+	"context"
 )
 
 type Store interface {
 	CreatePipeline(*Pipeline) error
-	UpdatePipeline(string, UpdatePipelineDTO) error
-	ListPipelines() ([]Pipeline, error)
+	UpdatePipeline(*Pipeline) error
+	ListPipelines(PipelinesFilter) ([]Pipeline, error)
 	GetPipeline(string) (*Pipeline, error)
 }
 
 type Service struct {
-	router chi.Router
-	store  Store
+	store Store
 }
 
 func New(store Store) *Service {
-	r := chi.NewRouter()
-	s := &Service{r, store}
-
-	r.Post("/pipelines", s.httpCreatePipeline())
-	r.Get("/pipelines", s.httpListPipelines())
-	r.Get("/pipelines/{id}", s.httpGetPipeline())
-	r.Patch("/pipelines/{id}", s.httpUpdatePipeline())
+	s := &Service{store}
 
 	return s
 }
 
-func (s Service) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	s.router.ServeHTTP(rw, r)
-}
-
-type Pipeline struct {
-	ID          string   `json:"id"`
+type CreatePipelineDTO struct {
 	Description string   `json:"description"`
 	Steps       []string `json:"steps"`
 }
 
-func (s *Service) httpCreatePipeline() http.HandlerFunc {
-	type request struct {
-		Description string   `json:"description,omitempty"`
-		Steps       []string `json:"steps,omitempty"`
+func (s *Service) CreatePipeline(ctx context.Context, dto CreatePipelineDTO) (*Pipeline, error) {
+	p, err := NewPipeline(dto.Description, dto.Steps)
+	if err != nil {
+		return nil, err
 	}
-	return func(rw http.ResponseWriter, r *http.Request) {
-		var req request
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			log.Printf("Failed to decode request body: %v\n", err)
-			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponse{Message: "Could not decode request body"})
-			return
-		}
-
-		p := &Pipeline{uuid.Must(uuid.NewRandom()).String(), req.Description, req.Steps}
-		if err := s.store.CreatePipeline(p); err != nil {
-			log.Printf("Store failed to CreatePipeline: %v\n", err)
-			web.HTTPResponse(rw, http.StatusInternalServerError, web.APIResponse{Message: "Internal error"})
-			return
-		}
-
-		web.HTTPResponse(rw, http.StatusCreated, web.APIResponse{Message: "Created pipeline", Data: p})
+	if err := s.store.CreatePipeline(p); err != nil {
+		return nil, err
 	}
+	return p, nil
+}
+
+type PipelinesFilter struct {
+	OnlyInactive bool
+}
+
+func NewPipelinesFilter() PipelinesFilter {
+	return PipelinesFilter{}
+}
+
+func (s *Service) ListPipelines(ctx context.Context, filter PipelinesFilter) ([]Pipeline, error) {
+	pipelines, err := s.store.ListPipelines(filter)
+	return pipelines, err
+}
+
+func (s *Service) GetPipeline(ctx context.Context, id string, allowInactive bool) (*Pipeline, error) {
+	p, err := s.store.GetPipeline(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if !allowInactive && p.Status == PipelineInactive {
+		return nil, ErrPipelineNotActive
+	}
+
+	return p, nil
 }
 
 type UpdatePipelineDTO struct {
-	Description *string  `json:"description,omitempty"`
-	Steps       []string `json:"steps,omitempty"`
+	Description *string         `json:"description,omitempty"`
+	Steps       []string        `json:"steps,omitempty"`
+	Status      *PipelineStatus `json:"status,omitempty"`
 }
 
-func (s *Service) httpUpdatePipeline() http.HandlerFunc {
-	return func(rw http.ResponseWriter, r *http.Request) {
-		var req UpdatePipelineDTO
-		id := chi.URLParam(r, "id")
-		if _, err := uuid.Parse(id); err != nil {
-			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponse{Message: "id must be of UUID format"})
-			return
-		}
-
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			log.Printf("Failed to decode request body: %v\n", err)
-			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponse{Message: "Could not decode request body"})
-			return
-		}
-
-		if err := s.store.UpdatePipeline(id, req); err != nil {
-			log.Printf("Store failed to UpdatePipeline: %v\n", err)
-			web.HTTPResponse(rw, http.StatusInternalServerError, web.APIResponse{Message: "Internal error"})
-			return
-		}
-
-		web.HTTPResponse(rw, http.StatusCreated, web.APIResponse{Message: "Updated pipeline"})
+func (s *Service) UpdatePipeline(ctx context.Context, id string, dto UpdatePipelineDTO) error {
+	p, err := s.GetPipeline(ctx, id, true)
+	if err != nil {
+		return err
 	}
+
+	if dto.Description != nil {
+		p.Description = *dto.Description
+	}
+	if dto.Steps != nil {
+		if err := p.SetSteps(dto.Steps); err != nil {
+			return err
+		}
+	}
+	if dto.Status != nil {
+		if err := p.SetStatus(*dto.Status); err != nil {
+			return err
+		}
+	}
+
+	if err := s.store.UpdatePipeline(p); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (s *Service) httpListPipelines() http.HandlerFunc {
-	return func(rw http.ResponseWriter, r *http.Request) {
-		p, err := s.store.ListPipelines()
-		if err != nil {
-			log.Printf("Store failed to GetPipeline: %v", err)
-			web.HTTPResponse(rw, http.StatusInternalServerError, web.APIResponse{Message: "Internal error"})
-			return
-		}
-
-		web.HTTPResponse(rw, http.StatusOK, web.APIResponse{Message: "Listed pipelines", Data: p})
+func (s *Service) DisablePipeline(ctx context.Context, id string) error {
+	p, err := s.GetPipeline(ctx, id, false)
+	if err != nil {
+		return err
 	}
+	if err := p.Disable(); err != nil {
+		return err
+	}
+	if err := s.store.UpdatePipeline(p); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (s *Service) httpGetPipeline() http.HandlerFunc {
-	return func(rw http.ResponseWriter, r *http.Request) {
-		id := chi.URLParam(r, "id")
-		if _, err := uuid.Parse(id); err != nil {
-			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponse{Message: "id must be of UUID format"})
-			return
-		}
-
-		p, err := s.store.GetPipeline(id)
-		if errors.Is(err, ErrPipelineNotFound) {
-			web.HTTPResponse(rw, http.StatusNotFound, web.APIResponse{Message: fmt.Sprintf("Pipeline with id '%s' was not found", id)})
-			return
-		}
-		if err != nil {
-			log.Printf("Store failed to GetPipeline: %v", err)
-			web.HTTPResponse(rw, http.StatusInternalServerError, web.APIResponse{Message: "Internal error"})
-			return
-		}
-
-		web.HTTPResponse(rw, http.StatusOK, web.APIResponse{Message: "Fetched pipeline", Data: p})
+func (s *Service) EnablePipeline(ctx context.Context, id string) error {
+	p, err := s.GetPipeline(ctx, id, true)
+	if err != nil {
+		return err
 	}
+	if err := p.Enable(); err != nil {
+		return err
+	}
+	if err := s.store.UpdatePipeline(p); err != nil {
+		return err
+	}
+	return nil
 }

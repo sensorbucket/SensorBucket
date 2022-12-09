@@ -35,11 +35,12 @@ func Run() error {
 		return fmt.Errorf("failed to migrate db: %w", err)
 	}
 	svc := service.New(store.NewPSQLStore(db))
+	transport := service.NewTransport(svc)
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
-		Handler:      svc,
+		Handler:      transport,
 	}
 
 	errC := make(chan error, 1)
