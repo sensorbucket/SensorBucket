@@ -2,7 +2,6 @@ package store
 
 import (
 	"database/sql"
-	"errors"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -53,9 +52,9 @@ func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) 
 	if filter.Configuration != nil {
 		q = q.Where("configuration::jsonb @> ?::jsonb", filter.Configuration)
 	}
-    if filter.LocationID != 0 {
-        q = q.Where("location_id = ?", filter.LocationID)
-    }
+	if filter.LocationID != 0 {
+		q = q.Where("location_id = ?", filter.LocationID)
+	}
 	query, params, err := q.ToSql()
 	if err != nil {
 		return nil, err
@@ -139,14 +138,26 @@ func (s *PSQLStore) createDevice(dev *service.Device) error {
 
 func (s *PSQLStore) Find(id int) (*service.Device, error) {
 	var dev DeviceModel
+	var locID sql.NullInt64
 
-	if err := s.db.Get(&dev, "SELECT * FROM devices WHERE id=$1", id); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
+	// Get device model
+	if err := s.db.QueryRowx(`SELECT "id", "code", "description", "organisation", "configuration", "location_id" FROM devices WHERE id=$1`, id).Scan(
+		&dev.ID, &dev.Code, &dev.Description, &dev.Organisation, &dev.Configuration, &locID,
+	); err != nil {
 		return nil, err
 	}
 
+	// Set location
+	if locID.Valid {
+		dev.Location = &service.Location{}
+		if err := s.db.QueryRowx(`SELECT "id", "name", ST_X(location::geometry) AS longitude, ST_Y(location::geometry) as latitude FROM locations WHERE id=$1`, locID.Int64).Scan(
+			&dev.Location.ID, &dev.Location.Name, &dev.Location.Longitude, &dev.Location.Latitude,
+		); err != nil {
+			return nil, err
+		}
+	}
+
+	// Set sensors
 	sensors := []service.Sensor{}
 	if err := s.db.Select(&sensors, "SELECT code, description, external_id, configuration FROM sensors WHERE device_id=$1", id); err != nil {
 		return nil, err
