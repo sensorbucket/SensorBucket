@@ -3,7 +3,7 @@ info:
   title: Sensorbucket API
   version: '1.0'
   license:
-    name: TBD
+    name: EUPLv2
   description: ''
   contact:
     name: Provincie Zeeland
@@ -12,137 +12,294 @@ servers:
   - description: Local
     url: 'http://localhost:3000'
 paths: 
-  /hello-world:
+  /devices:
     get:
-      description: Hello world!
+      operationId: ListDevices
+      summary: Fetch list of devices
+      tags: ["Devices"]
+      parameters:
+        - in: query
+          name: configuration
+          schema:
+            type: object
+        - in: query
+          name: location_id
+          schema:
+            type: number
       responses:
         200:
           description: OK
           content:
             application/json:
               schema:
-                type: string
-                example: "Hello world!"
-  
-  /asset-definitions:
-    get:
-      description: List asset definitions for this AM service
-      tags: ["Asset Management"]
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
-  /assets:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: listed devices
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/deviceDTO'
     post:
-      description: Create an asset
-      tags: ["Asset Management"]
-      requestBody:
+      operationId: CreateDevice
+      summary: Create a new device
+      tags: ["Devices"]
+      requestBody: 
         content:
           application/json:
-            schema:
-              type: object
-              required: [asset_definition, content]
-              properties:
-                asset_definition:
-                  type: string
-                  example: srn:asset:mfm-waterlevel:sensor
-                content:
-                  type: object
+            schema: 
+              $ref: '#/components/schemas/createDeviceDTO'
       responses:
         201:
           description: Created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/assetResponse"
-    get:
-      parameters:
-        - in: query
-          name: assetDefinition
-          schema:
-            type: string
-            example: srn:asset:mfm-waterlevel:sensor
-        - in: query
-          name: filter
-          schema:
-            type: array
-            items:
-              type: string
-      description: List and filter assets
-      tags: ["Asset Management"]
-      responses:
-        200:
-          description: OK
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: created device
+                  data:
+                    $ref: '#/components/schemas/deviceDTO'
+        404:
+          description: Location not found
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/assetResponse"
-
-  
-  /assets/{assetURN}:
-    parameters:
-      - name: assetURN
-        in: path
-        required: true
-        schema:
-          type: string
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Referenced location was not found
+  /devices/{id}:
     get:
-      description: Retrieve an asset
-      tags: ["Asset Management"]
+      operationId: GetDevice
+      summary: Get a device
+      tags: ["Devices"]
+      parameters: 
+        - name: id
+          description: The numeric ID of the device
+          in: path
+          required: true
+          schema:
+            type: number
       responses:
         200:
-          description: ok
+          description: Fetched device
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/assetResponse"
-    put:
-      description: Replace an asset definition
-      tags: ["Asset Management"]
-      requestBody:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched device
+                  data:
+                    $ref: '#/components/schemas/deviceDTO'
+        404:
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Device not found
+    patch:
+      operationId: UpdateDevice
+      summary: Update device properties
+      tags: ["Devices"]
+      parameters: 
+        - name: id
+          description: The numeric ID of the device
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody: 
         content:
           application/json:
             schema:
-              type: object
-              required: [content]
-              properties:
-                content:
-                  type: object
+              $ref: '#/components/schemas/updateDeviceDTO'
       responses:
         200:
-          description: ok
+          description: Updated device properties
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/assetResponse"
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Updated device properties
+        404:
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Device not found
 
-  /measurements/{start}/{end}:
-    parameters:
-      - in: path
-        name: start
-        required: true
-        schema:
-          type: string
-          format: iso8601
-          example: "2022-01-01T00:00:00Z"
-      - in: path
-        name: end
-        required: true
-        schema:
-          type: string
-          format: iso8601
-          example: "2022-12-31T23:59:59Z"
+  /devices/{device_id}/sensors:
     get:
-      description: query measurements
+      operationId: ListDeviceSensors
+      summary: List sensors on a device
+      tags: ["Devices"]
+      parameters: 
+        - name: device_id
+          description: The numeric ID of the device
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        200:
+          description: Listed device sensors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Listed device sensors
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/sensorDTO'
+        404:
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Device not found
+    post:
+      operationId: CreateDeviceSensor
+      summary: Create new sensor for device
+      tags: ["Devices"]
+      parameters: 
+        - name: device_id
+          description: The numeric ID of the device
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody: 
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createSensorDTO'
+      responses:
+        201:
+          description: Created new sensor for device
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Created new sensor for device
+        404:
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Device not found
+  /device/{device_id}/sensors/{sensor_code}:
+    delete:
+      operationId: DeleteDeviceSensor
+      summary: Delete a sensor from a device
+      tags: ["Devices"]
+      parameters: 
+        - name: device_id
+          description: The numeric ID of the device
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: sensor_code
+          description: The code of the sensor
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Deleted sensor from device
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Deleted sensor from device
+        404:
+          description: Device or sensor not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Device not found
+  /locations:
+    get:
+      operationId: ListLocations
+      summary: List all locations
+      tags: ["Locations"]
+      responses:
+        200:
+          description: Listed locations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Listed locations
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/locationDTO'
+
+  /measurements:
+    get:
+      operationId: QueryMeasurements
+      summary: query measurements
       tags: ["Measurements"]
       parameters:
+        - in: query
+          name: start
+          required: true
+          schema:
+            type: string
+            format: iso8601
+            example: "2022-01-01T00:00:00Z"
+        - in: query
+          name: end
+          required: true
+          schema:
+            type: string
+            format: iso8601
+            example: "2022-12-31T23:59:59Z"
         - in: query
           name: cursor
           required: false
@@ -154,7 +311,7 @@ paths:
           schema:
             type: number
         - in: query
-          name: thing_urn
+          name: device_id
           required: false
           schema:
             type: string
@@ -168,149 +325,188 @@ paths:
           required: false
           schema:
             type: string
+        - in: query
+          name: sensor_code
+          required: false
+          schema:
+            type: string
       responses:
         200:
-          description: ok
+          description: Fetched measurements
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/measurementResponse"
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched measurements
+                  next:
+                    type: string
+                    example: "https://sensorbucket.nl/api/v1/measurements/?cursor=eyJMaW1pdCI6NSwiU2tpcCI6MywiVGltZXN0YW1wIjoiMjAyMi0xMS0zMFQyMzo1OTo0NFoifQ%3D%3D&end=2022-12-01T00%3A00%3A00Z&limit=5&start=2022-01-01T00%3A00%3A00Z"
+                  count:
+                    type: number
+                    example: 100
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/measurementDTO"
 
-  /locations:
+  /pipelines:
+    get:
+      operationId: ListPipelines
+      summary: List existing pipelines
+      tags: ["Pipelines"]
+      responses:
+        200:
+          description: Fetched pipelines
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched pipelines
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/pipelineDTO'
     post:
-      description: Create a location
-      tags: ["locations"]
-      requestBody:
-        content:
+      operationId: CreatePipeline
+      summary: Create a new pipeline
+      tags: ["Pipelines"]
+      requestBody: 
+        content: 
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  example: Harborside 3A
-                lat:
-                  type: number
-                  example: 5.123123
-                lng:
-                  type: number
-                  example: 51.23123
+              $ref: '#/components/schemas/createPipelineDTO'
       responses:
-        201:
-          description: created
+        200:
+          description: Created pipeline
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/locationResponse"
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Created pipeline
+                  data:
+                    $ref: '#/components/schemas/pipelineDTO'
+
+  /pipelines/{id}:
     get:
-      description: List all locations
-      tags: ["locations"]
+      operationId: GetPipeline
+      summary: Fetch pipeline by ID
+      tags: ["Pipelines"]
+      parameters:
+        - name: id
+          description: The UUID of the pipeline
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         200:
-          description: ok
+          description: Fetched pipeline
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/locationResponse"
-  /locations/{id}:
-    parameters:
-      - in: path
-        required: true
-        name: id
-        schema:
-          type: number
-    delete:
-      description: Delete a location
-      tags: ["locations"]
-      responses:
-        200:
-          description: ok
-  /locations/things:
-    put:
-      description: Set thing location
-      tags: ["locations"]
-      requestBody:
-        content:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched pipeline
+                  data:
+                    $ref: '#/components/schemas/pipelineDTO'
+    patch:
+      operationId: UpdatePipeline
+      summary: Update a pipeline
+      tags: ["Pipelines"]
+      parameters:
+        - name: id
+          description: The UUID of the pipeline
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody: 
+        content: 
           application/json:
             schema:
-              $ref: "#/components/schemas/setThingLocationRequest"
+              $ref: '#/components/schemas/updatePipelineDTO'
       responses:
         200:
-          description: ok
+          description: Updated pipeline
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/thingLocationResponse"
-  /locations/things/{thingURN}:
-    parameters:
-      - in: path
-        required: true
-        name: thingURN
-        schema:
-          type: string
-          example: "srn:asset:mfm-waterlevel:sensor:AABBCCDDEEFFGGHH"
-    get:
-      description: get the location of a thing
-      tags: ["locations"]
-      responses:
-        200:
-          description: ok
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/thingLocationResponse"
-        404:
-          description: thing does not have a location
-    delete:
-      description: remove thing from a location
-      tags: ["locations"]
-      responses:
-        200:
-          description: ok
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Updated pipeline
+                  data:
+                    $ref: '#/components/schemas/pipelineDTO'
+    
 
 components:
-  schemas: 
-    assetResponse:
+  schemas:
+    createDeviceDTO:
       type: object
       properties:
-        urn:
+        code:
           type: string
-          example: "srn:asset:mfm-waterlevel:sensor:12345678"
-        content:
+          example: mfm1000
+        description:
+          type: string
+          example: Grasfield pipe 24
+        organisation:
+          type: string
+          example: provincie_zeeland
+        configuration:
           type: object
-    measurementResponse:
+          example:
+            eui: "060708090A0B0C0D"
+    updateDeviceDTO:
       type: object
       properties:
-        thing_urn:
-          type: string
-          example: "srn:asset:mfm-waterlevel:sensor:12345678"
-        timestamp:
-          type: string
-          example: "2022-02-01T12:14:00+02:00"
-        value:
+        description:
           type: number
-          example: 21.325
-        measurement_type:
-          type: string
-          example: air_temperature
-        measurement_type_unit:
-          type: string
-          example: degrees celsius
-        location_id:
+          example: 1
+        configuration:
+          type: object
+          example:
+            eui: "060708090A0B0C0D"
+    deviceDTO:
+      type: object
+      properties:
+        id:
           type: number
-          example: 12
-        coordinates:
+          example: 1
+        code:
+          type: string
+          example: mfm1000
+        description:
+          type: string
+          example: Grasfield pipe 24
+        organisation:
+          type: string
+          example: provincie_zeeland
+        configuration:
+          type: object
+          example:
+            eui: "060708090A0B0C0D"
+        location:
+          $ref: '#/components/schemas/locationDTO'
+        sensors:
           type: array
-          items: 
-            type: number
-          example: [5.47, 51.46]
-        metadata:
-          type: object
-    locationResponse:
+          items:
+            $ref: '#/components/schemas/sensorDTO'
+    locationDTO:
       type: object
       properties:
         id:
@@ -318,38 +514,152 @@ components:
           example: 1
         name:
           type: string
-          example: Harborside 3A
-        lat:
+          example: Bridgeton Waters
+        organisation:
+          type: string
+          example: provincie_zeeland
+        longitude:
           type: number
-          example: 5.123123
-        lng:
+          example: 50.12345678
+        latitude:
           type: number
-          example: 51.23123
-    thingLocationResponse:
+          example: 3.12345678
+    createSensorDTO:
       type: object
       properties:
-        thing_urn:
+        code:
           type: string
-          example: "srn:asset:mfm-waterlevel:sensor:AABBCCDDEEFFGGHH"
+          example: S123
+        description:
+          type: string
+          example: Pressure sensor at 5 meters depth
+        external_id:
+          type: string
+          example: "5"
+        measurement_type:
+          type: string
+          example: pressure
+    sensorDTO:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 1
+        code:
+          type: string
+          example: S123
+        description:
+          type: string
+          example: Pressure sensor at 5 meters depth
+        external_id:
+          type: string
+          example: "5"
+        measurement_type:
+          type: string
+          example: pressure
+    measurementDTO:
+      type: object
+      properties:
+        uplink_message_id:
+          type: string
+          example: ca29e28e-eeb6-4662-922c-6cf6a36ccb6e
+        timestamp:
+          type: number
+          example: 
+        device_id:
+          type: number
+          example: 5
+        device_code:
+          type: string
+          example: mfm1000
+        device_description:
+          type: string
+          example: Grasfield pipe 24
+        device_configuration:
+          type: object
+          example:
+            eui: "060708090A0B0C0D"
+        latitude:
+          type: number
+          example: 50.123456
+        longitude:
+          type: number
+          example: 3.12345
         location_id:
           type: number
+          example: 1
         location_name:
           type: string
-          example: Harborside 3A
-        location_lat:
+          example: Bridgeton Waters
+        location_latitude:
           type: number
-          example: 5.123123
-        location_lng:
+          example: 50.12345678
+        location_longitude:
           type: number
-          example: 51.23123
-    setThingLocationRequest:
+          example: 3.12345678
+        measurement_type:
+          type: string
+          example: pressure
+        measurement_type_unit:
+          type: string
+          example: hPa
+        sensor_code:
+          type: string
+          example: S123
+        sensor_description:
+          type: string
+          example: Pressure sensor at 5 meters depth
+        sensor_external_id:
+          type: string
+          example: "5"
+        sensor_configuration:
+          type: object
+          example: {}
+        value:
+          type: number
+          example: 3.44
+    pipelineDTO:
       type: object
       properties:
-        thing_urn:
+        id:
           type: string
-          example: "srn:asset:mfm-waterlevel:sensor:AABBCCDDEEFFGGHH"
-        location_id:
-          type: number
+          example: 9d4a0944-c11d-42ef-880f-a97c9619c5c0
+        description:
+          type: string
+          example: Pipeline for Multiflexmeter Groundwater devices
+        steps:
+          type: array
+          items:
+            type: string
+          example:
+            - "TTN@1.0.0"
+            - "MFMGroundwater@1.0.0"
+    createPipelineDTO:
+      type: object
+      properties:
+        description:
+          type: string
+          example: Pipeline for Multiflexmeter Groundwater devices
+        steps:
+          type: array
+          items:
+            type: string
+          example:
+            - "TTN@1.0.0"
+            - "MFMGroundwater@1.0.0"
+    updatePipelineDTO:
+      type: object
+      properties:
+        description:
+          type: string
+          example: Pipeline for Multiflexmeter Groundwater devices
+        steps:
+          type: array
+          items:
+            type: string
+          example:
+            - "TTN@1.0.0"
+            - "MFMGroundwater@1.0.0"
   securitySchemes:
     Authorization:
       type: http
@@ -357,4 +667,7 @@ components:
 security:
   - Authorization: []
 tags:
-  - name: Asset Management
+  - name: Devices
+  - name: Locations
+  - name: Pipelines
+  - name: Measurements
