@@ -24,6 +24,7 @@ func New(store Store) *Service {
 }
 
 type DeviceFilter struct {
+	LocationID    int             `json:"location_id"`
 	Configuration json.RawMessage `json:"configuration"`
 }
 

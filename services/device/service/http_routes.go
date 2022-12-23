@@ -68,16 +68,37 @@ func (t *HTTPTransport) setupRoutes() {
 // Routes
 //
 
+func parseQueryFilter(r *http.Request) (DeviceFilter, error) {
+	var filter DeviceFilter
+	q := r.URL.Query()
+
+	// Configuration filter
+	configurationFilter := q.Get("configuration")
+	if configurationFilter != "" {
+		if err := json.Unmarshal([]byte(configurationFilter), &filter.Configuration); err != nil {
+			return filter, err
+		}
+	}
+
+	// Location ID
+	qLocID := q.Get("location_id")
+	if qLocID != "" {
+		locID, err := strconv.ParseInt(qLocID, 10, 32)
+		if err != nil {
+			return filter, err
+		}
+		filter.LocationID = int(locID)
+	}
+
+	return filter, nil
+}
+
 func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-		filter := DeviceFilter{}
-		configurationFilter := q.Get("configuration")
-		if configurationFilter != "" {
-			if err := json.Unmarshal([]byte(configurationFilter), &filter.Configuration); err != nil {
-				web.HTTPError(rw, err)
-				return
-			}
+		filter, err := parseQueryFilter(r)
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
 		}
 
 		devices, err := t.svc.ListDevices(r.Context(), filter)

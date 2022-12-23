@@ -53,6 +53,9 @@ func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) 
 	if filter.Configuration != nil {
 		q = q.Where("configuration::jsonb @> ?::jsonb", filter.Configuration)
 	}
+    if filter.LocationID != 0 {
+        q = q.Where("location_id = ?", filter.LocationID)
+    }
 	query, params, err := q.ToSql()
 	if err != nil {
 		return nil, err
