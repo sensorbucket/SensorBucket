@@ -17,6 +17,15 @@ paths:
       operationId: ListDevices
       summary: Fetch list of devices
       tags: ["Devices"]
+      parameters:
+        - in: query
+          name: configuration
+          schema:
+            type: object
+        - in: query
+          name: location_id
+          schema:
+            type: number
       responses:
         200:
           description: OK
