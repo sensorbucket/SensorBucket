@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -71,17 +72,22 @@ func (s *PSQLStore) UpdatePipeline(p *service.Pipeline) error {
 func (s *PSQLStore) ListPipelines(filter service.PipelinesFilter) ([]service.Pipeline, error) {
 	//
 	// Fetch pipelines
-	// Create query
 	q := pq.Select("id", "description", "status", "last_status_change").From("pipelines")
-	if filter.OnlyInactive {
-		q = q.Where(sq.Eq{"status": service.PipelineInactive})
+	if len(filter.Status) > 0 {
+		q = q.Where(sq.Eq{"status": filter.Status})
 	} else {
 		q = q.Where(sq.NotEq{"status": service.PipelineInactive})
 	}
+	if len(filter.Step) > 0 {
+		pipelineIDsThatHaveSteps := pq.Select("pipeline_id").Prefix("id IN (").Suffix(")").Distinct().From("pipeline_steps").Where(sq.Eq{"image": filter.Step})
+		q = q.Where(pipelineIDsThatHaveSteps)
+	}
+
 	query, params, err := q.ToSql()
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("query: %v\n", query)
 	// Perform query
 	row, err := s.db.Queryx(query, params...)
 	if err != nil {

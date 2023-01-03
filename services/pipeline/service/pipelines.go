@@ -25,6 +25,17 @@ const (
 	PipelineInactive                = "inactive"
 )
 
+func StrToStatus(str string) (PipelineStatus, error) {
+	switch str {
+	case string(PipelineActive):
+		return PipelineActive, nil
+	case string(PipelineInactive):
+		return PipelineInactive, nil
+	default:
+		return PipelineActive, ErrPipelineInvalidStatus
+	}
+}
+
 type Pipeline struct {
 	ID               string         `json:"id"`
 	Description      string         `json:"description"`

@@ -84,7 +84,7 @@ func getPipelineSteps(id string) ([]string, error) {
 		return nil, &err
 	}
 
-	var p Pipeline
+    var p Pipeline
 	if err := json.NewDecoder(res.Body).Decode(&p); err != nil {
 		return nil, fmt.Errorf("could not parse pipeline service response: %w", err)
 	}
@@ -120,7 +120,11 @@ func httpPostUplink(xchg *mq.AMQPPublisher) http.HandlerFunc {
 			return
 		}
 
-		msgData, _ := json.Marshal(&msg)
+		msgData, err := json.Marshal(&msg)
+        if err != nil {
+            web.HTTPError(rw, err)
+            return
+        }
 		xchg.Publish(step, amqp.Publishing{Body: msgData})
 
 		web.HTTPResponse(rw, http.StatusAccepted, &web.APIResponse{

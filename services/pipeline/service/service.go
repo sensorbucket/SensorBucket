@@ -38,7 +38,8 @@ func (s *Service) CreatePipeline(ctx context.Context, dto CreatePipelineDTO) (*P
 }
 
 type PipelinesFilter struct {
-	OnlyInactive bool
+	Status []PipelineStatus
+	Step   []string
 }
 
 func NewPipelinesFilter() PipelinesFilter {

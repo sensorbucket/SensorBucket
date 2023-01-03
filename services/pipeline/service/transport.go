@@ -80,14 +80,40 @@ func (t *Transport) httpUpdatePipeline() http.HandlerFunc {
 	}
 }
 
+func parsePipelineFilterQuery(r *http.Request) (PipelinesFilter, error) {
+	filter := NewPipelinesFilter()
+	q := r.URL.Query()
+
+	// If there is one or more status query parameters then loop them, validate each and append to the filter list
+	if q.Has("status") {
+		filter.Status = []PipelineStatus{}
+		for _, v := range q["status"] {
+			status, err := StrToStatus(v)
+			if err != nil {
+				return filter, err
+			}
+			filter.Status = append(filter.Status, status)
+		}
+	}
+	if q.Has("step") {
+		filter.Step = q["step"]
+	}
+
+	return filter, nil
+}
+
 func (t *Transport) httpListPipelines() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		f := NewPipelinesFilter()
-		f.OnlyInactive = r.URL.Query().Has("inactive")
+		f, err := parsePipelineFilterQuery(r)
+		if err != nil {
+			log.Printf("Failed to GetPipeline: %v\n", err)
+			web.HTTPError(rw, err)
+			return
+		}
 
 		p, err := t.service.ListPipelines(r.Context(), f)
 		if err != nil {
-			log.Printf("Failed to GetPipeline: %v", err)
+			log.Printf("Failed to GetPipeline: %v\n", err)
 			web.HTTPError(rw, err)
 			return
 		}
@@ -103,14 +129,26 @@ func (t *Transport) httpGetPipeline() http.HandlerFunc {
 			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponse{Message: "id must be of UUID format"})
 			return
 		}
-		f := NewPipelinesFilter()
-		if r.URL.Query().Has("inactive") {
-			f.OnlyInactive = true
+
+		// We parse the pipeline filters to see if status=inactive is in there
+		// if it's in there then we show the pipeline even if its disabled.
+		f, err := parsePipelineFilterQuery(r)
+		if err != nil {
+			log.Printf("Failed to GetPipeline: %v\n", err)
+			web.HTTPError(rw, err)
+			return
+		}
+		showInactive := false
+		for _, v := range f.Status {
+			if v == PipelineInactive {
+				showInactive = true
+				break
+			}
 		}
 
-		p, err := t.service.GetPipeline(r.Context(), id, f.OnlyInactive)
+		p, err := t.service.GetPipeline(r.Context(), id, showInactive)
 		if err != nil {
-			log.Printf("Failed to GetPipeline: %v", err)
+			log.Printf("Failed to GetPipeline: %v\n", err)
 			web.HTTPError(rw, err)
 			return
 		}
@@ -128,7 +166,7 @@ func (t *Transport) httpDeletePipeline() http.HandlerFunc {
 		}
 
 		if err := t.service.DisablePipeline(r.Context(), id); err != nil {
-			log.Printf("Failed to GetPipeline: %v", err)
+			log.Printf("Failed to GetPipeline: %v\n", err)
 			web.HTTPError(rw, err)
 			return
 		}
