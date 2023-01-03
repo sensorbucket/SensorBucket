@@ -60,8 +60,6 @@ services:
     - POSTGRES_DB=sensorbucket
   dbweb:
     image: michalhosna/adminer
-    ports:
-        - 15432:8080
     environment:
         ADMINER_DRIVER: pgsql
         ADMINER_SERVER: db
@@ -75,6 +73,14 @@ services:
     ports:
       - 5672:5672
       - 15672:15672
+
+  openapi:
+    image: swaggerapi/swagger-editor
+    environment:
+      - URL=/openapi/ref/api.yaml
+      - BASE_URL=/openapi
+    volumes:
+      - ./tools/openapi/ref:/usr/share/nginx/html/ref
 
 networks:
   default:

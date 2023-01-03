@@ -357,6 +357,21 @@ paths:
       operationId: ListPipelines
       summary: List existing pipelines
       tags: ["Pipelines"]
+      parameters:
+        - name: inactive
+          description: Only show inactive pipelines
+          in: query
+          required: false
+          schema:
+              type: boolean
+        - name: step
+          description: Only show pipelines that include at least one of these steps
+          in: query
+          required: false
+          schema:
+              type: array
+              items:
+                type: string
       responses:
         200:
           description: Fetched pipelines
@@ -421,6 +436,8 @@ paths:
                     example: Fetched pipeline
                   data:
                     $ref: '#/components/schemas/pipelineDTO'
+        404:
+          description: Pipeline not found or disabled
     patch:
       operationId: UpdatePipeline
       summary: Update a pipeline
@@ -451,7 +468,57 @@ paths:
                     example: Updated pipeline
                   data:
                     $ref: '#/components/schemas/pipelineDTO'
-    
+        404:
+          description: Pipeline not found or disabled
+    delete:
+      operationId: DisablePipeline
+      summary: Disable a pipeline
+      tags: ['Pipelines']
+      parameters:
+        - name: id
+          description: The UUID of the pipeline
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: pipeline disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Disabled pipeline
+        404:
+          description: Pipeline not found or disabled
+
+  /uplinks/{pipeline_id}:
+    post:
+      tags: ['Uplink']
+      operationId: pushUplink
+      summary: Push an uplink message to the HTTP Importer
+      parameters:
+        - name: pipeline_id
+          description: The UUID of the pipeline
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Accepted uplink
+        404:
+          description: Pipeline not found or disabled
 
 components:
   schemas:
@@ -472,15 +539,15 @@ components:
           example:
             eui: "060708090A0B0C0D"
     updateDeviceDTO:
-      type: object
-      properties:
-        description:
-          type: number
-          example: 1
-        configuration:
-          type: object
-          example:
-            eui: "060708090A0B0C0D"
+        type: object
+        properties:
+          description:
+            type: number
+            example: 1
+          configuration:
+            type: object
+            example:
+              eui: "060708090A0B0C0D"
     deviceDTO:
       type: object
       properties:
@@ -671,3 +738,4 @@ tags:
   - name: Locations
   - name: Pipelines
   - name: Measurements
+  - name: Uplink
