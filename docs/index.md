@@ -1,16 +1,12 @@
-# SensorBucket
-Sensorbucket is an expandable pipeline system for processing measurements coming from multiple sources.
+# Sensorbucket
 
-## Planning
-- [ ] One set of workers + Asset manager  
-      March 27th
-- [ ] Publish and store measurements  
-      April 3rd
-- [ ] Initial deployment to K8s  
-      April 10th
-- [ ] Frontend compatible (AM-Proxy + Measurement API)  
-      April 17th
-- [ ] Python Library  
-      TBD
-- [ ] Other pipelines  
-      TBD
+Consume measurements without worrying about obscure data formats.
+
+SensorBucket processes data from different devices from different sources (HTTP, MQTT, FTP, ...) in different data formats (TheThingsNetwork, Multiflexmeter, CayenneLPP, proprietary, ...) and outputs all measurements in a single format.
+
+Your application might require air temperature data from location XYZ. It should not have to worry about whether that sensor was created by manufacturer A or Z.
+
+<figure markdown>
+![Simplified overview of sensorbucket](./context.png){ width="600"}
+</figure>
+

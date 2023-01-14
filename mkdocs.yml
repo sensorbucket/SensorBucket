@@ -3,23 +3,28 @@ repo_url: https://gitlab.com/sensorbucket
 repo_name: Sensorbucket
 theme:
   name: material
-  features:
-    - navigation.tabs
+  logo: sensorbucket-logo-white.png
+  favicon: sensorbucket-logo.png
   icon:
     repo: fontawesome/brands/git-alt 
   palette:
     - scheme: slate
-      primary: deep orange
+      primary: teal
       accent: blue grey
       toggle:
         icon: material/toggle-switch-off-outline
         name: Switch to light mode
     - scheme: default
-      primary: deep orange
+      primary: teal
       accent: blue grey
       toggle:
         icon: material/toggle-switch
         name: Switch to dark mode
+  features:
+    - navigation.sections
+
+plugins:
+  - glightbox
 
 markdown_extensions:
   - attr_list
@@ -38,8 +43,8 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
 
 nav:
-  - Home:
-    - Introduction: index.md
-    - Getting started: getting-started.md
-  - Services:
-    - Measurements: measurements/index.md
+  - Overview: index.md
+  - Introduction: introduction.md
+  - Development:
+    - Architecture: development/architecture.md
+    - Data Model: development/data-model.md
