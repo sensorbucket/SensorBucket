@@ -37,16 +37,23 @@ var (
 		"sensor with that code already exists on the device",
 		"DEVICE_DUPLICATE_SENSOR_CODE",
 	)
+	ErrInvalidCoordinates = web.NewError(
+		http.StatusBadRequest,
+		"Invalid coordinates supplied",
+		"ERR_LOCATION_INVALID_COORDINATES",
+	)
 )
 
 type Device struct {
-	ID            int             `json:"id"`
-	Code          string          `json:"code"`
-	Description   string          `json:"description"`
-	Organisation  string          `json:"organisation"`
-	Sensors       []Sensor        `json:"sensors"`
-	Configuration json.RawMessage `json:"configuration"`
-	Location      *Location       `json:"location"`
+	ID                  int             `json:"id"`
+	Code                string          `json:"code"`
+	Description         string          `json:"description"`
+	Organisation        string          `json:"organisation"`
+	Sensors             []Sensor        `json:"sensors"`
+	Configuration       json.RawMessage `json:"configuration"`
+	Longitude           float64         `json:"longitude"`
+	Latitude            float64         `json:"latitude"`
+	LocationDescription string          `json:"location_description" db:"location_description"`
 }
 
 type Sensor struct {
@@ -58,15 +65,17 @@ type Sensor struct {
 }
 
 type NewDeviceOpts struct {
-	Code          string
-	Description   string
-	Organisation  string
-	Configuration json.RawMessage
+	Code                string
+	Description         string
+	Organisation        string
+	Configuration       json.RawMessage
+	Longitude           float64
+	Latitude            float64
+	LocationDescription string
 }
 
 func NewDevice(opts NewDeviceOpts) (*Device, error) {
 	dev := Device{
-		Description:   "",
 		Sensors:       []Sensor{},
 		Configuration: []byte("{}"),
 	}
@@ -84,6 +93,13 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 	}
 
 	dev.Description = opts.Description
+
+	if opts.Latitude < -90 || opts.Latitude > 90 || opts.Longitude < -180 || opts.Longitude > 180 {
+		return nil, ErrInvalidCoordinates
+	}
+	dev.Latitude = opts.Latitude
+	dev.Longitude = opts.Longitude
+	dev.LocationDescription = opts.LocationDescription
 
 	return &dev, nil
 }
@@ -164,7 +180,11 @@ func (d *Device) DeleteSensor(sensor *Sensor) error {
 	return ErrSensorNotFound
 }
 
-func (d *Device) SetLocation(location *Location) error {
-	d.Location = location
+func (d *Device) SetLocation(lat, lng float64) error {
+	if lat < -90 || lat > 90 || lng < -180 || lng > 180 {
+		return ErrInvalidCoordinates
+	}
+	d.Latitude = lat
+	d.Longitude = lng
 	return nil
 }

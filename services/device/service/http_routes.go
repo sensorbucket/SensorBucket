@@ -61,7 +61,6 @@ func (t *HTTPTransport) setupRoutes() {
 			r.Delete("/{sensor_code}", t.httpDeleteSensor())
 		})
 	})
-	r.Get("/locations", t.httpListLocations())
 }
 
 //
@@ -80,17 +79,77 @@ func parseQueryFilter(r *http.Request) (DeviceFilter, error) {
 		}
 	}
 
-	// Location ID
-	qLocID := q.Get("location_id")
-	if qLocID != "" {
-		locID, err := strconv.ParseInt(qLocID, 10, 32)
+	return filter, nil
+}
+
+func parseBoundingBoxRequest(r *http.Request) (BoundingBox, error) {
+	var err error
+	var bb BoundingBox
+	q := r.URL.Query()
+
+	topQ := q.Get("top")
+	leftQ := q.Get("left")
+	bottomQ := q.Get("bottom")
+	rightQ := q.Get("right")
+	if topQ != "" && leftQ != "" && rightQ != "" && bottomQ != "" {
+		bb.Top, err = strconv.ParseFloat(topQ, 64)
 		if err != nil {
-			return filter, err
+			return bb, err
 		}
-		filter.LocationID = int(locID)
+		bb.Left, err = strconv.ParseFloat(leftQ, 64)
+		if err != nil {
+			return bb, err
+		}
+		bb.Bottom, err = strconv.ParseFloat(bottomQ, 64)
+		if err != nil {
+			return bb, err
+		}
+		bb.Right, err = strconv.ParseFloat(rightQ, 64)
+		if err != nil {
+			return bb, err
+		}
+
+		// TODO: Validate parameters
+	}
+	return bb, nil
+}
+
+func parseWithinRangeRequest(r *http.Request) (LocationRange, error) {
+	var err error
+	var lr LocationRange
+	q := r.URL.Query()
+
+	latitudeQ := q.Get("latitude")
+	longitudeQ := q.Get("longitude")
+	distanceQ := q.Get("distance")
+	if latitudeQ != "" && longitudeQ != "" && distanceQ != "" {
+		lr.Latitude, err = strconv.ParseFloat(latitudeQ, 64)
+		if err != nil {
+			return lr, err
+		}
+		lr.Longitude, err = strconv.ParseFloat(longitudeQ, 64)
+		if err != nil {
+			return lr, err
+		}
+		lr.Distance, err = strconv.ParseFloat(distanceQ, 64)
+		if err != nil {
+			return lr, err
+		}
+
+		// TODO: Validate parameters
 	}
 
-	return filter, nil
+	return lr, nil
+}
+
+func isWithinRangeRequest(r *http.Request) bool {
+	q := r.URL.Query()
+	return q.Has("latitude") && q.Has("longitude") && q.Has("distance")
+}
+
+func isWithinBoundingBoxRequest(r *http.Request) bool {
+	q := r.URL.Query()
+	return q.Has("top") && q.Has("left") && q.Has("right") && q.Has("bottom")
 }
 
 func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
@@ -100,12 +159,31 @@ func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
 			web.HTTPError(rw, err)
 			return
 		}
+		var devices []Device
 
-		devices, err := t.svc.ListDevices(r.Context(), filter)
+		// figure out what kind of query this is
+		if isWithinRangeRequest(r) {
+			lr, err := parseWithinRangeRequest(r)
+			if err != nil {
+				web.HTTPError(rw, err)
+				return
+			}
+			devices, err = t.svc.ListInRange(r.Context(), lr, filter)
+		} else if isWithinBoundingBoxRequest(r) {
+			bb, err := parseBoundingBoxRequest(r)
+			if err != nil {
+				web.HTTPError(rw, err)
+				return
+			}
+			devices, err = t.svc.ListInBoundingBox(r.Context(), bb, filter)
+		} else {
+			devices, err = t.svc.ListDevices(r.Context(), filter)
+		}
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
+
 		web.HTTPResponse(rw, http.StatusOK, &web.APIResponse{
 			Message: "listed devices",
 			Data:    devices,
@@ -230,21 +308,6 @@ func (t *HTTPTransport) httpDeleteSensor() http.HandlerFunc {
 
 		web.HTTPResponse(rw, http.StatusOK, &web.APIResponse{
 			Message: "Deleted sensor from device",
-		})
-	}
-}
-
-func (t *HTTPTransport) httpListLocations() http.HandlerFunc {
-	return func(rw http.ResponseWriter, r *http.Request) {
-		locations, err := t.svc.ListLocations(r.Context())
-		if err != nil {
-			web.HTTPError(rw, err)
-			return
-		}
-
-		web.HTTPResponse(rw, http.StatusOK, &web.APIResponse{
-			Message: "Listed locations",
-			Data:    locations,
 		})
 	}
 }

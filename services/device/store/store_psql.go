@@ -1,8 +1,6 @@
 package store
 
 import (
-	"database/sql"
-
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"sensorbucket.nl/sensorbucket/services/device/service"
@@ -34,99 +32,16 @@ type SensorModel struct {
 	DeviceID int `db:"device_id"`
 }
 
-func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) {
-	deviceModels := []DeviceModel{}
-
-	q := pq.Select(
-		"dev.id",
-		"dev.code",
-		"dev.description",
-		"dev.organisation",
-		"dev.configuration",
-		"loc.id",
-		"loc.name",
-		"loc.organisation",
-		"ST_X(loc.location::geometry) AS loc_longitude",
-		"ST_Y(loc.location::geometry) AS loc_latitude",
-	).From("devices dev").LeftJoin("locations loc ON dev.location_id = loc.id")
-	if filter.Configuration != nil {
-		q = q.Where("configuration::jsonb @> ?::jsonb", filter.Configuration)
-	}
-	if filter.LocationID != 0 {
-		q = q.Where("location_id = ?", filter.LocationID)
-	}
-	query, params, err := q.ToSql()
-	if err != nil {
-		return nil, err
-	}
-
-	// Fetch devices
-	row, err := s.db.Queryx(query, params...)
-	if err != nil {
-		return nil, err
-	}
-	for row.Next() {
-		dev := DeviceModel{}
-		dev.Location = &service.Location{}
-		if err := row.Scan(
-			&dev.ID,
-			&dev.Code,
-			&dev.Description,
-			&dev.Organisation,
-			&dev.Configuration,
-			&dev.Location.ID,
-			&dev.Location.Name,
-			&dev.Location.Organisation,
-			&dev.Location.Longitude,
-			&dev.Location.Latitude,
-		); err != nil {
-			return nil, err
-		}
-		deviceModels = append(deviceModels, dev)
-	}
-
-	ids := make([]int, len(deviceModels))
-	devMap := map[int]*DeviceModel{}
-	for ix := range deviceModels {
-		dev := &deviceModels[ix]
-		// Create an array of all device ids, used to filter upcoming queries
-		ids[ix] = dev.ID
-		// Initialize default fields
-		dev.Sensors = []service.Sensor{}
-		// Create a map for id => device ptr, used to add sensors and location
-		devMap[dev.ID] = dev
-	}
-
-	// Fetch sensors for devices
-	q = pq.Select("*").From("sensors").Where(sq.Eq{"device_id": ids})
-	query, params, err = q.ToSql()
-	if err != nil {
-		return nil, err
-	}
-	var sensorModels []SensorModel
-	if err := s.db.Select(&sensorModels, query, params...); err != nil {
-		return nil, err
-	}
-	for ix := range sensorModels {
-		model := sensorModels[ix]
-		dev := devMap[model.DeviceID]
-		dev.Sensors = append(dev.Sensors, model.Sensor)
-	}
-
-	devices := make([]service.Device, len(deviceModels))
-	for ix, model := range deviceModels {
-		devices[ix] = model.Device
-	}
-
-	return devices, nil
+func (s *PSQLStore) ListInBoundingBox(bb service.BoundingBox, filter service.DeviceFilter) ([]service.Device, error) {
+	return newDeviceQueryBuilder().WithFilters(filter).WithinBoundingBox(bb).Query(s.db)
 }
 
-func (s *PSQLStore) ListLocations() ([]service.Location, error) {
-	var locs []service.Location
-	if err := s.db.Select(&locs, `SELECT "id", "name", ST_X(location::geometry) AS longitude, ST_Y(location::geometry) as latitude FROM locations`); err != nil {
-		return nil, err
-	}
-	return locs, nil
+func (s *PSQLStore) ListInRange(r service.LocationRange, filter service.DeviceFilter) ([]service.Device, error) {
+	return newDeviceQueryBuilder().WithFilters(filter).WithinRange(r).Query(s.db)
+}
+
+func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) {
+	return newDeviceQueryBuilder().WithFilters(filter).Query(s.db)
 }
 
 func (s *PSQLStore) createDevice(dev *service.Device) error {
@@ -138,23 +53,10 @@ func (s *PSQLStore) createDevice(dev *service.Device) error {
 
 func (s *PSQLStore) Find(id int) (*service.Device, error) {
 	var dev DeviceModel
-	var locID sql.NullInt64
 
 	// Get device model
-	if err := s.db.QueryRowx(`SELECT "id", "code", "description", "organisation", "configuration", "location_id" FROM devices WHERE id=$1`, id).Scan(
-		&dev.ID, &dev.Code, &dev.Description, &dev.Organisation, &dev.Configuration, &locID,
-	); err != nil {
+	if err := s.db.Get(&dev, `SELECT "id", "code", "description", "organisation", "configuration", "location_description", ST_X("location"::geometry) AS latitude, ST_Y("location"::geometry) AS longitude FROM devices WHERE id=$1`, id); err != nil {
 		return nil, err
-	}
-
-	// Set location
-	if locID.Valid {
-		dev.Location = &service.Location{}
-		if err := s.db.QueryRowx(`SELECT "id", "name", ST_X(location::geometry) AS longitude, ST_Y(location::geometry) as latitude FROM locations WHERE id=$1`, locID.Int64).Scan(
-			&dev.Location.ID, &dev.Location.Name, &dev.Location.Longitude, &dev.Location.Latitude,
-		); err != nil {
-			return nil, err
-		}
 	}
 
 	// Set sensors

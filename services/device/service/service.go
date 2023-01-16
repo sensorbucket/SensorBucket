@@ -7,7 +7,8 @@ import (
 
 type Store interface {
 	List(DeviceFilter) ([]Device, error)
-	ListLocations() ([]Location, error)
+	ListInBoundingBox(BoundingBox, DeviceFilter) ([]Device, error)
+	ListInRange(LocationRange, DeviceFilter) ([]Device, error)
 	Find(id int) (*Device, error)
 	Save(dev *Device) error
 	Delete(dev *Device) error
@@ -24,12 +25,30 @@ func New(store Store) *Service {
 }
 
 type DeviceFilter struct {
-	LocationID    int             `json:"location_id"`
 	Configuration json.RawMessage `json:"configuration"`
+}
+type BoundingBox struct {
+	Top    float64 `json:"top"`
+	Left   float64 `json:"left"`
+	Bottom float64 `json:"bottom"`
+	Right  float64 `json:"right"`
+}
+type LocationRange struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+	Distance  float64 `json:"range"`
 }
 
 func (s *Service) ListDevices(ctx context.Context, filter DeviceFilter) ([]Device, error) {
 	devices, err := s.store.List(filter)
+	return devices, err
+}
+func (s *Service) ListInRange(ctx context.Context, lr LocationRange, filter DeviceFilter) ([]Device, error) {
+	devices, err := s.store.ListInRange(lr, filter)
+	return devices, err
+}
+func (s *Service) ListInBoundingBox(ctx context.Context, bb BoundingBox, filter DeviceFilter) ([]Device, error) {
+	devices, err := s.store.ListInBoundingBox(bb, filter)
 	return devices, err
 }
 
@@ -99,12 +118,4 @@ func (s *Service) DeleteDevice(ctx context.Context, dev *Device) error {
 		return err
 	}
 	return nil
-}
-
-func (s *Service) ListLocations(ctx context.Context) ([]Location, error) {
-	locations, err := s.store.ListLocations()
-	if err != nil {
-		return nil, err
-	}
-	return locations, nil
 }
