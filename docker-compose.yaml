@@ -11,8 +11,17 @@ services:
   device:
     build: .
     environment:
-    - DEVSVC=device
+    - APP_NAME=device
     - DB_DSN=postgresql://deviceservice:deviceservice@db:5432/deviceservice?sslmode=disable
+    volumes:
+      - ./:/workspace:cached
+
+  pipeline:
+    build: .
+    environment:
+    - APP_NAME=pipeline
+    - DB_DSN=postgresql://pipelineservice:pipelineservice@db:5432/pipelineservice?sslmode=disable
+    - HTTP_ADDR=:3000
     volumes:
       - ./:/workspace:cached
 
@@ -21,7 +30,7 @@ services:
     volumes:
       - .:/workspace:cached
     environment:
-    - DEVSVC=httpimporter
+    - APP_NAME=httpimporter
     - HTTP_ADDR=:3000
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_XCHG=pipeline.messages
@@ -29,31 +38,35 @@ services:
   measurements:
     build: .
     volumes:
-      - ..:/workspace:cached
+      - .:/workspace:cached
     environment:
-    - DEVSVC=measurements
-    - MS_HTTP_BASE=http://localhost:3000/measurements
-    - MS_HTTP_ADDR=:3000
-    - MS_DB_DSN=postgresql://user:sensorbucket@db:5432/measurements?sslmode=disable
-    - MS_AMQP_URL=amqp://guest:guest@mq:5672/
-    - MS_AMQP_EXCHANGE=pipeline.measurement.tx
-    - MS_AMQP_QUEUE=measurement_service_q
-    - MS_LOCATIONS_URL=http://locations:3000
+    - APP_NAME=measurements
+    - HTTP_BASE=http://localhost:3000/measurements
+    - HTTP_ADDR=:3000
+    - DB_DSN=postgresql://measurementservice:measurementservice@db:5432/measurementservice?sslmode=disable
+    - AMQP_HOST=amqp://guest:guest@mq:5672/
+    - AMQP_XCHG=pipeline.measurement.tx
+    - AMQP_QUEUE=measurement_service_q
 
-  locations:
+  worker_thethingsnetwork:
     build: .
     volumes:
-      - ..:/workspace:cached
+      - .:/workspace:cached
     environment:
-    - DEVSVC=locations
-    - LOCATION_SVC_HTTP_HOST=:3000
-    - LOCATION_SVC_WORKER_DB_DSN=postgresql://user:sensorbucket@db:5432/locations?sslmode=disable
+    - APP_NAME=the-things-network
+    - APP_TYPE=worker
+    - AMQP_HOST=amqp://guest:guest@mq:5672/
+    - AMQP_QUEUE=the-things-network
+    - AMQP_XCHG=pipeline.messages
+    - SVC_DEVICE=http://device:3000
 
   db:
     image: timescale/timescaledb-postgis:latest-pg12
     restart: unless-stopped
     ports:
       - 5432:5432
+    volumes:
+      - ./tools/postgres.d:/docker-entrypoint-initdb.d
     environment:
     - POSTGRES_USER=user
     - POSTGRES_PASSWORD=sensorbucket
@@ -71,7 +84,6 @@ services:
   mq:
     image: rabbitmq:3.8-management
     ports:
-      - 5672:5672
       - 15672:15672
 
   openapi:

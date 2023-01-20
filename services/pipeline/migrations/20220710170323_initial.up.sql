@@ -2,7 +2,7 @@ CREATE TABLE "pipelines" (
   "id" UUID NOT NULL PRIMARY KEY,
   "description" VARCHAR DEFAULT(''),
   "status" VARCHAR NOT NULL,
-  "last_status_change" TIMESTAMPZ NOT NULL
+  "last_status_change" TIMESTAMPTZ NOT NULL
 );
 
 CREATE TABLE "pipeline_steps" (
