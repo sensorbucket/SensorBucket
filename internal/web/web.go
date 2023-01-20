@@ -13,6 +13,7 @@ type APIResponse[T any] struct {
 	Message string `json:"message,omitempty"`
 	Data    T      `json:"data,omitempty"`
 }
+type APIResponseAny = APIResponse[any]
 
 // APIError is an API consumer friendly error
 type APIError struct {
