@@ -9,9 +9,9 @@ import (
 )
 
 // APIResponse ...
-type APIResponse struct {
-	Message string      `json:"message,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
+type APIResponse[T any] struct {
+	Message string `json:"message,omitempty"`
+	Data    T      `json:"data,omitempty"`
 }
 
 // APIError is an API consumer friendly error
