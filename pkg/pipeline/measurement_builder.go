@@ -68,6 +68,14 @@ func (b MeasurementBuilder) SetValue(v float64, measurementType string) Measurem
 	return b
 }
 
+func (b MeasurementBuilder) SetMetadata(meta map[string]any) MeasurementBuilder {
+	if b.err != nil {
+		return b
+	}
+	b.metadata = meta
+	return b
+}
+
 func (b MeasurementBuilder) Build() (Measurement, error) {
 	if b.err != nil {
 		return Measurement{}, b.err
