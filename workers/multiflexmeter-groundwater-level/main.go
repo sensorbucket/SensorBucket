@@ -18,9 +18,9 @@ import (
 
 var (
 	AMQP_QUEUE    = env.Must("AMQP_QUEUE")
-	AMQP_URL      = env.Must("AMQP_URL")
+	AMQP_HOST     = env.Must("AMQP_HOST")
 	AMQP_XCHG     = env.Must("AMQP_XCHG")
-	AMQP_PREFETCH = env.Must("AMQP_PREFETCH")
+	AMQP_PREFETCH = env.Could("AMQP_PREFETCH", "5")
 
 	ErrSensorNotFound = errors.New("sensor not found")
 )
@@ -36,12 +36,12 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-	publisher := mq.NewAMQPPublisher(AMQP_URL, AMQP_XCHG, func(c *amqp091.Channel) error {
+	publisher := mq.NewAMQPPublisher(AMQP_HOST, AMQP_XCHG, func(c *amqp091.Channel) error {
 		return c.ExchangeDeclare(AMQP_XCHG, "topic", true, false, false, false, nil)
 	})
 	go publisher.Start()
 
-	consumer := mq.NewAMQPConsumer(AMQP_URL, AMQP_QUEUE, func(c *amqp091.Channel) error {
+	consumer := mq.NewAMQPConsumer(AMQP_HOST, AMQP_QUEUE, func(c *amqp091.Channel) error {
 		_, err := c.QueueDeclare(AMQP_QUEUE, true, false, false, false, amqp091.Table{})
 		c.Qos(prefetch, 0, true)
 		return err

@@ -34,6 +34,7 @@ services:
     - HTTP_ADDR=:3000
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_XCHG=pipeline.messages
+    - SVC_PIPELINE=http://pipeline:3000
 
   measurements:
     build: .
@@ -60,9 +61,19 @@ services:
     - AMQP_XCHG=pipeline.messages
     - SVC_DEVICE=http://device:3000
 
+  worker_multiflexmeter:
+    build: .
+    volumes:
+      - .:/workspace:cached
+    environment:
+    - APP_NAME=multiflexmeter-groundwater-level
+    - APP_TYPE=worker
+    - AMQP_HOST=amqp://guest:guest@mq:5672/
+    - AMQP_QUEUE=multiflexmeter-groundwater-level
+    - AMQP_XCHG=pipeline.messages
+
   db:
     image: timescale/timescaledb-postgis:latest-pg12
-    restart: unless-stopped
     ports:
       - 5432:5432
     volumes:

@@ -20,7 +20,7 @@ import (
 
 var (
 	HTTP_ADDR    = env.Could("HTTP_ADDR", ":3000")
-	AMQP_URL     = env.Must("AMQP_URL")
+	AMQP_HOST    = env.Must("AMQP_HOST")
 	AMQP_XCHG    = env.Must("AMQP_XCHG")
 	SVC_PIPELINE = env.Must("SVC_PIPELINE")
 
@@ -39,7 +39,7 @@ func main() {
 
 func Run() error {
 	// Setup AMQP Producer
-	xchg := mq.NewAMQPPublisher(AMQP_URL, AMQP_XCHG, func(c *amqp.Channel) error {
+	xchg := mq.NewAMQPPublisher(AMQP_HOST, AMQP_XCHG, func(c *amqp.Channel) error {
 		return c.ExchangeDeclare(AMQP_XCHG, "topic", true, false, false, false, nil)
 	})
 	go xchg.Start()
@@ -84,7 +84,7 @@ func getPipelineSteps(id string) ([]string, error) {
 		return nil, &err
 	}
 
-    var p Pipeline
+	var p Pipeline
 	if err := json.NewDecoder(res.Body).Decode(&p); err != nil {
 		return nil, fmt.Errorf("could not parse pipeline service response: %w", err)
 	}
@@ -121,14 +121,15 @@ func httpPostUplink(xchg *mq.AMQPPublisher) http.HandlerFunc {
 		}
 
 		msgData, err := json.Marshal(&msg)
-        if err != nil {
-            web.HTTPError(rw, err)
-            return
-        }
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
 		xchg.Publish(step, amqp.Publishing{Body: msgData})
 
-		web.HTTPResponse(rw, http.StatusAccepted, &web.APIResponse{
+		web.HTTPResponse(rw, http.StatusAccepted, &web.APIResponseAny{
 			Message: "Received uplink message",
+			Data:    msg.ID,
 		})
 	}
 }

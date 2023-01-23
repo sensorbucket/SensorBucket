@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -26,6 +28,8 @@ var (
 	AMQP_XCHG     = env.Must("AMQP_XCHG")
 	AMQP_PREFETCH = env.Could("AMQP_PREFETCH", "5")
 	SVC_DEVICE    = env.Must("SVC_DEVICE")
+
+	ErrNoDeviceMatch = errors.New("no device in device service matches EUI of uplink")
 )
 
 func main() {
@@ -165,15 +169,35 @@ func fetchDeviceByEUI(eui string) (*pipeline.Device, error) {
 	filterJSON, _ := json.Marshal(filter)
 	filterQuery := url.QueryEscape(string(filterJSON))
 
-	res, err := http.Get(fmt.Sprintf("%s/devices/?configuration=%s", SVC_DEVICE, filterQuery))
+	url := fmt.Sprintf("%s/devices?configuration=%s", SVC_DEVICE, filterQuery)
+	res, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not perform request to device service: %w", err)
+	}
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("could not read device service response: %w", err)
 	}
 
-	var response web.APIResponse[pipeline.Device]
-	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
-		return nil, err
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		var response web.APIError
+		log.Println(string(body))
+		if err := json.Unmarshal(body, &response); err != nil {
+			return nil, fmt.Errorf("could not decode device service error response: %w", err)
+		}
+		return nil, &response
+	}
+	var response web.APIResponse[[]pipeline.Device]
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, fmt.Errorf("could not decode device service response: %w", err)
 	}
 
-	return &response.Data, nil
+	if len(response.Data) == 0 {
+		return nil, ErrNoDeviceMatch
+	}
+	if len(response.Data) > 1 {
+		log.Printf("[Warning] Expected 1 device to match %s but got %d devices\n", eui, len(response.Data))
+	}
+
+	return &response.Data[0], nil
 }
