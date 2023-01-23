@@ -26,7 +26,7 @@ func (e *APIError) Error() string {
 	return e.Message
 }
 
-func NewError(status int, message string, code string) error {
+func NewError(status int, message string, code string) *APIError {
 	return &APIError{
 		HTTPStatus: status,
 		Message:    message,
