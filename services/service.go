@@ -113,7 +113,7 @@ func httpPostUplink(xchg *mq.AMQPPublisher) http.HandlerFunc {
 		}
 
 		msg := pipeline.NewMessage(pipelineID.String(), steps)
-		msg.SetPayload(payload)
+		msg.Payload = payload
 		step, err := msg.NextStep()
 		if err != nil {
 			web.HTTPError(rw, err)

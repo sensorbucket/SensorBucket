@@ -130,7 +130,7 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 	if err := json.Unmarshal(msg.Payload, &ttn); err != nil {
 		return msg, err
 	}
-	builder := pipeline.NewMeasurementBuilder(msg)
+	builder := msg.NewMeasurement()
 
 	// Convert gateway signal strength and noise to measurements
 	for _, gw := range ttn.Uplink.RxMetaData {
@@ -140,8 +140,8 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 			continue
 		}
 		builder := builder.SetTimestamp(ts.Unix()).SetMetadata(map[string]any{"gateway_eui": gw.GatewayId.EUI})
-		builder.SetValue(gw.RSSI, "rssi").AppendTo(&msg)
-		builder.SetValue(gw.SNR, "snr").AppendTo(&msg)
+		builder.SetValue(gw.RSSI, "rssi").Add()
+		builder.SetValue(gw.SNR, "snr").Add()
 	}
 
 	// Match EUI to device
@@ -150,7 +150,7 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 		log.Printf("Could not fetch device for EUI: %v\n", err)
 	}
 	msg.Device = device
-	msg.SetPayload(ttn.Uplink.FrmPayload)
+	msg.Payload = ttn.Uplink.FrmPayload
 	ts, err := time.Parse(time.RFC3339, ttn.Timestamp)
 	if err != nil {
 		log.Printf("Error while parsing timestamp from uplink metadata: %v\n", err)

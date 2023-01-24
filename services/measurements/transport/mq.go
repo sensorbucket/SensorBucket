@@ -2,13 +2,13 @@ package transport
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
 	"github.com/rabbitmq/amqp091-go"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
+	deviceservice "sensorbucket.nl/sensorbucket/services/device/service"
 	"sensorbucket.nl/sensorbucket/services/measurements/service"
 )
 
@@ -48,7 +48,8 @@ func (t *MQTransport) Start() {
 		}
 		// If a location is set then add it to the base measurement
 		if pmsg.Device.Location != nil {
-			base.LocationID = &pmsg.Device.Location.ID
+			// Wil be removed anyway
+			//base.LocationID = &pmsg.Device.Location.ID
 			base.LocationName = &pmsg.Device.Location.Name
 			base.LocationLongitude = &pmsg.Device.Location.Longitude
 			base.LocationLatitude = &pmsg.Device.Location.Latitude
@@ -73,8 +74,8 @@ func (t *MQTransport) Start() {
 				continue
 			}
 
-			if msgMeas.SensorCode != nil {
-				sensor, err := getSensor(pmsg.Device, *msgMeas.SensorCode)
+			if msgMeas.SensorExternalID != nil {
+				sensor, err := (*deviceservice.Device)(pmsg.Device).GetSensorByExternalID(*msgMeas.SensorExternalID)
 				if err != nil {
 					log.Printf("Error: could not process measurement from pipeline message (%s) because: %v", pmsg.ID, err)
 					msg.Nack(false, false)
@@ -96,13 +97,4 @@ func (t *MQTransport) Start() {
 		}
 		msg.Ack(false)
 	}
-}
-
-func getSensor(dev *pipeline.Device, sensorCode string) (pipeline.Sensor, error) {
-	for _, s := range dev.Sensors {
-		if s.Code == sensorCode {
-			return s, nil
-		}
-	}
-	return pipeline.Sensor{}, fmt.Errorf("no sensor with code '%v' on device '%s", sensorCode, dev.Code)
 }

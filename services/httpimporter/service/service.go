@@ -67,7 +67,7 @@ func (h *HTTPImporter) httpPostUplink() http.HandlerFunc {
 		steps := pipelineModel.Steps
 
 		msg := pipeline.NewMessage(pipelineID.String(), steps)
-		msg.SetPayload(payload)
+		msg.Payload = payload
 
 		if err := h.queue.Publish(msg); err != nil {
 			web.HTTPError(rw, err)

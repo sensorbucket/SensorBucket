@@ -105,18 +105,16 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 		return msg, errors.New("incorrect payload header")
 	}
 
-	builder := pipeline.NewMeasurementBuilder(msg).AllowSensorNotFound()
-
 	// Get first measurement
 	millivolt, columnMeters, err := valueToMeasurements(data[2:])
 	if err != nil {
 		return msg, err
 	}
-	err = builder.SetSensor("0").SetValue(millivolt, "millivolt").AppendTo(&msg)
+	err = msg.NewMeasurement().SetSensor("0").SetValue(millivolt, "millivolt").Add()
 	if err != nil {
 		return msg, err
 	}
-	err = builder.SetSensor("0").SetValue(columnMeters, "watercolumn_meters").AppendTo(&msg)
+	err = msg.NewMeasurement().SetSensor("0").SetValue(columnMeters, "watercolumn_meters").Add()
 	if err != nil {
 		return msg, err
 	}
@@ -124,26 +122,17 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 	// First bit indicates if there is another measurement appended
 	if data[2]&0x80 > 0 {
 		millivolt, columnMeters, err := valueToMeasurements(data[5:])
-		err = builder.SetSensor("1").SetValue(millivolt, "millivolt").AppendTo(&msg)
+		err = msg.NewMeasurement().SetSensor("1").SetValue(millivolt, "millivolt").Add()
 		if err != nil {
 			return msg, err
 		}
-		err = builder.SetSensor("1").SetValue(columnMeters, "watercolumn_meters").AppendTo(&msg)
+		err = msg.NewMeasurement().SetSensor("1").SetValue(columnMeters, "watercolumn_meters").Add()
 		if err != nil {
 			return msg, err
 		}
 	}
 
 	return msg, nil
-}
-
-func getSensorCode(sensors []pipeline.Sensor, eid *string) (string, error) {
-	for _, s := range sensors {
-		if s.ExternalID == eid || (s.ExternalID != nil && eid != nil && *s.ExternalID == *eid) {
-			return s.Code, nil
-		}
-	}
-	return "", ErrSensorNotFound
 }
 
 func valueToMeasurements(data []byte) (millivolts, meters float64, err error) {
