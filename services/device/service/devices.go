@@ -166,6 +166,15 @@ func (d *Device) GetSensorByCode(code string) (*Sensor, error) {
 
 	return nil, ErrSensorNotFound
 }
+func (d *Device) GetSensorByExternalID(eid string) (*Sensor, error) {
+	for _, sensor := range d.Sensors {
+		if sensor.ExternalID != nil && *sensor.ExternalID == eid {
+			return &sensor, nil
+		}
+	}
+
+	return nil, ErrSensorNotFound
+}
 
 func (d *Device) DeleteSensor(sensor *Sensor) error {
 	sCount := len(d.Sensors)

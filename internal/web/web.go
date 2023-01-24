@@ -9,10 +9,11 @@ import (
 )
 
 // APIResponse ...
-type APIResponse struct {
-	Message string      `json:"message,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
+type APIResponse[T any] struct {
+	Message string `json:"message,omitempty"`
+	Data    T      `json:"data,omitempty"`
 }
+type APIResponseAny = APIResponse[any]
 
 // APIError is an API consumer friendly error
 type APIError struct {
@@ -25,7 +26,7 @@ func (e *APIError) Error() string {
 	return e.Message
 }
 
-func NewError(status int, message string, code string) error {
+func NewError(status int, message string, code string) *APIError {
 	return &APIError{
 		HTTPStatus: status,
 		Message:    message,
