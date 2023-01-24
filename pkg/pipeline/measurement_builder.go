@@ -3,33 +3,30 @@ package pipeline
 import "errors"
 
 var (
-	ErrSensorNotFound = errors.New("sensor not found")
-	ErrDeviceNotSet   = errors.New("device was required but not (yet) set")
+	ErrDeviceNotSet = errors.New("device was required but not (yet) set")
 )
 
 type MeasurementBuilder struct {
-	err                 error
-	message             Message
-	allowSensorNotFound bool
+	err     error
+	message *Message
 
-	timestamp       int64
-	value           float64
-	measurementType string
-	sensorCode      *string
-	metadata        map[string]any
+	timestamp        int64
+	value            float64
+	measurementType  string
+	sensorExternalID *string
+	metadata         map[string]any
 }
 
-func NewMeasurementBuilder(message Message) MeasurementBuilder {
+func (msg *Message) NewMeasurement() MeasurementBuilder {
+	return newMeasurementBuilder(msg)
+}
+
+func newMeasurementBuilder(msg *Message) MeasurementBuilder {
 	return MeasurementBuilder{
-		message:   message,
-		timestamp: message.Timestamp,
+		message:   msg,
+		timestamp: msg.Timestamp,
 		metadata:  make(map[string]any),
 	}
-}
-
-func (b MeasurementBuilder) AllowSensorNotFound() MeasurementBuilder {
-	b.allowSensorNotFound = true
-	return b
 }
 
 func (b MeasurementBuilder) SetTimestamp(ts int64) MeasurementBuilder {
@@ -44,17 +41,7 @@ func (b MeasurementBuilder) SetSensor(eid string) MeasurementBuilder {
 	if b.err != nil {
 		return b
 	}
-
-	if b.message.Device == nil {
-		b.err = ErrDeviceNotSet
-		return b
-	}
-	code, err := getSensor(b.message.Device.Sensors, eid)
-	if err != nil {
-		b.err = err
-		return b
-	}
-	b.sensorCode = &code
+	b.sensorExternalID = &eid
 
 	return b
 }
@@ -68,6 +55,14 @@ func (b MeasurementBuilder) SetValue(v float64, measurementType string) Measurem
 	return b
 }
 
+func (b MeasurementBuilder) SetMetadata(meta map[string]any) MeasurementBuilder {
+	if b.err != nil {
+		return b
+	}
+	b.metadata = meta
+	return b
+}
+
 func (b MeasurementBuilder) Build() (Measurement, error) {
 	if b.err != nil {
 		return Measurement{}, b.err
@@ -76,28 +71,16 @@ func (b MeasurementBuilder) Build() (Measurement, error) {
 		Timestamp:         b.timestamp,
 		Value:             b.value,
 		MeasurementTypeID: b.measurementType,
-		SensorCode:        b.sensorCode,
+		SensorExternalID:  b.sensorExternalID,
 		Metadata:          b.metadata,
 	}, nil
 }
 
-func (b MeasurementBuilder) AppendTo(msg *Message) error {
+func (b MeasurementBuilder) Add() error {
 	measurement, err := b.Build()
-	if b.allowSensorNotFound && errors.Is(err, ErrSensorNotFound) {
-		return nil
-	}
 	if err != nil {
 		return err
 	}
-	msg.Measurements = append(msg.Measurements, measurement)
+	b.message.Measurements = append(b.message.Measurements, measurement)
 	return nil
-}
-
-func getSensor(sensors []Sensor, eid string) (string, error) {
-	for _, s := range sensors {
-		if s.ExternalID != nil && *s.ExternalID == eid {
-			return s.Code, nil
-		}
-	}
-	return "", ErrSensorNotFound
 }

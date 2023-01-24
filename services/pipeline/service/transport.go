@@ -40,7 +40,7 @@ func (t *Transport) httpCreatePipeline() http.HandlerFunc {
 		var dto CreatePipelineDTO
 		if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
 			log.Printf("Failed to decode request body: %v\n", err)
-			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponse{Message: "Could not decode request body"})
+			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponseAny{Message: "Could not decode request body"})
 			return
 		}
 
@@ -51,7 +51,7 @@ func (t *Transport) httpCreatePipeline() http.HandlerFunc {
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusCreated, web.APIResponse{Message: "Created pipeline", Data: p})
+		web.HTTPResponse(rw, http.StatusCreated, web.APIResponseAny{Message: "Created pipeline", Data: p})
 	}
 }
 
@@ -60,13 +60,13 @@ func (t *Transport) httpUpdatePipeline() http.HandlerFunc {
 		var dto UpdatePipelineDTO
 		id := chi.URLParam(r, "id")
 		if _, err := uuid.Parse(id); err != nil {
-			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponse{Message: "id must be of UUID format"})
+			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponseAny{Message: "id must be of UUID format"})
 			return
 		}
 
 		if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
 			log.Printf("Failed to decode request body: %v\n", err)
-			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponse{Message: "Could not decode request body"})
+			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponseAny{Message: "Could not decode request body"})
 			return
 		}
 
@@ -76,7 +76,7 @@ func (t *Transport) httpUpdatePipeline() http.HandlerFunc {
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusCreated, web.APIResponse{Message: "Updated pipeline"})
+		web.HTTPResponse(rw, http.StatusCreated, web.APIResponseAny{Message: "Updated pipeline"})
 	}
 }
 
@@ -118,7 +118,7 @@ func (t *Transport) httpListPipelines() http.HandlerFunc {
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusOK, web.APIResponse{Message: "Listed pipelines", Data: p})
+		web.HTTPResponse(rw, http.StatusOK, web.APIResponseAny{Message: "Listed pipelines", Data: p})
 	}
 }
 
@@ -126,7 +126,7 @@ func (t *Transport) httpGetPipeline() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
 		if _, err := uuid.Parse(id); err != nil {
-			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponse{Message: "id must be of UUID format"})
+			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponseAny{Message: "id must be of UUID format"})
 			return
 		}
 
@@ -153,7 +153,7 @@ func (t *Transport) httpGetPipeline() http.HandlerFunc {
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusOK, web.APIResponse{Message: "Fetched pipeline", Data: p})
+		web.HTTPResponse(rw, http.StatusOK, web.APIResponseAny{Message: "Fetched pipeline", Data: p})
 	}
 }
 
@@ -161,7 +161,7 @@ func (t *Transport) httpDeletePipeline() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
 		if _, err := uuid.Parse(id); err != nil {
-			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponse{Message: "id must be of UUID format"})
+			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponseAny{Message: "id must be of UUID format"})
 			return
 		}
 
@@ -171,6 +171,6 @@ func (t *Transport) httpDeletePipeline() http.HandlerFunc {
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusOK, web.APIResponse{Message: "Pipeline set to inactive"})
+		web.HTTPResponse(rw, http.StatusOK, web.APIResponseAny{Message: "Pipeline set to inactive"})
 	}
 }

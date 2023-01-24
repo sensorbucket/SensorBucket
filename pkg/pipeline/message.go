@@ -1,46 +1,24 @@
 package pipeline
 
 import (
-	"encoding/json"
 	"errors"
 	"time"
 
 	"github.com/google/uuid"
+	deviceservice "sensorbucket.nl/sensorbucket/services/device/service"
 )
 
 var (
 	ErrMessageNoSteps = errors.New("pipeline message has no steps remaining")
 )
 
-type Device struct {
-	ID            int             `json:"id"`
-	Code          string          `json:"code"`
-	Description   string          `json:"description"`
-	Organisation  string          `json:"organisation"`
-	Configuration json.RawMessage `json:"configuration"`
-	Sensors       []Sensor        `json:"sensors"`
-	Location      *struct {
-		ID        int64   `json:"id"`
-		Name      string  `json:"name"`
-		Longitude float64 `json:"longitude"`
-		Latitude  float64 `json:"latitude"`
-	} `json:"location"`
-}
-
-type Sensor struct {
-	Code            string          `json:"code"`
-	Description     string          `json:"description"`
-	MeasurementType string          `json:"measurement_type"`
-	ExternalID      *string         `json:"external_id"`
-	Configuration   json.RawMessage `json:"configuration"`
-}
-
+type Device deviceservice.Device
 type Measurement struct {
 	Timestamp         int64          `json:"timestamp"`
 	Value             float64        `json:"value"`
 	Metadata          map[string]any `json:"metadata"`
 	MeasurementTypeID string         `json:"measurement_type_id"`
-	SensorCode        *string        `json:"sensor_code"`
+	SensorExternalID  *string        `json:"sensor_external_id"`
 }
 type Message struct {
 	ID            string        `json:"id"`
@@ -60,11 +38,6 @@ func NewMessage(pipelineID string, steps []string) *Message {
 		Timestamp:     time.Now().UnixMilli(),
 		Measurements:  []Measurement{},
 	}
-}
-
-func (m *Message) SetPayload(p []byte) *Message {
-	m.Payload = p
-	return m
 }
 
 func (m *Message) NextStep() (string, error) {

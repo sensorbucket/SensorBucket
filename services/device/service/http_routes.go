@@ -106,7 +106,7 @@ func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
 			web.HTTPError(rw, err)
 			return
 		}
-		web.HTTPResponse(rw, http.StatusOK, &web.APIResponse{
+		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
 			Message: "listed devices",
 			Data:    devices,
 		})
@@ -116,7 +116,7 @@ func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
 func (t *HTTPTransport) httpGetDevice() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		device := r.Context().Value(ctxDeviceKey).(*Device)
-		web.HTTPResponse(rw, http.StatusOK, &web.APIResponse{
+		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
 			Message: "Fetched device",
 			Data:    device,
 		})
@@ -137,7 +137,7 @@ func (t *HTTPTransport) httpCreateDevice() http.HandlerFunc {
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusCreated, &web.APIResponse{
+		web.HTTPResponse(rw, http.StatusCreated, &web.APIResponseAny{
 			Message: "Created new device",
 			Data:    dev,
 		})
@@ -153,7 +153,7 @@ func (t *HTTPTransport) httpDeleteDevice() http.HandlerFunc {
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusOK, &web.APIResponse{
+		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
 			Message: "Deleted device",
 		})
 	}
@@ -174,7 +174,7 @@ func (t *HTTPTransport) httpUpdateDevice() http.HandlerFunc {
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusOK, &web.APIResponse{
+		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
 			Message: "Updated device",
 		})
 	}
@@ -184,7 +184,7 @@ func (t *HTTPTransport) httpListSensors() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		device := r.Context().Value(ctxDeviceKey).(*Device)
 
-		web.HTTPResponse(rw, http.StatusOK, &web.APIResponse{
+		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
 			Message: "Listed sensors",
 			Data:    device.Sensors,
 		})
@@ -207,7 +207,7 @@ func (t *HTTPTransport) httpAddSensor() http.HandlerFunc {
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusCreated, &web.APIResponse{
+		web.HTTPResponse(rw, http.StatusCreated, &web.APIResponseAny{
 			Message: "Created new sensor for device",
 		})
 	}
@@ -228,7 +228,7 @@ func (t *HTTPTransport) httpDeleteSensor() http.HandlerFunc {
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusOK, &web.APIResponse{
+		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
 			Message: "Deleted sensor from device",
 		})
 	}
@@ -242,7 +242,7 @@ func (t *HTTPTransport) httpListLocations() http.HandlerFunc {
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusOK, &web.APIResponse{
+		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
 			Message: "Listed locations",
 			Data:    locations,
 		})

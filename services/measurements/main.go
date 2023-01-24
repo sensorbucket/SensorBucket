@@ -27,9 +27,9 @@ var (
 	HTTP_BASE     = env.Must("HTTP_BASE")
 	HTTP_ADDR     = env.Must("HTTP_ADDR")
 	DB_DSN        = env.Must("DB_DSN")
-	AMQP_HOST     = env.Must("AMQP_URL")
+	AMQP_HOST     = env.Must("AMQP_HOST")
 	AMQP_QUEUE    = env.Must("AMQP_QUEUE")
-	AMQP_PREFETCH = env.Must("AMQP_PREFETCH")
+	AMQP_PREFETCH = env.Could("AMQP_PREFETCH", "5")
 )
 
 func main() {
