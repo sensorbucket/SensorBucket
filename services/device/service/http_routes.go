@@ -23,11 +23,11 @@ type middleware = func(next http.Handler) http.Handler
 
 // HTTPTransport ...
 type HTTPTransport struct {
-	svc    *Service
+	svc    Service
 	router chi.Router
 }
 
-func NewHTTPTransport(svc *Service) *HTTPTransport {
+func NewHTTPTransport(svc Service) *HTTPTransport {
 	transport := &HTTPTransport{
 		svc:    svc,
 		router: chi.NewRouter(),

@@ -1,8 +1,6 @@
 package store
 
 import (
-	"fmt"
-
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"sensorbucket.nl/sensorbucket/services/device/service"
@@ -26,8 +24,8 @@ func newDeviceQueryBuilder() deviceQueryBuilder {
 		"organisation",
 		"configuration",
 		"location_description",
-		"ST_X(location::geometry) AS latitude",
-		"ST_Y(location::geometry) AS longitude",
+		"ST_X(location::geometry) AS longitude",
+		"ST_Y(location::geometry) AS latitude",
 	).From("devices")
 
 	return deviceQueryBuilder{query: q}
@@ -64,7 +62,6 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) ([]service.Device, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("Got query: %s\n", query)
 
 	// Fetch devices
 	if err := db.Select(&deviceModels, query, params...); err != nil {

@@ -3,7 +3,7 @@
 BEGIN;
 ALTER TABLE "devices" 
     ADD COLUMN "location" geography,
-    ADD COLUMN "location_description" VARCHAR;
+    ADD COLUMN "location_description" VARCHAR DEFAULT('') NOT NULL;
 
 UPDATE "devices" SET 
     "location" = loc."location",

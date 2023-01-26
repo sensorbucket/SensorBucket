@@ -45,7 +45,15 @@ func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) 
 }
 
 func (s *PSQLStore) createDevice(dev *service.Device) error {
-	if err := s.db.Get(&dev.ID, "INSERT INTO devices (code, description, organisation, configuration) VALUES ($1, $2, $3, $4) RETURNING id", dev.Code, dev.Description, dev.Organisation, dev.Configuration); err != nil {
+	if err := s.db.Get(&dev.ID,
+		`
+			INSERT INTO devices (code, description, organisation, configuration, location, location_description)
+			VALUES ($1, $2, $3, $4, ST_POINT($5, $6), $7)
+			RETURNING id
+		`,
+		dev.Code, dev.Description, dev.Organisation, dev.Configuration,
+		dev.Longitude, dev.Latitude, dev.LocationDescription,
+	); err != nil {
 		return err
 	}
 	return nil
@@ -71,8 +79,8 @@ func (s *PSQLStore) Find(id int) (*service.Device, error) {
 
 func (s *PSQLStore) updateDevice(dev *service.Device) error {
 	if _, err := s.db.Exec(
-		"UPDATE devices SET description=$2, configuration=$3 WHERE id=$1",
-		dev.ID, dev.Description, dev.Configuration,
+		"UPDATE devices SET description=$2, configuration=$3, location=ST_POINT($4, $5), location_description=$6 WHERE id=$1",
+		dev.ID, dev.Description, dev.Configuration, dev.Longitude, dev.Latitude, dev.LocationDescription,
 	); err != nil {
 		return err
 	}

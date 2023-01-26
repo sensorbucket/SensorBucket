@@ -16,6 +16,11 @@ paths:
     get:
       operationId: ListDevices
       summary: Fetch list of devices
+      description: |
+        Fetch a list of devices.
+        Location based filtering is either by bounding box or within radius from a position. 
+
+        To filter on bounding box, supply the top,left,bottom and right coordinates of the bounding box as query parameters. To filter by radius supply the longitude,latitude and distance query parameters. If both are supplied the bounding box query is discarded. 
       tags: ["Devices"]
       parameters:
         - in: query
@@ -24,6 +29,34 @@ paths:
             type: object
         - in: query
           name: location_id
+          schema:
+            type: number
+        - in: query
+          name: top
+          schema:
+            type: number
+        - in: query
+          name: left
+          schema:
+            type: number
+        - in: query
+          name: right
+          schema:
+            type: number
+        - in: query
+          name: bottom
+          schema:
+            type: number
+        - in: query
+          name: latitude
+          schema:
+            type: number
+        - in: query
+          name: longitude
+          schema:
+            type: number
+        - in: query
+          name: distance
           schema:
             type: number
       responses:
@@ -259,26 +292,6 @@ paths:
                   message:
                     type: string
                     example: Device not found
-  /locations:
-    get:
-      operationId: ListLocations
-      summary: List all locations
-      tags: ["Locations"]
-      responses:
-        200:
-          description: Listed locations
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Listed locations
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/locationDTO'
 
   /measurements:
     get:
@@ -534,6 +547,15 @@ components:
         organisation:
           type: string
           example: provincie_zeeland
+        latitude:
+          type: number
+          example: 1.2345
+        longitude:
+          type: number
+          example: 1.2345
+        location_description:
+          type: string
+          example: "Description of location"
         configuration:
           type: object
           example:
@@ -544,6 +566,15 @@ components:
           description:
             type: number
             example: 1
+          latitude:
+            type: number
+            example: 1.2345
+          longitude:
+            type: number
+            example: 1.2345
+          location_description:
+            type: string
+            example: "Description of location"
           configuration:
             type: object
             example:
@@ -567,30 +598,19 @@ components:
           type: object
           example:
             eui: "060708090A0B0C0D"
-        location:
-          $ref: '#/components/schemas/locationDTO'
+        latitude:
+          type: number
+          example: 1.2345
+        longitude:
+          type: number
+          example: 1.2345
+        location_description:
+          type: string
+          example: "Description of location"
         sensors:
           type: array
           items:
             $ref: '#/components/schemas/sensorDTO'
-    locationDTO:
-      type: object
-      properties:
-        id:
-          type: number
-          example: 1
-        name:
-          type: string
-          example: Bridgeton Waters
-        organisation:
-          type: string
-          example: provincie_zeeland
-        longitude:
-          type: number
-          example: 50.12345678
-        latitude:
-          type: number
-          example: 3.12345678
     createSensorDTO:
       type: object
       properties:
@@ -735,7 +755,4 @@ security:
   - Authorization: []
 tags:
   - name: Devices
-  - name: Locations
   - name: Pipelines
-  - name: Measurements
-  - name: Uplink

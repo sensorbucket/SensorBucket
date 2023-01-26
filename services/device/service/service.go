@@ -1,5 +1,7 @@
 package service
 
+//go:generate moq -pkg service_test -out mock_test.go . Store Service
+
 import (
 	"context"
 	"encoding/json"
@@ -13,13 +15,23 @@ type Store interface {
 	Save(dev *Device) error
 	Delete(dev *Device) error
 }
-
-type Service struct {
+type Service interface {
+	ListDevices(ctx context.Context, filter DeviceFilter) ([]Device, error)
+	ListInRange(ctx context.Context, lr LocationRange, filter DeviceFilter) ([]Device, error)
+	ListInBoundingBox(ctx context.Context, bb BoundingBox, filter DeviceFilter) ([]Device, error)
+	CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error)
+	GetDevice(ctx context.Context, id int) (*Device, error)
+	AddSensor(ctx context.Context, dev *Device, dto NewSensorOpts) error
+	DeleteSensor(ctx context.Context, dev *Device, sensor *Sensor) error
+	UpdateDevice(ctx context.Context, dev *Device, opt UpdateDeviceOpts) error
+	DeleteDevice(ctx context.Context, dev *Device) error
+}
+type ServiceImpl struct {
 	store Store
 }
 
-func New(store Store) *Service {
-	return &Service{
+func New(store Store) *ServiceImpl {
+	return &ServiceImpl{
 		store: store,
 	}
 }
@@ -39,20 +51,20 @@ type LocationRange struct {
 	Distance  float64 `json:"range"`
 }
 
-func (s *Service) ListDevices(ctx context.Context, filter DeviceFilter) ([]Device, error) {
+func (s *ServiceImpl) ListDevices(ctx context.Context, filter DeviceFilter) ([]Device, error) {
 	devices, err := s.store.List(filter)
 	return devices, err
 }
-func (s *Service) ListInRange(ctx context.Context, lr LocationRange, filter DeviceFilter) ([]Device, error) {
+func (s *ServiceImpl) ListInRange(ctx context.Context, lr LocationRange, filter DeviceFilter) ([]Device, error) {
 	devices, err := s.store.ListInRange(lr, filter)
 	return devices, err
 }
-func (s *Service) ListInBoundingBox(ctx context.Context, bb BoundingBox, filter DeviceFilter) ([]Device, error) {
+func (s *ServiceImpl) ListInBoundingBox(ctx context.Context, bb BoundingBox, filter DeviceFilter) ([]Device, error) {
 	devices, err := s.store.ListInBoundingBox(bb, filter)
 	return devices, err
 }
 
-func (s *Service) CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error) {
+func (s *ServiceImpl) CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error) {
 	dev, err := NewDevice(dto)
 	if err != nil {
 		return nil, err
@@ -63,7 +75,7 @@ func (s *Service) CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device,
 	return dev, nil
 }
 
-func (s *Service) GetDevice(ctx context.Context, id int) (*Device, error) {
+func (s *ServiceImpl) GetDevice(ctx context.Context, id int) (*Device, error) {
 	dev, err := s.store.Find(id)
 	if err != nil {
 		return nil, err
@@ -74,7 +86,7 @@ func (s *Service) GetDevice(ctx context.Context, id int) (*Device, error) {
 	return dev, nil
 }
 
-func (s *Service) AddSensor(ctx context.Context, dev *Device, dto NewSensorOpts) error {
+func (s *ServiceImpl) AddSensor(ctx context.Context, dev *Device, dto NewSensorOpts) error {
 	if err := dev.AddSensor(dto); err != nil {
 		return err
 	}
@@ -84,7 +96,7 @@ func (s *Service) AddSensor(ctx context.Context, dev *Device, dto NewSensorOpts)
 	return nil
 }
 
-func (s *Service) DeleteSensor(ctx context.Context, dev *Device, sensor *Sensor) error {
+func (s *ServiceImpl) DeleteSensor(ctx context.Context, dev *Device, sensor *Sensor) error {
 	if err := dev.DeleteSensor(sensor); err != nil {
 		return err
 	}
@@ -95,13 +107,25 @@ func (s *Service) DeleteSensor(ctx context.Context, dev *Device, sensor *Sensor)
 }
 
 type UpdateDeviceOpts struct {
-	Description   *string         `json:"description"`
-	Configuration json.RawMessage `json:"configuration"`
+	Description         *string         `json:"description"`
+	Longitude           *float64        `json:"longitude"`
+	Latitude            *float64        `json:"latitude"`
+	LocationDescription *string         `json:"location_description"`
+	Configuration       json.RawMessage `json:"configuration"`
 }
 
-func (s *Service) UpdateDevice(ctx context.Context, dev *Device, opt UpdateDeviceOpts) error {
+func (s *ServiceImpl) UpdateDevice(ctx context.Context, dev *Device, opt UpdateDeviceOpts) error {
 	if opt.Description != nil {
 		dev.Description = *opt.Description
+	}
+	if opt.Latitude != nil {
+		dev.Latitude = *opt.Latitude
+	}
+	if opt.Longitude != nil {
+		dev.Longitude = *opt.Longitude
+	}
+	if opt.LocationDescription != nil {
+		dev.LocationDescription = *opt.LocationDescription
 	}
 	if opt.Configuration != nil {
 		dev.Configuration = opt.Configuration
@@ -113,7 +137,7 @@ func (s *Service) UpdateDevice(ctx context.Context, dev *Device, opt UpdateDevic
 	return nil
 }
 
-func (s *Service) DeleteDevice(ctx context.Context, dev *Device) error {
+func (s *ServiceImpl) DeleteDevice(ctx context.Context, dev *Device) error {
 	if err := s.store.Delete(dev); err != nil {
 		return err
 	}
