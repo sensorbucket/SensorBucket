@@ -46,3 +46,32 @@ func TestServiceDeviceUpdates(t *testing.T) {
 	assert.EqualValues(t, newDevice.LocationDescription, *updateDTO.LocationDescription)
 	assert.EqualValues(t, newDevice.Configuration, updateDTO.Configuration)
 }
+
+func TestServiceCreateDevice(t *testing.T) {
+	newDTO := service.NewDeviceOpts{
+		Code:                "1234",
+		Description:         "description_a",
+		Organisation:        "organisation_a",
+		Configuration:       []byte("{}"),
+		Latitude:            10,
+		Longitude:           20,
+		LocationDescription: "location_description_a",
+	}
+	var storedDev *service.Device
+	store := &StoreMock{SaveFunc: func(dev *service.Device) error {
+		storedDev = dev
+		return nil
+	}}
+	svc := service.New(store)
+
+	_, err := svc.CreateDevice(context.Background(), newDTO)
+	assert.NoError(t, err)
+	assert.EqualValues(t, newDTO.Code, storedDev.Code)
+	assert.EqualValues(t, newDTO.Organisation, storedDev.Organisation)
+	assert.EqualValues(t, newDTO.Description, storedDev.Description)
+	assert.EqualValues(t, newDTO.Latitude, storedDev.Latitude)
+	assert.EqualValues(t, newDTO.Longitude, storedDev.Longitude)
+	assert.EqualValues(t, newDTO.LocationDescription, storedDev.LocationDescription)
+	assert.EqualValues(t, newDTO.Configuration, storedDev.Configuration)
+	assert.Len(t, storedDev.Sensors, 0)
+}
