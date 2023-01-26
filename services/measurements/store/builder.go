@@ -21,10 +21,12 @@ func (ib *insertBuilder) SetUplinkMessageID(id string) *insertBuilder {
 	ib.values["uplink_message_id"] = id
 	return ib
 }
-func (ib *insertBuilder) SetDevice(id int, code, description string) *insertBuilder {
+func (ib *insertBuilder) SetDevice(id int, code, description, locationDescription string, latitude, longitude float64) *insertBuilder {
 	ib.values["device_id"] = id
 	ib.values["device_code"] = code
 	ib.values["device_description"] = description
+	ib.values["device_location_description"] = locationDescription
+	ib.values["device_location"] = squirrel.Expr("ST_SETSRID(ST_POINT(?,?),4326)", longitude, latitude)
 	return ib
 }
 func (ib *insertBuilder) SetTimestamp(timestamp time.Time) *insertBuilder {
@@ -49,15 +51,6 @@ func (ib *insertBuilder) TrySetSensor(code, description, externalID *string) *in
 	ib.values["sensor_code"] = code
 	ib.values["sensor_description"] = description
 	ib.values["sensor_external_id"] = externalID
-	return ib
-}
-func (ib *insertBuilder) TrySetLocation(id *int64, name *string, longitude, latitude *float64) *insertBuilder {
-	if id == nil || name == nil || longitude == nil || latitude == nil {
-		return ib
-	}
-	ib.values["location_id"] = *id
-	ib.values["location_name"] = *name
-	ib.values["location_coordinates"] = squirrel.Expr("ST_SETSRID(ST_POINT(?,?),4326)", *longitude, *latitude)
 	return ib
 }
 func (ib *insertBuilder) TrySetCoordinates(longitude, latitude *float64) *insertBuilder {

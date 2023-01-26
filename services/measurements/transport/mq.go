@@ -40,19 +40,14 @@ func (t *MQTransport) Start() {
 
 		// Create a partial measurement which contains properties that are the same for each measurement
 		base := service.Measurement{
-			UplinkMessageID:     pmsg.ID,
-			DeviceID:            pmsg.Device.ID,
-			DeviceCode:          pmsg.Device.Code,
-			DeviceDescription:   pmsg.Device.Description,
-			DeviceConfiguration: pmsg.Device.Configuration,
-		}
-		// If a location is set then add it to the base measurement
-		if pmsg.Device.Location != nil {
-			// Wil be removed anyway
-			//base.LocationID = &pmsg.Device.Location.ID
-			base.LocationName = &pmsg.Device.Location.Name
-			base.LocationLongitude = &pmsg.Device.Location.Longitude
-			base.LocationLatitude = &pmsg.Device.Location.Latitude
+			UplinkMessageID:           pmsg.ID,
+			DeviceID:                  pmsg.Device.ID,
+			DeviceCode:                pmsg.Device.Code,
+			DeviceDescription:         pmsg.Device.Description,
+			DeviceConfiguration:       pmsg.Device.Configuration,
+			DeviceLocationDescription: &pmsg.Device.LocationDescription,
+			DeviceLatitude:            &pmsg.Device.Latitude,
+			DeviceLongitude:           &pmsg.Device.Longitude,
 		}
 
 		// Loop over the measurements and map them to the internal model

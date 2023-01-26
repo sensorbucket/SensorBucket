@@ -13,26 +13,25 @@ var (
 )
 
 type Measurement struct {
-	UplinkMessageID     string          `json:"uplink_message_id"`
-	DeviceID            int             `json:"device_id"`
-	DeviceCode          string          `json:"device_code"`
-	DeviceDescription   string          `json:"device_description"`
-	DeviceConfiguration json.RawMessage `json:"device_configuration"`
-	Timestamp           time.Time       `json:"timestamp"`
-	Value               float64         `json:"value"`
-	MeasurementType     string          `json:"measurement_type"`
-	MeasurementTypeUnit string          `json:"measurement_type_unit"`
-	Metadata            json.RawMessage `json:"metadata"`
-	Longitude           *float64        `json:"longitude"`
-	Latitude            *float64        `json:"latitude"`
-	LocationID          *int64          `json:"location_id"`
-	LocationName        *string         `json:"location_name"`
-	LocationLongitude   *float64        `json:"location_longitude"`
-	LocationLatitude    *float64        `json:"location_latitude"`
-	SensorCode          *string         `json:"sensor_code"`
-	SensorDescription   *string         `json:"sensor_description"`
-	SensorExternalID    *string         `json:"sensor_external_id"`
-	SensorConfiguration json.RawMessage `json:"sensor_configuration"`
+	UplinkMessageID           string          `json:"uplink_message_id"`
+	DeviceID                  int             `json:"device_id"`
+	DeviceCode                string          `json:"device_code"`
+	DeviceDescription         string          `json:"device_description"`
+	DeviceConfiguration       json.RawMessage `json:"device_configuration"`
+	Timestamp                 time.Time       `json:"timestamp"`
+	Value                     float64         `json:"value"`
+	MeasurementType           string          `json:"measurement_type"`
+	MeasurementTypeUnit       string          `json:"measurement_type_unit"`
+	Metadata                  json.RawMessage `json:"metadata"`
+	Longitude                 *float64        `json:"longitude"`
+	Latitude                  *float64        `json:"latitude"`
+	DeviceLocationDescription string          `json:"device_location_description"`
+	DeviceLongitude           float64         `json:"device_longitude"`
+	DeviceLatitude            float64         `json:"device_latitude"`
+	SensorCode                *string         `json:"sensor_code"`
+	SensorDescription         *string         `json:"sensor_description"`
+	SensorExternalID          *string         `json:"sensor_external_id"`
+	SensorConfiguration       json.RawMessage `json:"sensor_configuration"`
 }
 
 func (m *Measurement) Validate() error {
@@ -55,7 +54,6 @@ func (m *Measurement) Validate() error {
 type QueryFilters struct {
 	DeviceIDs        []string
 	SensorCodes      []string
-	LocationIDs      []int
 	MeasurementTypes []string
 }
 
@@ -95,15 +93,9 @@ type LocationData struct {
 	Latitude  float64
 }
 
-// LocationService is used to fetch location for an asset
-type LocationService interface {
-	FindLocationID(thingURN string) (LocationData, error)
-}
-
 // Service is the measurement service which stores measurement data.
 type Service struct {
-	store     MeasurementStore
-	locations LocationService
+	store MeasurementStore
 }
 
 func New(store MeasurementStore) *Service {

@@ -29,13 +29,12 @@ func NewPSQL(db *sqlx.DB) *MeasurementStorePSQL {
 func (s *MeasurementStorePSQL) Insert(m service.Measurement) error {
 	query, params, err := newInsertBuilder().
 		SetUplinkMessageID(m.UplinkMessageID).
-		SetDevice(m.DeviceID, m.DeviceCode, m.DeviceDescription).
+		SetDevice(m.DeviceID, m.DeviceCode, m.DeviceDescription, m.DeviceLocationDescription, m.DeviceLatitude, m.DeviceLongitude).
 		SetTimestamp(m.Timestamp).
 		SetValue(m.Value).
 		SetMeasurementType(m.MeasurementType, m.MeasurementTypeUnit).
 		SetMetadata(m.Metadata).
 		TrySetSensor(m.SensorCode, m.SensorDescription, m.SensorExternalID).
-		TrySetLocation(m.LocationID, m.LocationName, m.LocationLongitude, m.LocationLatitude).
 		TrySetCoordinates(m.Longitude, m.Latitude).
 		Build()
 	if err != nil {
@@ -60,6 +59,9 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 		"device_id",
 		"device_code",
 		"device_description",
+		"device_location_description",
+		"ST_X(device_location::geometry) as device_longitude",
+		"ST_Y(device_location::geometry) as device_latitude",
 		"sensor_code",
 		"sensor_description",
 		"sensor_external_id",
@@ -67,10 +69,8 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 		"value",
 		"measurement_type",
 		"measurement_type_unit",
-		"location_id",
-		"location_name",
-		"ST_X(location_coordinates::geometry) as location_lng",
-		"ST_Y(location_coordinates::geometry) as location_lat",
+		"ST_X(location::geometry) as longitude",
+		"ST_Y(location::geometry) as latitude",
 		"metadata",
 	).
 		From("measurements").
@@ -95,10 +95,6 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 	if len(query.Filters.SensorCodes) > 0 {
 		q = q.Where(sq.Eq{"sensor_code": query.Filters.SensorCodes})
 	}
-	if len(query.Filters.LocationIDs) > 0 {
-		q = q.Where(sq.Eq{"location_id": query.Filters.LocationIDs})
-	}
-
 	rows, err := q.RunWith(s.db).Query()
 	if err != nil {
 		return nil, nil, err
@@ -114,6 +110,9 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 			&m.DeviceID,
 			&m.DeviceCode,
 			&m.DeviceDescription,
+			&m.DeviceLocationDescription,
+			&m.DeviceLongitude,
+			&m.DeviceLatitude,
 			&m.SensorCode,
 			&m.SensorDescription,
 			&m.SensorExternalID,
@@ -121,10 +120,8 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 			&m.Value,
 			&m.MeasurementType,
 			&m.MeasurementTypeUnit,
-			&m.LocationID,
-			&m.LocationName,
-			&m.LocationLongitude,
-			&m.LocationLatitude,
+			&m.Longitude,
+			&m.Latitude,
 			&m.Metadata,
 		)
 		if err != nil {
