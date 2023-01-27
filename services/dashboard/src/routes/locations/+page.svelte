@@ -5,10 +5,13 @@
 	import Table from '$lib/Table.svelte';
 	import Map from '$lib/Map.svelte';
 	import Marker from '$lib/MapMarker.svelte';
+	import MapLayer from '$lib/MapLayer.svelte';
+	import MapLayerWms from '$lib/MapLayerWMS.svelte';
 
-	const { locations } = $page.data;
+	const locations = $page.data.locations as Location[];
 
 	let selectedLocation: Location | null = null;
+	let viewLocation: [number, number, number] = [51.55, 3.89, 9];
 	let devicesP: Promise<Device[]> | null = null;
 	$: {
 		if (selectedLocation != null) {
@@ -22,6 +25,13 @@
 		const device = e.detail;
 		goto('devices/' + device.id);
 	};
+	const onLocationSelect = (loc: Location, moveView = true) => {
+		selectedLocation = loc;
+		if (!moveView) return;
+		viewLocation = [selectedLocation.latitude, selectedLocation.longitude, 14];
+	};
+
+	let usePDOK = false;
 </script>
 
 <div class="grid grid-cols-12 gap-6">
@@ -30,22 +40,38 @@
 		<hr class="my-1" />
 		<Table
 			data={locations}
-			fields={['id', 'name', ['Coordinates', (loc) => loc.latitude + ', ' + loc.longitude]]}
-			on:select={(e) => (selectedLocation = e.detail)}
+			fields={[
+				'id',
+				'name',
+				['Coordinates', (loc) => loc.latitude.toFixed(4) + ', ' + loc.longitude.toFixed(4)]
+			]}
+			on:select={(e) => onLocationSelect(e.detail)}
 			isSelected={(loc) => loc.id === selectedLocation?.id}
 		/>
 	</div>
 
 	<div class="rounded bg-white p-4 col-span-8">
-		<h2 class="text-lg">Overview</h2>
+		<div class="flex justify-between">
+			<h2 class="text-lg">Overview</h2>
+			<button
+				class="px-2 py-1 rounded bg-primary-400 text-white text-sm"
+				class:bg-primary-600={usePDOK}
+				on:click|preventDefault={() => (usePDOK = !usePDOK)}>Use PDOK</button
+			>
+		</div>
 		<hr class="my-1" />
-		<Map
-			view={selectedLocation
-				? [selectedLocation.latitude, selectedLocation.longitude, 13]
-				: [51.55569000377443, 3.8900708007812504, 9]}
-		>
+		<Map view={viewLocation}>
+			{#if usePDOK}
+				<MapLayerWms />
+			{:else}
+				<MapLayer />
+			{/if}
 			{#each locations as loc}
-				<Marker location={[loc.latitude, loc.longitude]} />
+				<Marker
+					location={[loc.latitude, loc.longitude]}
+					on:click={() => onLocationSelect(loc, false)}
+					colorClass={selectedLocation?.id === loc.id ? 'text-rose-500' : 'text-primary-500'}
+				/>
 			{/each}
 		</Map>
 	</div>

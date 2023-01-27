@@ -4,6 +4,7 @@
 	import Map from '$lib/Map.svelte';
 	import Marker from '$lib/MapMarker.svelte';
 	import type { Device } from '$lib/models';
+	import MapLayer from '$lib/MapLayer.svelte';
 	export let data: PageData;
 	const { devices } = data;
 
@@ -37,13 +38,10 @@
 			<Map
 				view={selectedDevice?.location
 					? [selectedDevice.location.latitude, selectedDevice.location.longitude, 14]
-					: [51.55569000377443, 3.8900708007812504, 9]}
+					: [51.55, 3.89, 9]}
 			>
-				{#if selectedDevice && selectedDevice.location}
-					<Marker
-						location={[selectedDevice.location.latitude, selectedDevice.location.longitude]}
-					/>
-				{/if}
+				<MapLayer />
+				<Marker location={[selectedDevice.location.latitude, selectedDevice.location.longitude]} />
 			</Map>
 		{:else if selectedDevice && !selectedDevice.location}
 			<section class="text-center text-gray-300 text-4xl py-12">

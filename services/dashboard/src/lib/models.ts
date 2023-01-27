@@ -26,12 +26,12 @@ export interface Measurement {
 	device_id: number;
 	device_code: string;
 	device_description: string;
-	device_configuration: Object;
+	device_configuration: Record<string, string | number | boolean>;
 	timestamp: string;
 	value: number;
 	measurement_type: string;
 	measurement_unit: string;
-	metadata: Object;
+	metadata: Record<string, string | number | boolean>;
 	longitude: number | null;
 	latitude: number | null;
 	location_id: number;
@@ -41,5 +41,5 @@ export interface Measurement {
 	sensor_code: string;
 	sensor_description: string;
 	sensor_external_id: string | null;
-	sensor_configuration: Object | null;
+	sensor_configuration: Record<string, string | number | boolean>;
 }

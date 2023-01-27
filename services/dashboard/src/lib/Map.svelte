@@ -14,9 +14,6 @@
 
 	function useMap(container: HTMLElement) {
 		map = L.map(container);
-		L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(
-			map
-		);
 		return {
 			destroy: () => {
 				map?.remove();
