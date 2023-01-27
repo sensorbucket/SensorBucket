@@ -1,12 +1,12 @@
 version: '3'
 
 services:
-  apigateway:
-    image: nginx:alpine
+  caddy:
+    image: caddy:alpine
     ports:
       - 3000:80
     volumes:
-      - ./tools/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./tools/caddy:/etc/caddy
 
   dashboard:
     build: 
@@ -103,14 +103,11 @@ services:
 
   mq:
     image: rabbitmq:3.8-management
-    ports:
-      - 15672:15672
 
   openapi:
     image: swaggerapi/swagger-editor
     environment:
-      - URL=/openapi/ref/api.yaml
-      - BASE_URL=/openapi
+      - URL=/dev/api/ref/api.yaml
     volumes:
       - ./tools/openapi/ref:/usr/share/nginx/html/ref
 
