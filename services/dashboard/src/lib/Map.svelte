@@ -5,6 +5,7 @@
 	const dispatch = createEventDispatcher();
 	import { setContext } from 'svelte';
 	import { layerGroupKey, mapKey } from './map';
+	import type { BoundingBox } from './models';
 
 	type View = [number, number, number];
 	export let view: View;
@@ -20,13 +21,12 @@
 		// Dispatch viewChange event with BoundingBox
 		map.on('moveend', () => {
 			const bounds = map!.getBounds();
-			const detail = {
-				top: bounds.getNorth(),
-				right: bounds.getEast(),
-				bottom: bounds.getSouth(),
-				left: bounds.getWest()
-			};
-			dispatch('viewChange', detail);
+			dispatch('viewChange', {
+				north: bounds.getNorth(),
+				east: bounds.getEast(),
+				south: bounds.getSouth(),
+				west: bounds.getWest()
+			} satisfies BoundingBox);
 		});
 
 		// cleanup

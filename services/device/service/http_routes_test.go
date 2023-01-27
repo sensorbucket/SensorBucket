@@ -43,16 +43,16 @@ func TestHTTPListDeviceUsesBoundingBox(t *testing.T) {
 		},
 	}
 	expectedBB := service.BoundingBox{
-		Top:    1,
-		Right:  2,
-		Bottom: 3,
-		Left:   4,
+		North: 1,
+		East:  2,
+		South: 3,
+		West:  4,
 	}
 	transport := service.NewHTTPTransport(svc)
 	url := fmt.Sprintf(
-		"/devices?top=%f&left=%f&bottom=%f&right=%f",
-		expectedBB.Top, expectedBB.Left,
-		expectedBB.Bottom, expectedBB.Right,
+		"/devices?north=%f&west=%f&south=%f&east=%f",
+		expectedBB.North, expectedBB.West,
+		expectedBB.South, expectedBB.East,
 	)
 	req := httptest.NewRequest("GET", url, nil)
 	rw := httptest.NewRecorder()
@@ -121,7 +121,7 @@ func TestHTTPListDeviceUsesInRangeOverBoundingBox(t *testing.T) {
 	}
 	transport := service.NewHTTPTransport(svc)
 	url := fmt.Sprintf(
-		"/devices?latitude=%f&longitude=%f&distance=%f&top=1&left=1&right=1&bottom=1",
+		"/devices?latitude=%f&longitude=%f&distance=%f&north=1&west=1&east=1&south=1",
 		expectedLR.Latitude, expectedLR.Longitude, expectedLR.Distance,
 	)
 	req := httptest.NewRequest("GET", url, nil)

@@ -42,7 +42,7 @@ func (b deviceQueryBuilder) WithinBoundingBox(bb service.BoundingBox) deviceQuer
 	// TODO: check if coordinates are valid?
 	b.query = b.query.Where(
 		`location && ST_MakeEnvelope(?, ?, ?, ?)`,
-		bb.Left, bb.Top, bb.Bottom, bb.Right,
+		bb.West, bb.North, bb.South, bb.East,
 	)
 	return b
 }

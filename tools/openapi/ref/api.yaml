@@ -20,7 +20,7 @@ paths:
         Fetch a list of devices.
         Location based filtering is either by bounding box or within radius from a position. 
 
-        To filter on bounding box, supply the top,left,bottom and right coordinates of the bounding box as query parameters. To filter by radius supply the longitude,latitude and distance query parameters. If both are supplied the bounding box query is discarded. 
+        To filter on bounding box, supply the north,east,south,west coordinates of the bounding box as query parameters. To filter by radius supply the longitude,latitude and distance query parameters. If both are supplied the bounding box query is discarded. 
       tags: ["Devices"]
       parameters:
         - in: query
@@ -32,19 +32,19 @@ paths:
           schema:
             type: number
         - in: query
-          name: top
+          name: north
           schema:
             type: number
         - in: query
-          name: left
+          name: west
           schema:
             type: number
         - in: query
-          name: right
+          name: east
           schema:
             type: number
         - in: query
-          name: bottom
+          name: south
           schema:
             type: number
         - in: query

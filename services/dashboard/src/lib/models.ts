@@ -3,10 +3,10 @@ export interface APIResponse<T> {
     data: T;
 }
 export interface BoundingBox {
-    top: number;
-    right: number;
-    bottom: number;
-    left: number;
+    north: number;
+    east: number;
+    south: number;
+    west: number;
 }
 export interface Location {
     id: number;

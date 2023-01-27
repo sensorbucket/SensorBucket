@@ -87,24 +87,24 @@ func parseBoundingBoxRequest(r *http.Request) (BoundingBox, error) {
 	var bb BoundingBox
 	q := r.URL.Query()
 
-	topQ := q.Get("top")
-	leftQ := q.Get("left")
-	bottomQ := q.Get("bottom")
-	rightQ := q.Get("right")
-	if topQ != "" && leftQ != "" && rightQ != "" && bottomQ != "" {
-		bb.Top, err = strconv.ParseFloat(topQ, 64)
+	northQ := q.Get("north")
+	westQ := q.Get("west")
+	southQ := q.Get("south")
+	eastQ := q.Get("east")
+	if northQ != "" && westQ != "" && eastQ != "" && southQ != "" {
+		bb.North, err = strconv.ParseFloat(northQ, 64)
 		if err != nil {
 			return bb, err
 		}
-		bb.Left, err = strconv.ParseFloat(leftQ, 64)
+		bb.West, err = strconv.ParseFloat(westQ, 64)
 		if err != nil {
 			return bb, err
 		}
-		bb.Bottom, err = strconv.ParseFloat(bottomQ, 64)
+		bb.South, err = strconv.ParseFloat(southQ, 64)
 		if err != nil {
 			return bb, err
 		}
-		bb.Right, err = strconv.ParseFloat(rightQ, 64)
+		bb.East, err = strconv.ParseFloat(eastQ, 64)
 		if err != nil {
 			return bb, err
 		}
@@ -149,7 +149,7 @@ func isWithinRangeRequest(r *http.Request) bool {
 
 func isWithinBoundingBoxRequest(r *http.Request) bool {
 	q := r.URL.Query()
-	return q.Has("top") && q.Has("left") && q.Has("right") && q.Has("bottom")
+	return q.Has("north") && q.Has("west") && q.Has("east") && q.Has("south")
 }
 
 func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
