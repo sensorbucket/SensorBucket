@@ -1,0 +1,40 @@
+{
+	"name": "dashboard",
+	"version": "0.0.1",
+	"private": true,
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"lint": "prettier --plugin-search-dir . --check .",
+		"format": "prettier --plugin-search-dir . --write ."
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-auto": "^1.0.0",
+		"@sveltejs/kit": "^1.0.0",
+		"@types/leaflet": "^1.9.0",
+		"autoprefixer": "^10.4.13",
+		"iconify-icon": "^1.0.2",
+		"postcss": "^8.4.20",
+		"prettier": "^2.8.0",
+		"prettier-plugin-svelte": "^2.8.1",
+		"svelte": "^3.54.0",
+		"svelte-check": "^2.9.2",
+		"tailwindcss": "^3.2.4",
+		"tslib": "^2.4.1",
+		"typescript": "^4.9.4",
+		"vite": "^4.0.0"
+	},
+	"type": "module",
+	"dependencies": {
+		"@sgratzl/chartjs-chart-boxplot": "^4.1.0",
+		"@sveltejs/adapter-node": "^1.1.4",
+		"chart.js": "^4.1.1",
+		"chartjs-adapter-date-fns": "^3.0.0",
+		"date-fns": "^2.29.3",
+		"leaflet": "^1.9.3"
+	},
+	"packageManager": "yarn@3.3.1"
+}
