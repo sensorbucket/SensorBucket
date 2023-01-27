@@ -2,7 +2,7 @@
 	import * as L from 'leaflet';
 	import { onDestroy, createEventDispatcher } from 'svelte';
 	const dispatch = createEventDispatcher();
-	import { getLayer } from './map';
+	import { getLayer } from './map.ts';
 
 	const layer = getLayer();
 
