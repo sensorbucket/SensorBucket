@@ -28,10 +28,6 @@ paths:
           schema:
             type: object
         - in: query
-          name: location_id
-          schema:
-            type: number
-        - in: query
           name: north
           schema:
             type: number
@@ -96,16 +92,6 @@ paths:
                     example: created device
                   data:
                     $ref: '#/components/schemas/deviceDTO'
-        404:
-          description: Location not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Referenced location was not found
   /devices/{id}:
     get:
       operationId: GetDevice
@@ -328,11 +314,6 @@ paths:
           required: false
           schema:
             type: string
-        - in: query
-          name: location_id
-          required: false
-          schema:
-            type: number
         - in: query
           name: measurement_type
           required: false
@@ -672,9 +653,6 @@ components:
         longitude:
           type: number
           example: 3.12345
-        location_id:
-          type: number
-          example: 1
         location_name:
           type: string
           example: Bridgeton Waters
