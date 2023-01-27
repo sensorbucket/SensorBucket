@@ -62,7 +62,6 @@ func TestHTTPListDeviceUsesBoundingBox(t *testing.T) {
 	assert.True(t, isCalled)
 	assert.Empty(t, argFilter.Configuration)
 	assert.Equal(t, argBB, expectedBB)
-
 }
 
 func TestHTTPListDeviceUsesInRange(t *testing.T) {

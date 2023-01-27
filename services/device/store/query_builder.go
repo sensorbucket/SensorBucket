@@ -41,8 +41,8 @@ func (b deviceQueryBuilder) WithFilters(f service.DeviceFilter) deviceQueryBuild
 func (b deviceQueryBuilder) WithinBoundingBox(bb service.BoundingBox) deviceQueryBuilder {
 	// TODO: check if coordinates are valid?
 	b.query = b.query.Where(
-		`location && ST_MakeEnvelope(?, ?, ?, ?)`,
-		bb.West, bb.North, bb.South, bb.East,
+		`location::geometry @ ST_SetSRID(ST_MakeBox2D(ST_Point(?, ?), ST_Point(?, ?)),4326)`,
+		bb.West, bb.South, bb.East, bb.North,
 	)
 	return b
 }

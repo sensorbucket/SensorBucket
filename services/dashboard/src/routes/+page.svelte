@@ -29,7 +29,7 @@
 		<h2 class="text-lg">Table of devices</h2>
 		<hr class="my-1" />
 		<Table
-			data={viewDevices}
+			data={devices}
 			fields={[
 				'id',
 				'code',
