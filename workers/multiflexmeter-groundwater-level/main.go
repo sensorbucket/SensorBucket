@@ -110,11 +110,11 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 	if err != nil {
 		return msg, err
 	}
-	err = msg.NewMeasurement().SetSensor("0").SetValue(millivolt, "millivolt").Add()
+	err = msg.NewMeasurement().SetSensor("0").SetValue(millivolt, "pressure", "volt").SetValueFactor(-3).Add()
 	if err != nil {
 		return msg, err
 	}
-	err = msg.NewMeasurement().SetSensor("0").SetValue(columnMeters, "watercolumn_meters").Add()
+	err = msg.NewMeasurement().SetSensor("0").SetValue(columnMeters, "watercolumn", "meter").Add()
 	if err != nil {
 		return msg, err
 	}
@@ -122,11 +122,11 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 	// First bit indicates if there is another measurement appended
 	if data[2]&0x80 > 0 {
 		millivolt, columnMeters, err := valueToMeasurements(data[5:])
-		err = msg.NewMeasurement().SetSensor("1").SetValue(millivolt, "millivolt").Add()
+		err = msg.NewMeasurement().SetSensor("1").SetValue(millivolt, "pressure", "volt").SetValueFactor(-3).Add()
 		if err != nil {
 			return msg, err
 		}
-		err = msg.NewMeasurement().SetSensor("1").SetValue(columnMeters, "watercolumn_meters").Add()
+		err = msg.NewMeasurement().SetSensor("1").SetValue(columnMeters, "watercolumn", "meter").Add()
 		if err != nil {
 			return msg, err
 		}

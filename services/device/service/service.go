@@ -119,10 +119,10 @@ func (s *ServiceImpl) UpdateDevice(ctx context.Context, dev *Device, opt UpdateD
 		dev.Description = *opt.Description
 	}
 	if opt.Latitude != nil {
-		dev.Latitude = *opt.Latitude
+		dev.Latitude = opt.Latitude
 	}
 	if opt.Longitude != nil {
-		dev.Longitude = *opt.Longitude
+		dev.Longitude = opt.Longitude
 	}
 	if opt.LocationDescription != nil {
 		dev.LocationDescription = *opt.LocationDescription

@@ -45,23 +45,28 @@ var (
 )
 
 type Device struct {
-	ID                  int             `json:"id"`
+	ID                  int64           `json:"id"`
 	Code                string          `json:"code"`
 	Description         string          `json:"description"`
 	Organisation        string          `json:"organisation"`
 	Sensors             []Sensor        `json:"sensors"`
 	Configuration       json.RawMessage `json:"configuration"`
-	Longitude           float64         `json:"longitude"`
-	Latitude            float64         `json:"latitude"`
+	Longitude           *float64        `json:"longitude"`
+	Latitude            *float64        `json:"latitude"`
 	LocationDescription string          `json:"location_description" db:"location_description"`
 }
 
 type Sensor struct {
-	Code            string          `json:"code"`
-	Description     string          `json:"description"`
-	MeasurementType string          `json:"measurement_type"` // TODO:
-	ExternalID      *string         `json:"external_id" db:"external_id"`
-	Configuration   json.RawMessage `json:"configuration"`
+	ID          int64  `json:"id"`
+	Code        string `json:"code"`
+	Description string `json:"description"`
+	Brand       string `json:"brand"`
+	ArchiveTime int    `json:"archive_time"`
+	// TODO: Should these resolve to the actual entities?
+	Type          int64           `json:"type"`
+	Goal          int64           `json:"goal"`
+	ExternalID    *string         `json:"external_id" db:"external_id"`
+	Configuration json.RawMessage `json:"configuration"`
 }
 
 type NewDeviceOpts struct {
@@ -69,8 +74,8 @@ type NewDeviceOpts struct {
 	Description         string
 	Organisation        string
 	Configuration       json.RawMessage
-	Longitude           float64
-	Latitude            float64
+	Longitude           *float64
+	Latitude            *float64
 	LocationDescription string
 }
 
@@ -94,12 +99,14 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 
 	dev.Description = opts.Description
 
-	if opts.Latitude < -90 || opts.Latitude > 90 || opts.Longitude < -180 || opts.Longitude > 180 {
-		return nil, ErrInvalidCoordinates
+	if dev.Latitude != nil && dev.Longitude != nil {
+		if *opts.Latitude < -90 || *opts.Latitude > 90 || *opts.Longitude < -180 || *opts.Longitude > 180 {
+			return nil, ErrInvalidCoordinates
+		}
+		dev.Latitude = opts.Latitude
+		dev.Longitude = opts.Longitude
+		dev.LocationDescription = opts.LocationDescription
 	}
-	dev.Latitude = opts.Latitude
-	dev.Longitude = opts.Longitude
-	dev.LocationDescription = opts.LocationDescription
 
 	return &dev, nil
 }
@@ -189,11 +196,12 @@ func (d *Device) DeleteSensor(sensor *Sensor) error {
 	return ErrSensorNotFound
 }
 
-func (d *Device) SetLocation(lat, lng float64) error {
+func (d *Device) SetLocation(lat, lng float64, description string) error {
 	if lat < -90 || lat > 90 || lng < -180 || lng > 180 {
 		return ErrInvalidCoordinates
 	}
-	d.Latitude = lat
-	d.Longitude = lng
+	d.Latitude = &lat
+	d.Longitude = &lng
+	d.LocationDescription = description
 	return nil
 }

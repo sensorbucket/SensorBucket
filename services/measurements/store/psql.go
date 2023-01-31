@@ -26,18 +26,46 @@ func NewPSQL(db *sqlx.DB) *MeasurementStorePSQL {
 	}
 }
 
+func createInsertQuery(m service.Measurement) (string, []any, error) {
+	values := map[string]any{}
+
+	values["uplink_message_id"] = m.UplinkMessageID
+	values["organisation_id"] = m.OrganisationID
+	values["organisation_name"] = m.OrganisationName
+	values["organisation_address"] = m.OrganisationAddress
+	values["organisation_zipcode"] = m.OrganisationZipcode
+	values["organisation_city"] = m.OrganisationCity
+	values["organisation_coc"] = m.OrganisationCoC
+	values["orgnisation_location_coc"] = m.OrganisationLocationCoC
+	values["device_id"] = m.DeviceID
+	values["device_code"] = m.DeviceCode
+	values["device_description"] = m.DeviceDescription
+	values["device_location"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.DeviceLongitude, m.DeviceLatitude)
+	values["device_location_description"] = m.DeviceLocationDescription
+	values["device_configuration"] = m.DeviceConfiguration
+	values["sensor_id"] = m.SensorID
+	values["sensor_code"] = m.SensorCode
+	values["sensor_type_id"] = m.SensorTypeID
+	values["sensor_type_description"] = m.SensorTypeDescription
+	values["sensor_goal_id"] = m.SensorGoalID
+	values["sensor_goal_name"] = m.SensorGoalName
+	values["sensor_description"] = m.SensorDescription
+	values["sensor_external_id"] = m.SensorExternalID
+	values["sensor_config"] = m.SensorConfig
+	values["sensor_brand"] = m.SensorBrand
+	values["measurement_type"] = m.MeasurementType
+	values["measurement_unit"] = m.MeasurementUnit
+	values["measurement_timestamp"] = m.MeasurementTimestamp
+	values["measurement_value"] = m.MeasurementValue
+	values["measurement_value_prefix"] = m.MeasurementValuePrefix
+	values["measurement_value_prefix_factor"] = m.MeasurementValueFactor
+	values["measurement_location"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.MeasurementLongitude, m.MeasurementLatitude)
+
+	return pq.Insert("measurement").SetMap(values).ToSql()
+}
+
 func (s *MeasurementStorePSQL) Insert(m service.Measurement) error {
-	query, params, err := newInsertBuilder().
-		SetUplinkMessageID(m.UplinkMessageID).
-		SetDevice(m.DeviceID, m.DeviceCode, m.DeviceDescription).
-		SetTimestamp(m.Timestamp).
-		SetValue(m.Value).
-		SetMeasurementType(m.MeasurementType, m.MeasurementTypeUnit).
-		SetMetadata(m.Metadata).
-		TrySetSensor(m.SensorCode, m.SensorDescription, m.SensorExternalID).
-		TrySetLocation(m.LocationID, m.LocationName, m.LocationLongitude, m.LocationLatitude).
-		TrySetCoordinates(m.Longitude, m.Latitude).
-		Build()
+	query, params, err := createInsertQuery(m)
 	if err != nil {
 		return fmt.Errorf("could not generate query: %w", err)
 	}
@@ -57,32 +85,49 @@ func (s *MeasurementStorePSQL) Insert(m service.Measurement) error {
 func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) ([]service.Measurement, *service.Pagination, error) {
 	q := pq.Select(
 		"uplink_message_id",
+		"organisation_id",
+		"organisation_name",
+		"organisation_address",
+		"organisation_zipcode",
+		"organisation_city",
+		"organisation_coc",
+		"orgnisation_location_coc",
 		"device_id",
 		"device_code",
 		"device_description",
+		"ST_Y(device_location) as device_latitude",
+		"ST_X(device_location) as device_longitude",
+		"device_location_description",
+		"device_configuration",
+		"sensor_id",
 		"sensor_code",
+		"sensor_type_id",
+		"sensor_type_description",
+		"sensor_goal_id",
+		"sensor_goal_name",
 		"sensor_description",
 		"sensor_external_id",
-		"timestamp",
-		"value",
+		"sensor_config",
+		"sensor_brand",
 		"measurement_type",
-		"measurement_type_unit",
-		"location_id",
-		"location_name",
-		"ST_X(location_coordinates::geometry) as location_lng",
-		"ST_Y(location_coordinates::geometry) as location_lat",
-		"metadata",
+		"measurement_unit",
+		"measurement_timestamp",
+		"measurement_value",
+		"measurement_value_prefix",
+		"measurement_value_prefix_factor",
+		"ST_Y(measurement_location) as measurement_latitude",
+		"ST_X(measurement_location) as measurement_longitude",
 	).
 		From("measurements").
-		Where("timestamp >= ?", query.Start).
-		OrderBy("timestamp DESC").
+		Where("measurement_timestamp >= ?", query.Start).
+		OrderBy("measurement_timestamp DESC").
 		Limit(uint64(p.Limit + 1))
 
 	// Use cursor otherwise end time
 	if !p.Timestamp.IsZero() {
-		q = q.Where("timestamp <= to_timestamp(?)", p.Timestamp.Unix())
+		q = q.Where("measurement_timestamp <= to_timestamp(?)", p.Timestamp.Unix())
 	} else {
-		q = q.Where("timestamp <= ?", query.End)
+		q = q.Where("measurement_timestamp <= ?", query.End)
 	}
 	q = q.Offset(uint64(p.Skip))
 
@@ -94,9 +139,6 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 	}
 	if len(query.Filters.SensorCodes) > 0 {
 		q = q.Where(sq.Eq{"sensor_code": query.Filters.SensorCodes})
-	}
-	if len(query.Filters.LocationIDs) > 0 {
-		q = q.Where(sq.Eq{"location_id": query.Filters.LocationIDs})
 	}
 
 	rows, err := q.RunWith(s.db).Query()
@@ -111,21 +153,38 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 		var m service.Measurement
 		err = rows.Scan(
 			&m.UplinkMessageID,
+			&m.OrganisationID,
+			&m.OrganisationName,
+			&m.OrganisationAddress,
+			&m.OrganisationZipcode,
+			&m.OrganisationCity,
+			&m.OrganisationCoC,
+			&m.OrganisationLocationCoC,
 			&m.DeviceID,
 			&m.DeviceCode,
 			&m.DeviceDescription,
+			&m.DeviceLatitude,
+			&m.DeviceLongitude,
+			&m.DeviceLocationDescription,
+			&m.DeviceConfiguration,
+			&m.SensorID,
 			&m.SensorCode,
+			&m.SensorTypeID,
+			&m.SensorTypeDescription,
+			&m.SensorGoalID,
+			&m.SensorGoalName,
 			&m.SensorDescription,
 			&m.SensorExternalID,
-			&m.Timestamp,
-			&m.Value,
+			&m.SensorConfig,
+			&m.SensorBrand,
 			&m.MeasurementType,
-			&m.MeasurementTypeUnit,
-			&m.LocationID,
-			&m.LocationName,
-			&m.LocationLongitude,
-			&m.LocationLatitude,
-			&m.Metadata,
+			&m.MeasurementUnit,
+			&m.MeasurementTimestamp,
+			&m.MeasurementValue,
+			&m.MeasurementValuePrefix,
+			&m.MeasurementValueFactor,
+			&m.MeasurementLatitude,
+			&m.MeasurementLongitude,
 		)
 		if err != nil {
 			return nil, nil, err
@@ -138,14 +197,14 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 		} else {
 			nextPage = &service.Pagination{}
 			nextPage.Limit = p.Limit
-			nextPage.Timestamp = m.Timestamp
+			nextPage.Timestamp = m.MeasurementTimestamp
 			nextPage.Skip = 0
 			// If our timestamp stayed the same then we have to skip more
 			if nextPage.Timestamp == p.Timestamp {
 				nextPage.Skip = p.Skip
 			}
 			for i := len(list) - 1; i >= 0; i-- {
-				if list[i].Timestamp != nextPage.Timestamp {
+				if list[i].MeasurementTimestamp != nextPage.Timestamp {
 					break
 				}
 				nextPage.Skip++

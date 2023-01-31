@@ -10,11 +10,7 @@ type MeasurementBuilder struct {
 	err     error
 	message *Message
 
-	timestamp        int64
-	value            float64
-	measurementType  string
-	sensorExternalID *string
-	metadata         map[string]any
+	measurement Measurement
 }
 
 func (msg *Message) NewMeasurement() MeasurementBuilder {
@@ -23,9 +19,11 @@ func (msg *Message) NewMeasurement() MeasurementBuilder {
 
 func newMeasurementBuilder(msg *Message) MeasurementBuilder {
 	return MeasurementBuilder{
-		message:   msg,
-		timestamp: msg.Timestamp,
-		metadata:  make(map[string]any),
+		message: msg,
+		measurement: Measurement{
+			Timestamp:           msg.Timestamp,
+			MeasurementMetadata: map[string]any{},
+		},
 	}
 }
 
@@ -33,7 +31,7 @@ func (b MeasurementBuilder) SetTimestamp(ts int64) MeasurementBuilder {
 	if b.err != nil {
 		return b
 	}
-	b.timestamp = ts
+	b.measurement.Timestamp = ts
 	return b
 }
 
@@ -41,17 +39,18 @@ func (b MeasurementBuilder) SetSensor(eid string) MeasurementBuilder {
 	if b.err != nil {
 		return b
 	}
-	b.sensorExternalID = &eid
+	b.measurement.SensorExternalID = &eid
 
 	return b
 }
 
-func (b MeasurementBuilder) SetValue(v float64, measurementType string) MeasurementBuilder {
+func (b MeasurementBuilder) SetValue(value float64, measurementType, unit string) MeasurementBuilder {
 	if b.err != nil {
 		return b
 	}
-	b.measurementType = measurementType
-	b.value = v
+	b.measurement.MeasurementValue = value
+	b.measurement.MeasurementType = measurementType
+	b.measurement.MeasurementUnit = unit
 	return b
 }
 
@@ -59,28 +58,23 @@ func (b MeasurementBuilder) SetMetadata(meta map[string]any) MeasurementBuilder 
 	if b.err != nil {
 		return b
 	}
-	b.metadata = meta
+	b.measurement.MeasurementMetadata = meta
 	return b
 }
 
-func (b MeasurementBuilder) Build() (Measurement, error) {
+func (b MeasurementBuilder) SetValueFactor(f int) MeasurementBuilder {
 	if b.err != nil {
-		return Measurement{}, b.err
+		return b
 	}
-	return Measurement{
-		Timestamp:         b.timestamp,
-		Value:             b.value,
-		MeasurementTypeID: b.measurementType,
-		SensorExternalID:  b.sensorExternalID,
-		Metadata:          b.metadata,
-	}, nil
+	b.measurement.MeasurementValueFactor = f
+	return b
+
 }
 
 func (b MeasurementBuilder) Add() error {
-	measurement, err := b.Build()
-	if err != nil {
-		return err
+	if b.err != nil {
+		return b.err
 	}
-	b.message.Measurements = append(b.message.Measurements, measurement)
+	b.message.Measurements = append(b.message.Measurements, b.measurement)
 	return nil
 }

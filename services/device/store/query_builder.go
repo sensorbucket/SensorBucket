@@ -68,8 +68,8 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) ([]service.Device, error) {
 		return nil, err
 	}
 
-	ids := make([]int, len(deviceModels))
-	devMap := map[int]*DeviceModel{}
+	ids := make([]int64, len(deviceModels))
+	devMap := map[int64]*DeviceModel{}
 	for ix := range deviceModels {
 		dev := &deviceModels[ix]
 		// Create an array of all device ids, used to filter upcoming queries

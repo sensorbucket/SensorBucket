@@ -140,8 +140,8 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 			continue
 		}
 		builder := builder.SetTimestamp(ts.Unix()).SetMetadata(map[string]any{"gateway_eui": gw.GatewayId.EUI})
-		builder.SetValue(gw.RSSI, "rssi").Add()
-		builder.SetValue(gw.SNR, "snr").Add()
+		builder.SetValue(gw.RSSI, "rssi", "dbi").Add()
+		builder.SetValue(gw.SNR, "snr", "constant").Add()
 	}
 
 	// Match EUI to device

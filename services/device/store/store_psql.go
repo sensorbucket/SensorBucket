@@ -28,8 +28,7 @@ type DeviceModel struct {
 
 type SensorModel struct {
 	service.Sensor
-	ID       int
-	DeviceID int `db:"device_id"`
+	DeviceID int64 `db:"device_id"`
 }
 
 func (s *PSQLStore) ListInBoundingBox(bb service.BoundingBox, filter service.DeviceFilter) ([]service.Device, error) {
@@ -87,7 +86,7 @@ func (s *PSQLStore) updateDevice(dev *service.Device) error {
 	return nil
 }
 
-func (s *PSQLStore) updateSensors(devID int, sensors []service.Sensor) error {
+func (s *PSQLStore) updateSensors(devID int64, sensors []service.Sensor) error {
 	// Replace sensors
 	tx, err := s.db.Beginx()
 	if err != nil {

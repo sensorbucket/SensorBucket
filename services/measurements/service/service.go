@@ -1,53 +1,62 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"time"
-)
 
-var (
-	ErrLocationNotFound = errors.New("location not found")
+	"sensorbucket.nl/sensorbucket/pkg/pipeline"
+	deviceservice "sensorbucket.nl/sensorbucket/services/device/service"
 )
 
 type Measurement struct {
-	UplinkMessageID     string          `json:"uplink_message_id"`
-	DeviceID            int             `json:"device_id"`
-	DeviceCode          string          `json:"device_code"`
-	DeviceDescription   string          `json:"device_description"`
-	DeviceConfiguration json.RawMessage `json:"device_configuration"`
-	Timestamp           time.Time       `json:"timestamp"`
-	Value               float64         `json:"value"`
-	MeasurementType     string          `json:"measurement_type"`
-	MeasurementTypeUnit string          `json:"measurement_type_unit"`
-	Metadata            json.RawMessage `json:"metadata"`
-	Longitude           *float64        `json:"longitude"`
-	Latitude            *float64        `json:"latitude"`
-	LocationID          *int64          `json:"location_id"`
-	LocationName        *string         `json:"location_name"`
-	LocationLongitude   *float64        `json:"location_longitude"`
-	LocationLatitude    *float64        `json:"location_latitude"`
-	SensorCode          *string         `json:"sensor_code"`
-	SensorDescription   *string         `json:"sensor_description"`
-	SensorExternalID    *string         `json:"sensor_external_id"`
-	SensorConfiguration json.RawMessage `json:"sensor_configuration"`
+	UplinkMessageID           string          `json:"uplink_message_id"`
+	OrganisationID            int             `json:"organisation_id"`
+	OrganisationName          string          `json:"organisation_name"`
+	OrganisationAddress       string          `json:"organisation_address"`
+	OrganisationZipcode       string          `json:"organisation_zipcode"`
+	OrganisationCity          string          `json:"organisation_city"`
+	OrganisationCoC           string          `json:"organisation_coc"`
+	OrganisationLocationCoC   string          `json:"orgnisation_location_coc"`
+	DeviceID                  int64           `json:"device_id"`
+	DeviceCode                string          `json:"device_code"`
+	DeviceDescription         string          `json:"device_description"`
+	DeviceLatitude            *float64        `json:"device_latitude"`
+	DeviceLongitude           *float64        `json:"device_longitude"`
+	DeviceLocationDescription string          `json:"device_location_description"`
+	DeviceConfiguration       json.RawMessage `json:"device_configuration"`
+	SensorID                  int64           `json:"sensor_id"`
+	SensorCode                string          `json:"sensor_code"`
+	SensorTypeID              int64           `json:"sensor_type_id"`
+	SensorTypeDescription     string          `json:"sensor_type_description"`
+	SensorGoalID              int64           `json:"sensor_goal_id"`
+	SensorGoalName            string          `json:"sensor_goal_name"`
+	SensorDescription         string          `json:"sensor_description"`
+	SensorExternalID          *string         `json:"sensor_external_id"`
+	SensorConfig              json.RawMessage `json:"sensor_config"`
+	SensorBrand               string          `json:"sensor_brand"`
+	MeasurementType           string          `json:"measurement_type"`
+	MeasurementUnit           string          `json:"measurement_unit"`
+	MeasurementTimestamp      time.Time       `json:"measurement_timestamp"`
+	MeasurementValue          float64         `json:"measurement_value"`
+	MeasurementValuePrefix    string          `json:"measurement_value_prefix"`
+	MeasurementValueFactor    int             `json:"measurement_value_factor"`
+	MeasurementLatitude       *float64        `json:"measurement_latitude"`
+	MeasurementLongitude      *float64        `json:"measurement_longitude"`
+	MeasurementMetadata       map[string]any  `json:"measurement_metadata"`
 }
 
 func (m *Measurement) Validate() error {
 	if m.DeviceID == 0 {
 		return errors.New("Pipeline message must have a device attached to it")
 	}
-	if m.Timestamp.IsZero() {
+	if m.MeasurementTimestamp.IsZero() {
 		return errors.New("timestamp is required")
 	}
-	if m.MeasurementType == "" {
-		return errors.New("measurement_type is required")
-	}
-	//if m.MeasurementTypeUnit == "" {
-	//	return errors.New("measurement_type_unit is required")
-	//}
+	// TODO: Add validation
 	return nil
 }
 
@@ -55,7 +64,6 @@ func (m *Measurement) Validate() error {
 type QueryFilters struct {
 	DeviceIDs        []string
 	SensorCodes      []string
-	LocationIDs      []int
 	MeasurementTypes []string
 }
 
@@ -88,28 +96,87 @@ type MeasurementStore interface {
 	Query(Query, Pagination) ([]Measurement, *Pagination, error)
 }
 
-type LocationData struct {
-	ID        int64
-	Name      string
-	Longitude float64
-	Latitude  float64
-}
-
-// LocationService is used to fetch location for an asset
-type LocationService interface {
-	FindLocationID(thingURN string) (LocationData, error)
-}
-
 // Service is the measurement service which stores measurement data.
 type Service struct {
-	store     MeasurementStore
-	locations LocationService
+	store MeasurementStore
 }
 
 func New(store MeasurementStore) *Service {
 	return &Service{
 		store: store,
 	}
+}
+
+func (s *Service) StorePipelineMessage(ctx context.Context, msg pipeline.Message) error {
+	// TODO: get organisation from context
+
+	// Validate incoming message for completeness
+	if msg.Device == nil {
+		return errors.New("pipeline message has no device set")
+	}
+	if len(msg.Measurements) == 0 {
+		log.Printf("[warn] got pipeline message (%v) but it has no measurements\n", msg.ID)
+		return nil
+	}
+
+	for _, measurement := range msg.Measurements {
+		err := s.storePipelineMeasurement(msg, measurement)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Measurement) error {
+	measurement := Measurement{
+		UplinkMessageID: msg.ID,
+		// TODO: Organisation...
+		DeviceID:                  msg.Device.ID,
+		DeviceCode:                msg.Device.Code,
+		DeviceDescription:         msg.Device.Description,
+		DeviceLatitude:            msg.Device.Latitude,
+		DeviceLongitude:           msg.Device.Longitude,
+		DeviceLocationDescription: msg.Device.LocationDescription,
+		DeviceConfiguration:       msg.Device.Configuration,
+
+		MeasurementType:      m.MeasurementType,
+		MeasurementUnit:      m.MeasurementUnit,
+		MeasurementTimestamp: time.UnixMilli(m.Timestamp),
+		MeasurementValue:     m.MeasurementValue,
+		// Prefix?!?
+		MeasurementValueFactor: m.MeasurementValueFactor,
+		MeasurementLatitude:    msg.Device.Latitude,
+		MeasurementLongitude:   msg.Device.Longitude,
+		MeasurementMetadata:    m.MeasurementMetadata,
+	}
+
+	// Measurement location is either explicitly set or falls back to device location
+	if m.MeasurementLatitude != nil && m.MeasurementLongitude != nil {
+		measurement.MeasurementLatitude = m.MeasurementLatitude
+		measurement.MeasurementLongitude = m.MeasurementLongitude
+	}
+
+	// Get sensor
+	dev := (*deviceservice.Device)(msg.Device)
+	sensor, err := dev.GetSensorByExternalID(*m.SensorExternalID)
+	if err != nil {
+		return err
+	}
+
+	measurement.SensorID = sensor.ID
+	measurement.SensorCode = sensor.Code
+	measurement.SensorTypeID = sensor.Type
+	measurement.SensorTypeDescription = ""
+	measurement.SensorGoalID = sensor.Goal
+	measurement.SensorGoalName = ""
+	measurement.SensorDescription = sensor.Description
+	measurement.SensorExternalID = sensor.ExternalID
+	measurement.SensorConfig = sensor.Configuration
+	measurement.SensorBrand = sensor.Brand
+
+	return s.StoreMeasurement(measurement)
 }
 
 func (s *Service) StoreMeasurement(m Measurement) error {

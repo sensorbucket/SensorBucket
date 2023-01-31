@@ -26,8 +26,8 @@ func TestServiceDeviceUpdates(t *testing.T) {
 		Organisation:        "organisation_a",
 		Sensors:             []service.Sensor{},
 		Configuration:       []byte("{}"),
-		Latitude:            10,
-		Longitude:           20,
+		Latitude:            ptr(float64(10)),
+		Longitude:           ptr(float64(20)),
 		LocationDescription: "location_description_a",
 	}
 	var newDevice service.Device
@@ -41,8 +41,8 @@ func TestServiceDeviceUpdates(t *testing.T) {
 	err := svc.UpdateDevice(context.Background(), &originalDevice, updateDTO)
 	assert.NoError(t, err)
 	assert.EqualValues(t, newDevice.Description, *updateDTO.Description)
-	assert.EqualValues(t, newDevice.Latitude, *updateDTO.Latitude)
-	assert.EqualValues(t, newDevice.Longitude, *updateDTO.Longitude)
+	assert.EqualValues(t, newDevice.Latitude, updateDTO.Latitude)
+	assert.EqualValues(t, newDevice.Longitude, updateDTO.Longitude)
 	assert.EqualValues(t, newDevice.LocationDescription, *updateDTO.LocationDescription)
 	assert.EqualValues(t, newDevice.Configuration, updateDTO.Configuration)
 }

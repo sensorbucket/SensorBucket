@@ -127,21 +127,6 @@ func parseFilters(r *http.Request) (service.QueryFilters, error) {
 		filters.DeviceIDs = q["device_id"]
 	}
 
-	if len(q["location_id"]) > 0 {
-		filters.LocationIDs = make([]int, 0, len(q["location_id"]))
-		for _, valQ := range q["location_id"] {
-			valStr, err := url.QueryUnescape(valQ)
-			if err != nil {
-				return filters, fmt.Errorf("invalid location_id: %w", err)
-			}
-			id, err := strconv.Atoi(valStr)
-			if err != nil {
-				return filters, fmt.Errorf("invalid location_id: %w", err)
-			}
-			filters.LocationIDs = append(filters.LocationIDs, id)
-		}
-	}
-
 	if len(q["measurement_type"]) > 0 {
 		filters.MeasurementTypes = q["measurement_type"]
 	}
