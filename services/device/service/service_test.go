@@ -53,8 +53,8 @@ func TestServiceCreateDevice(t *testing.T) {
 		Description:         "description_a",
 		Organisation:        "organisation_a",
 		Configuration:       []byte("{}"),
-		Latitude:            10,
-		Longitude:           20,
+		Latitude:            ptr(float64(10)),
+		Longitude:           ptr(float64(20)),
 		LocationDescription: "location_description_a",
 	}
 	var storedDev *service.Device

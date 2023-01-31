@@ -99,7 +99,7 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 
 	dev.Description = opts.Description
 
-	if dev.Latitude != nil && dev.Longitude != nil {
+	if opts.Latitude != nil && opts.Longitude != nil {
 		if *opts.Latitude < -90 || *opts.Latitude > 90 || *opts.Longitude < -180 || *opts.Longitude > 180 {
 			return nil, ErrInvalidCoordinates
 		}
