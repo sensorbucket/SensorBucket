@@ -10,7 +10,7 @@ info:
     url: 'https://zeeland.nl'
 servers:
   - description: Local
-    url: 'http://localhost:3000'
+    url: 'http://localhost:3000/api'
 paths: 
   /devices:
     get:
@@ -20,7 +20,7 @@ paths:
         Fetch a list of devices.
         Location based filtering is either by bounding box or within radius from a position. 
 
-        To filter on bounding box, supply the top,left,bottom and right coordinates of the bounding box as query parameters. To filter by radius supply the longitude,latitude and distance query parameters. If both are supplied the bounding box query is discarded. 
+        To filter on bounding box, supply the north,east,south,west coordinates of the bounding box as query parameters. To filter by radius supply the longitude,latitude and distance query parameters. If both are supplied the bounding box query is discarded. 
       tags: ["Devices"]
       parameters:
         - in: query
@@ -28,23 +28,19 @@ paths:
           schema:
             type: object
         - in: query
-          name: location_id
+          name: north
           schema:
             type: number
         - in: query
-          name: top
+          name: west
           schema:
             type: number
         - in: query
-          name: left
+          name: east
           schema:
             type: number
         - in: query
-          name: right
-          schema:
-            type: number
-        - in: query
-          name: bottom
+          name: south
           schema:
             type: number
         - in: query
@@ -96,16 +92,6 @@ paths:
                     example: created device
                   data:
                     $ref: '#/components/schemas/deviceDTO'
-        404:
-          description: Location not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Referenced location was not found
   /devices/{id}:
     get:
       operationId: GetDevice
@@ -328,11 +314,6 @@ paths:
           required: false
           schema:
             type: string
-        - in: query
-          name: location_id
-          required: false
-          schema:
-            type: number
         - in: query
           name: measurement_type
           required: false
@@ -672,9 +653,6 @@ components:
         longitude:
           type: number
           example: 3.12345
-        location_id:
-          type: number
-          example: 1
         location_name:
           type: string
           example: Bridgeton Waters

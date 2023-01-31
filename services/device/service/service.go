@@ -40,10 +40,10 @@ type DeviceFilter struct {
 	Configuration json.RawMessage `json:"configuration"`
 }
 type BoundingBox struct {
-	Top    float64 `json:"top"`
-	Left   float64 `json:"left"`
-	Bottom float64 `json:"bottom"`
-	Right  float64 `json:"right"`
+	North float64 `json:"north"`
+	West  float64 `json:"west"`
+	South float64 `json:"south"`
+	East  float64 `json:"east"`
 }
 type LocationRange struct {
 	Latitude  float64 `json:"latitude"`

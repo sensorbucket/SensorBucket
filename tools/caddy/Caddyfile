@@ -1,0 +1,32 @@
+*:80
+
+handle_path /api/* {
+    reverse_proxy /pipelines pipelines:3000
+    reverse_proxy /devices device:3000
+    reverse_proxy /uplinks httpimporter:3000 {
+        rewrite /
+    }
+    reverse_proxy /measurements measurements:3000 {
+        rewrite /
+    }
+}
+
+redir /dev/mq /dev/mq/
+handle_path /dev/mq/* {
+    reverse_proxy mq:15672
+}
+
+redir /dev/db /dev/db/
+handle_path /dev/db/* {
+    reverse_proxy dbweb:8080
+}
+
+redir /dev/api /dev/api/
+handle_path /dev/api/* {
+    reverse_proxy openapi:8080
+}
+
+handle {
+    reverse_proxy /* dashboard:3000
+}
+
