@@ -81,7 +81,18 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) ([]service.Device, error) {
 	}
 
 	// Fetch sensors for devices
-	q := pq.Select("*").From("sensors").Where(sq.Eq{"device_id": ids})
+	q := pq.Select(
+		"device_id",
+		"id",
+		"code",
+		"description",
+		"brand",
+		"archive_time",
+		"type_id",
+		"goal_id",
+		"external_id",
+		"configuration",
+	).From("sensors").Where(sq.Eq{"device_id": ids})
 	query, params, err = q.ToSql()
 	if err != nil {
 		return nil, err

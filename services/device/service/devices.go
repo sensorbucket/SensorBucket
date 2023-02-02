@@ -61,10 +61,10 @@ type Sensor struct {
 	Code        string `json:"code"`
 	Description string `json:"description"`
 	Brand       string `json:"brand"`
-	ArchiveTime int    `json:"archive_time"`
+	ArchiveTime int    `json:"archive_time" db:"archive_time"`
 	// TODO: Should these resolve to the actual entities?
-	Type          int64           `json:"type"`
-	Goal          int64           `json:"goal"`
+	Type          int64           `json:"type" db:"type_id"`
+	Goal          int64           `json:"goal" db:"goal_id"`
 	ExternalID    string          `json:"external_id" db:"external_id"`
 	Configuration json.RawMessage `json:"configuration"`
 }
