@@ -15,7 +15,7 @@ var (
 type Device deviceservice.Device
 type Measurement struct {
 	Timestamp              int64          `json:"timestamp"`
-	SensorExternalID       *string        `json:"sensor_external_id"`
+	SensorExternalID       string         `json:"sensor_external_id"`
 	MeasurementValue       float64        `json:"measurement_value"`
 	MeasurementValueFactor int            `json:"measurement_value_prefix_factor"`
 	MeasurementType        string         `json:"measurement_type"`

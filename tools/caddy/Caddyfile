@@ -1,12 +1,12 @@
 *:80
 
 handle_path /api/* {
-    reverse_proxy /pipelines pipelines:3000
-    reverse_proxy /devices device:3000
-    reverse_proxy /uplinks httpimporter:3000 {
+    reverse_proxy /pipelines* pipeline:3000 
+    reverse_proxy /devices* device:3000
+    reverse_proxy /uplinks* httpimporter:3000 {
         rewrite /
     }
-    reverse_proxy /measurements measurements:3000 {
+    reverse_proxy /measurements* measurements:3000 {
         rewrite /
     }
 }

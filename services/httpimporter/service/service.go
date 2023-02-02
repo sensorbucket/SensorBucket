@@ -1,5 +1,7 @@
 package service
 
+//go:generate moq -pkg service_test -out mock_test.go . MessageQueue PipelineService
+
 import (
 	"io"
 	"net/http"

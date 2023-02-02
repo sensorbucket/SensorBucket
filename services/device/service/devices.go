@@ -65,7 +65,7 @@ type Sensor struct {
 	// TODO: Should these resolve to the actual entities?
 	Type          int64           `json:"type"`
 	Goal          int64           `json:"goal"`
-	ExternalID    *string         `json:"external_id" db:"external_id"`
+	ExternalID    string          `json:"external_id" db:"external_id"`
 	Configuration json.RawMessage `json:"configuration"`
 }
 
@@ -114,7 +114,7 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 type NewSensorOpts struct {
 	Code          string          `json:"code"`
 	Description   string          `json:"description"`
-	ExternalID    *string         `json:"external_id"`
+	ExternalID    string          `json:"external_id"`
 	Configuration json.RawMessage `json:"configuration"`
 }
 
@@ -175,7 +175,7 @@ func (d *Device) GetSensorByCode(code string) (*Sensor, error) {
 }
 func (d *Device) GetSensorByExternalID(eid string) (*Sensor, error) {
 	for _, sensor := range d.Sensors {
-		if sensor.ExternalID != nil && *sensor.ExternalID == eid {
+		if sensor.ExternalID == eid {
 			return &sensor, nil
 		}
 	}

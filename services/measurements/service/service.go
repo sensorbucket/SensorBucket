@@ -1,5 +1,7 @@
 package service
 
+//go:generate moq -pkg service_test -out mock_test.go . Store
+
 import (
 	"context"
 	"encoding/json"
@@ -10,6 +12,11 @@ import (
 
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	deviceservice "sensorbucket.nl/sensorbucket/services/device/service"
+)
+
+var (
+	ErrMissingDeviceInMeasurement    = errors.New("received measurement where device was not set, can't store")
+	ErrMissingTimestampInMeasurement = errors.New("received measurement where timestamp was not set, can't store")
 )
 
 type Measurement struct {
@@ -35,7 +42,7 @@ type Measurement struct {
 	SensorGoalID              int64           `json:"sensor_goal_id"`
 	SensorGoalName            string          `json:"sensor_goal_name"`
 	SensorDescription         string          `json:"sensor_description"`
-	SensorExternalID          *string         `json:"sensor_external_id"`
+	SensorExternalID          string          `json:"sensor_external_id"`
 	SensorConfig              json.RawMessage `json:"sensor_config"`
 	SensorBrand               string          `json:"sensor_brand"`
 	MeasurementType           string          `json:"measurement_type"`
@@ -51,10 +58,10 @@ type Measurement struct {
 
 func (m *Measurement) Validate() error {
 	if m.DeviceID == 0 {
-		return errors.New("Pipeline message must have a device attached to it")
+		return ErrMissingDeviceInMeasurement
 	}
 	if m.MeasurementTimestamp.IsZero() {
-		return errors.New("timestamp is required")
+		return ErrMissingTimestampInMeasurement
 	}
 	// TODO: Add validation
 	return nil
@@ -84,24 +91,25 @@ type Pagination struct {
 // iService is an interface for the service's exported interface, it can be used as a developer reference
 type iService interface {
 	StoreMeasurement(Measurement) error
+	StorePipelineMessage(context.Context, pipeline.Message) error
 	QueryMeasurements(Query, Pagination) ([]Measurement, *Pagination, error)
 }
 
 // Ensure Service implements iService
 var _ iService = (*Service)(nil)
 
-// MeasurementStore stores measurement data
-type MeasurementStore interface {
+// Store stores measurement data
+type Store interface {
 	Insert(Measurement) error
 	Query(Query, Pagination) ([]Measurement, *Pagination, error)
 }
 
 // Service is the measurement service which stores measurement data.
 type Service struct {
-	store MeasurementStore
+	store Store
 }
 
-func New(store MeasurementStore) *Service {
+func New(store Store) *Service {
 	return &Service{
 		store: store,
 	}
@@ -112,7 +120,7 @@ func (s *Service) StorePipelineMessage(ctx context.Context, msg pipeline.Message
 
 	// Validate incoming message for completeness
 	if msg.Device == nil {
-		return errors.New("pipeline message has no device set")
+		return ErrMissingDeviceInMeasurement
 	}
 	if len(msg.Measurements) == 0 {
 		log.Printf("[warn] got pipeline message (%v) but it has no measurements\n", msg.ID)
@@ -160,7 +168,7 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 
 	// Get sensor
 	dev := (*deviceservice.Device)(msg.Device)
-	sensor, err := dev.GetSensorByExternalID(*m.SensorExternalID)
+	sensor, err := dev.GetSensorByExternalID(m.SensorExternalID)
 	if err != nil {
 		return err
 	}
@@ -182,7 +190,7 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 func (s *Service) StoreMeasurement(m Measurement) error {
 	log.Printf("Inserting measurements: %+v\n", m)
 	if err := m.Validate(); err != nil {
-		return fmt.Errorf("validation failed for measurement: %s", err)
+		return fmt.Errorf("validation failed for measurement: %w", err)
 	}
 
 	return s.store.Insert(m)

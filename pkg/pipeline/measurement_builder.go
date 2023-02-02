@@ -39,7 +39,7 @@ func (b MeasurementBuilder) SetSensor(eid string) MeasurementBuilder {
 	if b.err != nil {
 		return b
 	}
-	b.measurement.SensorExternalID = &eid
+	b.measurement.SensorExternalID = eid
 
 	return b
 }
