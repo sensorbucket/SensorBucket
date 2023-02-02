@@ -13,7 +13,7 @@ import (
 var pq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 // Ensure MeasurementStorePSQL implements MeasurementStore
-var _ service.MeasurementStore = (*MeasurementStorePSQL)(nil)
+var _ service.Store = (*MeasurementStorePSQL)(nil)
 
 // MeasurementStorePSQL Implements the measurementstore with a PostgreSQL database as backend
 type MeasurementStorePSQL struct {
