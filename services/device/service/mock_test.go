@@ -22,7 +22,7 @@ var _ service.Store = &StoreMock{}
 //			DeleteFunc: func(dev *service.Device) error {
 //				panic("mock out the Delete method")
 //			},
-//			FindFunc: func(id int) (*service.Device, error) {
+//			FindFunc: func(id int64) (*service.Device, error) {
 //				panic("mock out the Find method")
 //			},
 //			ListFunc: func(deviceFilter service.DeviceFilter) ([]service.Device, error) {
@@ -48,7 +48,7 @@ type StoreMock struct {
 	DeleteFunc func(dev *service.Device) error
 
 	// FindFunc mocks the Find method.
-	FindFunc func(id int) (*service.Device, error)
+	FindFunc func(id int64) (*service.Device, error)
 
 	// ListFunc mocks the List method.
 	ListFunc func(deviceFilter service.DeviceFilter) ([]service.Device, error)
@@ -72,7 +72,7 @@ type StoreMock struct {
 		// Find holds details about calls to the Find method.
 		Find []struct {
 			// ID is the id argument value.
-			ID int
+			ID int64
 		}
 		// List holds details about calls to the List method.
 		List []struct {
@@ -140,12 +140,12 @@ func (mock *StoreMock) DeleteCalls() []struct {
 }
 
 // Find calls FindFunc.
-func (mock *StoreMock) Find(id int) (*service.Device, error) {
+func (mock *StoreMock) Find(id int64) (*service.Device, error) {
 	if mock.FindFunc == nil {
 		panic("StoreMock.FindFunc: method is nil but Store.Find was just called")
 	}
 	callInfo := struct {
-		ID int
+		ID int64
 	}{
 		ID: id,
 	}
@@ -160,10 +160,10 @@ func (mock *StoreMock) Find(id int) (*service.Device, error) {
 //
 //	len(mockedStore.FindCalls())
 func (mock *StoreMock) FindCalls() []struct {
-	ID int
+	ID int64
 } {
 	var calls []struct {
-		ID int
+		ID int64
 	}
 	mock.lockFind.RLock()
 	calls = mock.calls.Find
@@ -329,7 +329,7 @@ var _ service.Service = &ServiceMock{}
 //			DeleteSensorFunc: func(ctx context.Context, dev *service.Device, sensor *service.Sensor) error {
 //				panic("mock out the DeleteSensor method")
 //			},
-//			GetDeviceFunc: func(ctx context.Context, id int) (*service.Device, error) {
+//			GetDeviceFunc: func(ctx context.Context, id int64) (*service.Device, error) {
 //				panic("mock out the GetDevice method")
 //			},
 //			ListDevicesFunc: func(ctx context.Context, filter service.DeviceFilter) ([]service.Device, error) {
@@ -364,7 +364,7 @@ type ServiceMock struct {
 	DeleteSensorFunc func(ctx context.Context, dev *service.Device, sensor *service.Sensor) error
 
 	// GetDeviceFunc mocks the GetDevice method.
-	GetDeviceFunc func(ctx context.Context, id int) (*service.Device, error)
+	GetDeviceFunc func(ctx context.Context, id int64) (*service.Device, error)
 
 	// ListDevicesFunc mocks the ListDevices method.
 	ListDevicesFunc func(ctx context.Context, filter service.DeviceFilter) ([]service.Device, error)
@@ -417,7 +417,7 @@ type ServiceMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// ID is the id argument value.
-			ID int
+			ID int64
 		}
 		// ListDevices holds details about calls to the ListDevices method.
 		ListDevices []struct {
@@ -618,13 +618,13 @@ func (mock *ServiceMock) DeleteSensorCalls() []struct {
 }
 
 // GetDevice calls GetDeviceFunc.
-func (mock *ServiceMock) GetDevice(ctx context.Context, id int) (*service.Device, error) {
+func (mock *ServiceMock) GetDevice(ctx context.Context, id int64) (*service.Device, error) {
 	if mock.GetDeviceFunc == nil {
 		panic("ServiceMock.GetDeviceFunc: method is nil but Service.GetDevice was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
-		ID  int
+		ID  int64
 	}{
 		Ctx: ctx,
 		ID:  id,
@@ -641,11 +641,11 @@ func (mock *ServiceMock) GetDevice(ctx context.Context, id int) (*service.Device
 //	len(mockedService.GetDeviceCalls())
 func (mock *ServiceMock) GetDeviceCalls() []struct {
 	Ctx context.Context
-	ID  int
+	ID  int64
 } {
 	var calls []struct {
 		Ctx context.Context
-		ID  int
+		ID  int64
 	}
 	mock.lockGetDevice.RLock()
 	calls = mock.calls.GetDevice

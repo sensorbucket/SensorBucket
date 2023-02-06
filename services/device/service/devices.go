@@ -70,13 +70,13 @@ type Sensor struct {
 }
 
 type NewDeviceOpts struct {
-	Code                string
-	Description         string
-	Organisation        string
-	Configuration       json.RawMessage
-	Longitude           *float64
-	Latitude            *float64
-	LocationDescription string
+	Code                string          `json:"code"`
+	Description         string          `json:"description"`
+	Organisation        string          `json:"organisation"`
+	Configuration       json.RawMessage `json:"configuration"`
+	Longitude           *float64        `json:"longitude"`
+	Latitude            *float64        `json:"latitude"`
+	LocationDescription string          `json:"location_description"`
 }
 
 func NewDevice(opts NewDeviceOpts) (*Device, error) {
@@ -113,6 +113,9 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 
 type NewSensorOpts struct {
 	Code          string          `json:"code"`
+	Brand         string          `json:"brand"`
+	GoalID        int64           `json:"goal_id"`
+	TypeID        int64           `json:"type_id"`
 	Description   string          `json:"description"`
 	ExternalID    string          `json:"external_id"`
 	Configuration json.RawMessage `json:"configuration"`
@@ -120,7 +123,10 @@ type NewSensorOpts struct {
 
 func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 	sensor := Sensor{
-		Description:   "",
+		Brand:         opts.Brand,
+		Goal:          opts.GoalID,
+		Type:          opts.TypeID,
+		Description:   opts.Description,
 		ExternalID:    opts.ExternalID,
 		Configuration: []byte("{}"),
 	}
@@ -133,8 +139,6 @@ func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 	if opts.Configuration != nil {
 		sensor.Configuration = opts.Configuration
 	}
-
-	sensor.Description = opts.Description
 
 	return &sensor, nil
 }
@@ -183,10 +187,10 @@ func (d *Device) GetSensorByExternalID(eid string) (*Sensor, error) {
 	return nil, ErrSensorNotFound
 }
 
-func (d *Device) DeleteSensor(sensor *Sensor) error {
+func (d *Device) DeleteSensorByID(id int64) error {
 	sCount := len(d.Sensors)
 	for ix := range d.Sensors {
-		if d.Sensors[ix].Code == sensor.Code {
+		if d.Sensors[ix].ID == id {
 			d.Sensors[ix] = d.Sensors[sCount-1]
 			d.Sensors = d.Sensors[:sCount-1]
 			return nil

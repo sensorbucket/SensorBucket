@@ -11,7 +11,7 @@ type Store interface {
 	List(DeviceFilter) ([]Device, error)
 	ListInBoundingBox(BoundingBox, DeviceFilter) ([]Device, error)
 	ListInRange(LocationRange, DeviceFilter) ([]Device, error)
-	Find(id int) (*Device, error)
+	Find(id int64) (*Device, error)
 	Save(dev *Device) error
 	Delete(dev *Device) error
 }
@@ -20,7 +20,7 @@ type Service interface {
 	ListInRange(ctx context.Context, lr LocationRange, filter DeviceFilter) ([]Device, error)
 	ListInBoundingBox(ctx context.Context, bb BoundingBox, filter DeviceFilter) ([]Device, error)
 	CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error)
-	GetDevice(ctx context.Context, id int) (*Device, error)
+	GetDevice(ctx context.Context, id int64) (*Device, error)
 	AddSensor(ctx context.Context, dev *Device, dto NewSensorOpts) error
 	DeleteSensor(ctx context.Context, dev *Device, sensor *Sensor) error
 	UpdateDevice(ctx context.Context, dev *Device, opt UpdateDeviceOpts) error
@@ -75,7 +75,7 @@ func (s *ServiceImpl) CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Dev
 	return dev, nil
 }
 
-func (s *ServiceImpl) GetDevice(ctx context.Context, id int) (*Device, error) {
+func (s *ServiceImpl) GetDevice(ctx context.Context, id int64) (*Device, error) {
 	dev, err := s.store.Find(id)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (s *ServiceImpl) AddSensor(ctx context.Context, dev *Device, dto NewSensorO
 }
 
 func (s *ServiceImpl) DeleteSensor(ctx context.Context, dev *Device, sensor *Sensor) error {
-	if err := dev.DeleteSensor(sensor); err != nil {
+	if err := dev.DeleteSensorByID(sensor.ID); err != nil {
 		return err
 	}
 	if err := s.store.Save(dev); err != nil {

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -61,6 +60,7 @@ func (t *HTTPTransport) setupRoutes() {
 			r.Delete("/{sensor_code}", t.httpDeleteSensor())
 		})
 	})
+	// TODO: Should we be able to fetch sensor by global unique ID?
 }
 
 //
@@ -278,7 +278,6 @@ func (t *HTTPTransport) httpAddSensor() http.HandlerFunc {
 			return
 		}
 
-		fmt.Printf("Got: %+v\n", dto)
 		if err := t.svc.AddSensor(r.Context(), dev, dto); err != nil {
 			web.HTTPError(rw, err)
 			return
@@ -321,7 +320,7 @@ func (t *HTTPTransport) useDeviceResolver() middleware {
 	return func(next http.Handler) http.Handler {
 		mw := func(rw http.ResponseWriter, r *http.Request) {
 			idString := chi.URLParam(r, "device_id")
-			id, err := strconv.Atoi(idString)
+			id, err := strconv.ParseInt(idString, 10, 64)
 			if err != nil {
 				web.HTTPError(rw, ErrHTTPDeviceIDInvalid)
 				return

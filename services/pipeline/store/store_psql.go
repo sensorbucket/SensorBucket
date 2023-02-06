@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -87,7 +86,6 @@ func (s *PSQLStore) ListPipelines(filter service.PipelinesFilter) ([]service.Pip
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("query: %v\n", query)
 	// Perform query
 	row, err := s.db.Queryx(query, params...)
 	if err != nil {

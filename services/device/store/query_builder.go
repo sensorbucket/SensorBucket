@@ -104,7 +104,7 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) ([]service.Device, error) {
 	for ix := range sensorModels {
 		model := sensorModels[ix]
 		dev := devMap[model.DeviceID]
-		dev.Sensors = append(dev.Sensors, model.Sensor)
+		dev.Sensors = append(dev.Sensors, *model.Sensor)
 	}
 
 	devices := make([]service.Device, len(deviceModels))
