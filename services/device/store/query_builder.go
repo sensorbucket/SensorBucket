@@ -1,6 +1,8 @@
 package store
 
 import (
+	"fmt"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"sensorbucket.nl/sensorbucket/services/device/service"
@@ -58,14 +60,29 @@ func (b deviceQueryBuilder) WithinRange(r service.LocationRange) deviceQueryBuil
 func (b deviceQueryBuilder) Query(db *sqlx.DB) ([]service.Device, error) {
 	deviceModels := []DeviceModel{}
 
-	query, params, err := b.query.ToSql()
+	// Fetch devices
+	fmt.Println("Estimate query: ", sq.DebugSqlizer(b.query))
+	rows, err := b.query.RunWith(db).Query()
 	if err != nil {
 		return nil, err
 	}
 
-	// Fetch devices
-	if err := db.Select(&deviceModels, query, params...); err != nil {
-		return nil, err
+	for rows.Next() {
+		var model DeviceModel
+		err := rows.Scan(
+			&model.ID,
+			&model.Code,
+			&model.Description,
+			&model.Organisation,
+			&model.Configuration,
+			&model.LocationDescription,
+			&model.Longitude,
+			&model.Latitude,
+		)
+		if err != nil {
+			return nil, err
+		}
+		deviceModels = append(deviceModels, model)
 	}
 
 	ids := make([]int64, len(deviceModels))

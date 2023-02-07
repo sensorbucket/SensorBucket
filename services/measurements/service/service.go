@@ -190,7 +190,6 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 }
 
 func (s *Service) StoreMeasurement(m Measurement) error {
-	log.Printf("Inserting measurements: %+v\n", m)
 	if err := m.Validate(); err != nil {
 		return fmt.Errorf("validation failed for measurement: %w", err)
 	}

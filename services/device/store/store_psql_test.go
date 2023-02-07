@@ -94,6 +94,13 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 		assert.Equal(t, dev, readDev, "store.Save and store.Find result in changes")
 	})
 
+	t.Run("listing created device", func(t *testing.T) {
+		devs, err := store.List(service.DeviceFilter{})
+		assert.NoError(t, err)
+		assert.Len(t, devs, 1)
+		assert.Equal(t, dev, &devs[0], "store.Save and store.List result in changes")
+	})
+
 	t.Run("modifying a device and fetching it", func(t *testing.T) {
 		dev.Latitude = ptr(float64(40))
 		dev.Longitude = ptr(float64(50))

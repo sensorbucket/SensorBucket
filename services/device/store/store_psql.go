@@ -108,12 +108,14 @@ func (s *PSQLStore) Delete(dev *service.Device) error {
 func (s *PSQLStore) createDevice(dev *service.Device) error {
 	if err := s.db.Get(&dev.ID,
 		`
-			INSERT INTO devices (code, description, organisation, configuration, location, location_description)
+			INSERT INTO "devices" (
+				"code", "description", "organisation", "configuration", "location", "location_description"
+			)
 			VALUES ($1, $2, $3, $4, ST_POINT($5, $6), $7)
 			RETURNING id
 		`,
 		dev.Code, dev.Description, dev.Organisation, dev.Configuration,
-		dev.Latitude, dev.Longitude, dev.LocationDescription,
+		dev.Longitude, dev.Latitude, dev.LocationDescription,
 	); err != nil {
 		return err
 	}
@@ -123,7 +125,7 @@ func (s *PSQLStore) createDevice(dev *service.Device) error {
 func (s *PSQLStore) updateDevice(dev *service.Device) error {
 	if _, err := s.db.Exec(
 		"UPDATE devices SET description=$2, configuration=$3, location=ST_POINT($4, $5), location_description=$6 WHERE id=$1",
-		dev.ID, dev.Description, dev.Configuration, dev.Latitude, dev.Longitude, dev.LocationDescription,
+		dev.ID, dev.Description, dev.Configuration, dev.Longitude, dev.Latitude, dev.LocationDescription,
 	); err != nil {
 		return err
 	}
@@ -216,7 +218,13 @@ func find(db DB, id int64) (*service.Device, error) {
 	var dev DeviceModel
 
 	// Get device model
-	if err := db.Get(&dev, `SELECT "id", "code", "description", "organisation", "configuration", "location_description", ST_X("location"::geometry) AS latitude, ST_Y("location"::geometry) AS longitude FROM devices WHERE id=$1`, id); err != nil {
+	if err := db.Get(&dev, `
+		SELECT 
+			"id", "code", "description", "organisation", "configuration", "location_description",
+			ST_X("location"::geometry) AS longitude, ST_Y("location"::geometry) AS latitude
+		FROM devices
+		WHERE id=$1
+	`, id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, service.ErrDeviceNotFound
 		}

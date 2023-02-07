@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -93,7 +92,6 @@ func TestPassOnPipelineErrorToRequester(t *testing.T) {
 	if err := json.NewDecoder(res.Body).Decode(&apiResponse); err != nil {
 		assert.NoError(t, err, "JSON Decode API (error)response")
 	}
-	log.Printf("Got: %+v\n", apiResponse)
 	assert.Equal(t, pipelineServiceError.Message, apiResponse.Message)
 	assert.Equal(t, pipelineServiceError.Code, apiResponse.Code)
 	assert.Equal(t, pipelineServiceError.HTTPStatus, res.StatusCode)
