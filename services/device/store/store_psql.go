@@ -219,7 +219,7 @@ func find(db DB, id int64) (*service.Device, error) {
 	sensors := []service.Sensor{}
 	rows, err := db.Queryx(`
 		SELECT 
-			s.id, s.brand, s.code, s.description, s.external_id, s.configuration,
+			s.id, s.brand, s.code, s.description, s.external_id, s.configuration, s.archive_time,
 			sg.id, sg.name, sg.description,
 			st.id, st.description
 		FROM sensors s 
@@ -233,7 +233,7 @@ func find(db DB, id int64) (*service.Device, error) {
 	for rows.Next() {
 		var s = service.Sensor{Type: &service.SensorType{}, Goal: &service.SensorGoal{}}
 		if err := rows.Scan(
-			&s.ID, &s.Brand, &s.Code, &s.Description, &s.ExternalID, &s.Configuration,
+			&s.ID, &s.Brand, &s.Code, &s.Description, &s.ExternalID, &s.Configuration, &s.ArchiveTime,
 			&s.Goal.ID, &s.Goal.Name, &s.Goal.Description,
 			&s.Type.ID, &s.Type.Description,
 		); err != nil {

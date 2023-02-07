@@ -71,7 +71,7 @@ type Sensor struct {
 	Code          string          `json:"code"`
 	Description   string          `json:"description"`
 	Brand         string          `json:"brand"`
-	ArchiveTime   int             `json:"archive_time" db:"archive_time"`
+	ArchiveTime   uint            `json:"archive_time" db:"archive_time"`
 	Type          *SensorType     `json:"type"`
 	Goal          *SensorGoal     `json:"goal"`
 	ExternalID    string          `json:"external_id" db:"external_id"`
@@ -139,6 +139,7 @@ type NewSensorOpts struct {
 	Description   string          `json:"description"`
 	ExternalID    string          `json:"external_id"`
 	Configuration json.RawMessage `json:"configuration"`
+	ArchiveTime   uint            `json:"archive_time"`
 }
 
 func NewSensor(opts NewSensorOpts) (*Sensor, error) {
@@ -149,6 +150,7 @@ func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 		Description:   opts.Description,
 		ExternalID:    opts.ExternalID,
 		Configuration: []byte("{}"),
+		ArchiveTime:   opts.ArchiveTime,
 	}
 
 	if opts.Type == nil {

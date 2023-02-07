@@ -125,6 +125,7 @@ func TestShouldAddSensor(t *testing.T) {
 			Name:        "sensorgoalname",
 			Description: "sensorgoal",
 		},
+		ArchiveTime: 1500,
 	}
 	dev := &service.Device{
 		Code:                "test",
