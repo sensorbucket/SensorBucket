@@ -33,6 +33,8 @@ type Service interface {
 	ListDevices(ctx context.Context, filter DeviceFilter) ([]Device, error)
 	ListInRange(ctx context.Context, lr LocationRange, filter DeviceFilter) ([]Device, error)
 	ListInBoundingBox(ctx context.Context, bb BoundingBox, filter DeviceFilter) ([]Device, error)
+	ListSensorGoals(ctx context.Context) ([]SensorGoal, error)
+	ListSensorTypes(ctx context.Context) ([]SensorType, error)
 	CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error)
 	GetDevice(ctx context.Context, id int64) (*Device, error)
 	AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error
@@ -80,6 +82,14 @@ func (s *ServiceImpl) ListInBoundingBox(ctx context.Context, bb BoundingBox, fil
 	return devices, err
 }
 
+func (s *ServiceImpl) ListSensorTypes(ctx context.Context) ([]SensorType, error) {
+	return s.store.ListSensorTypes()
+}
+
+func (s *ServiceImpl) ListSensorGoals(ctx context.Context) ([]SensorGoal, error) {
+	return s.store.ListSensorGoals()
+}
+
 func (s *ServiceImpl) CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error) {
 	dev, err := NewDevice(dto)
 	if err != nil {
@@ -123,6 +133,7 @@ type NewSensorDTO struct {
 	Description   string          `json:"description"`
 	ExternalID    string          `json:"external_id"`
 	Configuration json.RawMessage `json:"configuration"`
+	ArchiveTime   uint            `json:"archive_time"`
 }
 
 func (s *ServiceImpl) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error {
@@ -142,6 +153,7 @@ func (s *ServiceImpl) AddSensor(ctx context.Context, dev *Device, dto NewSensorD
 		Description:   dto.Description,
 		ExternalID:    dto.ExternalID,
 		Configuration: dto.Configuration,
+		ArchiveTime:   dto.ArchiveTime,
 	}
 	if err := dev.AddSensor(opts); err != nil {
 		return err
@@ -168,6 +180,7 @@ type UpdateDeviceOpts struct {
 	Latitude            *float64        `json:"latitude"`
 	LocationDescription *string         `json:"location_description"`
 	Configuration       json.RawMessage `json:"configuration"`
+	ArchiveTime         uint            `json:"archive_time"`
 }
 
 func (s *ServiceImpl) UpdateDevice(ctx context.Context, dev *Device, opt UpdateDeviceOpts) error {

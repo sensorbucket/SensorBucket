@@ -12,6 +12,46 @@ servers:
   - description: Local
     url: 'http://localhost:3000/api'
 paths: 
+  /sensortypes:
+    get:
+      operationId: ListSensorTypes
+      summary: List available sensor types
+      tags: ["Devices"]
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: listed sensor types
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/sensortype'
+  /sensorgoals:
+    get:
+      operationId: ListSensorGoals
+      summary: List available sensor goals
+      tags: ["Devices"]
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: listed sensor goals
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/sensorgoal'
   /devices:
     get:
       operationId: ListDevices
@@ -516,6 +556,10 @@ paths:
 
 components:
   schemas:
+    sensortype:
+      type: object
+    sensorgoal:
+      type: object
     createDeviceDTO:
       type: object
       properties:

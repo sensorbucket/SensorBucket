@@ -188,7 +188,7 @@ func (s *PSQLStore) updateSensors(devID int64, sensors []service.Sensor) error {
 }
 
 func listSensorGoals(db DB) ([]service.SensorGoal, error) {
-	var goals []service.SensorGoal
+	goals := []service.SensorGoal{}
 	if err := db.Select(&goals, "SELECT id, name, description FROM sensor_goals"); err != nil {
 		return nil, err
 	}
@@ -196,11 +196,11 @@ func listSensorGoals(db DB) ([]service.SensorGoal, error) {
 }
 
 func listSensorTypes(db DB) ([]service.SensorType, error) {
-	var typs []service.SensorType
-	if err := db.Select(&typs, "SELECT id, description FROM sensor_types"); err != nil {
+	types := []service.SensorType{}
+	if err := db.Select(&types, "SELECT id, description FROM sensor_types"); err != nil {
 		return nil, err
 	}
-	return typs, nil
+	return types, nil
 
 }
 

@@ -3,6 +3,8 @@
 handle_path /api/* {
     reverse_proxy /pipelines* pipeline:3000 
     reverse_proxy /devices* device:3000
+    reverse_proxy /sensorgoals* device:3000
+    reverse_proxy /sensortypes* device:3000
     reverse_proxy /uplinks* httpimporter:3000 {
         rewrite /
     }

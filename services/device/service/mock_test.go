@@ -509,6 +509,12 @@ var _ service.Service = &ServiceMock{}
 //			ListInRangeFunc: func(ctx context.Context, lr service.LocationRange, filter service.DeviceFilter) ([]service.Device, error) {
 //				panic("mock out the ListInRange method")
 //			},
+//			ListSensorGoalsFunc: func(ctx context.Context) ([]service.SensorGoal, error) {
+//				panic("mock out the ListSensorGoals method")
+//			},
+//			ListSensorTypesFunc: func(ctx context.Context) ([]service.SensorType, error) {
+//				panic("mock out the ListSensorTypes method")
+//			},
 //			UpdateDeviceFunc: func(ctx context.Context, dev *service.Device, opt service.UpdateDeviceOpts) error {
 //				panic("mock out the UpdateDevice method")
 //			},
@@ -548,6 +554,12 @@ type ServiceMock struct {
 
 	// ListInRangeFunc mocks the ListInRange method.
 	ListInRangeFunc func(ctx context.Context, lr service.LocationRange, filter service.DeviceFilter) ([]service.Device, error)
+
+	// ListSensorGoalsFunc mocks the ListSensorGoals method.
+	ListSensorGoalsFunc func(ctx context.Context) ([]service.SensorGoal, error)
+
+	// ListSensorTypesFunc mocks the ListSensorTypes method.
+	ListSensorTypesFunc func(ctx context.Context) ([]service.SensorType, error)
 
 	// UpdateDeviceFunc mocks the UpdateDevice method.
 	UpdateDeviceFunc func(ctx context.Context, dev *service.Device, opt service.UpdateDeviceOpts) error
@@ -632,6 +644,16 @@ type ServiceMock struct {
 			// Filter is the filter argument value.
 			Filter service.DeviceFilter
 		}
+		// ListSensorGoals holds details about calls to the ListSensorGoals method.
+		ListSensorGoals []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
+		// ListSensorTypes holds details about calls to the ListSensorTypes method.
+		ListSensorTypes []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 		// UpdateDevice holds details about calls to the UpdateDevice method.
 		UpdateDevice []struct {
 			// Ctx is the ctx argument value.
@@ -652,6 +674,8 @@ type ServiceMock struct {
 	lockListDevices       sync.RWMutex
 	lockListInBoundingBox sync.RWMutex
 	lockListInRange       sync.RWMutex
+	lockListSensorGoals   sync.RWMutex
+	lockListSensorTypes   sync.RWMutex
 	lockUpdateDevice      sync.RWMutex
 }
 
@@ -1028,6 +1052,70 @@ func (mock *ServiceMock) ListInRangeCalls() []struct {
 	mock.lockListInRange.RLock()
 	calls = mock.calls.ListInRange
 	mock.lockListInRange.RUnlock()
+	return calls
+}
+
+// ListSensorGoals calls ListSensorGoalsFunc.
+func (mock *ServiceMock) ListSensorGoals(ctx context.Context) ([]service.SensorGoal, error) {
+	if mock.ListSensorGoalsFunc == nil {
+		panic("ServiceMock.ListSensorGoalsFunc: method is nil but Service.ListSensorGoals was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockListSensorGoals.Lock()
+	mock.calls.ListSensorGoals = append(mock.calls.ListSensorGoals, callInfo)
+	mock.lockListSensorGoals.Unlock()
+	return mock.ListSensorGoalsFunc(ctx)
+}
+
+// ListSensorGoalsCalls gets all the calls that were made to ListSensorGoals.
+// Check the length with:
+//
+//	len(mockedService.ListSensorGoalsCalls())
+func (mock *ServiceMock) ListSensorGoalsCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockListSensorGoals.RLock()
+	calls = mock.calls.ListSensorGoals
+	mock.lockListSensorGoals.RUnlock()
+	return calls
+}
+
+// ListSensorTypes calls ListSensorTypesFunc.
+func (mock *ServiceMock) ListSensorTypes(ctx context.Context) ([]service.SensorType, error) {
+	if mock.ListSensorTypesFunc == nil {
+		panic("ServiceMock.ListSensorTypesFunc: method is nil but Service.ListSensorTypes was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockListSensorTypes.Lock()
+	mock.calls.ListSensorTypes = append(mock.calls.ListSensorTypes, callInfo)
+	mock.lockListSensorTypes.Unlock()
+	return mock.ListSensorTypesFunc(ctx)
+}
+
+// ListSensorTypesCalls gets all the calls that were made to ListSensorTypes.
+// Check the length with:
+//
+//	len(mockedService.ListSensorTypesCalls())
+func (mock *ServiceMock) ListSensorTypesCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockListSensorTypes.RLock()
+	calls = mock.calls.ListSensorTypes
+	mock.lockListSensorTypes.RUnlock()
 	return calls
 }
 
