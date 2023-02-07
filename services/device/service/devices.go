@@ -42,6 +42,16 @@ var (
 		"Invalid coordinates supplied",
 		"ERR_LOCATION_INVALID_COORDINATES",
 	)
+	ErrSensorMissingType = web.NewError(
+		http.StatusBadRequest,
+		"Sensor requires a type",
+		"ERR_SENSOR_NO_TYPE",
+	)
+	ErrSensorMissingGoal = web.NewError(
+		http.StatusBadRequest,
+		"Sensor requires a goal",
+		"ERR_SENSOR_NO_GOAL",
+	)
 )
 
 type Device struct {
@@ -62,8 +72,8 @@ type Sensor struct {
 	Description   string          `json:"description"`
 	Brand         string          `json:"brand"`
 	ArchiveTime   int             `json:"archive_time" db:"archive_time"`
-	Type          SensorType      `json:"type"`
-	Goal          SensorGoal      `json:"goal"`
+	Type          *SensorType     `json:"type"`
+	Goal          *SensorGoal     `json:"goal"`
 	ExternalID    string          `json:"external_id" db:"external_id"`
 	Configuration json.RawMessage `json:"configuration"`
 }
@@ -124,8 +134,8 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 type NewSensorOpts struct {
 	Code          string          `json:"code"`
 	Brand         string          `json:"brand"`
-	Goal          SensorGoal      `json:"goal_id"`
-	Type          SensorType      `json:"type_id"`
+	Goal          *SensorGoal     `json:"goal_id"`
+	Type          *SensorType     `json:"type_id"`
 	Description   string          `json:"description"`
 	ExternalID    string          `json:"external_id"`
 	Configuration json.RawMessage `json:"configuration"`
@@ -139,6 +149,13 @@ func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 		Description:   opts.Description,
 		ExternalID:    opts.ExternalID,
 		Configuration: []byte("{}"),
+	}
+
+	if opts.Type == nil {
+		return nil, ErrSensorMissingType
+	}
+	if opts.Goal == nil {
+		return nil, ErrSensorMissingGoal
 	}
 
 	if !R_CODE.MatchString(opts.Code) {

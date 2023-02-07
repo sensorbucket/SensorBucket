@@ -35,7 +35,7 @@ type Service interface {
 	ListInBoundingBox(ctx context.Context, bb BoundingBox, filter DeviceFilter) ([]Device, error)
 	CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error)
 	GetDevice(ctx context.Context, id int64) (*Device, error)
-	AddSensor(ctx context.Context, dev *Device, dto NewSensorOpts) error
+	AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error
 	DeleteSensor(ctx context.Context, dev *Device, sensor *Sensor) error
 	UpdateDevice(ctx context.Context, dev *Device, opt UpdateDeviceOpts) error
 	DeleteDevice(ctx context.Context, dev *Device) error
@@ -115,8 +115,35 @@ func (s *ServiceImpl) GetSensorType(ctx context.Context, id int64) (*SensorType,
 	return typ, nil
 }
 
-func (s *ServiceImpl) AddSensor(ctx context.Context, dev *Device, dto NewSensorOpts) error {
-	if err := dev.AddSensor(dto); err != nil {
+type NewSensorDTO struct {
+	Code          string          `json:"code"`
+	Brand         string          `json:"brand"`
+	GoalID        int64           `json:"goal_id"`
+	TypeID        int64           `json:"type_id"`
+	Description   string          `json:"description"`
+	ExternalID    string          `json:"external_id"`
+	Configuration json.RawMessage `json:"configuration"`
+}
+
+func (s *ServiceImpl) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error {
+	sensorGoal, err := s.GetSensorGoal(ctx, dto.GoalID)
+	if err != nil {
+		return err
+	}
+	sensorType, err := s.GetSensorType(ctx, dto.TypeID)
+	if err != nil {
+		return err
+	}
+	opts := NewSensorOpts{
+		Code:          dto.Code,
+		Brand:         dto.Brand,
+		Goal:          sensorGoal,
+		Type:          sensorType,
+		Description:   dto.Description,
+		ExternalID:    dto.ExternalID,
+		Configuration: dto.Configuration,
+	}
+	if err := dev.AddSensor(opts); err != nil {
 		return err
 	}
 	if err := s.store.Save(dev); err != nil {

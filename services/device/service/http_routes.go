@@ -269,37 +269,16 @@ func (t *HTTPTransport) httpListSensors() http.HandlerFunc {
 }
 
 func (t *HTTPTransport) httpAddSensor() http.HandlerFunc {
-	type request struct {
-		Code          string          `json:"code"`
-		Brand         string          `json:"brand"`
-		GoalID        int64           `json:"goal_id"`
-		TypeID        int64           `json:"type_id"`
-		Description   string          `json:"description"`
-		ExternalID    string          `json:"external_id"`
-		Configuration json.RawMessage `json:"configuration"`
-	}
 	return func(rw http.ResponseWriter, r *http.Request) {
 		dev := r.Context().Value(ctxDeviceKey).(*Device)
 
 		// TODO: Create custom DTO, because we need to fetch sensorgoal and sensortype
-		var req request
-		if err := web.DecodeJSON(r, &req); err != nil {
+		var dto NewSensorDTO
+		if err := web.DecodeJSON(r, &dto); err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
 
-		sensorGoal, err := t.svc.GetSensorGoal(req.GoalID)
-		sensorType, err := t.svc.GetSensorType(req.TypeID)
-
-		dto := NewSensorOpts{
-			Code:          req.Code,
-			Brand:         req.Brand,
-			Goal:          sensorGoal,
-			Type:          sensorType,
-			Description:   req.Description,
-			ExternalID:    req.ExternalID,
-			Configuration: req.Configuration,
-		}
 		if err := t.svc.AddSensor(r.Context(), dev, dto); err != nil {
 			web.HTTPError(rw, err)
 			return

@@ -28,13 +28,20 @@ var (
 
 func resetPrefabs() {
 	prefabSensor1 = deviceservice.Sensor{
-		ID:            1,
-		Code:          "abcd",
-		Description:   "",
-		Brand:         "",
-		ArchiveTime:   100,
-		Type:          1,
-		Goal:          1,
+		ID:          1,
+		Code:        "abcd",
+		Description: "",
+		Brand:       "",
+		ArchiveTime: 100,
+		Type: &deviceservice.SensorType{
+			ID:          5,
+			Description: "sensortype",
+		},
+		Goal: &deviceservice.SensorGoal{
+			ID:          6,
+			Name:        "sensorgoalname",
+			Description: "sensorgoal",
+		},
 		Configuration: json.RawMessage{},
 		ExternalID:    "1",
 	}
@@ -88,10 +95,11 @@ func resetPrefabs() {
 		DeviceConfiguration:       prefabMessage.Device.Configuration,
 		SensorID:                  prefabSensor1.ID,
 		SensorCode:                prefabSensor1.Code,
-		SensorTypeID:              prefabSensor1.Type,
-		SensorTypeDescription:     "",
-		SensorGoalID:              prefabSensor1.Goal,
-		SensorGoalName:            "",
+		SensorTypeID:              prefabSensor1.Type.ID,
+		SensorTypeDescription:     prefabSensor1.Type.Description,
+		SensorGoalID:              prefabSensor1.Goal.ID,
+		SensorGoalName:            prefabSensor1.Goal.Name,
+		SensorGoalDescription:     prefabSensor1.Goal.Description,
 		SensorDescription:         prefabSensor1.Description,
 		SensorExternalID:          prefabSensor1.ExternalID,
 		SensorConfig:              prefabSensor1.Configuration,

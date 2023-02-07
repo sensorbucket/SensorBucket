@@ -53,9 +53,13 @@ func (s *PSQLStore) ListInRange(r service.LocationRange, filter service.DeviceFi
 func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) {
 	return newDeviceQueryBuilder().WithFilters(filter).Query(s.db)
 }
+
 func (s *PSQLStore) ListSensorGoals() ([]service.SensorGoal, error) {
+	return listSensorGoals(s.db)
 }
+
 func (s *PSQLStore) ListSensorTypes() ([]service.SensorType, error) {
+	return listSensorTypes(s.db)
 }
 
 func (s *PSQLStore) Find(id int64) (*service.Device, error) {
@@ -66,7 +70,7 @@ func (s *PSQLStore) FindSensorGoal(id int64) (*service.SensorGoal, error) {
 	return findSensorGoal(s.db, id)
 }
 
-func (s *PSQLStore) findSensorType(id int64) (*service.SensorType, error) {
+func (s *PSQLStore) FindSensorType(id int64) (*service.SensorType, error) {
 	return findSensorType(s.db, id)
 }
 
@@ -106,66 +110,6 @@ func (s *PSQLStore) createDevice(dev *service.Device) error {
 		return err
 	}
 	return nil
-}
-
-func ListSensorGoals(db DB) ([]service.SensorGoal, error) {
-	var goals []service.SensorGoal
-	if err := db.Select(&goals, "SELECT id, name, description FROM sensor_goals"); err != nil {
-		return nil, err
-	}
-	return goals, nil
-}
-
-func ListSensorTypes(db DB) ([]service.SensorType, error) {
-	var typs []service.SensorType
-	if err := db.Select(&typs, "SELECT id, description FROM sensor_types"); err != nil {
-		return nil, err
-	}
-	return typs, nil
-
-}
-
-func find(db DB, id int64) (*service.Device, error) {
-	var dev DeviceModel
-
-	// Get device model
-	if err := db.Get(&dev, `SELECT "id", "code", "description", "organisation", "configuration", "location_description", ST_X("location"::geometry) AS latitude, ST_Y("location"::geometry) AS longitude FROM devices WHERE id=$1`, id); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, service.ErrDeviceNotFound
-		}
-		return nil, err
-	}
-
-	// Set sensors
-	sensors := []service.Sensor{}
-	if err := db.Select(&sensors, "SELECT id, brand, goal_id, type_id, code, description, external_id, configuration FROM sensors WHERE device_id=$1", id); err != nil {
-		return nil, err
-	}
-
-	dev.Sensors = sensors
-	return &dev.Device, nil
-}
-
-func findSensorGoal(db DB, id int64) (*service.SensorGoal, error) {
-	var goal service.SensorGoal
-	if err := db.Get(&goal, "SELECT id, name, description FROM sensor_goals WHERE id = $1", id); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, service.ErrSensorGoalNotFound
-		}
-		return nil, err
-	}
-	return &goal, nil
-}
-
-func findSensorType(db DB, id int64) (*service.SensorType, error) {
-	var typ service.SensorType
-	if err := db.Get(&typ, "SELECT id, description FROM sensor_types WHERE id = $1", id); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, service.ErrSensorTypeNotFound
-		}
-		return nil, err
-	}
-	return &typ, nil
 }
 
 func (s *PSQLStore) updateDevice(dev *service.Device) error {
@@ -243,6 +187,87 @@ func (s *PSQLStore) updateSensors(devID int64, sensors []service.Sensor) error {
 	return nil
 }
 
+func listSensorGoals(db DB) ([]service.SensorGoal, error) {
+	var goals []service.SensorGoal
+	if err := db.Select(&goals, "SELECT id, name, description FROM sensor_goals"); err != nil {
+		return nil, err
+	}
+	return goals, nil
+}
+
+func listSensorTypes(db DB) ([]service.SensorType, error) {
+	var typs []service.SensorType
+	if err := db.Select(&typs, "SELECT id, description FROM sensor_types"); err != nil {
+		return nil, err
+	}
+	return typs, nil
+
+}
+
+func find(db DB, id int64) (*service.Device, error) {
+	var dev DeviceModel
+
+	// Get device model
+	if err := db.Get(&dev, `SELECT "id", "code", "description", "organisation", "configuration", "location_description", ST_X("location"::geometry) AS latitude, ST_Y("location"::geometry) AS longitude FROM devices WHERE id=$1`, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, service.ErrDeviceNotFound
+		}
+		return nil, err
+	}
+
+	// Set sensors
+	sensors := []service.Sensor{}
+	rows, err := db.Queryx(`
+		SELECT 
+			s.id, s.brand, s.code, s.description, s.external_id, s.configuration,
+			sg.id, sg.name, sg.description,
+			st.id, st.description
+		FROM sensors s 
+			LEFT JOIN sensor_goals sg ON s.goal_id = sg.id
+			LEFT JOIN sensor_types st ON s.type_id = st.id
+		WHERE device_id=$1
+	`, id)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var s = service.Sensor{Type: &service.SensorType{}, Goal: &service.SensorGoal{}}
+		if err := rows.Scan(
+			&s.ID, &s.Brand, &s.Code, &s.Description, &s.ExternalID, &s.Configuration,
+			&s.Goal.ID, &s.Goal.Name, &s.Goal.Description,
+			&s.Type.ID, &s.Type.Description,
+		); err != nil {
+			return nil, err
+		}
+		sensors = append(sensors, s)
+	}
+
+	dev.Sensors = sensors
+	return &dev.Device, nil
+}
+
+func findSensorGoal(db DB, id int64) (*service.SensorGoal, error) {
+	var goal service.SensorGoal
+	if err := db.Get(&goal, "SELECT id, name, description FROM sensor_goals WHERE id = $1", id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, service.ErrSensorGoalNotFound
+		}
+		return nil, err
+	}
+	return &goal, nil
+}
+
+func findSensorType(db DB, id int64) (*service.SensorType, error) {
+	var typ service.SensorType
+	if err := db.Get(&typ, "SELECT id, description FROM sensor_types WHERE id = $1", id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, service.ErrSensorTypeNotFound
+		}
+		return nil, err
+	}
+	return &typ, nil
+}
+
 func createSensors(tx DB, sensors []SensorModel) error {
 	if len(sensors) == 0 {
 		return nil
@@ -252,7 +277,7 @@ func createSensors(tx DB, sensors []SensorModel) error {
 	).Suffix("RETURNING id")
 	for _, s := range sensors {
 		q = q.Values(
-			s.Code, s.Brand, s.Description, s.Goal, s.Type, s.ArchiveTime, s.Configuration, s.ExternalID, s.DeviceID,
+			s.Code, s.Brand, s.Description, s.Goal.ID, s.Type.ID, s.ArchiveTime, s.Configuration, s.ExternalID, s.DeviceID,
 		)
 	}
 	query, params, err := q.ToSql()
@@ -277,8 +302,8 @@ func updateSensors(tx DB, sensors []SensorModel) error {
 			"code":          s.Code,
 			"brand":         s.Brand,
 			"description":   s.Description,
-			"goal_id":       s.Goal,
-			"type_id":       s.Type,
+			"goal_id":       s.Goal.ID,
+			"type_id":       s.Type.ID,
 			"archive_time":  s.ArchiveTime,
 			"configuration": s.Configuration,
 			"external_id":   s.ExternalID,

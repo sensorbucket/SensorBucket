@@ -41,6 +41,7 @@ type Measurement struct {
 	SensorTypeDescription     string          `json:"sensor_type_description"`
 	SensorGoalID              int64           `json:"sensor_goal_id"`
 	SensorGoalName            string          `json:"sensor_goal_name"`
+	SensorGoalDescription     string          `json:"sensor_goal_description"`
 	SensorDescription         string          `json:"sensor_description"`
 	SensorExternalID          string          `json:"sensor_external_id"`
 	SensorConfig              json.RawMessage `json:"sensor_config"`
@@ -175,10 +176,11 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 
 	measurement.SensorID = sensor.ID
 	measurement.SensorCode = sensor.Code
-	measurement.SensorTypeID = sensor.Type
-	measurement.SensorTypeDescription = ""
-	measurement.SensorGoalID = sensor.Goal
-	measurement.SensorGoalName = ""
+	measurement.SensorTypeID = sensor.Type.ID
+	measurement.SensorTypeDescription = sensor.Type.Description
+	measurement.SensorGoalID = sensor.Goal.ID
+	measurement.SensorGoalName = sensor.Goal.Name
+	measurement.SensorGoalDescription = sensor.Goal.Description
 	measurement.SensorDescription = sensor.Description
 	measurement.SensorExternalID = sensor.ExternalID
 	measurement.SensorConfig = sensor.Configuration
