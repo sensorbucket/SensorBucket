@@ -42,6 +42,14 @@ type SensorModel struct {
 	DeviceID int64 `db:"device_id"`
 }
 
+func sensorModelsToSensors(models []SensorModel) []service.Sensor {
+	var sensors = make([]service.Sensor, len(models))
+	for ix := range models {
+		sensors[ix] = *models[ix].Sensor
+	}
+	return sensors
+}
+
 func (s *PSQLStore) ListInBoundingBox(bb service.BoundingBox, filter service.DeviceFilter) ([]service.Device, error) {
 	return newDeviceQueryBuilder().WithFilters(filter).WithinBoundingBox(bb).Query(s.db)
 }
@@ -215,25 +223,51 @@ func find(db DB, id int64) (*service.Device, error) {
 		return nil, err
 	}
 
-	// Set sensors
-	sensors := []service.Sensor{}
-	rows, err := db.Queryx(`
-		SELECT 
-			s.id, s.brand, s.code, s.description, s.external_id, s.configuration, s.archive_time,
-			sg.id, sg.name, sg.description,
-			st.id, st.description
-		FROM sensors s 
-			LEFT JOIN sensor_goals sg ON s.goal_id = sg.id
-			LEFT JOIN sensor_types st ON s.type_id = st.id
-		WHERE device_id=$1
-	`, id)
+	sensors, err := listSensors(db, func(q sq.SelectBuilder) sq.SelectBuilder {
+		return q.Where(sq.Eq{"device_id": id})
+	})
 	if err != nil {
 		return nil, err
 	}
+	dev.Sensors = sensorModelsToSensors(sensors)
+
+	return &dev.Device, nil
+}
+
+type SelectQueryMod func(q sq.SelectBuilder) sq.SelectBuilder
+
+func listSensors(db DB, mods ...SelectQueryMod) ([]SensorModel, error) {
+	q := pq.Select(
+		"s.id", "s.brand", "s.code", "s.description", "s.external_id", "s.configuration", "s.archive_time",
+		"s.device_id",
+		"sg.id", "sg.name", "sg.description",
+		"st.id", "st.description",
+	).
+		From("sensors s").
+		LeftJoin("sensor_goals sg ON s.goal_id = sg.id").
+		LeftJoin("sensor_types st ON s.type_id = st.id")
+
+	// Apply mods
+	for _, mod := range mods {
+		q = mod(q)
+	}
+
+	rows, err := q.RunWith(db).Query()
+	if err != nil {
+		return nil, err
+	}
+
+	sensors := []SensorModel{}
 	for rows.Next() {
-		var s = service.Sensor{Type: &service.SensorType{}, Goal: &service.SensorGoal{}}
+		var s = SensorModel{
+			Sensor: &service.Sensor{
+				Type: &service.SensorType{},
+				Goal: &service.SensorGoal{},
+			},
+		}
 		if err := rows.Scan(
 			&s.ID, &s.Brand, &s.Code, &s.Description, &s.ExternalID, &s.Configuration, &s.ArchiveTime,
+			&s.DeviceID,
 			&s.Goal.ID, &s.Goal.Name, &s.Goal.Description,
 			&s.Type.ID, &s.Type.Description,
 		); err != nil {
@@ -241,9 +275,7 @@ func find(db DB, id int64) (*service.Device, error) {
 		}
 		sensors = append(sensors, s)
 	}
-
-	dev.Sensors = sensors
-	return &dev.Device, nil
+	return sensors, nil
 }
 
 func findSensorGoal(db DB, id int64) (*service.SensorGoal, error) {

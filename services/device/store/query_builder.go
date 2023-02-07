@@ -81,24 +81,10 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) ([]service.Device, error) {
 	}
 
 	// Fetch sensors for devices
-	q := pq.Select(
-		"device_id",
-		"id",
-		"code",
-		"description",
-		"brand",
-		"archive_time",
-		"type_id",
-		"goal_id",
-		"external_id",
-		"configuration",
-	).From("sensors").Where(sq.Eq{"device_id": ids})
-	query, params, err = q.ToSql()
+	sensorModels, err := listSensors(db, func(q sq.SelectBuilder) sq.SelectBuilder {
+		return q.Where(sq.Eq{"device_id": ids})
+	})
 	if err != nil {
-		return nil, err
-	}
-	var sensorModels []SensorModel
-	if err := db.Select(&sensorModels, query, params...); err != nil {
 		return nil, err
 	}
 	for ix := range sensorModels {
