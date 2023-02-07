@@ -140,7 +140,9 @@ func (s *PSQLStore) updateSensors(devID int64, sensors []service.Sensor) error {
 	}
 
 	// Get delta with db
-	dev, err := find(tx, devID)
+	dbSensors, err := listSensors(tx, func(q sq.SelectBuilder) sq.SelectBuilder {
+		return q.Where(sq.Eq{"device_id": devID})
+	})
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -148,6 +150,7 @@ func (s *PSQLStore) updateSensors(devID int64, sensors []service.Sensor) error {
 	var createdSensors []SensorModel
 	var updatedSensors []SensorModel
 	var deletedSensors []int64
+create_delta_loop:
 	for ix := range sensors {
 		s := &sensors[ix]
 		// If the sensor has ID 0 then it is new and must be created
@@ -156,10 +159,10 @@ func (s *PSQLStore) updateSensors(devID int64, sensors []service.Sensor) error {
 			continue
 		}
 		// If the sensor is present in db and this list then assume it is updated
-		for _, dbs := range dev.Sensors {
+		for _, dbs := range dbSensors {
 			if dbs.ID == s.ID {
 				updatedSensors = append(updatedSensors, SensorModel{Sensor: s, DeviceID: devID})
-				continue
+				continue create_delta_loop
 			}
 		}
 		// If we reach this, it means the sensor has an ID but is not present
@@ -167,10 +170,11 @@ func (s *PSQLStore) updateSensors(devID int64, sensors []service.Sensor) error {
 		log.Printf("[WARNING] device/store_psql#updateSensors was called with an unknown sensor (id: %d) that is neither new or already exists\n", s.ID)
 	}
 	// If a sensor is present in the database but not in the new list then it was removed
-	for _, dbs := range dev.Sensors {
+deleted_delta_loop:
+	for _, dbs := range dbSensors {
 		for _, s := range sensors {
 			if s.ID == dbs.ID {
-				continue
+				continue deleted_delta_loop
 			}
 		}
 		deletedSensors = append(deletedSensors, dbs.ID)
@@ -338,17 +342,18 @@ func updateSensors(tx DB, sensors []SensorModel) error {
 		return nil
 	}
 	for _, s := range sensors {
-		_, err := pq.Update("sensors").SetMap(map[string]any{
-			"code":          s.Code,
-			"brand":         s.Brand,
-			"description":   s.Description,
-			"goal_id":       s.Goal.ID,
-			"type_id":       s.Type.ID,
-			"archive_time":  s.ArchiveTime,
-			"configuration": s.Configuration,
-			"external_id":   s.ExternalID,
-			"device_id":     s.DeviceID,
-		}).RunWith(tx).Exec()
+		_, err := pq.Update("sensors").Where(sq.Eq{"id": s.ID}).
+			SetMap(map[string]any{
+				"code":          s.Code,
+				"brand":         s.Brand,
+				"description":   s.Description,
+				"goal_id":       s.Goal.ID,
+				"type_id":       s.Type.ID,
+				"archive_time":  s.ArchiveTime,
+				"configuration": s.Configuration,
+				"external_id":   s.ExternalID,
+				"device_id":     s.DeviceID,
+			}).RunWith(tx).Exec()
 		if err != nil {
 			return err
 		}

@@ -648,9 +648,22 @@ components:
         external_id:
           type: string
           example: "5"
-        measurement_type:
+        brand:
           type: string
-          example: pressure
+          example: "sensor brand ABC"
+        configuration:
+          type: object
+        archive_time:
+          type: number
+          example: 7
+        goal_id:
+          type: number
+          example: 1
+          description: The id of the goal on which this sensor is observing (such as waterlevel, air)
+        type_id:
+          type: number
+          example: 1
+          description: The id of the type of sensor (such as ultrasonic, pressure)
     sensorDTO:
       type: object
       properties:

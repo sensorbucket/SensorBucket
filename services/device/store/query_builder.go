@@ -1,8 +1,6 @@
 package store
 
 import (
-	"fmt"
-
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"sensorbucket.nl/sensorbucket/services/device/service"
@@ -61,7 +59,6 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) ([]service.Device, error) {
 	deviceModels := []DeviceModel{}
 
 	// Fetch devices
-	fmt.Println("Estimate query: ", sq.DebugSqlizer(b.query))
 	rows, err := b.query.RunWith(db).Query()
 	if err != nil {
 		return nil, err
