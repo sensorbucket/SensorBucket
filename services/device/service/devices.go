@@ -57,16 +57,26 @@ type Device struct {
 }
 
 type Sensor struct {
-	ID          int64  `json:"id"`
-	Code        string `json:"code"`
-	Description string `json:"description"`
-	Brand       string `json:"brand"`
-	ArchiveTime int    `json:"archive_time" db:"archive_time"`
-	// TODO: Should these resolve to the actual entities?
-	Type          int64           `json:"type" db:"type_id"`
-	Goal          int64           `json:"goal" db:"goal_id"`
+	ID            int64           `json:"id"`
+	Code          string          `json:"code"`
+	Description   string          `json:"description"`
+	Brand         string          `json:"brand"`
+	ArchiveTime   int             `json:"archive_time" db:"archive_time"`
+	Type          SensorType      `json:"type"`
+	Goal          SensorGoal      `json:"goal"`
 	ExternalID    string          `json:"external_id" db:"external_id"`
 	Configuration json.RawMessage `json:"configuration"`
+}
+
+type SensorType struct {
+	ID          int64  `json:"id"`
+	Description string `json:"description"`
+}
+
+type SensorGoal struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 type NewDeviceOpts struct {
@@ -114,8 +124,8 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 type NewSensorOpts struct {
 	Code          string          `json:"code"`
 	Brand         string          `json:"brand"`
-	GoalID        int64           `json:"goal_id"`
-	TypeID        int64           `json:"type_id"`
+	Goal          SensorGoal      `json:"goal_id"`
+	Type          SensorType      `json:"type_id"`
 	Description   string          `json:"description"`
 	ExternalID    string          `json:"external_id"`
 	Configuration json.RawMessage `json:"configuration"`
@@ -124,8 +134,8 @@ type NewSensorOpts struct {
 func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 	sensor := Sensor{
 		Brand:         opts.Brand,
-		Goal:          opts.GoalID,
-		Type:          opts.TypeID,
+		Goal:          opts.Goal,
+		Type:          opts.Type,
 		Description:   opts.Description,
 		ExternalID:    opts.ExternalID,
 		Configuration: []byte("{}"),
