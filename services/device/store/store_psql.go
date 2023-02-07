@@ -1,6 +1,8 @@
 package store
 
 import (
+	"database/sql"
+	"errors"
 	"log"
 
 	sq "github.com/Masterminds/squirrel"
@@ -51,6 +53,45 @@ func (s *PSQLStore) ListInRange(r service.LocationRange, filter service.DeviceFi
 func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) {
 	return newDeviceQueryBuilder().WithFilters(filter).Query(s.db)
 }
+func (s *PSQLStore) ListSensorGoals() ([]service.SensorGoal, error) {
+}
+func (s *PSQLStore) ListSensorTypes() ([]service.SensorType, error) {
+}
+
+func (s *PSQLStore) Find(id int64) (*service.Device, error) {
+	return find(s.db, id)
+}
+
+func (s *PSQLStore) FindSensorGoal(id int64) (*service.SensorGoal, error) {
+	return findSensorGoal(s.db, id)
+}
+
+func (s *PSQLStore) findSensorType(id int64) (*service.SensorType, error) {
+	return findSensorType(s.db, id)
+}
+
+func (s *PSQLStore) Delete(dev *service.Device) error {
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec("DELETE FROM sensors WHERE device_id=$1", dev.ID); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if _, err := tx.Exec("DELETE FROM devices WHERE id=$1", dev.ID); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func (s *PSQLStore) createDevice(dev *service.Device) error {
 	if err := s.db.Get(&dev.ID,
@@ -67,11 +108,31 @@ func (s *PSQLStore) createDevice(dev *service.Device) error {
 	return nil
 }
 
+func ListSensorGoals(db DB) ([]service.SensorGoal, error) {
+	var goals []service.SensorGoal
+	if err := db.Select(&goals, "SELECT id, name, description FROM sensor_goals"); err != nil {
+		return nil, err
+	}
+	return goals, nil
+}
+
+func ListSensorTypes(db DB) ([]service.SensorType, error) {
+	var typs []service.SensorType
+	if err := db.Select(&typs, "SELECT id, description FROM sensor_types"); err != nil {
+		return nil, err
+	}
+	return typs, nil
+
+}
+
 func find(db DB, id int64) (*service.Device, error) {
 	var dev DeviceModel
 
 	// Get device model
 	if err := db.Get(&dev, `SELECT "id", "code", "description", "organisation", "configuration", "location_description", ST_X("location"::geometry) AS latitude, ST_Y("location"::geometry) AS longitude FROM devices WHERE id=$1`, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, service.ErrDeviceNotFound
+		}
 		return nil, err
 	}
 
@@ -85,8 +146,26 @@ func find(db DB, id int64) (*service.Device, error) {
 	return &dev.Device, nil
 }
 
-func (s *PSQLStore) Find(id int64) (*service.Device, error) {
-	return find(s.db, id)
+func findSensorGoal(db DB, id int64) (*service.SensorGoal, error) {
+	var goal service.SensorGoal
+	if err := db.Get(&goal, "SELECT id, name, description FROM sensor_goals WHERE id = $1", id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, service.ErrSensorGoalNotFound
+		}
+		return nil, err
+	}
+	return &goal, nil
+}
+
+func findSensorType(db DB, id int64) (*service.SensorType, error) {
+	var typ service.SensorType
+	if err := db.Get(&typ, "SELECT id, description FROM sensor_types WHERE id = $1", id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, service.ErrSensorTypeNotFound
+		}
+		return nil, err
+	}
+	return &typ, nil
 }
 
 func (s *PSQLStore) updateDevice(dev *service.Device) error {
@@ -231,29 +310,6 @@ func (s *PSQLStore) Save(dev *service.Device) error {
 	}
 
 	if err := s.updateSensors(dev.ID, dev.Sensors); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *PSQLStore) Delete(dev *service.Device) error {
-	tx, err := s.db.Beginx()
-	if err != nil {
-		return err
-	}
-
-	if _, err := tx.Exec("DELETE FROM sensors WHERE device_id=$1", dev.ID); err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if _, err := tx.Exec("DELETE FROM devices WHERE id=$1", dev.ID); err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
 		return err
 	}
 

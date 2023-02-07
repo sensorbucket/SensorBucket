@@ -5,13 +5,27 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
+	"sensorbucket.nl/sensorbucket/internal/web"
+)
+
+var _ Service = (*ServiceImpl)(nil)
+
+var (
+	ErrSensorGoalNotFound = web.NewError(http.StatusNotFound, "sensor goal was not found", "SENSOR_GOAL_NOT_FOUND")
+	ErrSensorTypeNotFound = web.NewError(http.StatusNotFound, "sensor type was not found", "SENSOR_TYPE_NOT_FOUND")
 )
 
 type Store interface {
 	List(DeviceFilter) ([]Device, error)
 	ListInBoundingBox(BoundingBox, DeviceFilter) ([]Device, error)
 	ListInRange(LocationRange, DeviceFilter) ([]Device, error)
+	ListSensorGoals() ([]SensorGoal, error)
+	ListSensorTypes() ([]SensorType, error)
 	Find(id int64) (*Device, error)
+	FindSensorGoal(id int64) (*SensorGoal, error)
+	FindSensorType(id int64) (*SensorType, error)
 	Save(dev *Device) error
 	Delete(dev *Device) error
 }
@@ -25,6 +39,8 @@ type Service interface {
 	DeleteSensor(ctx context.Context, dev *Device, sensor *Sensor) error
 	UpdateDevice(ctx context.Context, dev *Device, opt UpdateDeviceOpts) error
 	DeleteDevice(ctx context.Context, dev *Device) error
+	GetSensorGoal(ctx context.Context, id int64) (*SensorGoal, error)
+	GetSensorType(ctx context.Context, id int64) (*SensorType, error)
 }
 type ServiceImpl struct {
 	store Store
@@ -80,10 +96,23 @@ func (s *ServiceImpl) GetDevice(ctx context.Context, id int64) (*Device, error) 
 	if err != nil {
 		return nil, err
 	}
-	if dev == nil {
-		return nil, ErrDeviceNotFound
-	}
 	return dev, nil
+}
+
+func (s *ServiceImpl) GetSensorGoal(ctx context.Context, id int64) (*SensorGoal, error) {
+	goal, err := s.store.FindSensorGoal(id)
+	if err != nil {
+		return nil, err
+	}
+	return goal, nil
+}
+
+func (s *ServiceImpl) GetSensorType(ctx context.Context, id int64) (*SensorType, error) {
+	typ, err := s.store.FindSensorType(id)
+	if err != nil {
+		return nil, err
+	}
+	return typ, nil
 }
 
 func (s *ServiceImpl) AddSensor(ctx context.Context, dev *Device, dto NewSensorOpts) error {
