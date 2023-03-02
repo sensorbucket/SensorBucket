@@ -45,10 +45,6 @@ func createInsertQuery(m service.Measurement) (string, []any, error) {
 	values["device_configuration"] = m.DeviceConfiguration
 	values["sensor_id"] = m.SensorID
 	values["sensor_code"] = m.SensorCode
-	values["sensor_type_id"] = m.SensorTypeID
-	values["sensor_type_description"] = m.SensorTypeDescription
-	values["sensor_goal_id"] = m.SensorGoalID
-	values["sensor_goal_name"] = m.SensorGoalName
 	values["sensor_description"] = m.SensorDescription
 	values["sensor_external_id"] = m.SensorExternalID
 	values["sensor_config"] = m.SensorConfig
@@ -101,10 +97,6 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 		"device_configuration",
 		"sensor_id",
 		"sensor_code",
-		"sensor_type_id",
-		"sensor_type_description",
-		"sensor_goal_id",
-		"sensor_goal_name",
 		"sensor_description",
 		"sensor_external_id",
 		"sensor_config",
@@ -169,10 +161,6 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 			&m.DeviceConfiguration,
 			&m.SensorID,
 			&m.SensorCode,
-			&m.SensorTypeID,
-			&m.SensorTypeDescription,
-			&m.SensorGoalID,
-			&m.SensorGoalName,
 			&m.SensorDescription,
 			&m.SensorExternalID,
 			&m.SensorConfig,

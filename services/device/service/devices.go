@@ -42,16 +42,6 @@ var (
 		"Invalid coordinates supplied",
 		"ERR_LOCATION_INVALID_COORDINATES",
 	)
-	ErrSensorMissingType = web.NewError(
-		http.StatusBadRequest,
-		"Sensor requires a type",
-		"ERR_SENSOR_NO_TYPE",
-	)
-	ErrSensorMissingGoal = web.NewError(
-		http.StatusBadRequest,
-		"Sensor requires a goal",
-		"ERR_SENSOR_NO_GOAL",
-	)
 )
 
 type Device struct {
@@ -72,21 +62,8 @@ type Sensor struct {
 	Description   string          `json:"description"`
 	Brand         string          `json:"brand"`
 	ArchiveTime   uint            `json:"archive_time" db:"archive_time"`
-	Type          *SensorType     `json:"type"`
-	Goal          *SensorGoal     `json:"goal"`
 	ExternalID    string          `json:"external_id" db:"external_id"`
 	Configuration json.RawMessage `json:"configuration"`
-}
-
-type SensorType struct {
-	ID          int64  `json:"id"`
-	Description string `json:"description"`
-}
-
-type SensorGoal struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
 }
 
 type NewDeviceOpts struct {
@@ -134,8 +111,6 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 type NewSensorOpts struct {
 	Code          string          `json:"code"`
 	Brand         string          `json:"brand"`
-	Goal          *SensorGoal     `json:"goal_id"`
-	Type          *SensorType     `json:"type_id"`
 	Description   string          `json:"description"`
 	ExternalID    string          `json:"external_id"`
 	Configuration json.RawMessage `json:"configuration"`
@@ -145,19 +120,10 @@ type NewSensorOpts struct {
 func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 	sensor := Sensor{
 		Brand:         opts.Brand,
-		Goal:          opts.Goal,
-		Type:          opts.Type,
 		Description:   opts.Description,
 		ExternalID:    opts.ExternalID,
 		Configuration: []byte("{}"),
 		ArchiveTime:   opts.ArchiveTime,
-	}
-
-	if opts.Type == nil {
-		return nil, ErrSensorMissingType
-	}
-	if opts.Goal == nil {
-		return nil, ErrSensorMissingGoal
 	}
 
 	if !R_CODE.MatchString(opts.Code) {

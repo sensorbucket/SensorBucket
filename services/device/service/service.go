@@ -5,27 +5,15 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"net/http"
-
-	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
 var _ Service = (*ServiceImpl)(nil)
-
-var (
-	ErrSensorGoalNotFound = web.NewError(http.StatusNotFound, "sensor goal was not found", "SENSOR_GOAL_NOT_FOUND")
-	ErrSensorTypeNotFound = web.NewError(http.StatusNotFound, "sensor type was not found", "SENSOR_TYPE_NOT_FOUND")
-)
 
 type Store interface {
 	List(DeviceFilter) ([]Device, error)
 	ListInBoundingBox(BoundingBox, DeviceFilter) ([]Device, error)
 	ListInRange(LocationRange, DeviceFilter) ([]Device, error)
-	ListSensorGoals() ([]SensorGoal, error)
-	ListSensorTypes() ([]SensorType, error)
 	Find(id int64) (*Device, error)
-	FindSensorGoal(id int64) (*SensorGoal, error)
-	FindSensorType(id int64) (*SensorType, error)
 	Save(dev *Device) error
 	Delete(dev *Device) error
 }
@@ -33,16 +21,12 @@ type Service interface {
 	ListDevices(ctx context.Context, filter DeviceFilter) ([]Device, error)
 	ListInRange(ctx context.Context, lr LocationRange, filter DeviceFilter) ([]Device, error)
 	ListInBoundingBox(ctx context.Context, bb BoundingBox, filter DeviceFilter) ([]Device, error)
-	ListSensorGoals(ctx context.Context) ([]SensorGoal, error)
-	ListSensorTypes(ctx context.Context) ([]SensorType, error)
 	CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error)
 	GetDevice(ctx context.Context, id int64) (*Device, error)
 	AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error
 	DeleteSensor(ctx context.Context, dev *Device, sensor *Sensor) error
 	UpdateDevice(ctx context.Context, dev *Device, opt UpdateDeviceOpts) error
 	DeleteDevice(ctx context.Context, dev *Device) error
-	GetSensorGoal(ctx context.Context, id int64) (*SensorGoal, error)
-	GetSensorType(ctx context.Context, id int64) (*SensorType, error)
 }
 type ServiceImpl struct {
 	store Store
@@ -82,14 +66,6 @@ func (s *ServiceImpl) ListInBoundingBox(ctx context.Context, bb BoundingBox, fil
 	return devices, err
 }
 
-func (s *ServiceImpl) ListSensorTypes(ctx context.Context) ([]SensorType, error) {
-	return s.store.ListSensorTypes()
-}
-
-func (s *ServiceImpl) ListSensorGoals(ctx context.Context) ([]SensorGoal, error) {
-	return s.store.ListSensorGoals()
-}
-
 func (s *ServiceImpl) CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error) {
 	dev, err := NewDevice(dto)
 	if err != nil {
@@ -109,22 +85,6 @@ func (s *ServiceImpl) GetDevice(ctx context.Context, id int64) (*Device, error) 
 	return dev, nil
 }
 
-func (s *ServiceImpl) GetSensorGoal(ctx context.Context, id int64) (*SensorGoal, error) {
-	goal, err := s.store.FindSensorGoal(id)
-	if err != nil {
-		return nil, err
-	}
-	return goal, nil
-}
-
-func (s *ServiceImpl) GetSensorType(ctx context.Context, id int64) (*SensorType, error) {
-	typ, err := s.store.FindSensorType(id)
-	if err != nil {
-		return nil, err
-	}
-	return typ, nil
-}
-
 type NewSensorDTO struct {
 	Code          string          `json:"code"`
 	Brand         string          `json:"brand"`
@@ -137,19 +97,9 @@ type NewSensorDTO struct {
 }
 
 func (s *ServiceImpl) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error {
-	sensorGoal, err := s.GetSensorGoal(ctx, dto.GoalID)
-	if err != nil {
-		return err
-	}
-	sensorType, err := s.GetSensorType(ctx, dto.TypeID)
-	if err != nil {
-		return err
-	}
 	opts := NewSensorOpts{
 		Code:          dto.Code,
 		Brand:         dto.Brand,
-		Goal:          sensorGoal,
-		Type:          sensorType,
 		Description:   dto.Description,
 		ExternalID:    dto.ExternalID,
 		Configuration: dto.Configuration,

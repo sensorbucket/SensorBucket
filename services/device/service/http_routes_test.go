@@ -2,15 +2,11 @@ package service_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/device/service"
 )
 
@@ -135,80 +131,4 @@ func TestHTTPListDeviceUsesInRangeOverBoundingBox(t *testing.T) {
 	assert.True(t, isCalled)
 	assert.Empty(t, argFilter.Configuration)
 	assert.Equal(t, argLR, expectedLR)
-}
-
-func TestHTTPShouldListSensorTypes(t *testing.T) {
-	types := []service.SensorType{
-		{
-			ID:          1,
-			Description: "type_1",
-		},
-		{
-			ID:          2,
-			Description: "type_2",
-		},
-		{
-			ID:          3,
-			Description: "type_3",
-		},
-	}
-	svc := &ServiceMock{
-		ListSensorTypesFunc: func(ctx context.Context) ([]service.SensorType, error) {
-			return types, nil
-		},
-	}
-	transport := service.NewHTTPTransport(svc)
-
-	// Act
-	r := httptest.NewRequest("GET", "/sensortypes", nil)
-	rw := httptest.NewRecorder()
-	transport.ServeHTTP(rw, r)
-
-	// assert
-	response := rw.Result()
-	require.Equal(t, http.StatusOK, response.StatusCode)
-	var apiResponse web.APIResponse[[]service.SensorType]
-	if err := json.NewDecoder(response.Body).Decode(&apiResponse); err != nil {
-		require.NoError(t, err, "could not decode http response")
-	}
-	assert.Equal(t, types, apiResponse.Data)
-}
-func TestHTTPShouldListSensorGoals(t *testing.T) {
-	goals := []service.SensorGoal{
-		{
-			ID:          1,
-			Name:        "goal_1",
-			Description: "goal_1",
-		},
-		{
-			ID:          2,
-			Name:        "goal_2",
-			Description: "goal_2",
-		},
-		{
-			ID:          3,
-			Name:        "goal_3",
-			Description: "goal_3",
-		},
-	}
-	svc := &ServiceMock{
-		ListSensorGoalsFunc: func(ctx context.Context) ([]service.SensorGoal, error) {
-			return goals, nil
-		},
-	}
-	transport := service.NewHTTPTransport(svc)
-
-	// Act
-	r := httptest.NewRequest("GET", "/sensorgoals", nil)
-	rw := httptest.NewRecorder()
-	transport.ServeHTTP(rw, r)
-
-	// assert
-	response := rw.Result()
-	require.Equal(t, http.StatusOK, response.StatusCode)
-	var apiResponse web.APIResponse[[]service.SensorGoal]
-	if err := json.NewDecoder(response.Body).Decode(&apiResponse); err != nil {
-		require.NoError(t, err, "could not decode http response")
-	}
-	assert.Equal(t, goals, apiResponse.Data)
 }

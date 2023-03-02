@@ -123,16 +123,7 @@ func TestShouldAddSensor(t *testing.T) {
 		ExternalID:    "0",
 		Description:   "description",
 		Configuration: json.RawMessage("{}"),
-		Type: &service.SensorType{
-			ID:          5,
-			Description: "sensortype",
-		},
-		Goal: &service.SensorGoal{
-			ID:          6,
-			Name:        "sensorgoalname",
-			Description: "sensorgoal",
-		},
-		ArchiveTime: 1500,
+		ArchiveTime:   1500,
 	}
 	dev := &service.Device{
 		Code:                "test",
@@ -146,13 +137,6 @@ func TestShouldAddSensor(t *testing.T) {
 	}
 	db, err := createPostgresServer(t)
 	require.NoError(t, err)
-	_, err = db.Exec(`
-		INSERT INTO "sensor_types" ("id", "description")
-		OVERRIDING SYSTEM VALUE VALUES (5, 'sensortype');
-		INSERT INTO "sensor_goals" ("id", "name", "description")
-		OVERRIDING SYSTEM VALUE VALUES (6, 'sensorgoalname', 'sensorgoal');
-	`)
-	require.NoError(t, err, "could not insert default sensor_goals and sensor_types")
 	store := store.NewPSQLStore(db)
 
 	// Save initial device state
@@ -176,11 +160,6 @@ func TestShouldAddSensor(t *testing.T) {
 		assert.Equal(t, dev.Sensors[0].ID, dbSensor.ID, "Original sensor should be updated")
 		assert.Equal(t, s1.Code, dbSensor.Code)
 		assert.Equal(t, s1.Brand, dbSensor.Brand)
-		assert.Equal(t, s1.Type.ID, dbSensor.Type.ID)
-		assert.Equal(t, s1.Type.Description, dbSensor.Type.Description)
-		assert.Equal(t, s1.Goal.ID, dbSensor.Goal.ID)
-		assert.Equal(t, s1.Goal.Description, dbSensor.Goal.Description)
-		assert.Equal(t, s1.Goal.Name, dbSensor.Goal.Name)
 		assert.Equal(t, s1.Description, dbSensor.Description)
 		assert.Equal(t, s1.ExternalID, dbSensor.ExternalID)
 		assert.Equal(t, s1.Configuration, dbSensor.Configuration)

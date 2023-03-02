@@ -90,32 +90,15 @@ func TestServiceShouldAddSensor(t *testing.T) {
 		Longitude:           ptr(float64(20)),
 		LocationDescription: "location_description_a",
 	}
-	goal := service.SensorGoal{
-		ID:          5,
-		Name:        "sensorgoal",
-		Description: "sensorgoaldesc",
-	}
-	typ := service.SensorType{
-		ID:          6,
-		Description: "sensortypedesc",
-	}
 	sensorDTO := service.NewSensorDTO{
 		Code:          "sensorcode",
 		Brand:         "sensorbrand",
-		GoalID:        goal.ID,
-		TypeID:        typ.ID,
 		Description:   "sensordescription",
 		ExternalID:    "sensorexternalid",
 		Configuration: json.RawMessage("{}"),
 		ArchiveTime:   1000,
 	}
 	store := &StoreMock{
-		FindSensorTypeFunc: func(id int64) (*service.SensorType, error) {
-			return &typ, nil
-		},
-		FindSensorGoalFunc: func(id int64) (*service.SensorGoal, error) {
-			return &goal, nil
-		},
 		SaveFunc: func(dev *service.Device) error {
 			return nil
 		},
@@ -137,89 +120,4 @@ func TestServiceShouldAddSensor(t *testing.T) {
 	assert.Equal(t, sensorDTO.Description, dto.Description)
 	assert.Equal(t, sensorDTO.ExternalID, dto.ExternalID)
 	assert.Equal(t, sensorDTO.ArchiveTime, dto.ArchiveTime)
-	assert.Equal(t, &goal, dto.Goal)
-	assert.Equal(t, &typ, dto.Type)
-}
-
-func TestServiceShouldErrorIfSensorTypeDoesNotExist(t *testing.T) {
-	ctx := context.Background()
-	dev := service.Device{
-		Code:                "1234",
-		Description:         "description_a",
-		Organisation:        "organisation_a",
-		Sensors:             []service.Sensor{},
-		Configuration:       []byte("{}"),
-		Latitude:            ptr(float64(10)),
-		Longitude:           ptr(float64(20)),
-		LocationDescription: "location_description_a",
-	}
-	goal := service.SensorGoal{
-		ID:          5,
-		Name:        "sensorgoal",
-		Description: "sensorgoaldesc",
-	}
-	sensorDTO := service.NewSensorDTO{
-		Code:          "sensorcode",
-		Brand:         "sensorbrand",
-		GoalID:        goal.ID,
-		TypeID:        1, // Does not exist
-		Description:   "sensordescription",
-		ExternalID:    "sensorexternalid",
-		Configuration: json.RawMessage("{}"),
-		ArchiveTime:   1000,
-	}
-	store := &StoreMock{
-		FindSensorTypeFunc: func(id int64) (*service.SensorType, error) {
-			return nil, service.ErrSensorTypeNotFound
-		},
-		FindSensorGoalFunc: func(id int64) (*service.SensorGoal, error) {
-			return &goal, nil
-		},
-	}
-	svc := service.New(store)
-
-	// Act
-	err := svc.AddSensor(ctx, &dev, sensorDTO)
-	assert.ErrorIs(t, err, service.ErrSensorTypeNotFound)
-}
-
-func TestServiceShouldErrorIfSensorGoalDoesNotExist(t *testing.T) {
-	ctx := context.Background()
-	dev := service.Device{
-		Code:                "1234",
-		Description:         "description_a",
-		Organisation:        "organisation_a",
-		Sensors:             []service.Sensor{},
-		Configuration:       []byte("{}"),
-		Latitude:            ptr(float64(10)),
-		Longitude:           ptr(float64(20)),
-		LocationDescription: "location_description_a",
-	}
-	typ := service.SensorType{
-		ID:          6,
-		Description: "sensortypedesc",
-	}
-	sensorDTO := service.NewSensorDTO{
-		Code:          "sensorcode",
-		Brand:         "sensorbrand",
-		GoalID:        1, // Does not exist
-		TypeID:        typ.ID,
-		Description:   "sensordescription",
-		ExternalID:    "sensorexternalid",
-		Configuration: json.RawMessage("{}"),
-		ArchiveTime:   1000,
-	}
-	store := &StoreMock{
-		FindSensorTypeFunc: func(id int64) (*service.SensorType, error) {
-			return &typ, nil
-		},
-		FindSensorGoalFunc: func(id int64) (*service.SensorGoal, error) {
-			return nil, service.ErrSensorGoalNotFound
-		},
-	}
-	svc := service.New(store)
-
-	// Act
-	err := svc.AddSensor(ctx, &dev, sensorDTO)
-	assert.ErrorIs(t, err, service.ErrSensorGoalNotFound)
 }
