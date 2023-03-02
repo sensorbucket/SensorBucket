@@ -35,13 +35,17 @@ func createInsertQuery(m service.Measurement) (string, []any, error) {
 	values["organisation_address"] = m.OrganisationAddress
 	values["organisation_zipcode"] = m.OrganisationZipcode
 	values["organisation_city"] = m.OrganisationCity
-	values["organisation_coc"] = m.OrganisationCoC
-	values["orgnisation_location_coc"] = m.OrganisationLocationCoC
+	values["organisation_chamber_of_commerce_id"] = m.OrganisationChamberOfCommerceID
+	values["organisation_headquarter_id"] = m.OrganisationHeadquarterID
+	values["organisation_state"] = m.OrganisationState
+	values["organisation_archive_time"] = m.OrganisationArchiveTime
 	values["device_id"] = m.DeviceID
 	values["device_code"] = m.DeviceCode
 	values["device_description"] = m.DeviceDescription
 	values["device_location"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.DeviceLongitude, m.DeviceLatitude)
+	values["device_altitude"] = m.DeviceAltitude
 	values["device_location_description"] = m.DeviceLocationDescription
+	values["device_state"] = m.DeviceState
 	values["device_properties"] = m.DeviceProperties
 	values["sensor_id"] = m.SensorID
 	values["sensor_code"] = m.SensorCode
@@ -49,13 +53,15 @@ func createInsertQuery(m service.Measurement) (string, []any, error) {
 	values["sensor_external_id"] = m.SensorExternalID
 	values["sensor_properties"] = m.SensorProperties
 	values["sensor_brand"] = m.SensorBrand
-	values["measurement_type"] = m.MeasurementType
-	values["measurement_unit"] = m.MeasurementUnit
+	values["sensor_archive_time"] = m.SensorArchiveTime
+	values["datastream_id"] = m.DatastreamID
+	values["datastream_description"] = m.DatastreamDescription
+	values["datastream_observed_property"] = m.DatastreamObservedProperty
+	values["datastream_unit_of_measurement"] = m.DatastreamUnitOfMeasurement
 	values["measurement_timestamp"] = m.MeasurementTimestamp
 	values["measurement_value"] = m.MeasurementValue
-	values["measurement_value_prefix"] = m.MeasurementValuePrefix
-	values["measurement_value_prefix_factor"] = m.MeasurementValueFactor
 	values["measurement_location"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.MeasurementLongitude, m.MeasurementLatitude)
+	values["measurement_altitude"] = m.MeasurementAltitude
 
 	return pq.Insert("measurement").SetMap(values).ToSql()
 }
@@ -86,29 +92,34 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 		"organisation_address",
 		"organisation_zipcode",
 		"organisation_city",
-		"organisation_coc",
-		"orgnisation_location_coc",
+		"organisation_chamber_of_commerce_id",
+		"organisation_headquarter_id",
+		"organisation_archive_time",
+		"organisation_state",
 		"device_id",
 		"device_code",
 		"device_description",
 		"ST_Y(device_location) as device_latitude",
 		"ST_X(device_location) as device_longitude",
+		"device_altitude",
 		"device_location_description",
 		"device_properties",
+		"device_state",
 		"sensor_id",
 		"sensor_code",
 		"sensor_description",
 		"sensor_external_id",
 		"sensor_properties",
 		"sensor_brand",
-		"measurement_type",
-		"measurement_unit",
+		"datastream_id",
+		"datastream_description",
+		"datastream_observed_property",
+		"datastream_unit_of_measurement",
 		"measurement_timestamp",
 		"measurement_value",
-		"measurement_value_prefix",
-		"measurement_value_prefix_factor",
 		"ST_Y(measurement_location) as measurement_latitude",
 		"ST_X(measurement_location) as measurement_longitude",
+		"measurement_altitude",
 	).
 		From("measurements").
 		Where("measurement_timestamp >= ?", query.Start).
@@ -125,9 +136,6 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 
 	if len(query.Filters.DeviceIDs) > 0 {
 		q = q.Where(sq.Eq{"device_id": query.Filters.DeviceIDs})
-	}
-	if len(query.Filters.MeasurementTypes) > 0 {
-		q = q.Where(sq.Eq{"measurement_type": query.Filters.MeasurementTypes})
 	}
 	if len(query.Filters.SensorCodes) > 0 {
 		q = q.Where(sq.Eq{"sensor_code": query.Filters.SensorCodes})
@@ -150,29 +158,34 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 			&m.OrganisationAddress,
 			&m.OrganisationZipcode,
 			&m.OrganisationCity,
-			&m.OrganisationCoC,
-			&m.OrganisationLocationCoC,
+			&m.OrganisationChamberOfCommerceID,
+			&m.OrganisationHeadquarterID,
+			&m.OrganisationArchiveTime,
+			&m.OrganisationState,
 			&m.DeviceID,
 			&m.DeviceCode,
 			&m.DeviceDescription,
 			&m.DeviceLatitude,
 			&m.DeviceLongitude,
+			&m.DeviceAltitude,
 			&m.DeviceLocationDescription,
 			&m.DeviceProperties,
+			&m.DeviceState,
 			&m.SensorID,
 			&m.SensorCode,
 			&m.SensorDescription,
 			&m.SensorExternalID,
 			&m.SensorProperties,
 			&m.SensorBrand,
-			&m.MeasurementType,
-			&m.MeasurementUnit,
+			&m.DatastreamID,
+			&m.DatastreamDescription,
+			&m.DatastreamObservedProperty,
+			&m.DatastreamUnitOfMeasurement,
 			&m.MeasurementTimestamp,
 			&m.MeasurementValue,
-			&m.MeasurementValuePrefix,
-			&m.MeasurementValueFactor,
 			&m.MeasurementLatitude,
 			&m.MeasurementLongitude,
+			&m.MeasurementAltitude,
 		)
 		if err != nil {
 			return nil, nil, err

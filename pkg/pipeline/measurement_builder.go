@@ -21,8 +21,8 @@ func newMeasurementBuilder(msg *Message) MeasurementBuilder {
 	return MeasurementBuilder{
 		message: msg,
 		measurement: Measurement{
-			Timestamp:           msg.Timestamp,
-			MeasurementMetadata: map[string]any{},
+			Timestamp:             msg.Timestamp,
+			MeasurementProperties: map[string]any{},
 		},
 	}
 }
@@ -58,7 +58,7 @@ func (b MeasurementBuilder) SetMetadata(meta map[string]any) MeasurementBuilder 
 	if b.err != nil {
 		return b
 	}
-	b.measurement.MeasurementMetadata = meta
+	b.measurement.MeasurementProperties = meta
 	return b
 }
 

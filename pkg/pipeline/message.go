@@ -22,7 +22,8 @@ type Measurement struct {
 	MeasurementUnit        string         `json:"measurement_unit"`
 	MeasurementLatitude    *float64       `json:"measurement_latitude"`
 	MeasurementLongitude   *float64       `json:"measurement_longitude"`
-	MeasurementMetadata    map[string]any `json:"measurement_metadata"`
+	MeasurementAltitude    *float64       `json:"measurement_altitude"`
+	MeasurementProperties  map[string]any `json:"measurement_properties"`
 }
 type Message struct {
 	ID            string        `json:"id"`

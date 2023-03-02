@@ -44,7 +44,9 @@ func resetPrefabs() {
 		Sensors:             []deviceservice.Sensor{prefabSensor1},
 		Latitude:            ptr(float64(10)),
 		Longitude:           ptr(float64(20)),
+		Altitude:            ptr(float64(30)),
 		LocationDescription: "",
+		State:               1,
 		Properties:          json.RawMessage([]byte(`{"hello":"world"}`)),
 	}
 	prefabTimestamp = time.Now()
@@ -57,7 +59,8 @@ func resetPrefabs() {
 		MeasurementUnit:        "",
 		MeasurementLatitude:    ptr(float64(30)),
 		MeasurementLongitude:   ptr(float64(40)),
-		MeasurementMetadata:    map[string]any{},
+		MeasurementAltitude:    ptr(float64(50)),
+		MeasurementProperties:  map[string]any{},
 	}
 	prefabMessage = pipeline.Message{
 		ID:            uuid.NewString(),
@@ -70,19 +73,23 @@ func resetPrefabs() {
 		},
 	}
 	expectedMeasurement = service.Measurement{
-		UplinkMessageID:           prefabMessage.ID,
-		OrganisationName:          "",
-		OrganisationAddress:       "",
-		OrganisationZipcode:       "",
-		OrganisationCity:          "",
-		OrganisationCoC:           "",
-		OrganisationLocationCoC:   "",
+		UplinkMessageID:                 prefabMessage.ID,
+		OrganisationName:                "",
+		OrganisationAddress:             "",
+		OrganisationZipcode:             "",
+		OrganisationCity:                "",
+		OrganisationChamberOfCommerceID: "",
+		OrganisationHeadquarterID:       "",
+		//OrganisationArchiveTime:         123,
+		//OrganisationState:               1,
 		DeviceID:                  prefabMessage.Device.ID,
 		DeviceCode:                prefabMessage.Device.Code,
 		DeviceDescription:         prefabMessage.Device.Description,
 		DeviceLatitude:            prefabMessage.Device.Latitude,
 		DeviceLongitude:           prefabMessage.Device.Longitude,
+		DeviceAltitude:            prefabMessage.Device.Altitude,
 		DeviceLocationDescription: prefabMessage.Device.LocationDescription,
+		DeviceState:               prefabMessage.Device.State,
 		DeviceProperties:          prefabMessage.Device.Properties,
 		SensorID:                  prefabSensor1.ID,
 		SensorCode:                prefabSensor1.Code,
@@ -90,15 +97,13 @@ func resetPrefabs() {
 		SensorExternalID:          prefabSensor1.ExternalID,
 		SensorProperties:          prefabSensor1.Properties,
 		SensorBrand:               prefabSensor1.Brand,
-		MeasurementType:           prefabMeasurement1.MeasurementType,
-		MeasurementUnit:           prefabMeasurement1.MeasurementUnit,
+		SensorArchiveTime:         prefabSensor1.ArchiveTime,
 		MeasurementTimestamp:      time.UnixMilli(prefabMeasurement1.Timestamp),
 		MeasurementValue:          prefabMeasurement1.MeasurementValue,
-		MeasurementValuePrefix:    "",
-		MeasurementValueFactor:    prefabMeasurement1.MeasurementValueFactor,
 		MeasurementLatitude:       prefabMeasurement1.MeasurementLatitude,
 		MeasurementLongitude:      prefabMeasurement1.MeasurementLongitude,
-		MeasurementMetadata:       prefabMeasurement1.MeasurementMetadata,
+		MeasurementAltitude:       prefabMeasurement1.MeasurementAltitude,
+		MeasurementProperties:     prefabMeasurement1.MeasurementProperties,
 	}
 }
 
@@ -117,8 +122,10 @@ func TestShouldConvertPipelineMessageToMeasurements(t *testing.T) {
 			Setup: func() {
 				prefabMessage.Measurements[0].MeasurementLatitude = nil
 				prefabMessage.Measurements[0].MeasurementLongitude = nil
+				prefabMessage.Measurements[0].MeasurementAltitude = nil
 				expectedMeasurement.MeasurementLatitude = prefabDevice1.Latitude
 				expectedMeasurement.MeasurementLongitude = prefabDevice1.Longitude
+				expectedMeasurement.MeasurementAltitude = prefabDevice1.Altitude
 			},
 		},
 		{

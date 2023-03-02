@@ -20,36 +20,42 @@ var (
 )
 
 type Measurement struct {
-	UplinkMessageID           string          `json:"uplink_message_id"`
-	OrganisationID            int             `json:"organisation_id"`
-	OrganisationName          string          `json:"organisation_name"`
-	OrganisationAddress       string          `json:"organisation_address"`
-	OrganisationZipcode       string          `json:"organisation_zipcode"`
-	OrganisationCity          string          `json:"organisation_city"`
-	OrganisationCoC           string          `json:"organisation_coc"`
-	OrganisationLocationCoC   string          `json:"orgnisation_location_coc"`
-	DeviceID                  int64           `json:"device_id"`
-	DeviceCode                string          `json:"device_code"`
-	DeviceDescription         string          `json:"device_description"`
-	DeviceLatitude            *float64        `json:"device_latitude"`
-	DeviceLongitude           *float64        `json:"device_longitude"`
-	DeviceLocationDescription string          `json:"device_location_description"`
-	DeviceProperties          json.RawMessage `json:"device_properties"`
-	SensorID                  int64           `json:"sensor_id"`
-	SensorCode                string          `json:"sensor_code"`
-	SensorDescription         string          `json:"sensor_description"`
-	SensorExternalID          string          `json:"sensor_external_id"`
-	SensorProperties          json.RawMessage `json:"sensor_properties"`
-	SensorBrand               string          `json:"sensor_brand"`
-	MeasurementType           string          `json:"measurement_type"`
-	MeasurementUnit           string          `json:"measurement_unit"`
-	MeasurementTimestamp      time.Time       `json:"measurement_timestamp"`
-	MeasurementValue          float64         `json:"measurement_value"`
-	MeasurementValuePrefix    string          `json:"measurement_value_prefix"`
-	MeasurementValueFactor    int             `json:"measurement_value_factor"`
-	MeasurementLatitude       *float64        `json:"measurement_latitude"`
-	MeasurementLongitude      *float64        `json:"measurement_longitude"`
-	MeasurementMetadata       map[string]any  `json:"measurement_metadata"`
+	UplinkMessageID                 string          `json:"uplink_message_id"`
+	OrganisationID                  int             `json:"organisation_id"`
+	OrganisationName                string          `json:"organisation_name"`
+	OrganisationAddress             string          `json:"organisation_address"`
+	OrganisationZipcode             string          `json:"organisation_zipcode"`
+	OrganisationCity                string          `json:"organisation_city"`
+	OrganisationChamberOfCommerceID string          `json:"organisation_chamber_of_commerce_id"`
+	OrganisationHeadquarterID       string          `json:"organisation_headquarter_id"`
+	OrganisationArchiveTime         int             `json:"organisation_archive_time"`
+	OrganisationState               int             `json:"organisation_state"` // TODO: Use enumerator
+	DeviceID                        int64           `json:"device_id"`
+	DeviceCode                      string          `json:"device_code"`
+	DeviceDescription               string          `json:"device_description"`
+	DeviceLatitude                  *float64        `json:"device_latitude"`
+	DeviceLongitude                 *float64        `json:"device_longitude"`
+	DeviceAltitude                  *float64        `json:"device_altitude"`
+	DeviceLocationDescription       string          `json:"device_location_description"`
+	DeviceProperties                json.RawMessage `json:"device_properties"`
+	DeviceState                     int             `json:"device_state"` // TODO: Use enumerator
+	SensorID                        int64           `json:"sensor_id"`
+	SensorCode                      string          `json:"sensor_code"`
+	SensorDescription               string          `json:"sensor_description"`
+	SensorExternalID                string          `json:"sensor_external_id"`
+	SensorProperties                json.RawMessage `json:"sensor_properties"`
+	SensorBrand                     string          `json:"sensor_brand"`
+	SensorArchiveTime               int             `json:"sensor_archive_time"`
+	DatastreamID                    string          `json:"datastream_id"`
+	DatastreamDescription           string          `json:"datastream_description"`
+	DatastreamObservedProperty      string          `json:"datastream_observed_property"`
+	DatastreamUnitOfMeasurement     string          `json:"datastream_unit_of_measurement"`
+	MeasurementTimestamp            time.Time       `json:"measurement_timestamp"`
+	MeasurementValue                float64         `json:"measurement_value"`
+	MeasurementLatitude             *float64        `json:"measurement_latitude"`
+	MeasurementLongitude            *float64        `json:"measurement_longitude"`
+	MeasurementAltitude             *float64        `json:"measurement_altitude"`
+	MeasurementProperties           map[string]any  `json:"measurement_properties"`
 }
 
 func (m *Measurement) Validate() error {
@@ -65,9 +71,8 @@ func (m *Measurement) Validate() error {
 
 // QueryFilters represents the available filters for querying measurements
 type QueryFilters struct {
-	DeviceIDs        []string
-	SensorCodes      []string
-	MeasurementTypes []string
+	DeviceIDs   []string
+	SensorCodes []string
 }
 
 // Query contains query information for a list of measurements
@@ -134,6 +139,13 @@ func (s *Service) StorePipelineMessage(ctx context.Context, msg pipeline.Message
 }
 
 func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Measurement) error {
+	// Get sensor that produced this measurement
+	dev := (*deviceservice.Device)(msg.Device)
+	sensor, err := dev.GetSensorByExternalID(m.SensorExternalID)
+	if err != nil {
+		return err
+	}
+
 	measurement := Measurement{
 		UplinkMessageID: msg.ID,
 		// TODO: Organisation...
@@ -142,39 +154,40 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 		DeviceDescription:         msg.Device.Description,
 		DeviceLatitude:            msg.Device.Latitude,
 		DeviceLongitude:           msg.Device.Longitude,
+		DeviceAltitude:            msg.Device.Altitude,
 		DeviceLocationDescription: msg.Device.LocationDescription,
 		DeviceProperties:          msg.Device.Properties,
+		DeviceState:               msg.Device.State,
 
-		MeasurementType:      m.MeasurementType,
-		MeasurementUnit:      m.MeasurementUnit,
-		MeasurementTimestamp: time.UnixMilli(m.Timestamp),
-		MeasurementValue:     m.MeasurementValue,
-		// Prefix?!?
-		MeasurementValueFactor: m.MeasurementValueFactor,
-		MeasurementLatitude:    msg.Device.Latitude,
-		MeasurementLongitude:   msg.Device.Longitude,
-		MeasurementMetadata:    m.MeasurementMetadata,
+		SensorID:          sensor.ID,
+		SensorCode:        sensor.Code,
+		SensorDescription: sensor.Description,
+		SensorExternalID:  sensor.ExternalID,
+		SensorProperties:  sensor.Properties,
+		SensorBrand:       sensor.Brand,
+		SensorArchiveTime: sensor.ArchiveTime,
+
+		// TODO: Get datastream from worker
+		// TODO: Should querying measurements be per datastream or combined?
+		DatastreamID:                "",
+		DatastreamDescription:       "",
+		DatastreamObservedProperty:  "",
+		DatastreamUnitOfMeasurement: "",
+
+		MeasurementTimestamp:  time.UnixMilli(m.Timestamp),
+		MeasurementValue:      m.MeasurementValue,
+		MeasurementLatitude:   msg.Device.Latitude,
+		MeasurementLongitude:  msg.Device.Longitude,
+		MeasurementAltitude:   msg.Device.Altitude,
+		MeasurementProperties: m.MeasurementProperties,
 	}
 
 	// Measurement location is either explicitly set or falls back to device location
 	if m.MeasurementLatitude != nil && m.MeasurementLongitude != nil {
 		measurement.MeasurementLatitude = m.MeasurementLatitude
 		measurement.MeasurementLongitude = m.MeasurementLongitude
+		measurement.MeasurementAltitude = m.MeasurementAltitude
 	}
-
-	// Get sensor
-	dev := (*deviceservice.Device)(msg.Device)
-	sensor, err := dev.GetSensorByExternalID(m.SensorExternalID)
-	if err != nil {
-		return err
-	}
-
-	measurement.SensorID = sensor.ID
-	measurement.SensorCode = sensor.Code
-	measurement.SensorDescription = sensor.Description
-	measurement.SensorExternalID = sensor.ExternalID
-	measurement.SensorProperties = sensor.Properties
-	measurement.SensorBrand = sensor.Brand
 
 	return s.StoreMeasurement(measurement)
 }

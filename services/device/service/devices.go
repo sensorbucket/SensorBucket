@@ -53,6 +53,8 @@ type Device struct {
 	Properties          json.RawMessage `json:"metadata"`
 	Longitude           *float64        `json:"longitude"`
 	Latitude            *float64        `json:"latitude"`
+	Altitude            *float64        `json:"altitude"`
+	State               int             `json:"state"` // TODO: Use enum
 	LocationDescription string          `json:"location_description" db:"location_description"`
 }
 
@@ -61,7 +63,7 @@ type Sensor struct {
 	Code        string          `json:"code"`
 	Description string          `json:"description"`
 	Brand       string          `json:"brand"`
-	ArchiveTime uint            `json:"archive_time" db:"archive_time"`
+	ArchiveTime int             `json:"archive_time" db:"archive_time"`
 	ExternalID  string          `json:"external_id" db:"external_id"`
 	Properties  json.RawMessage `json:"properties"`
 }
@@ -73,7 +75,9 @@ type NewDeviceOpts struct {
 	Properties          json.RawMessage `json:"properties"`
 	Longitude           *float64        `json:"longitude"`
 	Latitude            *float64        `json:"latitude"`
+	Altitude            *float64        `json:"altitude"`
 	LocationDescription string          `json:"location_description"`
+	State               int             `json:"state"`
 }
 
 func NewDevice(opts NewDeviceOpts) (*Device, error) {
@@ -86,6 +90,7 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 		return nil, ErrDeviceInvalidCode
 	}
 	dev.Code = opts.Code
+	dev.State = opts.State
 
 	// TODO: Validate if org exists?
 	dev.Organisation = opts.Organisation
@@ -102,6 +107,7 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 		}
 		dev.Latitude = opts.Latitude
 		dev.Longitude = opts.Longitude
+		dev.Altitude = opts.Altitude
 		dev.LocationDescription = opts.LocationDescription
 	}
 
@@ -113,8 +119,8 @@ type NewSensorOpts struct {
 	Brand       string          `json:"brand"`
 	Description string          `json:"description"`
 	ExternalID  string          `json:"external_id"`
+	ArchiveTime int             `json:"archive_time"`
 	Properties  json.RawMessage `json:"properties"`
-	ArchiveTime uint            `json:"archive_time"`
 }
 
 func NewSensor(opts NewSensorOpts) (*Sensor, error) {
