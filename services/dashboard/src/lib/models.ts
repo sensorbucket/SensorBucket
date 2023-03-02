@@ -20,7 +20,7 @@ export interface Sensor {
     description: string;
     measurement_type: string;
     external_id: string;
-    configuration: Record<string, any>;
+    properties: Record<string, any>;
 }
 export interface Device {
     id: number;
@@ -31,14 +31,14 @@ export interface Device {
     longitude: number;
     location_description: string;
     sensors: Sensor[];
-    configuration: Record<string, any>;
+    properties: Record<string, any>;
 }
 export interface Measurement {
     uplink_message_id: string;
     device_id: number;
     device_code: string;
     device_description: string;
-    device_configuration: Record<string, string | number | boolean>;
+    device_properties: Record<string, string | number | boolean>;
     timestamp: string;
     value: number;
     measurement_type: string;
@@ -53,5 +53,5 @@ export interface Measurement {
     sensor_code: string;
     sensor_description: string;
     sensor_external_id: string | null;
-    sensor_configuration: Record<string, string | number | boolean>;
+    sensor_properties: Record<string, string | number | boolean>;
 }

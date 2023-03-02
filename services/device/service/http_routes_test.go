@@ -27,7 +27,7 @@ func TestHTTPListDeviceUsesRegularList(t *testing.T) {
 	transport.ServeHTTP(rw, req)
 
 	assert.True(t, isCalled)
-	assert.Empty(t, argFilter.Configuration)
+	assert.Empty(t, argFilter.Properties)
 }
 
 func TestHTTPListDeviceUsesBoundingBox(t *testing.T) {
@@ -60,7 +60,7 @@ func TestHTTPListDeviceUsesBoundingBox(t *testing.T) {
 	transport.ServeHTTP(rw, req)
 
 	assert.True(t, isCalled)
-	assert.Empty(t, argFilter.Configuration)
+	assert.Empty(t, argFilter.Properties)
 	assert.Equal(t, argBB, expectedBB)
 }
 
@@ -92,7 +92,7 @@ func TestHTTPListDeviceUsesInRange(t *testing.T) {
 	transport.ServeHTTP(rw, req)
 
 	assert.True(t, isCalled)
-	assert.Empty(t, argFilter.Configuration)
+	assert.Empty(t, argFilter.Properties)
 	assert.Equal(t, argLR, expectedLR)
 }
 
@@ -129,6 +129,6 @@ func TestHTTPListDeviceUsesInRangeOverBoundingBox(t *testing.T) {
 	transport.ServeHTTP(rw, req)
 
 	assert.True(t, isCalled)
-	assert.Empty(t, argFilter.Configuration)
+	assert.Empty(t, argFilter.Properties)
 	assert.Equal(t, argLR, expectedLR)
 }

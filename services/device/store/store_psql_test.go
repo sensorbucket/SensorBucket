@@ -80,7 +80,7 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 		Longitude:           ptr(float64(20)),
 		Description:         "description",
 		Organisation:        "organisation",
-		Configuration:       json.RawMessage([]byte("null")),
+		Properties:          json.RawMessage([]byte("null")),
 		LocationDescription: "location_description",
 	}
 
@@ -106,7 +106,7 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 		dev.Longitude = ptr(float64(50))
 		dev.Description = "newdescription"
 		dev.LocationDescription = "newlocationdescription"
-		dev.Configuration = json.RawMessage([]byte(`{"hello":"world"}`))
+		dev.Properties = json.RawMessage([]byte(`{"hello":"world"}`))
 		err = store.Save(dev)
 		assert.NoError(t, err)
 
@@ -119,11 +119,11 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 
 func TestShouldAddSensor(t *testing.T) {
 	s1 := service.NewSensorOpts{
-		Code:          "s1",
-		ExternalID:    "0",
-		Description:   "description",
-		Configuration: json.RawMessage("{}"),
-		ArchiveTime:   1500,
+		Code:        "s1",
+		ExternalID:  "0",
+		Description: "description",
+		Properties:  json.RawMessage("{}"),
+		ArchiveTime: 1500,
 	}
 	dev := &service.Device{
 		Code:                "test",
@@ -132,7 +132,7 @@ func TestShouldAddSensor(t *testing.T) {
 		Longitude:           ptr(float64(20)),
 		Description:         "description",
 		Organisation:        "organisation",
-		Configuration:       json.RawMessage([]byte("{}")),
+		Properties:          json.RawMessage([]byte("{}")),
 		LocationDescription: "location_description",
 	}
 	db, err := createPostgresServer(t)
@@ -162,7 +162,7 @@ func TestShouldAddSensor(t *testing.T) {
 		assert.Equal(t, s1.Brand, dbSensor.Brand)
 		assert.Equal(t, s1.Description, dbSensor.Description)
 		assert.Equal(t, s1.ExternalID, dbSensor.ExternalID)
-		assert.Equal(t, s1.Configuration, dbSensor.Configuration)
+		assert.Equal(t, s1.Properties, dbSensor.Properties)
 		assert.Equal(t, s1.ArchiveTime, dbSensor.ArchiveTime)
 	})
 	t.Run("should delete sensor", func(t *testing.T) {

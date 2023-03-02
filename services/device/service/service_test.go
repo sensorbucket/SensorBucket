@@ -20,14 +20,14 @@ func TestServiceDeviceUpdates(t *testing.T) {
 		Latitude:            ptr(float64(30)),
 		Longitude:           ptr(float64(40)),
 		LocationDescription: ptr("location_description_b"),
-		Configuration:       []byte(`{"meta":true}`),
+		Properties:          []byte(`{"meta":true}`),
 	}
 	originalDevice := service.Device{
 		Code:                "1234",
 		Description:         "description_a",
 		Organisation:        "organisation_a",
 		Sensors:             []service.Sensor{},
-		Configuration:       []byte("{}"),
+		Properties:          []byte("{}"),
 		Latitude:            ptr(float64(10)),
 		Longitude:           ptr(float64(20)),
 		LocationDescription: "location_description_a",
@@ -46,7 +46,7 @@ func TestServiceDeviceUpdates(t *testing.T) {
 	assert.EqualValues(t, newDevice.Latitude, updateDTO.Latitude)
 	assert.EqualValues(t, newDevice.Longitude, updateDTO.Longitude)
 	assert.EqualValues(t, newDevice.LocationDescription, *updateDTO.LocationDescription)
-	assert.EqualValues(t, newDevice.Configuration, updateDTO.Configuration)
+	assert.EqualValues(t, newDevice.Properties, updateDTO.Properties)
 }
 
 func TestServiceCreateDevice(t *testing.T) {
@@ -54,7 +54,7 @@ func TestServiceCreateDevice(t *testing.T) {
 		Code:                "1234",
 		Description:         "description_a",
 		Organisation:        "organisation_a",
-		Configuration:       []byte("{}"),
+		Properties:          []byte("{}"),
 		Latitude:            ptr(float64(10)),
 		Longitude:           ptr(float64(20)),
 		LocationDescription: "location_description_a",
@@ -74,7 +74,7 @@ func TestServiceCreateDevice(t *testing.T) {
 	assert.EqualValues(t, newDTO.Latitude, storedDev.Latitude)
 	assert.EqualValues(t, newDTO.Longitude, storedDev.Longitude)
 	assert.EqualValues(t, newDTO.LocationDescription, storedDev.LocationDescription)
-	assert.EqualValues(t, newDTO.Configuration, storedDev.Configuration)
+	assert.EqualValues(t, newDTO.Properties, storedDev.Properties)
 	assert.Len(t, storedDev.Sensors, 0)
 }
 
@@ -85,18 +85,18 @@ func TestServiceShouldAddSensor(t *testing.T) {
 		Description:         "description_a",
 		Organisation:        "organisation_a",
 		Sensors:             []service.Sensor{},
-		Configuration:       []byte("{}"),
+		Properties:          []byte("{}"),
 		Latitude:            ptr(float64(10)),
 		Longitude:           ptr(float64(20)),
 		LocationDescription: "location_description_a",
 	}
 	sensorDTO := service.NewSensorDTO{
-		Code:          "sensorcode",
-		Brand:         "sensorbrand",
-		Description:   "sensordescription",
-		ExternalID:    "sensorexternalid",
-		Configuration: json.RawMessage("{}"),
-		ArchiveTime:   1000,
+		Code:        "sensorcode",
+		Brand:       "sensorbrand",
+		Description: "sensordescription",
+		ExternalID:  "sensorexternalid",
+		Properties:  json.RawMessage("{}"),
+		ArchiveTime: 1000,
 	}
 	store := &StoreMock{
 		SaveFunc: func(dev *service.Device) error {

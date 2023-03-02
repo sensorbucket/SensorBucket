@@ -22,7 +22,7 @@ func newDeviceQueryBuilder() deviceQueryBuilder {
 		"code",
 		"description",
 		"organisation",
-		"configuration",
+		"properties",
 		"location_description",
 		"ST_X(location::geometry) AS longitude",
 		"ST_Y(location::geometry) AS latitude",
@@ -32,8 +32,8 @@ func newDeviceQueryBuilder() deviceQueryBuilder {
 }
 
 func (b deviceQueryBuilder) WithFilters(f service.DeviceFilter) deviceQueryBuilder {
-	if f.Configuration != nil {
-		b.query = b.query.Where("configuration::jsonb @> ?::jsonb", f.Configuration)
+	if f.Properties != nil {
+		b.query = b.query.Where("properties::jsonb @> ?::jsonb", f.Properties)
 	}
 	return b
 }
@@ -71,7 +71,7 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) ([]service.Device, error) {
 			&model.Code,
 			&model.Description,
 			&model.Organisation,
-			&model.Configuration,
+			&model.Properties,
 			&model.LocationDescription,
 			&model.Longitude,
 			&model.Latitude,

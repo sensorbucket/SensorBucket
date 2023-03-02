@@ -28,7 +28,7 @@ Using the pipeline ID the data ingress service fetches the order of workers that
 
 Workers are services specific to processing incoming data. The workers receive data from the message queue, process it, and pushes it back to the message queue; very similar to ETL scripts that is.
 
-Somewhere in the pipeline of workers, there is a worker that must be able to associate the incoming data to a device in SensorBucket. In the case of LoRaWAN a worker could query the devices endpoint and filter on the arbitrary `configuration.dev_eui` property to find the matching device.
+Somewhere in the pipeline of workers, there is a worker that must be able to associate the incoming data to a device in SensorBucket. In the case of LoRaWAN a worker could query the devices endpoint and filter on the arbitrary `properties.dev_eui` property to find the matching device.
 
 Along the pipeline of workers, each worker can append measurements and data to the message that is routed to the next worker. 
 

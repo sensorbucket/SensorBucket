@@ -71,10 +71,10 @@ func parseQueryFilter(r *http.Request) (DeviceFilter, error) {
 	var filter DeviceFilter
 	q := r.URL.Query()
 
-	// Configuration filter
-	configurationFilter := q.Get("configuration")
-	if configurationFilter != "" {
-		if err := json.Unmarshal([]byte(configurationFilter), &filter.Configuration); err != nil {
+	// Property filter
+	propertiesFilter := q.Get("properties")
+	if propertiesFilter != "" {
+		if err := json.Unmarshal([]byte(propertiesFilter), &filter.Properties); err != nil {
 			return filter, err
 		}
 	}

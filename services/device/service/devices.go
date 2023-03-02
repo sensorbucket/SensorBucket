@@ -50,27 +50,27 @@ type Device struct {
 	Description         string          `json:"description"`
 	Organisation        string          `json:"organisation"`
 	Sensors             []Sensor        `json:"sensors"`
-	Configuration       json.RawMessage `json:"configuration"`
+	Properties          json.RawMessage `json:"metadata"`
 	Longitude           *float64        `json:"longitude"`
 	Latitude            *float64        `json:"latitude"`
 	LocationDescription string          `json:"location_description" db:"location_description"`
 }
 
 type Sensor struct {
-	ID            int64           `json:"id"`
-	Code          string          `json:"code"`
-	Description   string          `json:"description"`
-	Brand         string          `json:"brand"`
-	ArchiveTime   uint            `json:"archive_time" db:"archive_time"`
-	ExternalID    string          `json:"external_id" db:"external_id"`
-	Configuration json.RawMessage `json:"configuration"`
+	ID          int64           `json:"id"`
+	Code        string          `json:"code"`
+	Description string          `json:"description"`
+	Brand       string          `json:"brand"`
+	ArchiveTime uint            `json:"archive_time" db:"archive_time"`
+	ExternalID  string          `json:"external_id" db:"external_id"`
+	Properties  json.RawMessage `json:"properties"`
 }
 
 type NewDeviceOpts struct {
 	Code                string          `json:"code"`
 	Description         string          `json:"description"`
 	Organisation        string          `json:"organisation"`
-	Configuration       json.RawMessage `json:"configuration"`
+	Properties          json.RawMessage `json:"properties"`
 	Longitude           *float64        `json:"longitude"`
 	Latitude            *float64        `json:"latitude"`
 	LocationDescription string          `json:"location_description"`
@@ -78,8 +78,8 @@ type NewDeviceOpts struct {
 
 func NewDevice(opts NewDeviceOpts) (*Device, error) {
 	dev := Device{
-		Sensors:       []Sensor{},
-		Configuration: []byte("{}"),
+		Sensors:    []Sensor{},
+		Properties: []byte("{}"),
 	}
 
 	if !R_CODE.MatchString(opts.Code) {
@@ -90,8 +90,8 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 	// TODO: Validate if org exists?
 	dev.Organisation = opts.Organisation
 
-	if opts.Configuration != nil {
-		dev.Configuration = opts.Configuration
+	if opts.Properties != nil {
+		dev.Properties = opts.Properties
 	}
 
 	dev.Description = opts.Description
@@ -109,21 +109,21 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 }
 
 type NewSensorOpts struct {
-	Code          string          `json:"code"`
-	Brand         string          `json:"brand"`
-	Description   string          `json:"description"`
-	ExternalID    string          `json:"external_id"`
-	Configuration json.RawMessage `json:"configuration"`
-	ArchiveTime   uint            `json:"archive_time"`
+	Code        string          `json:"code"`
+	Brand       string          `json:"brand"`
+	Description string          `json:"description"`
+	ExternalID  string          `json:"external_id"`
+	Properties  json.RawMessage `json:"properties"`
+	ArchiveTime uint            `json:"archive_time"`
 }
 
 func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 	sensor := Sensor{
-		Brand:         opts.Brand,
-		Description:   opts.Description,
-		ExternalID:    opts.ExternalID,
-		Configuration: []byte("{}"),
-		ArchiveTime:   opts.ArchiveTime,
+		Brand:       opts.Brand,
+		Description: opts.Description,
+		ExternalID:  opts.ExternalID,
+		Properties:  []byte("{}"),
+		ArchiveTime: opts.ArchiveTime,
 	}
 
 	if !R_CODE.MatchString(opts.Code) {
@@ -131,8 +131,8 @@ func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 	}
 	sensor.Code = opts.Code
 
-	if opts.Configuration != nil {
-		sensor.Configuration = opts.Configuration
+	if opts.Properties != nil {
+		sensor.Properties = opts.Properties
 	}
 
 	return &sensor, nil

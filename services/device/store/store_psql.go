@@ -93,12 +93,12 @@ func (s *PSQLStore) createDevice(dev *service.Device) error {
 	if err := s.db.Get(&dev.ID,
 		`
 			INSERT INTO "devices" (
-				"code", "description", "organisation", "configuration", "location", "location_description"
+				"code", "description", "organisation", "properties", "location", "location_description"
 			)
 			VALUES ($1, $2, $3, $4, ST_POINT($5, $6), $7)
 			RETURNING id
 		`,
-		dev.Code, dev.Description, dev.Organisation, dev.Configuration,
+		dev.Code, dev.Description, dev.Organisation, dev.Properties,
 		dev.Longitude, dev.Latitude, dev.LocationDescription,
 	); err != nil {
 		return err
@@ -108,8 +108,8 @@ func (s *PSQLStore) createDevice(dev *service.Device) error {
 
 func (s *PSQLStore) updateDevice(dev *service.Device) error {
 	if _, err := s.db.Exec(
-		"UPDATE devices SET description=$2, configuration=$3, location=ST_POINT($4, $5), location_description=$6 WHERE id=$1",
-		dev.ID, dev.Description, dev.Configuration, dev.Longitude, dev.Latitude, dev.LocationDescription,
+		"UPDATE devices SET description=$2, properties=$3, location=ST_POINT($4, $5), location_description=$6 WHERE id=$1",
+		dev.ID, dev.Description, dev.Properties, dev.Longitude, dev.Latitude, dev.LocationDescription,
 	); err != nil {
 		return err
 	}
@@ -191,7 +191,7 @@ func find(db DB, id int64) (*service.Device, error) {
 	// Get device model
 	if err := db.Get(&dev, `
 		SELECT 
-			"id", "code", "description", "organisation", "configuration", "location_description",
+			"id", "code", "description", "organisation", "properties", "location_description",
 			ST_X("location"::geometry) AS longitude, ST_Y("location"::geometry) AS latitude
 		FROM devices
 		WHERE id=$1
@@ -217,7 +217,7 @@ type SelectQueryMod func(q sq.SelectBuilder) sq.SelectBuilder
 
 func listSensors(db DB, mods ...SelectQueryMod) ([]SensorModel, error) {
 	q := pq.Select(
-		"s.id", "s.brand", "s.code", "s.description", "s.external_id", "s.configuration", "s.archive_time",
+		"s.id", "s.brand", "s.code", "s.description", "s.external_id", "s.properties", "s.archive_time",
 		"s.device_id",
 	).From("sensors s")
 
@@ -237,7 +237,7 @@ func listSensors(db DB, mods ...SelectQueryMod) ([]SensorModel, error) {
 			Sensor: &service.Sensor{},
 		}
 		if err := rows.Scan(
-			&s.ID, &s.Brand, &s.Code, &s.Description, &s.ExternalID, &s.Configuration, &s.ArchiveTime,
+			&s.ID, &s.Brand, &s.Code, &s.Description, &s.ExternalID, &s.Properties, &s.ArchiveTime,
 			&s.DeviceID,
 		); err != nil {
 			return nil, err
@@ -252,11 +252,11 @@ func createSensors(tx DB, sensors []SensorModel) error {
 		return nil
 	}
 	q := pq.Insert("sensors").Columns(
-		"code", "brand", "description", "archive_time", "configuration", "external_id", "device_id",
+		"code", "brand", "description", "archive_time", "properties", "external_id", "device_id",
 	).Suffix("RETURNING id")
 	for _, s := range sensors {
 		q = q.Values(
-			s.Code, s.Brand, s.Description, s.ArchiveTime, s.Configuration, s.ExternalID, s.DeviceID,
+			s.Code, s.Brand, s.Description, s.ArchiveTime, s.Properties, s.ExternalID, s.DeviceID,
 		)
 	}
 	query, params, err := q.ToSql()
@@ -279,13 +279,13 @@ func updateSensors(tx DB, sensors []SensorModel) error {
 	for _, s := range sensors {
 		_, err := pq.Update("sensors").Where(sq.Eq{"id": s.ID}).
 			SetMap(map[string]any{
-				"code":          s.Code,
-				"brand":         s.Brand,
-				"description":   s.Description,
-				"archive_time":  s.ArchiveTime,
-				"configuration": s.Configuration,
-				"external_id":   s.ExternalID,
-				"device_id":     s.DeviceID,
+				"code":         s.Code,
+				"brand":        s.Brand,
+				"description":  s.Description,
+				"archive_time": s.ArchiveTime,
+				"properties":   s.Properties,
+				"external_id":  s.ExternalID,
+				"device_id":    s.DeviceID,
 			}).RunWith(tx).Exec()
 		if err != nil {
 			return err

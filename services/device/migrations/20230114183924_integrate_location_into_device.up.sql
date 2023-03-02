@@ -16,8 +16,6 @@ DROP TABLE "locations";
 -- Add new fields to sensor
 ALTER TABLE "sensors"
     ADD COLUMN "archive_time" INT,
-    ADD COLUMN "type_id" BIGINT,
-    ADD COLUMN "goal_id" BIGINT,
     ADD COLUMN "brand" VARCHAR;
 
 COMMIT;

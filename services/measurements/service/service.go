@@ -34,12 +34,12 @@ type Measurement struct {
 	DeviceLatitude            *float64        `json:"device_latitude"`
 	DeviceLongitude           *float64        `json:"device_longitude"`
 	DeviceLocationDescription string          `json:"device_location_description"`
-	DeviceConfiguration       json.RawMessage `json:"device_configuration"`
+	DeviceProperties          json.RawMessage `json:"device_properties"`
 	SensorID                  int64           `json:"sensor_id"`
 	SensorCode                string          `json:"sensor_code"`
 	SensorDescription         string          `json:"sensor_description"`
 	SensorExternalID          string          `json:"sensor_external_id"`
-	SensorConfig              json.RawMessage `json:"sensor_config"`
+	SensorProperties          json.RawMessage `json:"sensor_properties"`
 	SensorBrand               string          `json:"sensor_brand"`
 	MeasurementType           string          `json:"measurement_type"`
 	MeasurementUnit           string          `json:"measurement_unit"`
@@ -143,7 +143,7 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 		DeviceLatitude:            msg.Device.Latitude,
 		DeviceLongitude:           msg.Device.Longitude,
 		DeviceLocationDescription: msg.Device.LocationDescription,
-		DeviceConfiguration:       msg.Device.Configuration,
+		DeviceProperties:          msg.Device.Properties,
 
 		MeasurementType:      m.MeasurementType,
 		MeasurementUnit:      m.MeasurementUnit,
@@ -173,7 +173,7 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 	measurement.SensorCode = sensor.Code
 	measurement.SensorDescription = sensor.Description
 	measurement.SensorExternalID = sensor.ExternalID
-	measurement.SensorConfig = sensor.Configuration
+	measurement.SensorProperties = sensor.Properties
 	measurement.SensorBrand = sensor.Brand
 
 	return s.StoreMeasurement(measurement)

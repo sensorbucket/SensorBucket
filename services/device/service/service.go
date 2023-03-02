@@ -39,7 +39,7 @@ func New(store Store) *ServiceImpl {
 }
 
 type DeviceFilter struct {
-	Configuration json.RawMessage `json:"configuration"`
+	Properties json.RawMessage `json:"properties"`
 }
 type BoundingBox struct {
 	North float64 `json:"north"`
@@ -86,24 +86,24 @@ func (s *ServiceImpl) GetDevice(ctx context.Context, id int64) (*Device, error) 
 }
 
 type NewSensorDTO struct {
-	Code          string          `json:"code"`
-	Brand         string          `json:"brand"`
-	GoalID        int64           `json:"goal_id"`
-	TypeID        int64           `json:"type_id"`
-	Description   string          `json:"description"`
-	ExternalID    string          `json:"external_id"`
-	Configuration json.RawMessage `json:"configuration"`
-	ArchiveTime   uint            `json:"archive_time"`
+	Code        string          `json:"code"`
+	Brand       string          `json:"brand"`
+	GoalID      int64           `json:"goal_id"`
+	TypeID      int64           `json:"type_id"`
+	Description string          `json:"description"`
+	ExternalID  string          `json:"external_id"`
+	Properties  json.RawMessage `json:"properties"`
+	ArchiveTime uint            `json:"archive_time"`
 }
 
 func (s *ServiceImpl) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error {
 	opts := NewSensorOpts{
-		Code:          dto.Code,
-		Brand:         dto.Brand,
-		Description:   dto.Description,
-		ExternalID:    dto.ExternalID,
-		Configuration: dto.Configuration,
-		ArchiveTime:   dto.ArchiveTime,
+		Code:        dto.Code,
+		Brand:       dto.Brand,
+		Description: dto.Description,
+		ExternalID:  dto.ExternalID,
+		Properties:  dto.Properties,
+		ArchiveTime: dto.ArchiveTime,
 	}
 	if err := dev.AddSensor(opts); err != nil {
 		return err
@@ -129,7 +129,7 @@ type UpdateDeviceOpts struct {
 	Longitude           *float64        `json:"longitude"`
 	Latitude            *float64        `json:"latitude"`
 	LocationDescription *string         `json:"location_description"`
-	Configuration       json.RawMessage `json:"configuration"`
+	Properties          json.RawMessage `json:"properties"`
 	ArchiveTime         uint            `json:"archive_time"`
 }
 
@@ -146,8 +146,8 @@ func (s *ServiceImpl) UpdateDevice(ctx context.Context, dev *Device, opt UpdateD
 	if opt.LocationDescription != nil {
 		dev.LocationDescription = *opt.LocationDescription
 	}
-	if opt.Configuration != nil {
-		dev.Configuration = opt.Configuration
+	if opt.Properties != nil {
+		dev.Properties = opt.Properties
 	}
 	if err := s.store.Save(dev); err != nil {
 		return err

@@ -42,12 +42,12 @@ func createInsertQuery(m service.Measurement) (string, []any, error) {
 	values["device_description"] = m.DeviceDescription
 	values["device_location"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.DeviceLongitude, m.DeviceLatitude)
 	values["device_location_description"] = m.DeviceLocationDescription
-	values["device_configuration"] = m.DeviceConfiguration
+	values["device_properties"] = m.DeviceProperties
 	values["sensor_id"] = m.SensorID
 	values["sensor_code"] = m.SensorCode
 	values["sensor_description"] = m.SensorDescription
 	values["sensor_external_id"] = m.SensorExternalID
-	values["sensor_config"] = m.SensorConfig
+	values["sensor_properties"] = m.SensorProperties
 	values["sensor_brand"] = m.SensorBrand
 	values["measurement_type"] = m.MeasurementType
 	values["measurement_unit"] = m.MeasurementUnit
@@ -94,12 +94,12 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 		"ST_Y(device_location) as device_latitude",
 		"ST_X(device_location) as device_longitude",
 		"device_location_description",
-		"device_configuration",
+		"device_properties",
 		"sensor_id",
 		"sensor_code",
 		"sensor_description",
 		"sensor_external_id",
-		"sensor_config",
+		"sensor_properties",
 		"sensor_brand",
 		"measurement_type",
 		"measurement_unit",
@@ -158,12 +158,12 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 			&m.DeviceLatitude,
 			&m.DeviceLongitude,
 			&m.DeviceLocationDescription,
-			&m.DeviceConfiguration,
+			&m.DeviceProperties,
 			&m.SensorID,
 			&m.SensorCode,
 			&m.SensorDescription,
 			&m.SensorExternalID,
-			&m.SensorConfig,
+			&m.SensorProperties,
 			&m.SensorBrand,
 			&m.MeasurementType,
 			&m.MeasurementUnit,

@@ -169,7 +169,7 @@ func fetchDeviceByEUI(eui string) (*pipeline.Device, error) {
 	filterJSON, _ := json.Marshal(filter)
 	filterQuery := url.QueryEscape(string(filterJSON))
 
-	url := fmt.Sprintf("%s/devices?configuration=%s", SVC_DEVICE, filterQuery)
+	url := fmt.Sprintf("%s/devices?properties=%s", SVC_DEVICE, filterQuery)
 	res, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("could not perform request to device service: %w", err)

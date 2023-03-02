@@ -28,13 +28,13 @@ var (
 
 func resetPrefabs() {
 	prefabSensor1 = deviceservice.Sensor{
-		ID:            1,
-		Code:          "abcd",
-		Description:   "",
-		Brand:         "",
-		ArchiveTime:   100,
-		Configuration: json.RawMessage{},
-		ExternalID:    "1",
+		ID:          1,
+		Code:        "abcd",
+		Description: "",
+		Brand:       "",
+		ArchiveTime: 100,
+		Properties:  json.RawMessage{},
+		ExternalID:  "1",
 	}
 	prefabDevice1 = pipeline.Device{
 		ID:                  1,
@@ -45,7 +45,7 @@ func resetPrefabs() {
 		Latitude:            ptr(float64(10)),
 		Longitude:           ptr(float64(20)),
 		LocationDescription: "",
-		Configuration:       json.RawMessage([]byte(`{"hello":"world"}`)),
+		Properties:          json.RawMessage([]byte(`{"hello":"world"}`)),
 	}
 	prefabTimestamp = time.Now()
 	prefabMeasurement1 = pipeline.Measurement{
@@ -83,12 +83,12 @@ func resetPrefabs() {
 		DeviceLatitude:            prefabMessage.Device.Latitude,
 		DeviceLongitude:           prefabMessage.Device.Longitude,
 		DeviceLocationDescription: prefabMessage.Device.LocationDescription,
-		DeviceConfiguration:       prefabMessage.Device.Configuration,
+		DeviceProperties:          prefabMessage.Device.Properties,
 		SensorID:                  prefabSensor1.ID,
 		SensorCode:                prefabSensor1.Code,
 		SensorDescription:         prefabSensor1.Description,
 		SensorExternalID:          prefabSensor1.ExternalID,
-		SensorConfig:              prefabSensor1.Configuration,
+		SensorProperties:          prefabSensor1.Properties,
 		SensorBrand:               prefabSensor1.Brand,
 		MeasurementType:           prefabMeasurement1.MeasurementType,
 		MeasurementUnit:           prefabMeasurement1.MeasurementUnit,
