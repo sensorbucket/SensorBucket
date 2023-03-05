@@ -78,6 +78,8 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 		Sensors:             []service.Sensor{},
 		Latitude:            ptr(float64(10)),
 		Longitude:           ptr(float64(20)),
+		Altitude:            ptr(float64(30)),
+		State:               1,
 		Description:         "description",
 		Organisation:        "organisation",
 		Properties:          json.RawMessage([]byte("null")),
@@ -104,6 +106,8 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 	t.Run("modifying a device and fetching it", func(t *testing.T) {
 		dev.Latitude = ptr(float64(40))
 		dev.Longitude = ptr(float64(50))
+		dev.Altitude = ptr(float64(60))
+		dev.State = 2
 		dev.Description = "newdescription"
 		dev.LocationDescription = "newlocationdescription"
 		dev.Properties = json.RawMessage([]byte(`{"hello":"world"}`))

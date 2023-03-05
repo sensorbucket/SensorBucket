@@ -93,13 +93,13 @@ func (s *PSQLStore) createDevice(dev *service.Device) error {
 	if err := s.db.Get(&dev.ID,
 		`
 			INSERT INTO "devices" (
-				"code", "description", "organisation", "properties", "location", "location_description"
+				"code", "description", "organisation", "properties", "location", "altitude", "location_description"
 			)
-			VALUES ($1, $2, $3, $4, ST_POINT($5, $6), $7)
+			VALUES ($1, $2, $3, $4, ST_POINT($5, $6), $7, $8)
 			RETURNING id
 		`,
 		dev.Code, dev.Description, dev.Organisation, dev.Properties,
-		dev.Longitude, dev.Latitude, dev.LocationDescription,
+		dev.Longitude, dev.Latitude, dev.Altitude, dev.LocationDescription,
 	); err != nil {
 		return err
 	}
@@ -108,8 +108,8 @@ func (s *PSQLStore) createDevice(dev *service.Device) error {
 
 func (s *PSQLStore) updateDevice(dev *service.Device) error {
 	if _, err := s.db.Exec(
-		"UPDATE devices SET description=$2, properties=$3, location=ST_POINT($4, $5), location_description=$6 WHERE id=$1",
-		dev.ID, dev.Description, dev.Properties, dev.Longitude, dev.Latitude, dev.LocationDescription,
+		"UPDATE devices SET description=$2, properties=$3, location=ST_POINT($4, $5), altitude=$6, location_description=$7 WHERE id=$1",
+		dev.ID, dev.Description, dev.Properties, dev.Longitude, dev.Latitude, dev.Altitude, dev.LocationDescription,
 	); err != nil {
 		return err
 	}

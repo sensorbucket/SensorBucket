@@ -82,33 +82,25 @@ type NewDeviceOpts struct {
 
 func NewDevice(opts NewDeviceOpts) (*Device, error) {
 	dev := Device{
-		Sensors:    []Sensor{},
-		Properties: []byte("{}"),
+		Sensors:             []Sensor{},
+		Properties:          []byte("{}"),
+		LocationDescription: opts.LocationDescription,
+		Description:         opts.Description,
+		Organisation:        opts.Organisation,
+		Code:                opts.Code,
+		State:               opts.State,
 	}
 
 	if !R_CODE.MatchString(opts.Code) {
 		return nil, ErrDeviceInvalidCode
 	}
-	dev.Code = opts.Code
-	dev.State = opts.State
-
-	// TODO: Validate if org exists?
-	dev.Organisation = opts.Organisation
 
 	if opts.Properties != nil {
 		dev.Properties = opts.Properties
 	}
 
-	dev.Description = opts.Description
-
-	if opts.Latitude != nil && opts.Longitude != nil {
-		if *opts.Latitude < -90 || *opts.Latitude > 90 || *opts.Longitude < -180 || *opts.Longitude > 180 {
-			return nil, ErrInvalidCoordinates
-		}
-		dev.Latitude = opts.Latitude
-		dev.Longitude = opts.Longitude
-		dev.Altitude = opts.Altitude
-		dev.LocationDescription = opts.LocationDescription
+	if err := dev.SetLocation(opts.Latitude, opts.Longitude, opts.Altitude); err != nil {
+		return nil, err
 	}
 
 	return &dev, nil
@@ -201,12 +193,17 @@ func (d *Device) DeleteSensorByID(id int64) error {
 	return ErrSensorNotFound
 }
 
-func (d *Device) SetLocation(lat, lng float64, description string) error {
-	if lat < -90 || lat > 90 || lng < -180 || lng > 180 {
+func (d *Device) SetLocation(lat, lng, alt *float64) error {
+	if lat == nil || lng == nil || alt == nil {
+		d.Latitude = nil
+		d.Longitude = nil
+		d.Altitude = nil
+	}
+	if *lat < -90 || *lat > 90 || *lng < -180 || *lng > 180 {
 		return ErrInvalidCoordinates
 	}
-	d.Latitude = &lat
-	d.Longitude = &lng
-	d.LocationDescription = description
+	d.Latitude = lat
+	d.Longitude = lng
+	d.Altitude = alt
 	return nil
 }
