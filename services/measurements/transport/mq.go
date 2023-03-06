@@ -33,13 +33,13 @@ func (t *MQTransport) Start() {
 		if err := json.Unmarshal(msg.Body, &pmsg); err != nil {
 			msg.Nack(false, false)
 			log.Printf("Error unmarshalling amqp message body to pipeline.Message: %v", err)
-			return
+			continue
 		}
 
 		if err := t.svc.StorePipelineMessage(context.Background(), pmsg); err != nil {
 			msg.Nack(false, false)
 			log.Printf("Error storing pipeline message: %v\n", err)
-			return
+			continue
 		}
 
 		msg.Ack(false)

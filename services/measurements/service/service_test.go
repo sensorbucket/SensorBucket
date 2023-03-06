@@ -23,6 +23,7 @@ var (
 	prefabTimestamp     time.Time
 	prefabMeasurement1  pipeline.Measurement
 	prefabMessage       pipeline.Message
+	prefabDatastream    service.Datastream
 	expectedMeasurement service.Measurement
 )
 
@@ -35,6 +36,13 @@ func resetPrefabs() {
 		ArchiveTime: 100,
 		Properties:  json.RawMessage{},
 		ExternalID:  "1",
+	}
+	prefabDatastream = service.Datastream{
+		ID:                uuid.New(),
+		Description:       "",
+		SensorID:          1,
+		UnitOfMeasurement: "1/cm3",
+		ObservedProperty:  "mc_pm25",
 	}
 	prefabDevice1 = pipeline.Device{
 		ID:                  1,
@@ -51,16 +59,15 @@ func resetPrefabs() {
 	}
 	prefabTimestamp = time.Now()
 	prefabMeasurement1 = pipeline.Measurement{
-		Timestamp:              prefabTimestamp.UnixMilli(),
-		SensorExternalID:       prefabSensor1.ExternalID,
-		MeasurementValue:       5,
-		MeasurementValueFactor: 0,
-		MeasurementType:        "",
-		MeasurementUnit:        "",
-		MeasurementLatitude:    ptr(float64(30)),
-		MeasurementLongitude:   ptr(float64(40)),
-		MeasurementAltitude:    ptr(float64(50)),
-		MeasurementProperties:  map[string]any{},
+		Timestamp:         prefabTimestamp.UnixMilli(),
+		SensorExternalID:  prefabSensor1.ExternalID,
+		Value:             5,
+		ObservedProperty:  "",
+		UnitOfMeasurement: "",
+		Latitude:          ptr(float64(30)),
+		Longitude:         ptr(float64(40)),
+		Altitude:          ptr(float64(50)),
+		Properties:        map[string]any{},
 	}
 	prefabMessage = pipeline.Message{
 		ID:            uuid.NewString(),
@@ -91,19 +98,26 @@ func resetPrefabs() {
 		DeviceLocationDescription: prefabMessage.Device.LocationDescription,
 		DeviceState:               prefabMessage.Device.State,
 		DeviceProperties:          prefabMessage.Device.Properties,
-		SensorID:                  prefabSensor1.ID,
-		SensorCode:                prefabSensor1.Code,
-		SensorDescription:         prefabSensor1.Description,
-		SensorExternalID:          prefabSensor1.ExternalID,
-		SensorProperties:          prefabSensor1.Properties,
-		SensorBrand:               prefabSensor1.Brand,
-		SensorArchiveTime:         prefabSensor1.ArchiveTime,
-		MeasurementTimestamp:      time.UnixMilli(prefabMeasurement1.Timestamp),
-		MeasurementValue:          prefabMeasurement1.MeasurementValue,
-		MeasurementLatitude:       prefabMeasurement1.MeasurementLatitude,
-		MeasurementLongitude:      prefabMeasurement1.MeasurementLongitude,
-		MeasurementAltitude:       prefabMeasurement1.MeasurementAltitude,
-		MeasurementProperties:     prefabMeasurement1.MeasurementProperties,
+
+		SensorID:          prefabSensor1.ID,
+		SensorCode:        prefabSensor1.Code,
+		SensorDescription: prefabSensor1.Description,
+		SensorExternalID:  prefabSensor1.ExternalID,
+		SensorProperties:  prefabSensor1.Properties,
+		SensorBrand:       prefabSensor1.Brand,
+		SensorArchiveTime: prefabSensor1.ArchiveTime,
+
+		DatastreamID:                prefabDatastream.ID,
+		DatastreamDescription:       prefabDatastream.Description,
+		DatastreamObservedProperty:  prefabDatastream.ObservedProperty,
+		DatastreamUnitOfMeasurement: prefabDatastream.UnitOfMeasurement,
+
+		MeasurementTimestamp:  time.UnixMilli(prefabMeasurement1.Timestamp),
+		MeasurementValue:      prefabMeasurement1.Value,
+		MeasurementLatitude:   prefabMeasurement1.Latitude,
+		MeasurementLongitude:  prefabMeasurement1.Longitude,
+		MeasurementAltitude:   prefabMeasurement1.Altitude,
+		MeasurementProperties: prefabMeasurement1.Properties,
 	}
 }
 
@@ -120,9 +134,9 @@ func TestShouldConvertPipelineMessageToMeasurements(t *testing.T) {
 		{
 			Name: "Should fallback to device location if no measurement location is set",
 			Setup: func() {
-				prefabMessage.Measurements[0].MeasurementLatitude = nil
-				prefabMessage.Measurements[0].MeasurementLongitude = nil
-				prefabMessage.Measurements[0].MeasurementAltitude = nil
+				prefabMessage.Measurements[0].Latitude = nil
+				prefabMessage.Measurements[0].Longitude = nil
+				prefabMessage.Measurements[0].Altitude = nil
 				expectedMeasurement.MeasurementLatitude = prefabDevice1.Latitude
 				expectedMeasurement.MeasurementLongitude = prefabDevice1.Longitude
 				expectedMeasurement.MeasurementAltitude = prefabDevice1.Altitude
@@ -141,6 +155,9 @@ func TestShouldConvertPipelineMessageToMeasurements(t *testing.T) {
 			var storeInsertCallCount int
 			storeInsertArgs := []service.Measurement{}
 			store := &StoreMock{
+				FindDatastreamFunc: func(sensorID int64, obs string) (*service.Datastream, error) {
+					return &prefabDatastream, nil
+				},
 				InsertFunc: func(measurement service.Measurement) error {
 					storeInsertCallCount++
 					storeInsertArgs = append(storeInsertArgs, measurement)

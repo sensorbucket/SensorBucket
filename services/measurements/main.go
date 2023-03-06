@@ -47,6 +47,8 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
+	db.SetMaxIdleConns(2)
+	db.SetMaxOpenConns(10)
 	if err := migrations.MigratePostgres(db.DB); err != nil {
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}

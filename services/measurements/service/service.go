@@ -1,6 +1,6 @@
 package service
 
-//go:generate moq -pkg service_test -out mock_test.go . Store
+//go:generate moq -pkg service_test -out mock_test.go . Store DatastreamFinderCreater
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	deviceservice "sensorbucket.nl/sensorbucket/services/device/service"
 )
@@ -46,7 +47,7 @@ type Measurement struct {
 	SensorProperties                json.RawMessage           `json:"sensor_properties"`
 	SensorBrand                     string                    `json:"sensor_brand"`
 	SensorArchiveTime               int                       `json:"sensor_archive_time"`
-	DatastreamID                    string                    `json:"datastream_id"`
+	DatastreamID                    uuid.UUID                 `json:"datastream_id"`
 	DatastreamDescription           string                    `json:"datastream_description"`
 	DatastreamObservedProperty      string                    `json:"datastream_observed_property"`
 	DatastreamUnitOfMeasurement     string                    `json:"datastream_unit_of_measurement"`
@@ -101,6 +102,8 @@ var _ iService = (*Service)(nil)
 
 // Store stores measurement data
 type Store interface {
+	DatastreamFinderCreater
+
 	Insert(Measurement) error
 	Query(Query, Pagination) ([]Measurement, *Pagination, error)
 }
@@ -143,6 +146,12 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 	dev := (*deviceservice.Device)(msg.Device)
 	sensor, err := dev.GetSensorByExternalID(m.SensorExternalID)
 	if err != nil {
+		return fmt.Errorf("GetSensorByExternalID error for device: %d, sensor eID: %s, error: %w", dev.ID, m.SensorExternalID, err)
+	}
+
+	// Find or create datastream
+	ds, err := FindOrCreateDatastream(sensor.ID, m.ObservedProperty, m.UnitOfMeasurement, s.store)
+	if err != nil {
 		return err
 	}
 
@@ -167,26 +176,24 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 		SensorBrand:       sensor.Brand,
 		SensorArchiveTime: sensor.ArchiveTime,
 
-		// TODO: Get datastream from worker
-		// TODO: Should querying measurements be per datastream or combined?
-		DatastreamID:                "",
-		DatastreamDescription:       "",
-		DatastreamObservedProperty:  "",
-		DatastreamUnitOfMeasurement: "",
+		DatastreamID:                ds.ID,
+		DatastreamDescription:       ds.Description,
+		DatastreamObservedProperty:  ds.ObservedProperty,
+		DatastreamUnitOfMeasurement: ds.UnitOfMeasurement,
 
 		MeasurementTimestamp:  time.UnixMilli(m.Timestamp),
-		MeasurementValue:      m.MeasurementValue,
+		MeasurementValue:      m.Value,
 		MeasurementLatitude:   msg.Device.Latitude,
 		MeasurementLongitude:  msg.Device.Longitude,
 		MeasurementAltitude:   msg.Device.Altitude,
-		MeasurementProperties: m.MeasurementProperties,
+		MeasurementProperties: m.Properties,
 	}
 
 	// Measurement location is either explicitly set or falls back to device location
-	if m.MeasurementLatitude != nil && m.MeasurementLongitude != nil {
-		measurement.MeasurementLatitude = m.MeasurementLatitude
-		measurement.MeasurementLongitude = m.MeasurementLongitude
-		measurement.MeasurementAltitude = m.MeasurementAltitude
+	if m.Latitude != nil && m.Longitude != nil {
+		measurement.MeasurementLatitude = m.Latitude
+		measurement.MeasurementLongitude = m.Longitude
+		measurement.MeasurementAltitude = m.Altitude
 	}
 
 	return s.StoreMeasurement(measurement)

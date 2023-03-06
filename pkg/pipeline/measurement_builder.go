@@ -1,11 +1,5 @@
 package pipeline
 
-import "errors"
-
-var (
-	ErrDeviceNotSet = errors.New("device was required but not (yet) set")
-)
-
 type MeasurementBuilder struct {
 	err     error
 	message *Message
@@ -21,8 +15,8 @@ func newMeasurementBuilder(msg *Message) MeasurementBuilder {
 	return MeasurementBuilder{
 		message: msg,
 		measurement: Measurement{
-			Timestamp:             msg.Timestamp,
-			MeasurementProperties: map[string]any{},
+			Timestamp:  msg.Timestamp,
+			Properties: map[string]any{},
 		},
 	}
 }
@@ -44,13 +38,13 @@ func (b MeasurementBuilder) SetSensor(eid string) MeasurementBuilder {
 	return b
 }
 
-func (b MeasurementBuilder) SetValue(value float64, measurementType, unit string) MeasurementBuilder {
+func (b MeasurementBuilder) SetValue(value float64, obs, uom string) MeasurementBuilder {
 	if b.err != nil {
 		return b
 	}
-	b.measurement.MeasurementValue = value
-	b.measurement.MeasurementType = measurementType
-	b.measurement.MeasurementUnit = unit
+	b.measurement.Value = value
+	b.measurement.ObservedProperty = obs
+	b.measurement.UnitOfMeasurement = uom
 	return b
 }
 
@@ -58,17 +52,8 @@ func (b MeasurementBuilder) SetMetadata(meta map[string]any) MeasurementBuilder 
 	if b.err != nil {
 		return b
 	}
-	b.measurement.MeasurementProperties = meta
+	b.measurement.Properties = meta
 	return b
-}
-
-func (b MeasurementBuilder) SetValueFactor(f int) MeasurementBuilder {
-	if b.err != nil {
-		return b
-	}
-	b.measurement.MeasurementValueFactor = f
-	return b
-
 }
 
 func (b MeasurementBuilder) Add() error {

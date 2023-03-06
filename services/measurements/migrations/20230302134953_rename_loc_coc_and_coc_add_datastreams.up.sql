@@ -10,13 +10,13 @@ ALTER TABLE "measurements" ADD "device_state" INT NOT NULL;
 ALTER TABLE "measurements" ADD "sensor_archive_time" INT;
 ALTER TABLE "measurements" ADD "datastream_id" VARCHAR NOT NULL;
 ALTER TABLE "measurements" ADD "datastream_description" VARCHAR;
-ALTER TABLE "measurements" ADD "datastream_observed_property" VARCHAR:
+ALTER TABLE "measurements" ADD "datastream_observed_property" VARCHAR;
 ALTER TABLE "measurements" ADD "datastream_unit_of_measurement" VARCHAR;
 ALTER TABLE "measurements" ADD "measurement_altitude" REAL;
 
-ALTER TABLE "measurement" DROP "measurement_type";
-ALTER TABLE "measurement" DROP "measurement_unit";
-ALTER TABLE "measurement" DROP "measurement_value_prefix";
-ALTER TABLE "measurement" DROP "measurement_value_factor";
+ALTER TABLE "measurements" DROP "measurement_type";
+ALTER TABLE "measurements" DROP "measurement_unit";
+ALTER TABLE "measurements" DROP "measurement_value_prefix";
+ALTER TABLE "measurements" DROP "measurement_value_factor";
 
 COMMIT;

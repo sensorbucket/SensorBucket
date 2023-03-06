@@ -14,16 +14,15 @@ var (
 
 type Device deviceservice.Device
 type Measurement struct {
-	Timestamp              int64          `json:"timestamp"`
-	SensorExternalID       string         `json:"sensor_external_id"`
-	MeasurementValue       float64        `json:"measurement_value"`
-	MeasurementValueFactor int            `json:"measurement_value_prefix_factor"`
-	MeasurementType        string         `json:"measurement_type"`
-	MeasurementUnit        string         `json:"measurement_unit"`
-	MeasurementLatitude    *float64       `json:"measurement_latitude"`
-	MeasurementLongitude   *float64       `json:"measurement_longitude"`
-	MeasurementAltitude    *float64       `json:"measurement_altitude"`
-	MeasurementProperties  map[string]any `json:"measurement_properties"`
+	Timestamp         int64          `json:"timestamp"`
+	SensorExternalID  string         `json:"sensor_external_id"`
+	Value             float64        `json:"value"`
+	ObservedProperty  string         `json:"observed_property"`
+	UnitOfMeasurement string         `json:"unit_of_measurement"`
+	Latitude          *float64       `json:"latitude"`
+	Longitude         *float64       `json:"longitude"`
+	Altitude          *float64       `json:"altitude"`
+	Properties        map[string]any `json:"properties"`
 }
 type Message struct {
 	ID            string        `json:"id"`

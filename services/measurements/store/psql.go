@@ -1,8 +1,10 @@
 package store
 
 import (
+	"database/sql"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
@@ -63,7 +65,7 @@ func createInsertQuery(m service.Measurement) (string, []any, error) {
 	values["measurement_location"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.MeasurementLongitude, m.MeasurementLatitude)
 	values["measurement_altitude"] = m.MeasurementAltitude
 
-	return pq.Insert("measurement").SetMap(values).ToSql()
+	return pq.Insert("measurements").SetMap(values).ToSql()
 }
 
 func (s *MeasurementStorePSQL) Insert(m service.Measurement) error {
@@ -214,6 +216,38 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 	}
 
 	return list, nextPage, nil
+}
+
+func (s *MeasurementStorePSQL) FindDatastream(sensorID int64, obs string) (*service.Datastream, error) {
+	var ds service.Datastream
+	query := `
+		SELECT
+			"id", "description", "sensor_id", "observed_property", "unit_of_measurement"
+		FROM 
+			"datastreams"
+		WHERE
+			"sensor_id"=$1 AND "observed_property"=$2
+	`
+	if err := s.db.Get(&ds, query, sensorID, obs); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, service.ErrDatastreamNotFound
+		}
+		return nil, fmt.Errorf("database error querying datastream: %w", err)
+	}
+	return &ds, nil
+}
+
+func (s *MeasurementStorePSQL) CreateDatastream(ds *service.Datastream) error {
+	_, err := s.db.Exec(`
+	INSERT INTO
+		"datastreams" ("id", "description", "sensor_id", "observed_property", "unit_of_measurement")
+	VALUES 
+		($1, $2, $3, $4, $5)
+	`, ds.ID, ds.Description, ds.SensorID, ds.ObservedProperty, ds.UnitOfMeasurement)
+	if err != nil {
+		return fmt.Errorf("database error inserting datastream: %w", err)
+	}
+	return nil
 }
 
 // decodeCursor decodes the pagination cursor which is just a base64 encoded ISO8601 timestamp
