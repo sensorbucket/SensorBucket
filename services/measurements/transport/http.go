@@ -131,6 +131,10 @@ func parseFilters(r *http.Request) (service.QueryFilters, error) {
 		filters.SensorCodes = q["sensor_code"]
 	}
 
+	if q.Has("datastream") {
+		filters.Datastream = q.Get("datastream")
+	}
+
 	return filters, nil
 }
 

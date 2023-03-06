@@ -101,8 +101,8 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 		"device_id",
 		"device_code",
 		"device_description",
-		"ST_Y(device_location) as device_latitude",
-		"ST_X(device_location) as device_longitude",
+		"ST_Y(device_location::geometry) as device_latitude",
+		"ST_X(device_location::geometry) as device_longitude",
 		"device_altitude",
 		"device_location_description",
 		"device_properties",
@@ -119,8 +119,8 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 		"datastream_unit_of_measurement",
 		"measurement_timestamp",
 		"measurement_value",
-		"ST_Y(measurement_location) as measurement_latitude",
-		"ST_X(measurement_location) as measurement_longitude",
+		"ST_Y(measurement_location::geometry) as measurement_latitude",
+		"ST_X(measurement_location::geometry) as measurement_longitude",
 		"measurement_altitude",
 	).
 		From("measurements").
@@ -141,6 +141,9 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 	}
 	if len(query.Filters.SensorCodes) > 0 {
 		q = q.Where(sq.Eq{"sensor_code": query.Filters.SensorCodes})
+	}
+	if query.Filters.Datastream != "" {
+		q = q.Where(sq.Eq{"datastream_id": query.Filters.Datastream})
 	}
 
 	rows, err := q.RunWith(s.db).Query()

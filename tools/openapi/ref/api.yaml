@@ -315,7 +315,7 @@ paths:
           schema:
             type: string
         - in: query
-          name: measurement_type
+          name: datastream
           required: false
           schema:
             type: string

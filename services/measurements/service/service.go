@@ -74,6 +74,7 @@ func (m *Measurement) Validate() error {
 type QueryFilters struct {
 	DeviceIDs   []string
 	SensorCodes []string
+	Datastream  string
 }
 
 // Query contains query information for a list of measurements
