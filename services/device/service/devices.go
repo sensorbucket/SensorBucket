@@ -44,6 +44,14 @@ var (
 	)
 )
 
+type DeviceState uint8
+
+const (
+	DeviceStateUnknown DeviceState = iota
+	DeviceEnabled
+	DeviceDisabled
+)
+
 type Device struct {
 	ID                  int64           `json:"id"`
 	Code                string          `json:"code"`
@@ -54,7 +62,7 @@ type Device struct {
 	Longitude           *float64        `json:"longitude"`
 	Latitude            *float64        `json:"latitude"`
 	Altitude            *float64        `json:"altitude"`
-	State               int             `json:"state"` // TODO: Use enum
+	State               DeviceState     `json:"state"`
 	LocationDescription string          `json:"location_description" db:"location_description"`
 }
 
@@ -77,7 +85,7 @@ type NewDeviceOpts struct {
 	Latitude            *float64        `json:"latitude"`
 	Altitude            *float64        `json:"altitude"`
 	LocationDescription string          `json:"location_description"`
-	State               int             `json:"state"`
+	State               DeviceState     `json:"state"`
 }
 
 func NewDevice(opts NewDeviceOpts) (*Device, error) {

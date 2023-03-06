@@ -128,9 +128,10 @@ type UpdateDeviceOpts struct {
 	Description         *string         `json:"description"`
 	Longitude           *float64        `json:"longitude"`
 	Latitude            *float64        `json:"latitude"`
+	Altitude            *float64        `json:"altitude"`
 	LocationDescription *string         `json:"location_description"`
 	Properties          json.RawMessage `json:"properties"`
-	ArchiveTime         uint            `json:"archive_time"`
+	State               *DeviceState    `json:"state"`
 }
 
 func (s *ServiceImpl) UpdateDevice(ctx context.Context, dev *Device, opt UpdateDeviceOpts) error {
@@ -143,11 +144,17 @@ func (s *ServiceImpl) UpdateDevice(ctx context.Context, dev *Device, opt UpdateD
 	if opt.Longitude != nil {
 		dev.Longitude = opt.Longitude
 	}
+	if opt.Altitude != nil {
+		dev.Altitude = opt.Altitude
+	}
 	if opt.LocationDescription != nil {
 		dev.LocationDescription = *opt.LocationDescription
 	}
 	if opt.Properties != nil {
 		dev.Properties = opt.Properties
+	}
+	if opt.State != nil {
+		dev.State = *opt.State
 	}
 	if err := s.store.Save(dev); err != nil {
 		return err

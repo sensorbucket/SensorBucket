@@ -46,7 +46,7 @@ func resetPrefabs() {
 		Longitude:           ptr(float64(20)),
 		Altitude:            ptr(float64(30)),
 		LocationDescription: "",
-		State:               1,
+		State:               deviceservice.DeviceEnabled,
 		Properties:          json.RawMessage([]byte(`{"hello":"world"}`)),
 	}
 	prefabTimestamp = time.Now()

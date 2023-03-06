@@ -127,10 +127,6 @@ func parseFilters(r *http.Request) (service.QueryFilters, error) {
 		filters.DeviceIDs = q["device_id"]
 	}
 
-	if len(q["measurement_type"]) > 0 {
-		filters.MeasurementTypes = q["measurement_type"]
-	}
-
 	if len(q["sensor_code"]) > 0 {
 		filters.SensorCodes = q["sensor_code"]
 	}

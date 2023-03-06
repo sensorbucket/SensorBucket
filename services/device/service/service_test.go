@@ -19,6 +19,8 @@ func TestServiceDeviceUpdates(t *testing.T) {
 		Description:         ptr("description_b"),
 		Latitude:            ptr(float64(30)),
 		Longitude:           ptr(float64(40)),
+		Altitude:            ptr(float64(50)),
+		State:               ptr(service.DeviceDisabled),
 		LocationDescription: ptr("location_description_b"),
 		Properties:          []byte(`{"meta":true}`),
 	}
@@ -30,6 +32,8 @@ func TestServiceDeviceUpdates(t *testing.T) {
 		Properties:          []byte("{}"),
 		Latitude:            ptr(float64(10)),
 		Longitude:           ptr(float64(20)),
+		Altitude:            ptr(float64(30)),
+		State:               service.DeviceEnabled,
 		LocationDescription: "location_description_a",
 	}
 	var newDevice service.Device
@@ -45,6 +49,8 @@ func TestServiceDeviceUpdates(t *testing.T) {
 	assert.EqualValues(t, newDevice.Description, *updateDTO.Description)
 	assert.EqualValues(t, newDevice.Latitude, updateDTO.Latitude)
 	assert.EqualValues(t, newDevice.Longitude, updateDTO.Longitude)
+	assert.EqualValues(t, newDevice.Altitude, updateDTO.Altitude)
+	assert.EqualValues(t, newDevice.State, *updateDTO.State)
 	assert.EqualValues(t, newDevice.LocationDescription, *updateDTO.LocationDescription)
 	assert.EqualValues(t, newDevice.Properties, updateDTO.Properties)
 }
@@ -57,6 +63,8 @@ func TestServiceCreateDevice(t *testing.T) {
 		Properties:          []byte("{}"),
 		Latitude:            ptr(float64(10)),
 		Longitude:           ptr(float64(20)),
+		Altitude:            ptr(float64(30)),
+		State:               service.DeviceEnabled,
 		LocationDescription: "location_description_a",
 	}
 	var storedDev *service.Device
@@ -73,6 +81,8 @@ func TestServiceCreateDevice(t *testing.T) {
 	assert.EqualValues(t, newDTO.Description, storedDev.Description)
 	assert.EqualValues(t, newDTO.Latitude, storedDev.Latitude)
 	assert.EqualValues(t, newDTO.Longitude, storedDev.Longitude)
+	assert.EqualValues(t, newDTO.Altitude, storedDev.Altitude)
+	assert.EqualValues(t, newDTO.State, storedDev.State)
 	assert.EqualValues(t, newDTO.LocationDescription, storedDev.LocationDescription)
 	assert.EqualValues(t, newDTO.Properties, storedDev.Properties)
 	assert.Len(t, storedDev.Sensors, 0)

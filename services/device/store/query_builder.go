@@ -26,6 +26,8 @@ func newDeviceQueryBuilder() deviceQueryBuilder {
 		"location_description",
 		"ST_X(location::geometry) AS longitude",
 		"ST_Y(location::geometry) AS latitude",
+		"altitude",
+		"state",
 	).From("devices")
 
 	return deviceQueryBuilder{query: q}
@@ -75,6 +77,8 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) ([]service.Device, error) {
 			&model.LocationDescription,
 			&model.Longitude,
 			&model.Latitude,
+			&model.Altitude,
+			&model.State,
 		)
 		if err != nil {
 			return nil, err

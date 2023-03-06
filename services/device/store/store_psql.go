@@ -93,13 +93,15 @@ func (s *PSQLStore) createDevice(dev *service.Device) error {
 	if err := s.db.Get(&dev.ID,
 		`
 			INSERT INTO "devices" (
-				"code", "description", "organisation", "properties", "location", "altitude", "location_description"
+				"code", "description", "organisation", "properties", "location",
+				"altitude", "location_description", "state"
 			)
-			VALUES ($1, $2, $3, $4, ST_POINT($5, $6), $7, $8)
+			VALUES ($1, $2, $3, $4, ST_POINT($5, $6), $7, $8, $9)
 			RETURNING id
 		`,
 		dev.Code, dev.Description, dev.Organisation, dev.Properties,
 		dev.Longitude, dev.Latitude, dev.Altitude, dev.LocationDescription,
+		dev.State,
 	); err != nil {
 		return err
 	}
@@ -107,9 +109,16 @@ func (s *PSQLStore) createDevice(dev *service.Device) error {
 }
 
 func (s *PSQLStore) updateDevice(dev *service.Device) error {
-	if _, err := s.db.Exec(
-		"UPDATE devices SET description=$2, properties=$3, location=ST_POINT($4, $5), altitude=$6, location_description=$7 WHERE id=$1",
-		dev.ID, dev.Description, dev.Properties, dev.Longitude, dev.Latitude, dev.Altitude, dev.LocationDescription,
+	if _, err := s.db.Exec(`
+	UPDATE 
+		devices
+	SET
+		description=$2, properties=$3, location=ST_POINT($4, $5), altitude=$6,
+		location_description=$7, state=$8
+	WHERE
+		id=$1`,
+		dev.ID, dev.Description, dev.Properties, dev.Longitude, dev.Latitude,
+		dev.Altitude, dev.LocationDescription, dev.State,
 	); err != nil {
 		return err
 	}
@@ -192,7 +201,8 @@ func find(db DB, id int64) (*service.Device, error) {
 	if err := db.Get(&dev, `
 		SELECT 
 			"id", "code", "description", "organisation", "properties", "location_description",
-			ST_X("location"::geometry) AS longitude, ST_Y("location"::geometry) AS latitude
+			ST_X("location"::geometry) AS longitude, ST_Y("location"::geometry) AS latitude,
+			"altitude", "state"
 		FROM devices
 		WHERE id=$1
 	`, id); err != nil {
