@@ -106,7 +106,7 @@ func TestServiceShouldAddSensor(t *testing.T) {
 		Description: "sensordescription",
 		ExternalID:  "sensorexternalid",
 		Properties:  json.RawMessage("{}"),
-		ArchiveTime: 1000,
+		ArchiveTime: ptr(1000),
 	}
 	store := &StoreMock{
 		SaveFunc: func(dev *service.Device) error {

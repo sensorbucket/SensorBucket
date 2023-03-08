@@ -127,7 +127,7 @@ func TestShouldAddSensor(t *testing.T) {
 		ExternalID:  "0",
 		Description: "description",
 		Properties:  json.RawMessage("{}"),
-		ArchiveTime: 1500,
+		ArchiveTime: ptr(1500),
 	}
 	dev := &service.Device{
 		Code:                "test",

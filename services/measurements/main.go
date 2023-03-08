@@ -24,12 +24,13 @@ import (
 )
 
 var (
-	HTTP_BASE     = env.Must("HTTP_BASE")
-	HTTP_ADDR     = env.Must("HTTP_ADDR")
-	DB_DSN        = env.Must("DB_DSN")
-	AMQP_HOST     = env.Must("AMQP_HOST")
-	AMQP_QUEUE    = env.Must("AMQP_QUEUE")
-	AMQP_PREFETCH = env.Could("AMQP_PREFETCH", "5")
+	HTTP_BASE        = env.Must("HTTP_BASE")
+	HTTP_ADDR        = env.Must("HTTP_ADDR")
+	DB_DSN           = env.Must("DB_DSN")
+	AMQP_HOST        = env.Must("AMQP_HOST")
+	AMQP_QUEUE       = env.Must("AMQP_QUEUE")
+	AMQP_PREFETCH    = env.Could("AMQP_PREFETCH", "5")
+	SVC_ARCHIVE_TIME = env.Could("SVC_ARCHIVE_TIME", "14")
 )
 
 func main() {
@@ -43,6 +44,11 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("MQ_PREFETCH environment variable is not an integer: %v", err)
 	}
+	svcArchiveTime, err := strconv.Atoi(SVC_ARCHIVE_TIME)
+	if err != nil {
+		return fmt.Errorf("SVC_ARCHIVE_TIME environment variable is not an integer: %v", err)
+	}
+
 	db, err := sqlx.Open("pgx", DB_DSN)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
@@ -53,7 +59,7 @@ func Run() error {
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 	store := store.NewPSQL(db)
-	svc := service.New(store)
+	svc := service.New(store, svcArchiveTime)
 
 	// Start receiving messages in coroutine
 	consumer := mq.NewAMQPConsumer(AMQP_HOST, AMQP_QUEUE, func(c *amqp091.Channel) error {

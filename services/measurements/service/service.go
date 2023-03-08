@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/samber/lo"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	deviceservice "sensorbucket.nl/sensorbucket/services/device/service"
 )
@@ -57,6 +58,7 @@ type Measurement struct {
 	MeasurementLongitude            *float64                  `json:"measurement_longitude"`
 	MeasurementAltitude             *float64                  `json:"measurement_altitude"`
 	MeasurementProperties           map[string]any            `json:"measurement_properties"`
+	MeasurementExpiration           int64                     `json:"measurement_expiration"`
 }
 
 func (m *Measurement) Validate() error {
@@ -112,12 +114,14 @@ type Store interface {
 
 // Service is the measurement service which stores measurement data.
 type Service struct {
-	store Store
+	store             Store
+	systemArchiveTime int
 }
 
-func New(store Store) *Service {
+func New(store Store, systemArchiveTime int) *Service {
 	return &Service{
-		store: store,
+		store:             store,
+		systemArchiveTime: systemArchiveTime,
 	}
 }
 
@@ -157,6 +161,9 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 		return err
 	}
 
+	// TODO: Get organisation archive time
+	archiveTime, _ := lo.Coalesce(sensor.ArchiveTime, &s.systemArchiveTime) // msg.Organisation.ArchiveTime)
+
 	measurement := Measurement{
 		UplinkMessageID: msg.ID,
 		// TODO: Organisation...
@@ -189,6 +196,7 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 		MeasurementLongitude:  msg.Device.Longitude,
 		MeasurementAltitude:   msg.Device.Altitude,
 		MeasurementProperties: m.Properties,
+		MeasurementExpiration: msg.ReceivedAt + (time.Duration(*archiveTime*24) * time.Hour).Milliseconds(),
 	}
 
 	// Measurement location is either explicitly set or falls back to device location

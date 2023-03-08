@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -84,7 +85,7 @@ func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 					return nil
 				},
 			}
-			svc := service.New(store)
+			svc := service.New(store, 0)
 
 			// Act
 			err = svc.StorePipelineMessage(context.Background(), *msg)
@@ -141,7 +142,7 @@ func TestShouldCopyOverDefaultFields(t *testing.T) {
 			return nil
 		},
 	}
-	svc := service.New(store)
+	svc := service.New(store, 0)
 
 	// Act
 	err = svc.StorePipelineMessage(context.Background(), *msg)
@@ -276,7 +277,7 @@ func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
 					return nil
 				},
 			}
-			svc := service.New(store)
+			svc := service.New(store, 0)
 
 			// Act
 			require.NoError(t,
@@ -290,5 +291,81 @@ func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
 			assert.Equal(t, tC.ExpectedLongitude, measurement.MeasurementLongitude)
 			assert.Equal(t, tC.ExpectedAltitude, measurement.MeasurementAltitude)
 		})
+	}
+}
+
+func TestShouldSetExpirationDate(t *testing.T) {
+	now := time.Now()
+	sysArchiveTime := 14
+	testCases := []struct {
+		desc                    string
+		organisationArchiveTime *int
+		sensorArchiveTime       *int
+		expectedArchiveTime     int64
+	}{
+		{
+			desc:                    "No organisationArchiveTime and no sensorArchiveTime, should use system ArchiveTime",
+			organisationArchiveTime: nil,
+			sensorArchiveTime:       nil,
+			expectedArchiveTime:     now.Add(time.Duration(sysArchiveTime) * 24 * time.Hour).UnixMilli(),
+		},
+	}
+	for _, tC := range testCases {
+		msg := pipeline.NewMessage(uuid.NewString(), []string{})
+		msg.ReceivedAt = now.UnixMilli()
+		msg.Device = &pipeline.Device{
+			ID:           1,
+			Code:         "",
+			Description:  "",
+			Organisation: "",
+			// TODO: We kind of need organisationArchiveTime here, but how do we get it?
+			// Perhaps split the device endpoint in two:
+			//  - one ep for just the device info
+			//  - one ep for workers with all relevant data (device, sensors, org)
+			Sensors: []deviceservice.Sensor{
+				{
+					ID:          1,
+					Code:        "",
+					Description: "",
+					Brand:       "",
+					ArchiveTime: tC.sensorArchiveTime,
+					ExternalID:  "",
+					Properties:  json.RawMessage("{}"),
+				},
+			},
+			Latitude:            ptr(float64(10)),
+			Longitude:           ptr(float64(20)),
+			Altitude:            ptr(float64(30)),
+			LocationDescription: "",
+			State:               deviceservice.DeviceEnabled,
+			Properties:          json.RawMessage([]byte(`{"hello":"world"}`)),
+		}
+		err := msg.NewMeasurement().SetValue(5, "test_obs", "1").SetSensor("").Add()
+		require.NoError(t, err)
+		ds := service.Datastream{
+			ID:                uuid.New(),
+			Description:       "",
+			SensorID:          msg.Device.Sensors[0].ID,
+			ObservedProperty:  msg.Measurements[0].ObservedProperty,
+			UnitOfMeasurement: msg.Measurements[0].UnitOfMeasurement,
+		}
+		store := &StoreMock{
+			FindDatastreamFunc: func(sensorID int64, obs string) (*service.Datastream, error) {
+				return &ds, nil
+			},
+			InsertFunc: func(measurement service.Measurement) error {
+				return nil
+			},
+		}
+		svc := service.New(store, sysArchiveTime)
+
+		// Act
+		err = svc.StorePipelineMessage(context.Background(), *msg)
+		require.NoError(t, err)
+
+		// Assert
+		require.Len(t, store.calls.Insert, 1, "SQL Insert should've been called")
+		measurement := store.calls.Insert[0].Measurement
+		assert.Equal(t, tC.expectedArchiveTime, measurement.MeasurementExpiration)
 	}
 }

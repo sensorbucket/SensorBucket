@@ -64,6 +64,7 @@ func createInsertQuery(m service.Measurement) (string, []any, error) {
 	values["measurement_value"] = m.MeasurementValue
 	values["measurement_location"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.MeasurementLongitude, m.MeasurementLatitude)
 	values["measurement_altitude"] = m.MeasurementAltitude
+	values["measurement_expiration"] = m.MeasurementExpiration
 
 	return pq.Insert("measurements").SetMap(values).ToSql()
 }
@@ -122,6 +123,7 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 		"ST_Y(measurement_location::geometry) as measurement_latitude",
 		"ST_X(measurement_location::geometry) as measurement_longitude",
 		"measurement_altitude",
+		"measurement_expiration",
 	).
 		From("measurements").
 		Where("measurement_timestamp >= ?", query.Start).
@@ -191,6 +193,7 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 			&m.MeasurementLatitude,
 			&m.MeasurementLongitude,
 			&m.MeasurementAltitude,
+			&m.MeasurementExpiration,
 		)
 		if err != nil {
 			return nil, nil, err
