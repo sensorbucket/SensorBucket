@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/measurements/service"
 )
 
@@ -30,7 +31,8 @@ func NewHTTP(svc *service.Service, url string) *HTTPTransport {
 	t.router.Get("/health", func(rw http.ResponseWriter, r *http.Request) {
 		rw.Write([]byte("healthy"))
 	})
-	t.router.Get("/", t.httpGetMeasurements())
+	t.router.Get("/measurements", t.httpGetMeasurements())
+	t.router.Get("/datastreams", t.httpListDatastream())
 
 	return t
 }
@@ -81,6 +83,19 @@ func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
 			}
 		}
 		sendJSON(w, response)
+	}
+}
+
+func (t *HTTPTransport) httpListDatastream() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ds, err := t.svc.ListDatastreams(r.Context())
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+			Data: ds,
+		})
 	}
 }
 

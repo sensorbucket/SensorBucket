@@ -46,7 +46,7 @@ type Measurement struct {
 	SensorExternalID                string                    `json:"sensor_external_id"`
 	SensorProperties                json.RawMessage           `json:"sensor_properties"`
 	SensorBrand                     string                    `json:"sensor_brand"`
-	SensorArchiveTime               int                       `json:"sensor_archive_time"`
+	SensorArchiveTime               *int                      `json:"sensor_archive_time"`
 	DatastreamID                    uuid.UUID                 `json:"datastream_id"`
 	DatastreamDescription           string                    `json:"datastream_description"`
 	DatastreamObservedProperty      string                    `json:"datastream_observed_property"`
@@ -107,6 +107,7 @@ type Store interface {
 
 	Insert(Measurement) error
 	Query(Query, Pagination) ([]Measurement, *Pagination, error)
+	ListDatastreams() ([]Datastream, error)
 }
 
 // Service is the measurement service which stores measurement data.
@@ -214,4 +215,8 @@ func (s *Service) QueryMeasurements(q Query, p Pagination) ([]Measurement, *Pagi
 		return nil, nil, err
 	}
 	return measurements, nextPage, nil
+}
+
+func (s *Service) ListDatastreams(ctx context.Context) ([]Datastream, error) {
+	return s.store.ListDatastreams()
 }

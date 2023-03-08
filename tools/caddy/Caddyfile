@@ -6,9 +6,8 @@ handle_path /api/* {
     handle_path /uplinks* {
         reverse_proxy httpimporter:3000
     }
-    reverse_proxy /measurements* measurements:3000 {
-        rewrite /
-    }
+    reverse_proxy /measurements* measurements:3000
+    reverse_proxy /datastreams* measurements:3000
 }
 
 redir /dev/mq /dev/mq/

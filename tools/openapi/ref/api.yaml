@@ -345,6 +345,23 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/measurementDTO"
+  /datastreams:
+    get:
+      operationId: ListDatastreams
+      summary: get a list of all datastreams
+      tags: ["Measurements"]
+      responses:
+        200:
+          description: Fetched datastreams
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/datastreamDTO"
 
   /pipelines:
     get:
@@ -730,6 +747,21 @@ components:
           example:
             - "TTN@1.0.0"
             - "MFMGroundwater@1.0.0"
+    datastreamDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        sensor_id:
+          type: number
+        observed_property:
+          type: string
+        unit_of_measurement:
+          type: string
+          format: ucum
   securitySchemes:
     Authorization:
       type: http

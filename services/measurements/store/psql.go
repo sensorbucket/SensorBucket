@@ -253,6 +253,20 @@ func (s *MeasurementStorePSQL) CreateDatastream(ds *service.Datastream) error {
 	return nil
 }
 
+func (s *MeasurementStorePSQL) ListDatastreams() ([]service.Datastream, error) {
+	var ds = []service.Datastream{}
+	if err := s.db.Select(&ds, `
+		SELECT
+			"id", "description", "sensor_id", "observed_property", "unit_of_measurement"
+		FROM
+			"datastreams"
+	`); err != nil {
+		return nil, fmt.Errorf("error selecting datastreams from db: %w", err)
+	}
+
+	return ds, nil
+}
+
 // decodeCursor decodes the pagination cursor which is just a base64 encoded ISO8601 timestamp
 func decodeCursor(cursor string) (uint64, error) {
 	decoded, err := hex.DecodeString(cursor)
