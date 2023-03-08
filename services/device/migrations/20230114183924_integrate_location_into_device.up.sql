@@ -16,6 +16,6 @@ DROP TABLE "locations";
 -- Add new fields to sensor
 ALTER TABLE "sensors"
     ADD COLUMN "archive_time" INT,
-    ADD COLUMN "brand" VARCHAR;
+    ADD COLUMN "brand" VARCHAR NOT NULL DEFAULT('');
 
 COMMIT;

@@ -71,7 +71,7 @@ type Sensor struct {
 	Code        string          `json:"code"`
 	Description string          `json:"description"`
 	Brand       string          `json:"brand"`
-	ArchiveTime int             `json:"archive_time" db:"archive_time"`
+	ArchiveTime *int            `json:"archive_time" db:"archive_time"`
 	ExternalID  string          `json:"external_id" db:"external_id"`
 	Properties  json.RawMessage `json:"properties"`
 }
@@ -119,7 +119,7 @@ type NewSensorOpts struct {
 	Brand       string          `json:"brand"`
 	Description string          `json:"description"`
 	ExternalID  string          `json:"external_id"`
-	ArchiveTime int             `json:"archive_time"`
+	ArchiveTime *int            `json:"archive_time"`
 	Properties  json.RawMessage `json:"properties"`
 }
 

@@ -93,7 +93,7 @@ type NewSensorDTO struct {
 	Description string          `json:"description"`
 	ExternalID  string          `json:"external_id"`
 	Properties  json.RawMessage `json:"properties"`
-	ArchiveTime int             `json:"archive_time"`
+	ArchiveTime *int            `json:"archive_time"`
 }
 
 func (s *ServiceImpl) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error {
