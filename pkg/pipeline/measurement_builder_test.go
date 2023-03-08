@@ -12,7 +12,7 @@ func TestMeasurementBuilderAddMeasurement(t *testing.T) {
 	msg := pipeline.NewMessage(uuid.NewString(), []string{"a", "b", "c"})
 	intermediateBuilder := msg.NewMeasurement().
 		SetSensor("testsensor").
-		SetValue(1234, "TEST_MEASUREMENT").
+		SetValue(1234, "TEST_TYPE", "TEST_UNIT").
 		SetMetadata(map[string]any{"meta": true})
 	// No modification should have happened yet
 	assert.Len(t, msg.Measurements, 0)

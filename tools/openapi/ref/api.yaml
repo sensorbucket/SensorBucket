@@ -10,20 +10,49 @@ info:
     url: 'https://zeeland.nl'
 servers:
   - description: Local
-    url: 'http://localhost:3000'
+    url: 'http://localhost:3000/api'
 paths: 
   /devices:
     get:
       operationId: ListDevices
       summary: Fetch list of devices
+      description: |
+        Fetch a list of devices.
+        Location based filtering is either by bounding box or within radius from a position. 
+
+        To filter on bounding box, supply the north,east,south,west coordinates of the bounding box as query parameters. To filter by radius supply the longitude,latitude and distance query parameters. If both are supplied the bounding box query is discarded. 
       tags: ["Devices"]
       parameters:
         - in: query
-          name: configuration
+          name: properties
           schema:
             type: object
         - in: query
-          name: location_id
+          name: north
+          schema:
+            type: number
+        - in: query
+          name: west
+          schema:
+            type: number
+        - in: query
+          name: east
+          schema:
+            type: number
+        - in: query
+          name: south
+          schema:
+            type: number
+        - in: query
+          name: latitude
+          schema:
+            type: number
+        - in: query
+          name: longitude
+          schema:
+            type: number
+        - in: query
+          name: distance
           schema:
             type: number
       responses:
@@ -63,16 +92,6 @@ paths:
                     example: created device
                   data:
                     $ref: '#/components/schemas/deviceDTO'
-        404:
-          description: Location not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Referenced location was not found
   /devices/{id}:
     get:
       operationId: GetDevice
@@ -259,26 +278,6 @@ paths:
                   message:
                     type: string
                     example: Device not found
-  /locations:
-    get:
-      operationId: ListLocations
-      summary: List all locations
-      tags: ["Locations"]
-      responses:
-        200:
-          description: Listed locations
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Listed locations
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/locationDTO'
 
   /measurements:
     get:
@@ -316,12 +315,7 @@ paths:
           schema:
             type: string
         - in: query
-          name: location_id
-          required: false
-          schema:
-            type: number
-        - in: query
-          name: measurement_type
+          name: datastream
           required: false
           schema:
             type: string
@@ -351,6 +345,23 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/measurementDTO"
+  /datastreams:
+    get:
+      operationId: ListDatastreams
+      summary: get a list of all datastreams
+      tags: ["Measurements"]
+      responses:
+        200:
+          description: Fetched datastreams
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/datastreamDTO"
 
   /pipelines:
     get:
@@ -534,7 +545,16 @@ components:
         organisation:
           type: string
           example: provincie_zeeland
-        configuration:
+        latitude:
+          type: number
+          example: 1.2345
+        longitude:
+          type: number
+          example: 1.2345
+        location_description:
+          type: string
+          example: "Description of location"
+        properties:
           type: object
           example:
             eui: "060708090A0B0C0D"
@@ -544,7 +564,16 @@ components:
           description:
             type: number
             example: 1
-          configuration:
+          latitude:
+            type: number
+            example: 1.2345
+          longitude:
+            type: number
+            example: 1.2345
+          location_description:
+            type: string
+            example: "Description of location"
+          properties:
             type: object
             example:
               eui: "060708090A0B0C0D"
@@ -563,34 +592,23 @@ components:
         organisation:
           type: string
           example: provincie_zeeland
-        configuration:
+        properties:
           type: object
           example:
             eui: "060708090A0B0C0D"
-        location:
-          $ref: '#/components/schemas/locationDTO'
+        latitude:
+          type: number
+          example: 1.2345
+        longitude:
+          type: number
+          example: 1.2345
+        location_description:
+          type: string
+          example: "Description of location"
         sensors:
           type: array
           items:
             $ref: '#/components/schemas/sensorDTO'
-    locationDTO:
-      type: object
-      properties:
-        id:
-          type: number
-          example: 1
-        name:
-          type: string
-          example: Bridgeton Waters
-        organisation:
-          type: string
-          example: provincie_zeeland
-        longitude:
-          type: number
-          example: 50.12345678
-        latitude:
-          type: number
-          example: 3.12345678
     createSensorDTO:
       type: object
       properties:
@@ -603,9 +621,14 @@ components:
         external_id:
           type: string
           example: "5"
-        measurement_type:
+        brand:
           type: string
-          example: pressure
+          example: "sensor brand ABC"
+        properties:
+          type: object
+        archive_time:
+          type: number
+          example: 7
     sensorDTO:
       type: object
       properties:
@@ -642,7 +665,7 @@ components:
         device_description:
           type: string
           example: Grasfield pipe 24
-        device_configuration:
+        device_properties:
           type: object
           example:
             eui: "060708090A0B0C0D"
@@ -652,9 +675,6 @@ components:
         longitude:
           type: number
           example: 3.12345
-        location_id:
-          type: number
-          example: 1
         location_name:
           type: string
           example: Bridgeton Waters
@@ -679,7 +699,7 @@ components:
         sensor_external_id:
           type: string
           example: "5"
-        sensor_configuration:
+        sensor_properties:
           type: object
           example: {}
         value:
@@ -727,6 +747,21 @@ components:
           example:
             - "TTN@1.0.0"
             - "MFMGroundwater@1.0.0"
+    datastreamDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        sensor_id:
+          type: number
+        observed_property:
+          type: string
+        unit_of_measurement:
+          type: string
+          format: ucum
   securitySchemes:
     Authorization:
       type: http
@@ -735,7 +770,4 @@ security:
   - Authorization: []
 tags:
   - name: Devices
-  - name: Locations
   - name: Pipelines
-  - name: Measurements
-  - name: Uplink

@@ -1,12 +1,21 @@
 version: '3'
 
 services:
-  apigateway:
-    image: nginx:alpine
+  caddy:
+    image: caddy:alpine
     ports:
       - 3000:80
     volumes:
-      - ./tools/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./tools/caddy:/etc/caddy
+
+  dashboard:
+    build: 
+      context: ./services/dashboard
+      dockerfile: Dockerfile
+      target: dev
+    command: yarn dev --host=0.0.0.0 --port=3000
+    volumes:
+      - ./services/dashboard:/app:cached
 
   device:
     build: .
@@ -42,7 +51,7 @@ services:
       - .:/workspace:cached
     environment:
     - APP_NAME=measurements
-    - HTTP_BASE=http://localhost:3000/measurements
+    - HTTP_BASE=http://localhost:3000/api/measurements
     - HTTP_ADDR=:3000
     - DB_DSN=postgresql://measurementservice:measurementservice@db:5432/measurementservice?sslmode=disable
     - AMQP_HOST=amqp://guest:guest@mq:5672/
@@ -94,14 +103,11 @@ services:
 
   mq:
     image: rabbitmq:3.8-management
-    ports:
-      - 15672:15672
 
   openapi:
     image: swaggerapi/swagger-editor
     environment:
-      - URL=/openapi/ref/api.yaml
-      - BASE_URL=/openapi
+      - URL=/dev/api/ref/api.yaml
     volumes:
       - ./tools/openapi/ref:/usr/share/nginx/html/ref
 

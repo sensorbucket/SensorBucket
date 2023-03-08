@@ -32,6 +32,8 @@ func main() {
 
 func Run() error {
 	db := sqlx.MustOpen("pgx", DB_DSN)
+	db.SetMaxIdleConns(2)
+	db.SetMaxOpenConns(10)
 	if err := migrations.MigratePostgres(db.DB); err != nil {
 		return fmt.Errorf("failed to migrate db: %w", err)
 	}

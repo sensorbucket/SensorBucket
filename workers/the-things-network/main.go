@@ -130,19 +130,6 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 	if err := json.Unmarshal(msg.Payload, &ttn); err != nil {
 		return msg, err
 	}
-	builder := msg.NewMeasurement()
-
-	// Convert gateway signal strength and noise to measurements
-	for _, gw := range ttn.Uplink.RxMetaData {
-		ts, err := time.Parse(time.RFC3339, gw.Timestamp)
-		if err != nil {
-			log.Printf("Error while parsing timestamp from gateway RX Metadata: %v\n", err)
-			continue
-		}
-		builder := builder.SetTimestamp(ts.Unix()).SetMetadata(map[string]any{"gateway_eui": gw.GatewayId.EUI})
-		builder.SetValue(gw.RSSI, "rssi").Add()
-		builder.SetValue(gw.SNR, "snr").Add()
-	}
 
 	// Match EUI to device
 	device, err := fetchDeviceByEUI(ttn.EndDeviceId.EUI)
@@ -155,7 +142,28 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 	if err != nil {
 		log.Printf("Error while parsing timestamp from uplink metadata: %v\n", err)
 	}
-	msg.Timestamp = ts.Unix()
+	msg.Timestamp = ts.UnixMilli()
+
+	// Convert gateway signal strength and noise to measurements
+	builder := msg.NewMeasurement()
+	for _, gw := range ttn.Uplink.RxMetaData {
+		var ts int64
+		if gw.Timestamp != "" {
+			tim, err := time.Parse(time.RFC3339, gw.Timestamp)
+			if err != nil {
+				log.Printf("Error while parsing timestamp from gateway RX Metadata: %v\n", err)
+				continue
+			}
+			ts = tim.UnixMilli()
+		} else {
+			ts = msg.Timestamp
+		}
+
+		gwEUI := gw.GatewayId.EUI
+		builder := builder.SetTimestamp(ts).SetMetadata(map[string]any{"gateway_eui": gwEUI}).SetSensor("antenna")
+		builder.SetValue(gw.RSSI, fmt.Sprintf("rssi_%s", gwEUI), "dB").Add()
+		builder.SetValue(gw.SNR, fmt.Sprintf("snr_%s", gwEUI), "dB").Add()
+	}
 
 	return msg, nil
 }
@@ -169,7 +177,7 @@ func fetchDeviceByEUI(eui string) (*pipeline.Device, error) {
 	filterJSON, _ := json.Marshal(filter)
 	filterQuery := url.QueryEscape(string(filterJSON))
 
-	url := fmt.Sprintf("%s/devices?configuration=%s", SVC_DEVICE, filterQuery)
+	url := fmt.Sprintf("%s/devices?properties=%s", SVC_DEVICE, filterQuery)
 	res, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("could not perform request to device service: %w", err)
@@ -193,7 +201,7 @@ func fetchDeviceByEUI(eui string) (*pipeline.Device, error) {
 	}
 
 	if len(response.Data) == 0 {
-		return nil, ErrNoDeviceMatch
+		return nil, fmt.Errorf("%w: for EUI: %s", ErrNoDeviceMatch, eui)
 	}
 	if len(response.Data) > 1 {
 		log.Printf("[Warning] Expected 1 device to match %s but got %d devices\n", eui, len(response.Data))

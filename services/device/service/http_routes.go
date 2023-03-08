@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -23,11 +22,11 @@ type middleware = func(next http.Handler) http.Handler
 
 // HTTPTransport ...
 type HTTPTransport struct {
-	svc    *Service
+	svc    Service
 	router chi.Router
 }
 
-func NewHTTPTransport(svc *Service) *HTTPTransport {
+func NewHTTPTransport(svc Service) *HTTPTransport {
 	transport := &HTTPTransport{
 		svc:    svc,
 		router: chi.NewRouter(),
@@ -61,7 +60,7 @@ func (t *HTTPTransport) setupRoutes() {
 			r.Delete("/{sensor_code}", t.httpDeleteSensor())
 		})
 	})
-	r.Get("/locations", t.httpListLocations())
+	// TODO: Should we be able to fetch sensor by global unique ID?
 }
 
 //
@@ -72,25 +71,85 @@ func parseQueryFilter(r *http.Request) (DeviceFilter, error) {
 	var filter DeviceFilter
 	q := r.URL.Query()
 
-	// Configuration filter
-	configurationFilter := q.Get("configuration")
-	if configurationFilter != "" {
-		if err := json.Unmarshal([]byte(configurationFilter), &filter.Configuration); err != nil {
+	// Property filter
+	propertiesFilter := q.Get("properties")
+	if propertiesFilter != "" {
+		if err := json.Unmarshal([]byte(propertiesFilter), &filter.Properties); err != nil {
 			return filter, err
 		}
-	}
-
-	// Location ID
-	qLocID := q.Get("location_id")
-	if qLocID != "" {
-		locID, err := strconv.ParseInt(qLocID, 10, 32)
-		if err != nil {
-			return filter, err
-		}
-		filter.LocationID = int(locID)
 	}
 
 	return filter, nil
+}
+
+func parseBoundingBoxRequest(r *http.Request) (BoundingBox, error) {
+	var err error
+	var bb BoundingBox
+	q := r.URL.Query()
+
+	northQ := q.Get("north")
+	westQ := q.Get("west")
+	southQ := q.Get("south")
+	eastQ := q.Get("east")
+	if northQ != "" && westQ != "" && eastQ != "" && southQ != "" {
+		bb.North, err = strconv.ParseFloat(northQ, 64)
+		if err != nil {
+			return bb, err
+		}
+		bb.West, err = strconv.ParseFloat(westQ, 64)
+		if err != nil {
+			return bb, err
+		}
+		bb.South, err = strconv.ParseFloat(southQ, 64)
+		if err != nil {
+			return bb, err
+		}
+		bb.East, err = strconv.ParseFloat(eastQ, 64)
+		if err != nil {
+			return bb, err
+		}
+
+		// TODO: Validate parameters
+	}
+	return bb, nil
+}
+
+func parseWithinRangeRequest(r *http.Request) (LocationRange, error) {
+	var err error
+	var lr LocationRange
+	q := r.URL.Query()
+
+	latitudeQ := q.Get("latitude")
+	longitudeQ := q.Get("longitude")
+	distanceQ := q.Get("distance")
+	if latitudeQ != "" && longitudeQ != "" && distanceQ != "" {
+		lr.Latitude, err = strconv.ParseFloat(latitudeQ, 64)
+		if err != nil {
+			return lr, err
+		}
+		lr.Longitude, err = strconv.ParseFloat(longitudeQ, 64)
+		if err != nil {
+			return lr, err
+		}
+		lr.Distance, err = strconv.ParseFloat(distanceQ, 64)
+		if err != nil {
+			return lr, err
+		}
+
+		// TODO: Validate parameters
+	}
+
+	return lr, nil
+}
+
+func isWithinRangeRequest(r *http.Request) bool {
+	q := r.URL.Query()
+	return q.Has("latitude") && q.Has("longitude") && q.Has("distance")
+}
+
+func isWithinBoundingBoxRequest(r *http.Request) bool {
+	q := r.URL.Query()
+	return q.Has("north") && q.Has("west") && q.Has("east") && q.Has("south")
 }
 
 func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
@@ -100,8 +159,26 @@ func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
 			web.HTTPError(rw, err)
 			return
 		}
+		var devices []Device
 
-		devices, err := t.svc.ListDevices(r.Context(), filter)
+		// figure out what kind of query this is
+		if isWithinRangeRequest(r) {
+			lr, err := parseWithinRangeRequest(r)
+			if err != nil {
+				web.HTTPError(rw, err)
+				return
+			}
+			devices, err = t.svc.ListInRange(r.Context(), lr, filter)
+		} else if isWithinBoundingBoxRequest(r) {
+			bb, err := parseBoundingBoxRequest(r)
+			if err != nil {
+				web.HTTPError(rw, err)
+				return
+			}
+			devices, err = t.svc.ListInBoundingBox(r.Context(), bb, filter)
+		} else {
+			devices, err = t.svc.ListDevices(r.Context(), filter)
+		}
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
@@ -195,13 +272,12 @@ func (t *HTTPTransport) httpAddSensor() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		dev := r.Context().Value(ctxDeviceKey).(*Device)
 
-		var dto NewSensorOpts
+		var dto NewSensorDTO
 		if err := web.DecodeJSON(r, &dto); err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
 
-		fmt.Printf("Got: %+v\n", dto)
 		if err := t.svc.AddSensor(r.Context(), dev, dto); err != nil {
 			web.HTTPError(rw, err)
 			return
@@ -234,21 +310,6 @@ func (t *HTTPTransport) httpDeleteSensor() http.HandlerFunc {
 	}
 }
 
-func (t *HTTPTransport) httpListLocations() http.HandlerFunc {
-	return func(rw http.ResponseWriter, r *http.Request) {
-		locations, err := t.svc.ListLocations(r.Context())
-		if err != nil {
-			web.HTTPError(rw, err)
-			return
-		}
-
-		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
-			Message: "Listed locations",
-			Data:    locations,
-		})
-	}
-}
-
 //
 // Helpers
 //
@@ -259,7 +320,7 @@ func (t *HTTPTransport) useDeviceResolver() middleware {
 	return func(next http.Handler) http.Handler {
 		mw := func(rw http.ResponseWriter, r *http.Request) {
 			idString := chi.URLParam(r, "device_id")
-			id, err := strconv.Atoi(idString)
+			id, err := strconv.ParseInt(idString, 10, 64)
 			if err != nil {
 				web.HTTPError(rw, ErrHTTPDeviceIDInvalid)
 				return

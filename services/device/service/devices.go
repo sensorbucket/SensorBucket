@@ -37,69 +37,99 @@ var (
 		"sensor with that code already exists on the device",
 		"DEVICE_DUPLICATE_SENSOR_CODE",
 	)
+	ErrInvalidCoordinates = web.NewError(
+		http.StatusBadRequest,
+		"Invalid coordinates supplied",
+		"ERR_LOCATION_INVALID_COORDINATES",
+	)
+)
+
+type DeviceState uint8
+
+const (
+	DeviceStateUnknown DeviceState = iota
+	DeviceEnabled
+	DeviceDisabled
 )
 
 type Device struct {
-	ID            int             `json:"id"`
-	Code          string          `json:"code"`
-	Description   string          `json:"description"`
-	Organisation  string          `json:"organisation"`
-	Sensors       []Sensor        `json:"sensors"`
-	Configuration json.RawMessage `json:"configuration"`
-	Location      *Location       `json:"location"`
+	ID                  int64           `json:"id"`
+	Code                string          `json:"code"`
+	Description         string          `json:"description"`
+	Organisation        string          `json:"organisation"`
+	Sensors             []Sensor        `json:"sensors"`
+	Properties          json.RawMessage `json:"metadata"`
+	Longitude           *float64        `json:"longitude"`
+	Latitude            *float64        `json:"latitude"`
+	Altitude            *float64        `json:"altitude"`
+	State               DeviceState     `json:"state"`
+	LocationDescription string          `json:"location_description" db:"location_description"`
 }
 
 type Sensor struct {
-	Code            string          `json:"code"`
-	Description     string          `json:"description"`
-	MeasurementType string          `json:"measurement_type"` // TODO:
-	ExternalID      *string         `json:"external_id" db:"external_id"`
-	Configuration   json.RawMessage `json:"configuration"`
+	ID          int64           `json:"id"`
+	Code        string          `json:"code"`
+	Description string          `json:"description"`
+	Brand       string          `json:"brand"`
+	ArchiveTime *int            `json:"archive_time" db:"archive_time"`
+	ExternalID  string          `json:"external_id" db:"external_id"`
+	Properties  json.RawMessage `json:"properties"`
 }
 
 type NewDeviceOpts struct {
-	Code          string
-	Description   string
-	Organisation  string
-	Configuration json.RawMessage
+	Code                string          `json:"code"`
+	Description         string          `json:"description"`
+	Organisation        string          `json:"organisation"`
+	Properties          json.RawMessage `json:"properties"`
+	Longitude           *float64        `json:"longitude"`
+	Latitude            *float64        `json:"latitude"`
+	Altitude            *float64        `json:"altitude"`
+	LocationDescription string          `json:"location_description"`
+	State               DeviceState     `json:"state"`
 }
 
 func NewDevice(opts NewDeviceOpts) (*Device, error) {
 	dev := Device{
-		Description:   "",
-		Sensors:       []Sensor{},
-		Configuration: []byte("{}"),
+		Sensors:             []Sensor{},
+		Properties:          []byte("{}"),
+		LocationDescription: opts.LocationDescription,
+		Description:         opts.Description,
+		Organisation:        opts.Organisation,
+		Code:                opts.Code,
+		State:               opts.State,
 	}
 
 	if !R_CODE.MatchString(opts.Code) {
 		return nil, ErrDeviceInvalidCode
 	}
-	dev.Code = opts.Code
 
-	// TODO: Validate if org exists?
-	dev.Organisation = opts.Organisation
-
-	if opts.Configuration != nil {
-		dev.Configuration = opts.Configuration
+	if opts.Properties != nil {
+		dev.Properties = opts.Properties
 	}
 
-	dev.Description = opts.Description
+	if err := dev.SetLocation(opts.Latitude, opts.Longitude, opts.Altitude); err != nil {
+		return nil, err
+	}
 
 	return &dev, nil
 }
 
 type NewSensorOpts struct {
-	Code          string          `json:"code"`
-	Description   string          `json:"description"`
-	ExternalID    *string         `json:"external_id"`
-	Configuration json.RawMessage `json:"configuration"`
+	Code        string          `json:"code"`
+	Brand       string          `json:"brand"`
+	Description string          `json:"description"`
+	ExternalID  string          `json:"external_id"`
+	ArchiveTime *int            `json:"archive_time"`
+	Properties  json.RawMessage `json:"properties"`
 }
 
 func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 	sensor := Sensor{
-		Description:   "",
-		ExternalID:    opts.ExternalID,
-		Configuration: []byte("{}"),
+		Brand:       opts.Brand,
+		Description: opts.Description,
+		ExternalID:  opts.ExternalID,
+		Properties:  []byte("{}"),
+		ArchiveTime: opts.ArchiveTime,
 	}
 
 	if !R_CODE.MatchString(opts.Code) {
@@ -107,11 +137,9 @@ func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 	}
 	sensor.Code = opts.Code
 
-	if opts.Configuration != nil {
-		sensor.Configuration = opts.Configuration
+	if opts.Properties != nil {
+		sensor.Properties = opts.Properties
 	}
-
-	sensor.Description = opts.Description
 
 	return &sensor, nil
 }
@@ -152,7 +180,7 @@ func (d *Device) GetSensorByCode(code string) (*Sensor, error) {
 }
 func (d *Device) GetSensorByExternalID(eid string) (*Sensor, error) {
 	for _, sensor := range d.Sensors {
-		if sensor.ExternalID != nil && *sensor.ExternalID == eid {
+		if sensor.ExternalID == eid {
 			return &sensor, nil
 		}
 	}
@@ -160,10 +188,10 @@ func (d *Device) GetSensorByExternalID(eid string) (*Sensor, error) {
 	return nil, ErrSensorNotFound
 }
 
-func (d *Device) DeleteSensor(sensor *Sensor) error {
+func (d *Device) DeleteSensorByID(id int64) error {
 	sCount := len(d.Sensors)
 	for ix := range d.Sensors {
-		if d.Sensors[ix].Code == sensor.Code {
+		if d.Sensors[ix].ID == id {
 			d.Sensors[ix] = d.Sensors[sCount-1]
 			d.Sensors = d.Sensors[:sCount-1]
 			return nil
@@ -173,7 +201,17 @@ func (d *Device) DeleteSensor(sensor *Sensor) error {
 	return ErrSensorNotFound
 }
 
-func (d *Device) SetLocation(location *Location) error {
-	d.Location = location
+func (d *Device) SetLocation(lat, lng, alt *float64) error {
+	if lat == nil || lng == nil || alt == nil {
+		d.Latitude = nil
+		d.Longitude = nil
+		d.Altitude = nil
+	}
+	if *lat < -90 || *lat > 90 || *lng < -180 || *lng > 180 {
+		return ErrInvalidCoordinates
+	}
+	d.Latitude = lat
+	d.Longitude = lng
+	d.Altitude = alt
 	return nil
 }

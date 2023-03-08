@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/measurements/service"
 )
 
@@ -30,7 +31,8 @@ func NewHTTP(svc *service.Service, url string) *HTTPTransport {
 	t.router.Get("/health", func(rw http.ResponseWriter, r *http.Request) {
 		rw.Write([]byte("healthy"))
 	})
-	t.router.Get("/", t.httpGetMeasurements())
+	t.router.Get("/measurements", t.httpGetMeasurements())
+	t.router.Get("/datastreams", t.httpListDatastream())
 
 	return t
 }
@@ -84,6 +86,19 @@ func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
 	}
 }
 
+func (t *HTTPTransport) httpListDatastream() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ds, err := t.svc.ListDatastreams(r.Context())
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+			Data: ds,
+		})
+	}
+}
+
 func parseTimeRange(r *http.Request) (time.Time, time.Time, error) {
 	var zero time.Time
 	q := r.URL.Query()
@@ -127,27 +142,12 @@ func parseFilters(r *http.Request) (service.QueryFilters, error) {
 		filters.DeviceIDs = q["device_id"]
 	}
 
-	if len(q["location_id"]) > 0 {
-		filters.LocationIDs = make([]int, 0, len(q["location_id"]))
-		for _, valQ := range q["location_id"] {
-			valStr, err := url.QueryUnescape(valQ)
-			if err != nil {
-				return filters, fmt.Errorf("invalid location_id: %w", err)
-			}
-			id, err := strconv.Atoi(valStr)
-			if err != nil {
-				return filters, fmt.Errorf("invalid location_id: %w", err)
-			}
-			filters.LocationIDs = append(filters.LocationIDs, id)
-		}
-	}
-
-	if len(q["measurement_type"]) > 0 {
-		filters.MeasurementTypes = q["measurement_type"]
-	}
-
 	if len(q["sensor_code"]) > 0 {
 		filters.SensorCodes = q["sensor_code"]
+	}
+
+	if q.Has("datastream") {
+		filters.Datastream = q.Get("datastream")
 	}
 
 	return filters, nil

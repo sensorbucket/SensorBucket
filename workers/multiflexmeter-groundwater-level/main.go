@@ -74,14 +74,17 @@ func processDelivery(c <-chan amqp091.Delivery, p *mq.AMQPPublisher) {
 		// Do process
 		msg, err = processMessage(msg)
 		if err != nil {
-			return fmt.Errorf("could not process message: %v", err)
+			return fmt.Errorf("could not process message: %w", err)
 		}
 
 		// Publish result
 		topic, err := msg.NextStep()
+		if err != nil {
+			return fmt.Errorf("could not get next step: %w", err)
+		}
 		msgJSON, err := json.Marshal(msg)
 		if err != nil {
-			return fmt.Errorf("could not marshal pipelines message: %v", err)
+			return fmt.Errorf("could not marshal pipelines message: %w", err)
 		}
 		p.Publish(topic, amqp091.Publishing{
 			Body: msgJSON,
@@ -101,6 +104,9 @@ func processDelivery(c <-chan amqp091.Delivery, p *mq.AMQPPublisher) {
 
 func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 	data := msg.Payload
+	if len(data) == 0 {
+		return msg, nil
+	}
 	if len(data) < 2 || data[0] != 0x6c || data[1] != 0x11 {
 		return msg, errors.New("incorrect payload header")
 	}
@@ -110,11 +116,11 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 	if err != nil {
 		return msg, err
 	}
-	err = msg.NewMeasurement().SetSensor("0").SetValue(millivolt, "millivolt").Add()
+	err = msg.NewMeasurement().SetSensor("0").SetValue(millivolt, "pressure", "mV").Add()
 	if err != nil {
 		return msg, err
 	}
-	err = msg.NewMeasurement().SetSensor("0").SetValue(columnMeters, "watercolumn_meters").Add()
+	err = msg.NewMeasurement().SetSensor("0").SetValue(columnMeters, "watercolumn", "m").Add()
 	if err != nil {
 		return msg, err
 	}
@@ -122,11 +128,11 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 	// First bit indicates if there is another measurement appended
 	if data[2]&0x80 > 0 {
 		millivolt, columnMeters, err := valueToMeasurements(data[5:])
-		err = msg.NewMeasurement().SetSensor("1").SetValue(millivolt, "millivolt").Add()
+		err = msg.NewMeasurement().SetSensor("1").SetValue(millivolt, "pressure", "mV").Add()
 		if err != nil {
 			return msg, err
 		}
-		err = msg.NewMeasurement().SetSensor("1").SetValue(columnMeters, "watercolumn_meters").Add()
+		err = msg.NewMeasurement().SetSensor("1").SetValue(columnMeters, "watercolumn", "m").Add()
 		if err != nil {
 			return msg, err
 		}
