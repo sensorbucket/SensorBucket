@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	deviceservice "sensorbucket.nl/sensorbucket/services/device/service"
 	"sensorbucket.nl/sensorbucket/services/measurements/service"
@@ -17,39 +17,13 @@ func ptr[T any](v T) *T {
 	return &v
 }
 
-var (
-	prefabSensor1       deviceservice.Sensor
-	prefabDevice1       pipeline.Device
-	prefabTimestamp     time.Time
-	prefabMeasurement1  pipeline.Measurement
-	prefabMessage       pipeline.Message
-	prefabDatastream    service.Datastream
-	expectedMeasurement service.Measurement
-)
-
-func resetPrefabs() {
-	prefabSensor1 = deviceservice.Sensor{
-		ID:          1,
-		Code:        "abcd",
-		Description: "",
-		Brand:       "",
-		ArchiveTime: 100,
-		Properties:  json.RawMessage{},
-		ExternalID:  "1",
-	}
-	prefabDatastream = service.Datastream{
-		ID:                uuid.New(),
-		Description:       "",
-		SensorID:          1,
-		UnitOfMeasurement: "1/cm3",
-		ObservedProperty:  "mc_pm25",
-	}
-	prefabDevice1 = pipeline.Device{
+func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
+	device := &pipeline.Device{
 		ID:                  1,
 		Code:                "",
 		Description:         "",
 		Organisation:        "",
-		Sensors:             []deviceservice.Sensor{prefabSensor1},
+		Sensors:             []deviceservice.Sensor{},
 		Latitude:            ptr(float64(10)),
 		Longitude:           ptr(float64(20)),
 		Altitude:            ptr(float64(30)),
@@ -57,125 +31,264 @@ func resetPrefabs() {
 		State:               deviceservice.DeviceEnabled,
 		Properties:          json.RawMessage([]byte(`{"hello":"world"}`)),
 	}
-	prefabTimestamp = time.Now()
-	prefabMeasurement1 = pipeline.Measurement{
-		Timestamp:         prefabTimestamp.UnixMilli(),
-		SensorExternalID:  prefabSensor1.ExternalID,
-		Value:             5,
-		ObservedProperty:  "",
-		UnitOfMeasurement: "",
-		Latitude:          ptr(float64(30)),
-		Longitude:         ptr(float64(40)),
-		Altitude:          ptr(float64(50)),
-		Properties:        map[string]any{},
+	sensor := &deviceservice.Sensor{
+		ID:          1,
+		Code:        "",
+		Description: "",
+		Brand:       "",
+		ArchiveTime: nil,
+		ExternalID:  "",
+		Properties:  json.RawMessage("{}"),
 	}
-	prefabMessage = pipeline.Message{
-		ID:            uuid.NewString(),
-		PipelineID:    uuid.NewString(),
-		PipelineSteps: []string{},
-		Timestamp:     prefabTimestamp.UnixMilli(),
-		Device:        &prefabDevice1,
-		Measurements: []pipeline.Measurement{
-			prefabMeasurement1,
-		},
-	}
-	expectedMeasurement = service.Measurement{
-		UplinkMessageID:                 prefabMessage.ID,
-		OrganisationName:                "",
-		OrganisationAddress:             "",
-		OrganisationZipcode:             "",
-		OrganisationCity:                "",
-		OrganisationChamberOfCommerceID: "",
-		OrganisationHeadquarterID:       "",
-		//OrganisationArchiveTime:         123,
-		//OrganisationState:               1,
-		DeviceID:                  prefabMessage.Device.ID,
-		DeviceCode:                prefabMessage.Device.Code,
-		DeviceDescription:         prefabMessage.Device.Description,
-		DeviceLatitude:            prefabMessage.Device.Latitude,
-		DeviceLongitude:           prefabMessage.Device.Longitude,
-		DeviceAltitude:            prefabMessage.Device.Altitude,
-		DeviceLocationDescription: prefabMessage.Device.LocationDescription,
-		DeviceState:               prefabMessage.Device.State,
-		DeviceProperties:          prefabMessage.Device.Properties,
-
-		SensorID:          prefabSensor1.ID,
-		SensorCode:        prefabSensor1.Code,
-		SensorDescription: prefabSensor1.Description,
-		SensorExternalID:  prefabSensor1.ExternalID,
-		SensorProperties:  prefabSensor1.Properties,
-		SensorBrand:       prefabSensor1.Brand,
-		SensorArchiveTime: prefabSensor1.ArchiveTime,
-
-		DatastreamID:                prefabDatastream.ID,
-		DatastreamDescription:       prefabDatastream.Description,
-		DatastreamObservedProperty:  prefabDatastream.ObservedProperty,
-		DatastreamUnitOfMeasurement: prefabDatastream.UnitOfMeasurement,
-
-		MeasurementTimestamp:  time.UnixMilli(prefabMeasurement1.Timestamp),
-		MeasurementValue:      prefabMeasurement1.Value,
-		MeasurementLatitude:   prefabMeasurement1.Latitude,
-		MeasurementLongitude:  prefabMeasurement1.Longitude,
-		MeasurementAltitude:   prefabMeasurement1.Altitude,
-		MeasurementProperties: prefabMeasurement1.Properties,
-	}
-}
-
-func TestShouldConvertPipelineMessageToMeasurements(t *testing.T) {
-	for _, tc := range []struct {
-		Name          string
-		Setup         func()
-		ExpectedError error
+	testCases := []struct {
+		desc   string
+		device *pipeline.Device
+		sensor *deviceservice.Sensor
+		err    error
 	}{
 		{
-			Name:  "Default case",
-			Setup: func() {},
+			desc:   "Both set, no error",
+			device: device,
+			sensor: sensor,
+			err:    nil,
 		},
 		{
-			Name: "Should fallback to device location if no measurement location is set",
-			Setup: func() {
-				prefabMessage.Measurements[0].Latitude = nil
-				prefabMessage.Measurements[0].Longitude = nil
-				prefabMessage.Measurements[0].Altitude = nil
-				expectedMeasurement.MeasurementLatitude = prefabDevice1.Latitude
-				expectedMeasurement.MeasurementLongitude = prefabDevice1.Longitude
-				expectedMeasurement.MeasurementAltitude = prefabDevice1.Altitude
-			},
+			desc:   "Device set, no sensor",
+			device: device,
+			sensor: nil,
+			err:    service.ErrInvalidSensorID,
 		},
 		{
-			Name: "Should throw if no device is set",
-			Setup: func() {
-				prefabMessage.Device = nil
-			},
-			ExpectedError: service.ErrMissingDeviceInMeasurement,
+			desc:   "Device not set",
+			device: nil,
+			sensor: nil,
+			err:    service.ErrMissingDeviceInMeasurement,
 		},
-	} {
-		t.Run(tc.Name, func(t *testing.T) {
-			resetPrefabs()
-			var storeInsertCallCount int
-			storeInsertArgs := []service.Measurement{}
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			msg := pipeline.NewMessage(uuid.NewString(), []string{})
+			if tC.device != nil {
+				msg.Device = tC.device
+				if tC.sensor != nil {
+					msg.Device.Sensors = append(msg.Device.Sensors, *tC.sensor)
+				}
+			}
+			err := msg.NewMeasurement().SetValue(5, "test_obs", "1").SetSensor("").Add()
+			require.NoError(t, err)
 			store := &StoreMock{
 				FindDatastreamFunc: func(sensorID int64, obs string) (*service.Datastream, error) {
-					return &prefabDatastream, nil
+					return &service.Datastream{}, nil
 				},
 				InsertFunc: func(measurement service.Measurement) error {
-					storeInsertCallCount++
-					storeInsertArgs = append(storeInsertArgs, measurement)
 					return nil
 				},
 			}
 			svc := service.New(store)
 
-			tc.Setup()
-			err := svc.StorePipelineMessage(context.Background(), prefabMessage)
-			if tc.ExpectedError != nil {
-				assert.Error(t, err)
-				assert.ErrorIs(t, err, tc.ExpectedError)
+			// Act
+			err = svc.StorePipelineMessage(context.Background(), *msg)
+			if tC.err != nil {
+				assert.Error(t, tC.err, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, len(prefabMessage.Measurements), storeInsertCallCount)
-				assert.EqualValues(t, expectedMeasurement, storeInsertArgs[0])
 			}
+		})
+	}
+}
+
+// This tests whether the related models are properly copied into the measurements
+// It does not test any logic
+func TestShouldCopyOverDefaultFields(t *testing.T) {
+	msg := pipeline.NewMessage(uuid.NewString(), []string{})
+	msg.Device = &pipeline.Device{
+		ID:           1,
+		Code:         "",
+		Description:  "",
+		Organisation: "",
+		Sensors: []deviceservice.Sensor{
+			{
+				ID:          1,
+				Code:        "",
+				Description: "",
+				Brand:       "",
+				ArchiveTime: nil,
+				ExternalID:  "",
+				Properties:  json.RawMessage("{}"),
+			},
+		},
+		Latitude:            ptr(float64(10)),
+		Longitude:           ptr(float64(20)),
+		Altitude:            ptr(float64(30)),
+		LocationDescription: "",
+		State:               deviceservice.DeviceEnabled,
+		Properties:          json.RawMessage([]byte(`{"hello":"world"}`)),
+	}
+	err := msg.NewMeasurement().SetValue(5, "test_obs", "1").SetSensor("").Add()
+	require.NoError(t, err)
+	ds := service.Datastream{
+		ID:                uuid.New(),
+		Description:       "",
+		SensorID:          msg.Device.Sensors[0].ID,
+		ObservedProperty:  msg.Measurements[0].ObservedProperty,
+		UnitOfMeasurement: msg.Measurements[0].UnitOfMeasurement,
+	}
+	store := &StoreMock{
+		FindDatastreamFunc: func(sensorID int64, obs string) (*service.Datastream, error) {
+			return &ds, nil
+		},
+		InsertFunc: func(measurement service.Measurement) error {
+			return nil
+		},
+	}
+	svc := service.New(store)
+
+	// Act
+	err = svc.StorePipelineMessage(context.Background(), *msg)
+	require.NoError(t, err)
+
+	// Assert
+	require.Len(t, store.calls.Insert, 1, "SQL Insert should've been called")
+	measurement := store.calls.Insert[0].Measurement
+	assert.Equal(t, msg.ID, measurement.UplinkMessageID)
+	//assert.Equal(t, OrganisationName, measurement.OrganisationName)
+	//assert.Equal(t, OrganisationAddress, measurement.OrganisationAddress)
+	//assert.Equal(t, OrganisationZipcode, measurement.OrganisationZipcode)
+	//assert.Equal(t, OrganisationCity, measurement.OrganisationCity)
+	//assert.Equal(t, OrganisationChamberOfCommerceID, measurement.OrganisationChamberOfCommerceID)
+	//assert.Equal(t, OrganisationHeadquarterID, measurement.OrganisationHeadquarterID)
+	assert.Equal(t, msg.Device.ID, measurement.DeviceID)
+	assert.Equal(t, msg.Device.Code, measurement.DeviceCode)
+	assert.Equal(t, msg.Device.Description, measurement.DeviceDescription)
+	assert.Equal(t, msg.Device.Latitude, measurement.DeviceLatitude)
+	assert.Equal(t, msg.Device.Longitude, measurement.DeviceLongitude)
+	assert.Equal(t, msg.Device.Altitude, measurement.DeviceAltitude)
+	assert.Equal(t, msg.Device.LocationDescription, measurement.DeviceLocationDescription)
+	assert.Equal(t, msg.Device.State, measurement.DeviceState)
+	assert.Equal(t, msg.Device.Properties, measurement.DeviceProperties)
+	assert.Equal(t, msg.Device.Sensors[0].ID, measurement.SensorID)
+	assert.Equal(t, msg.Device.Sensors[0].Code, measurement.SensorCode)
+	assert.Equal(t, msg.Device.Sensors[0].Description, measurement.SensorDescription)
+	assert.Equal(t, msg.Device.Sensors[0].ExternalID, measurement.SensorExternalID)
+	assert.Equal(t, msg.Device.Sensors[0].Properties, measurement.SensorProperties)
+	assert.Equal(t, msg.Device.Sensors[0].Brand, measurement.SensorBrand)
+	assert.Equal(t, msg.Device.Sensors[0].ArchiveTime, measurement.SensorArchiveTime)
+	assert.Equal(t, ds.ID, measurement.DatastreamID)
+	assert.Equal(t, ds.Description, measurement.DatastreamDescription)
+	assert.Equal(t, ds.ObservedProperty, measurement.DatastreamObservedProperty)
+	assert.Equal(t, ds.UnitOfMeasurement, measurement.DatastreamUnitOfMeasurement)
+}
+
+func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
+	testCases := []struct {
+		desc                 string
+		DeviceLongitude      *float64
+		DeviceLatitude       *float64
+		DeviceAltitude       *float64
+		MeasurementLongitude *float64
+		MeasurementLatitude  *float64
+		MeasurementAltitude  *float64
+		ExpectedLongitude    *float64
+		ExpectedLatitude     *float64
+		ExpectedAltitude     *float64
+	}{
+		{
+			desc:                 "Device not set, Measurement set",
+			MeasurementLatitude:  ptr(float64(10)),
+			MeasurementLongitude: ptr(float64(20)),
+			MeasurementAltitude:  ptr(float64(30)),
+			ExpectedLatitude:     ptr(float64(10)),
+			ExpectedLongitude:    ptr(float64(20)),
+			ExpectedAltitude:     ptr(float64(30)),
+		},
+		{
+			desc:              "Device set, Measurement not set",
+			DeviceLatitude:    ptr(float64(10)),
+			DeviceLongitude:   ptr(float64(20)),
+			DeviceAltitude:    ptr(float64(30)),
+			ExpectedLatitude:  ptr(float64(10)),
+			ExpectedLongitude: ptr(float64(20)),
+			ExpectedAltitude:  ptr(float64(30)),
+		},
+		{
+			desc:                 "Device set, Measurement set",
+			DeviceLatitude:       ptr(float64(90)),
+			DeviceLongitude:      ptr(float64(90)),
+			DeviceAltitude:       ptr(float64(90)),
+			MeasurementLatitude:  ptr(float64(10)),
+			MeasurementLongitude: ptr(float64(20)),
+			MeasurementAltitude:  ptr(float64(30)),
+			ExpectedLatitude:     ptr(float64(10)),
+			ExpectedLongitude:    ptr(float64(20)),
+			ExpectedAltitude:     ptr(float64(30)),
+		},
+		{
+			desc: "None set",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			msg := pipeline.NewMessage(uuid.NewString(), []string{})
+			msg.Device = &pipeline.Device{
+				ID:           1,
+				Code:         "",
+				Description:  "",
+				Organisation: "",
+				Sensors: []deviceservice.Sensor{
+					{
+						ID:          1,
+						Code:        "",
+						Description: "",
+						Brand:       "",
+						ArchiveTime: nil,
+						ExternalID:  "",
+						Properties:  json.RawMessage("{}"),
+					},
+				},
+				Latitude:            tC.DeviceLatitude,
+				Longitude:           tC.DeviceLongitude,
+				Altitude:            tC.DeviceAltitude,
+				LocationDescription: "",
+				State:               deviceservice.DeviceEnabled,
+				Properties:          json.RawMessage([]byte(`{"hello":"world"}`)),
+			}
+			builder := msg.NewMeasurement().SetValue(5, "test_obs", "1").SetSensor("")
+			if tC.MeasurementLatitude != nil && tC.MeasurementLongitude != nil && tC.MeasurementAltitude != nil {
+				builder = builder.SetLocation(
+					*tC.MeasurementLatitude,
+					*tC.MeasurementLongitude,
+					*tC.MeasurementAltitude,
+				)
+			}
+			require.NoError(t, builder.Add())
+			ds := service.Datastream{
+				ID:                uuid.New(),
+				Description:       "",
+				SensorID:          msg.Device.Sensors[0].ID,
+				ObservedProperty:  msg.Measurements[0].ObservedProperty,
+				UnitOfMeasurement: msg.Measurements[0].UnitOfMeasurement,
+			}
+			store := &StoreMock{
+				FindDatastreamFunc: func(sensorID int64, obs string) (*service.Datastream, error) {
+					return &ds, nil
+				},
+				InsertFunc: func(measurement service.Measurement) error {
+					return nil
+				},
+			}
+			svc := service.New(store)
+
+			// Act
+			require.NoError(t,
+				svc.StorePipelineMessage(context.Background(), *msg),
+			)
+
+			// Assert
+			require.Len(t, store.calls.Insert, 1, "SQL Insert should've been called")
+			measurement := store.calls.Insert[0].Measurement
+			assert.Equal(t, tC.ExpectedLatitude, measurement.MeasurementLatitude)
+			assert.Equal(t, tC.ExpectedLongitude, measurement.MeasurementLongitude)
+			assert.Equal(t, tC.ExpectedAltitude, measurement.MeasurementAltitude)
 		})
 	}
 }

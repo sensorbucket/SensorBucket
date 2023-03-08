@@ -27,6 +27,9 @@ var _ service.Store = &StoreMock{}
 //			InsertFunc: func(measurement service.Measurement) error {
 //				panic("mock out the Insert method")
 //			},
+//			ListDatastreamsFunc: func() ([]service.Datastream, error) {
+//				panic("mock out the ListDatastreams method")
+//			},
 //			QueryFunc: func(query service.Query, pagination service.Pagination) ([]service.Measurement, *service.Pagination, error) {
 //				panic("mock out the Query method")
 //			},
@@ -45,6 +48,9 @@ type StoreMock struct {
 
 	// InsertFunc mocks the Insert method.
 	InsertFunc func(measurement service.Measurement) error
+
+	// ListDatastreamsFunc mocks the ListDatastreams method.
+	ListDatastreamsFunc func() ([]service.Datastream, error)
 
 	// QueryFunc mocks the Query method.
 	QueryFunc func(query service.Query, pagination service.Pagination) ([]service.Measurement, *service.Pagination, error)
@@ -68,6 +74,9 @@ type StoreMock struct {
 			// Measurement is the measurement argument value.
 			Measurement service.Measurement
 		}
+		// ListDatastreams holds details about calls to the ListDatastreams method.
+		ListDatastreams []struct {
+		}
 		// Query holds details about calls to the Query method.
 		Query []struct {
 			// Query is the query argument value.
@@ -79,6 +88,7 @@ type StoreMock struct {
 	lockCreateDatastream sync.RWMutex
 	lockFindDatastream   sync.RWMutex
 	lockInsert           sync.RWMutex
+	lockListDatastreams  sync.RWMutex
 	lockQuery            sync.RWMutex
 }
 
@@ -179,6 +189,33 @@ func (mock *StoreMock) InsertCalls() []struct {
 	mock.lockInsert.RLock()
 	calls = mock.calls.Insert
 	mock.lockInsert.RUnlock()
+	return calls
+}
+
+// ListDatastreams calls ListDatastreamsFunc.
+func (mock *StoreMock) ListDatastreams() ([]service.Datastream, error) {
+	if mock.ListDatastreamsFunc == nil {
+		panic("StoreMock.ListDatastreamsFunc: method is nil but Store.ListDatastreams was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockListDatastreams.Lock()
+	mock.calls.ListDatastreams = append(mock.calls.ListDatastreams, callInfo)
+	mock.lockListDatastreams.Unlock()
+	return mock.ListDatastreamsFunc()
+}
+
+// ListDatastreamsCalls gets all the calls that were made to ListDatastreams.
+// Check the length with:
+//
+//	len(mockedStore.ListDatastreamsCalls())
+func (mock *StoreMock) ListDatastreamsCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockListDatastreams.RLock()
+	calls = mock.calls.ListDatastreams
+	mock.lockListDatastreams.RUnlock()
 	return calls
 }
 
