@@ -20,7 +20,8 @@
 					time: true
 				}
 			},
-			series: [{}, { label: 'x', stroke: 'blue' }]
+			series: [{}, { stroke: 'blue' }],
+			axes: [{ label: 'Timestamp' }]
 		};
 
 		chart = new uPlot(opts, [], container);
@@ -44,14 +45,17 @@
 		(() => {
 			if (!chart) return;
 			console.log('Chart update', { data });
+			chart.delSeries(1);
 			chart.addSeries(
 				{
 					label: `${datastream.observed_property} (${datastream.unit_of_measurement})`,
 					stroke: 'blue'
 				},
-				5
+				1
 			);
-			//chart.setData(data);
+			let labels = chart.root.querySelectorAll('.u-legend .u-label');
+			labels[1].textContent = chart.axes[1].label = datastream.unit_of_measurement;
+			chart.setData(data);
 		})();
 	}
 </script>

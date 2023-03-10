@@ -53,7 +53,7 @@
 		{#await dsPromise then datastreams}
 			<div class="overflow-y-scroll flex-grow">
 				<Table
-					data={datastreams ?? []}
+					data={datastreams?.filter((ds) => ds.sensor_id == selectedSensor?.id) ?? []}
 					fields={['description', 'observed_property', 'unit_of_measurement']}
 					isSelected={(ds) => ds.id == selectedDatastream?.id}
 					on:select={(e) => (selectedDatastream = e.detail)}

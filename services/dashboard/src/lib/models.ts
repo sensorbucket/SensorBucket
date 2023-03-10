@@ -29,6 +29,7 @@ export interface Device {
 }
 export interface Datastream {
     id: string;
+    sensor_id: number;
     description: string;
     observed_property: string;
     unit_of_measurement: string;
