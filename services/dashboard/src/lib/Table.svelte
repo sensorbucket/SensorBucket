@@ -23,7 +23,7 @@
 	}
 </script>
 
-<table class="w-full rounded overflow-hidden text-left text-sm">
+<table class="w-full rounded text-left text-sm">
 	<thead class="bg-primary-500 text-white">
 		<tr>
 			{#each fields as key}

@@ -8,12 +8,6 @@ export interface BoundingBox {
     south: number;
     west: number;
 }
-export interface Location {
-    id: number;
-    name: string;
-    latitude: number;
-    longitude: number;
-}
 export interface Sensor {
     id: number;
     code: string;
@@ -33,6 +27,12 @@ export interface Device {
     sensors: Sensor[];
     properties: Record<string, any>;
 }
+export interface Datastream {
+    id: string;
+    description: string;
+    observed_property: string;
+    unit_of_measurement: string;
+};
 export interface Measurement {
     uplink_message_id: string;
     device_id: number;
