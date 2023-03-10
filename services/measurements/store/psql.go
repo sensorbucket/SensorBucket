@@ -64,7 +64,7 @@ func createInsertQuery(m service.Measurement) (string, []any, error) {
 	values["measurement_value"] = m.MeasurementValue
 	values["measurement_location"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.MeasurementLongitude, m.MeasurementLatitude)
 	values["measurement_altitude"] = m.MeasurementAltitude
-	values["measurement_expiration"] = m.MeasurementExpiration
+	values["measurement_expiration"] = sq.Expr("to_timestamp(?)::date", m.MeasurementExpiration/1000)
 
 	return pq.Insert("measurements").SetMap(values).ToSql()
 }
