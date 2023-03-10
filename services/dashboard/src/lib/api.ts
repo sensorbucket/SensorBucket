@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 import axios from 'axios';
-import type { Datastream, APIResponse, BoundingBox, Device } from './models';
+import type { Datastream, APIResponse, BoundingBox, Device, Measurement } from './models';
 
 const api_url = browser ? '/api' : 'http://caddy/api'
 const X = axios.create({ baseURL: api_url, transitional: { silentJSONParsing: false } })
@@ -11,6 +11,14 @@ export const API = {
         (bb: BoundingBox) => X.get<APIResponse<Device[]>>('/devices', { params: bb })
             .then(response => response.data.data),
     listDatastreamsForSensor: async (id: number) =>
-        X.get<APIResponse<Datastream[]>>(`/datastreams?sensor=${id}`).then(r => r.data.data)
+        X.get<APIResponse<Datastream[]>>(`/datastreams?sensor=${id}`).then(r => r.data.data),
+    getMeasurements: async (start: Date, end: Date, filters: Record<string, any>) =>
+        X.get<APIResponse<Measurement[]>>(`/measurements`, {
+            params: {
+                ...filters,
+                start: start.toISOString(),
+                end: end.toISOString()
+            }
+        }).then(r => r.data.data)
 }
 

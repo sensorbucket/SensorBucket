@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { API } from '$lib/api';
+	import DatastreamChart from '$lib/DatastreamChart.svelte';
 	import type { Device, Sensor, Datastream } from '$lib/models';
 	import Table from '$lib/Table.svelte';
 	import type { PageData } from './$types';
@@ -61,16 +62,21 @@
 		{/await}
 	</div>
 
-	<div class="layout-measurements">
+	<div class="layout-measurements flex flex-col">
 		<h2 class="text-lg">Measurements</h2>
 		<hr class="my-1" />
+		{#if selectedDatastream}
+			<div class="flex-grow">
+				<DatastreamChart datastream={selectedDatastream} />
+			</div>
+		{/if}
 	</div>
 </div>
 
 <style>
 	.layout {
 		@apply grid gap-4;
-		grid-template-rows: 33vh minmax(50vh, 1fr);
+		grid-template-rows: minmax(33vh, 28rem) minmax(50vh, 1fr);
 		grid-template-columns: 1fr 1fr 1fr;
 	}
 

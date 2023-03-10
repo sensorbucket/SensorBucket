@@ -39,10 +39,8 @@ export interface Measurement {
     device_code: string;
     device_description: string;
     device_properties: Record<string, string | number | boolean>;
-    timestamp: string;
-    value: number;
-    measurement_type: string;
-    measurement_unit: string;
+    measurement_timestamp: string;
+    measurement_value: number;
     metadata: Record<string, string | number | boolean>;
     longitude: number | null;
     latitude: number | null;
