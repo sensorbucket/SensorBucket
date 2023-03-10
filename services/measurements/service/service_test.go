@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"encoding/json"
+	"math"
 	"testing"
 	"time"
 
@@ -301,13 +302,13 @@ func TestShouldSetExpirationDate(t *testing.T) {
 		desc                    string
 		organisationArchiveTime *int
 		sensorArchiveTime       *int
-		expectedArchiveTime     int64
+		expectedArchiveTime     time.Time
 	}{
 		{
 			desc:                    "No organisationArchiveTime and no sensorArchiveTime, should use system ArchiveTime",
 			organisationArchiveTime: nil,
 			sensorArchiveTime:       nil,
-			expectedArchiveTime:     now.Add(time.Duration(sysArchiveTime) * 24 * time.Hour).UnixMilli(),
+			expectedArchiveTime:     now.Add(time.Duration(sysArchiveTime) * 24 * time.Hour),
 		},
 	}
 	for _, tC := range testCases {
@@ -366,6 +367,12 @@ func TestShouldSetExpirationDate(t *testing.T) {
 		// Assert
 		require.Len(t, store.calls.Insert, 1, "SQL Insert should've been called")
 		measurement := store.calls.Insert[0].Measurement
-		assert.Equal(t, tC.expectedArchiveTime, measurement.MeasurementExpiration)
+		// Check if the difference in seconds is 0, otherwise there might be a subsecond difference
+		// due to parsing
+		assert.Equal(t,
+			float64(0),
+			math.Abs(float64(tC.expectedArchiveTime.Unix()-measurement.MeasurementExpiration.Unix())),
+			"",
+		)
 	}
 }

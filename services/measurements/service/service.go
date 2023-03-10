@@ -58,7 +58,7 @@ type Measurement struct {
 	MeasurementLongitude            *float64                  `json:"measurement_longitude"`
 	MeasurementAltitude             *float64                  `json:"measurement_altitude"`
 	MeasurementProperties           map[string]any            `json:"measurement_properties"`
-	MeasurementExpiration           int64                     `json:"measurement_expiration"`
+	MeasurementExpiration           time.Time                 `json:"measurement_expiration"`
 }
 
 func (m *Measurement) Validate() error {
@@ -162,7 +162,8 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 	}
 
 	// TODO: Get organisation archive time
-	archiveTime, _ := lo.Coalesce(sensor.ArchiveTime, &s.systemArchiveTime) // msg.Organisation.ArchiveTime)
+	// Time is by default in days
+	archiveTimeDays, _ := lo.Coalesce(sensor.ArchiveTime, &s.systemArchiveTime) // msg.Organisation.ArchiveTime)
 
 	measurement := Measurement{
 		UplinkMessageID: msg.ID,
@@ -196,7 +197,7 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 		MeasurementLongitude:  msg.Device.Longitude,
 		MeasurementAltitude:   msg.Device.Altitude,
 		MeasurementProperties: m.Properties,
-		MeasurementExpiration: msg.ReceivedAt + (time.Duration(*archiveTime*24) * time.Hour).Milliseconds(),
+		MeasurementExpiration: time.UnixMilli(msg.ReceivedAt).Add(time.Duration(*archiveTimeDays) * 24 * time.Hour),
 	}
 
 	// Measurement location is either explicitly set or falls back to device location
