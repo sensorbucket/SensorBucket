@@ -50,10 +50,16 @@ func TestNewMessageRandomUUID(t *testing.T) {
 	}
 }
 
-func TestNewMessageTimestampIsMillis(t *testing.T) {
+func TestNewMessageTimesInMillis(t *testing.T) {
 	msg := pipeline.NewMessage("", nil)
 	diff := float64(time.Now().UnixMilli() - msg.Timestamp)
-	if math.Abs(diff) > 1000 {
-		t.Errorf("Time between now and message creation differs more than expected: %.4f, it might not use millis!", diff)
+	diff2 := float64(time.Now().UnixMilli() - msg.ReceivedAt)
+	if math.Abs(diff) > 1000 || math.Abs(diff2) > 1000 {
+		t.Errorf("Time between now and message timestamp/receivedAt differs more than expected: %.4f, it might not use millis!", diff)
 	}
+}
+
+func TestHasReceivedDate(t *testing.T) {
+	msg := pipeline.NewMessage("", nil)
+	assert.GreaterOrEqual(t, time.Now().UnixMilli(), msg.ReceivedAt)
 }

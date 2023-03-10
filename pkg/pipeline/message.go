@@ -26,6 +26,7 @@ type Measurement struct {
 }
 type Message struct {
 	ID            string        `json:"id"`
+	ReceivedAt    int64         `json:"received_at"`
 	PipelineID    string        `json:"pipeline_id"`
 	PipelineSteps []string      `json:"pipeline_steps"`
 	Timestamp     int64         `json:"timestamp"`
@@ -37,6 +38,7 @@ type Message struct {
 func NewMessage(pipelineID string, steps []string) *Message {
 	return &Message{
 		ID:            uuid.Must(uuid.NewRandom()).String(),
+		ReceivedAt:    time.Now().UnixMilli(),
 		PipelineID:    pipelineID,
 		PipelineSteps: steps,
 		Timestamp:     time.Now().UnixMilli(),

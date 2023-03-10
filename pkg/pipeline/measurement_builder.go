@@ -56,6 +56,16 @@ func (b MeasurementBuilder) SetMetadata(meta map[string]any) MeasurementBuilder 
 	return b
 }
 
+func (b MeasurementBuilder) SetLocation(latitude, longitude, altitude float64) MeasurementBuilder {
+	if b.err != nil {
+		return b
+	}
+	b.measurement.Longitude = &longitude
+	b.measurement.Latitude = &latitude
+	b.measurement.Altitude = &altitude
+	return b
+}
+
 func (b MeasurementBuilder) Add() error {
 	if b.err != nil {
 		return b.err
