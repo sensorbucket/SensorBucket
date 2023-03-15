@@ -18,6 +18,14 @@
 	$: {
 		if (selectedSensor != null) dsPromise = API.listDatastreamsForSensor(selectedSensor.id);
 	}
+
+	function onDeviceChange(dev: Device) {
+		if (selectedDevice?.id != dev.id) {
+			selectedDatastream = null;
+			selectedSensor = null;
+		}
+		selectedDevice = dev;
+	}
 </script>
 
 <div class="layout">
@@ -34,7 +42,7 @@
 			{devices}
 			{selectedDevice}
 			view={devicesAsMap ? 'map' : 'table'}
-			on:select={(e) => (selectedDevice = e.detail)}
+			on:select={(e) => onDeviceChange(e.detail)}
 		/>
 	</div>
 	<div class="layout-sensors">
