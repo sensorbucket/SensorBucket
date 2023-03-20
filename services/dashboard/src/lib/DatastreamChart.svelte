@@ -4,7 +4,7 @@
 	import uPlot from 'uplot';
 	import 'uplot/dist/uPlot.min.css';
 	import { parseISO } from 'date-fns';
-	import type { Datastream } from './models';
+	import type { Datastream, Measurement } from './models';
 
 	export let datastream: Datastream;
 	export let start = new Date(Date.now() - 24 * 60 * 60 * 1000000);
@@ -29,17 +29,37 @@
 	}
 
 	let data: [number[], number[]] = [[], []];
+	let stream: ReadableStream<Measurement[]>;
+	let transform = () =>
+		new TransformStream({
+			transform(chunk, ctrl) {
+				let x: number[] = [];
+				let y: number[] = [];
+				for (let m of chunk.reverse()) {
+					x.push(parseISO(m.measurement_timestamp).getTime() / 1000);
+					y.push(m.measurement_value);
+				}
+				ctrl.enqueue([x, y]);
+			}
+		});
+	let writer = () =>
+		new WritableStream({
+			start() {
+				data = [[], []];
+			},
+			write(chunk) {
+				data[0] = [...chunk[0], ...data[0]];
+				data[1] = [...chunk[1], ...data[1]];
+				data = data;
+			}
+		});
 
 	$: {
-		API.getMeasurements(start, end, { datastream: datastream.id }).then((measurements) => {
-			let x: number[] = [];
-			let y: number[] = [];
-			for (let m of measurements.reverse()) {
-				x.push(parseISO(m.measurement_timestamp).getTime() / 1000);
-				y.push(m.measurement_value);
-			}
-			data = [x, y];
-		});
+		if (stream) {
+			stream.cancel();
+		}
+		stream = API.streamMeasurements(start, end, { datastream: datastream.id });
+		stream.pipeThrough(transform()).pipeTo(writer());
 	}
 
 	$: {

@@ -1,6 +1,8 @@
 export interface APIResponse<T> {
     message: string;
     data: T;
+    count?: number;
+    next?: string;
 }
 export interface BoundingBox {
     north: number;
