@@ -3,7 +3,7 @@
 	const dispatch = createEventDispatcher();
 
 	type T = $$Generic;
-	type Field = keyof T | [string, (item: T) => any];
+	type Field = keyof T | [string, keyof T | ((item: T) => any)];
 
 	export let data: T[];
 	export let fields: Field[] = [];
@@ -11,7 +11,11 @@
 
 	function fieldValue(item: T, key: Field): any {
 		if (Array.isArray(key)) {
-			return key[1](item);
+			const fnOrKey = key[1];
+			if (typeof fnOrKey !== 'function') {
+				return item[fnOrKey];
+			}
+			return fnOrKey(item);
 		}
 		return item[key];
 	}
