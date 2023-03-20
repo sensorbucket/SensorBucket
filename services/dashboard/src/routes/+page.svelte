@@ -51,7 +51,7 @@
 	<Card title="Sensors" area="1/2/1/3">
 		<Table
 			data={selectedDevice?.sensors ?? []}
-			fields={['code', 'external_id']}
+			fields={['code', ['External ID', 'external_id']]}
 			isSelected={(e) => e.id == selectedSensor?.id}
 			on:select={(e) => (selectedSensor = e.detail)}
 		/>
@@ -90,7 +90,7 @@
 <style>
 	.layout {
 		@apply grid gap-4;
-		grid-template-rows: minmax(33vh, 28rem) minmax(50vh, 1fr);
+		grid-template-rows: minmax(33vh, 28rem) 48rem;
 		grid-template-columns: 1fr 1fr 1fr;
 	}
 </style>

@@ -41,11 +41,17 @@
 		{#each viewDevices as dev}
 			{#if dev.latitude && dev.longitude}
 				{#if selectedDevice?.id === dev.id}
-					<MapMarker location={[dev.latitude, dev.longitude]} colorClass="text-red-500" />
+					<MapMarker
+						location={[dev.latitude, dev.longitude]}
+						colorClass="text-red-500"
+						tooltip={dev.code}
+						permanentTooltip
+					/>
 				{:else}
 					<MapMarker
 						location={[dev.latitude, dev.longitude]}
 						on:click={() => onDeviceSelect(dev)}
+						tooltip={dev.code}
 					/>
 				{/if}
 			{/if}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { API } from './api';
+	import { resize } from './useResize.ts';
 	import uPlot from 'uplot';
 	import 'uplot/dist/uPlot.min.css';
 	import { parseISO } from 'date-fns';
