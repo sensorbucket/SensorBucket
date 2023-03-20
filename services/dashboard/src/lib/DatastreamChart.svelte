@@ -58,6 +58,7 @@
 		if (stream) {
 			stream.cancel();
 		}
+		console.log('New measurement stream:', start, end, datastream.id);
 		stream = API.streamMeasurements(start, end, { datastream: datastream.id });
 		stream.pipeThrough(transform()).pipeTo(writer());
 	}
@@ -65,7 +66,6 @@
 	$: {
 		(() => {
 			if (!chart) return;
-			console.log('Chart update', { data });
 			chart.delSeries(1);
 			chart.addSeries(
 				{

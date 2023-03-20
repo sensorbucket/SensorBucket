@@ -58,7 +58,6 @@
 	$: {
 		(() => {
 			if (!chart) return;
-			console.log('Chart update');
 			chart.data.datasets = [{ data }];
 			chart.update();
 		})();

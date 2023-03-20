@@ -5,6 +5,7 @@
 	import type { Device, Sensor, Datastream } from '$lib/models';
 	import Table from '$lib/Table.svelte';
 	import type { PageData } from './$types';
+	import DateInput from './DateInput.svelte';
 	import DeviceMapTable from './DeviceMapTable.svelte';
 
 	export let data: PageData;
@@ -16,6 +17,8 @@
 
 	let selectedDatastream: Datastream | null = null;
 	let dsPromise: Promise<Datastream[]>;
+	let startDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+	let endDate = new Date();
 
 	function fetchDatastreams(id: number) {
 		dsPromise = API.listDatastreamsForSensor(id);
@@ -30,6 +33,10 @@
 			selectedSensor = null;
 		}
 		selectedDevice = dev;
+	}
+
+	$: {
+		console.log('datechange: ', startDate, endDate);
 	}
 </script>
 
@@ -79,8 +86,14 @@
 		{/await}
 	</Card>
 	<Card title="Measurements" area="2/1/3/4">
+		<div slot="util">
+			<label for="startdate" class="font-bold">Start: </label>
+			<DateInput id="startdate" value={startDate} on:change={(e) => (startDate = e.detail)} />
+			<label for="enddate" class="ml-4 font-bold">End: </label>
+			<DateInput id="enddate" value={endDate} on:change={(e) => (endDate = e.detail)} />
+		</div>
 		{#if selectedDatastream}
-			<DatastreamChart datastream={selectedDatastream} />
+			<DatastreamChart datastream={selectedDatastream} start={startDate} end={endDate} />
 		{/if}
 	</Card>
 </div>
