@@ -80,9 +80,7 @@
 	</Card>
 	<Card title="Measurements" area="2/1/3/4">
 		{#if selectedDatastream}
-			<div class="flex-grow">
-				<DatastreamChart datastream={selectedDatastream} />
-			</div>
+			<DatastreamChart datastream={selectedDatastream} />
 		{/if}
 	</Card>
 </div>

@@ -14,8 +14,8 @@
 	function useChart(container: HTMLElement) {
 		let opts = {
 			title: 'Datastream measurements',
-			width: container.clientWidth,
-			height: container.clientHeight,
+			width: container.clientWidth - 10,
+			height: container.clientHeight - 70,
 			scales: {
 				x: {
 					time: true
