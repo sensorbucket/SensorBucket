@@ -34,10 +34,6 @@
 		}
 		selectedDevice = dev;
 	}
-
-	$: {
-		console.log('datechange: ', startDate, endDate);
-	}
 </script>
 
 <div class="layout">
