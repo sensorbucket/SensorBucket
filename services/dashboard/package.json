@@ -35,7 +35,8 @@
 		"chart.js": "^4.1.1",
 		"chartjs-adapter-date-fns": "^3.0.0",
 		"date-fns": "^2.29.3",
-		"leaflet": "^1.9.3"
+		"leaflet": "^1.9.3",
+		"uplot": "^1.6.24"
 	},
 	"packageManager": "yarn@3.4.1"
 }

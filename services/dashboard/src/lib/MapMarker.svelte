@@ -9,6 +9,8 @@
 	export let location: L.LatLngExpression;
 	export let iconURL = 'mdi:map-marker';
 	export let colorClass = 'text-primary-500';
+	export let tooltip = '';
+	export let permanentTooltip = false;
 
 	let marker: L.Marker = L.marker(location);
 	$: {
@@ -22,6 +24,8 @@
 	}
 
 	$: {
+		if (tooltip !== '')
+			marker.bindTooltip(tooltip, { offset: L.point(18, -18), permanent: permanentTooltip });
 		marker.addTo(layer);
 		marker.on('click', () => dispatch('click'));
 	}

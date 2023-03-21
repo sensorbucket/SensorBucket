@@ -28,6 +28,7 @@
 				west: bounds.getWest()
 			} satisfies BoundingBox);
 		});
+		map.setView([view[0], view[1]], view[2]);
 
 		// cleanup
 		return {
@@ -38,7 +39,7 @@
 		};
 	}
 	$: {
-		map?.setView([view[0], view[1]], view[2]);
+		map?.flyTo([view[0], view[1]], view[2], { duration: 0.5 });
 	}
 </script>
 
