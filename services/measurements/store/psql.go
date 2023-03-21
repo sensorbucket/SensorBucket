@@ -256,14 +256,14 @@ func (s *MeasurementStorePSQL) CreateDatastream(ds *service.Datastream) error {
 	return nil
 }
 
-func (s *MeasurementStorePSQL) ListDatastreams() ([]service.Datastream, error) {
+func (s *MeasurementStorePSQL) ListDatastreams(filter service.DatastreamFilter) ([]service.Datastream, error) {
 	var ds = []service.Datastream{}
-	if err := s.db.Select(&ds, `
-		SELECT
-			"id", "description", "sensor_id", "observed_property", "unit_of_measurement"
-		FROM
-			"datastreams"
-	`); err != nil {
+	q := pq.Select(
+		"id", "description", "sensor_id", "observed_property", "unit_of_measurement",
+	).From("datastreams")
+	query, params, _ := q.ToSql()
+
+	if err := s.db.Select(&ds, query, params...); err != nil {
 		return nil, fmt.Errorf("error selecting datastreams from db: %w", err)
 	}
 

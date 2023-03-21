@@ -3,10 +3,13 @@ package httpfilter
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
 var (
@@ -15,81 +18,35 @@ var (
 	ErrEmptyStrs            = errors.New("strs must have at least one item")
 	ErrTMustBeStruct        = errors.New("T must be struct")
 	ErrConvertingString     = errors.New("cant convert string")
+	ErrBadParameterValue    = web.NewError(http.StatusBadRequest, "Invalid query parameter", "ERR_QUERY_PARAMETER_INVALID")
 )
 
-// setSingleFieldValue sets a single value to the given field after converting the input string
-// to the appropriate type based on the field's kind.
-func setSingleFieldValue(field reflect.Value, str string) error {
-	if !field.CanSet() {
-		return ErrCantSetField
-	}
-
-	switch field.Kind() {
-	case reflect.String:
-		field.SetString(str)
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		val, err := strconv.ParseInt(str, 10, 64)
-		if err != nil {
-			return fmt.Errorf("%w: to int, %v", ErrConvertingString, err)
-		}
-		field.SetInt(val)
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		val, err := strconv.ParseUint(str, 10, 64)
-		if err != nil {
-			return fmt.Errorf("%w: to Uint, %v", ErrConvertingString, err)
-		}
-		field.SetUint(val)
-	case reflect.Float32, reflect.Float64:
-		val, err := strconv.ParseFloat(str, 64)
-		if err != nil {
-			return fmt.Errorf("%w: to Float, %v", ErrConvertingString, err)
-		}
-		field.SetFloat(val)
-	case reflect.Bool:
-		val, err := strconv.ParseBool(str)
-		if err != nil {
-			return fmt.Errorf("%w: to Bool, %v", ErrConvertingString, err)
-		}
-		field.SetBool(val)
-	default:
-		return ErrUnsupportedFieldType
-	}
-
-	return nil
+type StringConverter interface {
+	FromString(string) (any, error)
 }
 
-// setFieldValue sets the value(s) from strs to the given field.
-// If the field is a slice, it sets all values from strs, otherwise, it sets the first value.
-func setFieldValue(field reflect.Value, strs []string) error {
-	if !field.CanSet() {
-		return ErrCantSetField
-	}
-	if len(strs) == 0 {
-		return ErrEmptyStrs
-	}
-	if field.Kind() != reflect.Slice {
-		return setSingleFieldValue(field, strs[0])
-	}
-
-	slice := reflect.MakeSlice(field.Type(), len(strs), len(strs))
-	for i, str := range strs {
-		element := slice.Index(i)
-		err := setSingleFieldValue(element, str)
-		if err != nil {
-			return err
-		}
-	}
-	field.Set(slice)
-	return nil
-}
+var stringConverterType = reflect.TypeOf((*StringConverter)(nil)).Elem()
 
 type FieldConverter func(reflect.Value, []string) error
 type FieldSingleConverter func(reflect.Value, string) error
 
 // createSingleConverterFor creates a FieldSingleConverter for the given value kind.
 // The returned function converts the given string and sets it to the value
-func createSingleConverterFor(k reflect.Kind) (FieldSingleConverter, error) {
-	switch k {
+func createSingleConverterFor(t reflect.Type) (FieldSingleConverter, error) {
+
+	if t.Implements(stringConverterType) {
+		return func(v reflect.Value, s string) error {
+			converter := reflect.New(t).Interface().(StringConverter)
+			val, err := converter.FromString(s)
+			if err != nil {
+				return fmt.Errorf("%w: %v", ErrConvertingString, err)
+			}
+			v.Set(reflect.ValueOf(val))
+			return nil
+		}, nil
+	}
+
+	switch t.Kind() {
 	case reflect.String:
 		return func(field reflect.Value, s string) error {
 			field.SetString(s)
@@ -152,12 +109,11 @@ func singleToMultiConverter(conv FieldSingleConverter, err error) (FieldConverte
 // If the field type is a slice, it creates a converter for its elements and wraps
 // it to handle slices.
 func createFieldConverter(t reflect.Type) (FieldConverter, error) {
-	k := t.Kind()
-	if k != reflect.Slice {
-		return singleToMultiConverter(createSingleConverterFor(k))
+	if t.Kind() != reflect.Slice {
+		return singleToMultiConverter(createSingleConverterFor(t))
 	}
 
-	conv, err := createSingleConverterFor(t.Elem().Kind())
+	conv, err := createSingleConverterFor(t.Elem())
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +121,9 @@ func createFieldConverter(t reflect.Type) (FieldConverter, error) {
 		newSlice := reflect.MakeSlice(v.Type(), len(s), len(s))
 		for ix, str := range s {
 			el := newSlice.Index(ix)
-			conv(el, str)
+			if err := conv(el, str); err != nil {
+				return err
+			}
 		}
 		v.Set(newSlice)
 		return nil
@@ -212,6 +170,9 @@ func Create[T any]() (FilterCreator[T], error) {
 			}
 			field := v.Field(num)
 			err := converters[num](field, q[key])
+			if errors.Is(err, ErrConvertingString) {
+				return fmt.Errorf("%w: %s, %v", ErrBadParameterValue, key, err)
+			}
 			if err != nil {
 				return err
 			}
@@ -220,4 +181,12 @@ func Create[T any]() (FilterCreator[T], error) {
 	}
 
 	return parse, nil
+}
+
+func MustCreate[T any]() FilterCreator[T] {
+	f, err := Create[T]()
+	if err != nil {
+		panic(err)
+	}
+	return f
 }

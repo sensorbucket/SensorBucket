@@ -109,7 +109,7 @@ type Store interface {
 
 	Insert(Measurement) error
 	Query(Query, Pagination) ([]Measurement, *Pagination, error)
-	ListDatastreams() ([]Datastream, error)
+	ListDatastreams(DatastreamFilter) ([]Datastream, error)
 }
 
 // Service is the measurement service which stores measurement data.
@@ -226,6 +226,10 @@ func (s *Service) QueryMeasurements(q Query, p Pagination) ([]Measurement, *Pagi
 	return measurements, nextPage, nil
 }
 
-func (s *Service) ListDatastreams(ctx context.Context) ([]Datastream, error) {
-	return s.store.ListDatastreams()
+type DatastreamFilter struct {
+	Sensors []int
+}
+
+func (s *Service) ListDatastreams(ctx context.Context, filter DatastreamFilter) ([]Datastream, error) {
+	return s.store.ListDatastreams(filter)
 }
