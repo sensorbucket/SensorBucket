@@ -19,6 +19,7 @@ var (
 	ErrEmptyStrs            = errors.New("strs must have at least one item")
 	ErrTMustBeStruct        = errors.New("T must be struct")
 	ErrConvertingString     = errors.New("cant convert string")
+	ErrMissingParameter     = web.NewError(http.StatusBadRequest, "missing required parameter", "ERR_QUERY_PARAMETER_MISSING")
 	ErrBadParameterValue    = web.NewError(http.StatusBadRequest, "Invalid query parameter", "ERR_QUERY_PARAMETER_INVALID")
 )
 
@@ -145,6 +146,25 @@ func createFieldConverter(t reflect.Type) (FieldConverter, error) {
 
 type FilterCreator[T any] func(q url.Values, val *T) error
 
+func parseURLTag(ft reflect.StructField) (string, bool) {
+	var required bool
+	var key = strings.ToLower(ft.Name)
+
+	tag, ok := ft.Tag.Lookup("url")
+	if !ok {
+		return key, required
+	}
+
+	tagParts := strings.Split(tag, ",")
+	if tagParts[0] != "" {
+		key = tagParts[0]
+	}
+	if len(tagParts) > 1 && tagParts[1] == "required" {
+		required = true
+	}
+	return key, required
+}
+
 // Create creates a FilterCreator function for the given struct type T.
 // It maps URL query keys to struct field indices and creates appropriate field converters.
 func Create[T any]() (FilterCreator[T], error) {
@@ -155,6 +175,7 @@ func Create[T any]() (FilterCreator[T], error) {
 
 	fieldCount := t.NumField()
 	keys := make(map[int]string, fieldCount)
+	required := make(map[int]bool, fieldCount)
 	converters := make(map[int]FieldConverter, fieldCount)
 
 	for i := 0; i < fieldCount; i++ {
@@ -162,12 +183,7 @@ func Create[T any]() (FilterCreator[T], error) {
 		if !ft.IsExported() {
 			continue
 		}
-		tag, ok := ft.Tag.Lookup("url")
-		if !ok {
-			tag = strings.ToLower(ft.Name)
-		}
-		keys[i] = tag
-
+		keys[i], required[i] = parseURLTag(ft)
 		converter, err := createFieldConverter(ft.Type)
 		if err != nil {
 			return nil, err
@@ -181,6 +197,9 @@ func Create[T any]() (FilterCreator[T], error) {
 		v := reflect.ValueOf(val).Elem()
 		for num, key := range keys {
 			if !q.Has(key) {
+				if required[num] {
+					return fmt.Errorf("%w: %v", ErrMissingParameter, key)
+				}
 				continue
 			}
 			// Unescape values

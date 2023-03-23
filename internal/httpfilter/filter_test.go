@@ -10,16 +10,16 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 )
 
-type TestStruct struct {
-	A string   `url:"a"`
-	B int      `url:"b"`
-	C uint     `url:"c"`
-	D float64  `url:"d"`
-	E bool     `url:"e"`
-	F []string `url:"f"`
-}
-
 func TestCreateAndFilterPrimitives(t *testing.T) {
+	type TestStruct struct {
+		A string   `url:"a"`
+		B int      `url:"b"`
+		C uint     `url:"c"`
+		D float64  `url:"d"`
+		E bool     `url:"e"`
+		F []string `url:"f"`
+	}
+
 	filterCreator, err := httpfilter.Create[TestStruct]()
 	if err != nil {
 		t.Fatalf("Error creating filterCreator: %v", err)
@@ -72,6 +72,16 @@ func TestCreateAndFilterPrimitives(t *testing.T) {
 }
 
 func TestFilterInvalidValues(t *testing.T) {
+	type TestStruct struct {
+		A string   `url:"a"`
+		B int      `url:"b"`
+		C uint     `url:"c"`
+		D float64  `url:"d"`
+		E bool     `url:"e"`
+		F []string `url:"f"`
+		R string   `url:"r,required"`
+	}
+
 	filterCreator, err := httpfilter.Create[TestStruct]()
 	require.NoError(t, err)
 
@@ -82,23 +92,28 @@ func TestFilterInvalidValues(t *testing.T) {
 	}{
 		{
 			name:     "Invalid int value",
-			query:    "b=text",
+			query:    "r=true&b=text",
 			expected: httpfilter.ErrConvertingString,
 		},
 		{
 			name:     "Invalid uint value",
-			query:    "c=text",
+			query:    "r=true&c=text",
 			expected: httpfilter.ErrConvertingString,
 		},
 		{
 			name:     "Invalid float64 value",
-			query:    "d=text",
+			query:    "r=true&d=text",
 			expected: httpfilter.ErrConvertingString,
 		},
 		{
 			name:     "Invalid bool value",
-			query:    "e=text",
+			query:    "r=true&e=text",
 			expected: httpfilter.ErrConvertingString,
+		},
+		{
+			name:     "Missing required value",
+			query:    "",
+			expected: httpfilter.ErrMissingParameter,
 		},
 	}
 

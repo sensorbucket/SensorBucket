@@ -74,8 +74,8 @@ func (m *Measurement) Validate() error {
 
 // Filter contains query information for a list of measurements
 type Filter struct {
-	Start       time.Time
-	End         time.Time
+	Start       time.Time `url:",required"`
+	End         time.Time `url:",required"`
 	DeviceIDs   []string
 	SensorCodes []string
 	Datastream  []string
