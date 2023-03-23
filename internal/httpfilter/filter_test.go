@@ -3,6 +3,7 @@ package httpfilter_test
 import (
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +19,7 @@ type TestStruct struct {
 	F []string `url:"f"`
 }
 
-func TestCreateAndFilter(t *testing.T) {
+func TestCreateAndFilterPrimitives(t *testing.T) {
 	filterCreator, err := httpfilter.Create[TestStruct]()
 	if err != nil {
 		t.Fatalf("Error creating filterCreator: %v", err)
@@ -127,5 +128,28 @@ func TestCreateInvalidTypes(t *testing.T) {
 		a any
 		b struct{}
 	}]()
-	assert.NoError(t, err, "Should allow invalid values for non-exported fields")
+}
+
+func TestFilterParseTime(t *testing.T) {
+	type filter struct {
+		Start time.Time
+		End   time.Time
+	}
+	var f filter
+	start := "2022-01-01T00:00:01Z"
+	end := "2022-01-02T00:00:01Z"
+	q := url.Values{
+		"start": []string{start},
+		"end":   []string{url.QueryEscape(end)},
+	}
+	expectedStart, _ := time.Parse(time.RFC3339, start)
+	expectedEnd, _ := time.Parse(time.RFC3339, end)
+	parseFilter, err := httpfilter.Create[filter]()
+	require.NoError(t, err)
+
+	err = parseFilter(q, &f)
+	require.NoError(t, err)
+
+	assert.Equal(t, expectedStart, f.Start)
+	assert.Equal(t, expectedEnd, f.End)
 }

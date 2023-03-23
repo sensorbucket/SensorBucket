@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
@@ -46,6 +47,18 @@ func createSingleConverterFor(t reflect.Type) (FieldSingleConverter, error) {
 		}, nil
 	}
 
+	if t == reflect.TypeOf(time.Time{}) {
+		return func(field reflect.Value, s string) error {
+			t, err := time.Parse(time.RFC3339, s)
+			if err != nil {
+				return err
+			}
+			field.Set(reflect.ValueOf(t))
+			return nil
+		}, nil
+	}
+
+	// Fallback to more primitive types if no converter was returned yet
 	switch t.Kind() {
 	case reflect.String:
 		return func(field reflect.Value, s string) error {
@@ -163,13 +176,25 @@ func Create[T any]() (FilterCreator[T], error) {
 	}
 
 	parse := func(q url.Values, val *T) error {
+		var err error
+
 		v := reflect.ValueOf(val).Elem()
 		for num, key := range keys {
 			if !q.Has(key) {
 				continue
 			}
+			// Unescape values
+			values := make([]string, len(q[key]))
+			for ix, str := range q[key] {
+				values[ix], err = url.QueryUnescape(str)
+				if err != nil {
+					return err
+				}
+			}
+
+			// find converter
 			field := v.Field(num)
-			err := converters[num](field, q[key])
+			err := converters[num](field, values)
 			if errors.Is(err, ErrConvertingString) {
 				return fmt.Errorf("%w: %s, %v", ErrBadParameterValue, key, err)
 			}

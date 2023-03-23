@@ -43,15 +43,9 @@ func (t *HTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
-	createFilter := httpfilter.MustCreate[service.QueryFilters]()
+	createFilter := httpfilter.MustCreate[service.Filter]()
 	return func(w http.ResponseWriter, r *http.Request) {
-		start, end, err := parseTimeRange(r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		var filters service.QueryFilters
+		var filters service.Filter
 		if err := createFilter(r.URL.Query(), &filters); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -63,11 +57,7 @@ func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
 			return
 		}
 
-		measurements, nextPage, err := t.svc.QueryMeasurements(service.Query{
-			Start:   start,
-			End:     end,
-			Filters: filters,
-		}, pagination)
+		measurements, nextPage, err := t.svc.QueryMeasurements(filters, pagination)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
