@@ -72,18 +72,13 @@ func (m *Measurement) Validate() error {
 	return nil
 }
 
-// QueryFilters represents the available filters for querying measurements
-type QueryFilters struct {
+// Filter contains query information for a list of measurements
+type Filter struct {
+	Start       time.Time `url:",required"`
+	End         time.Time `url:",required"`
 	DeviceIDs   []string
 	SensorCodes []string
-	Datastream  string
-}
-
-// Query contains query information for a list of measurements
-type Query struct {
-	Start   time.Time
-	End     time.Time
-	Filters QueryFilters
+	Datastream  []string
 }
 
 // Pagination represents the pagination information for the measurements query.
@@ -97,7 +92,7 @@ type Pagination struct {
 type iService interface {
 	StoreMeasurement(Measurement) error
 	StorePipelineMessage(context.Context, pipeline.Message) error
-	QueryMeasurements(Query, Pagination) ([]Measurement, *Pagination, error)
+	QueryMeasurements(Filter, Pagination) ([]Measurement, *Pagination, error)
 }
 
 // Ensure Service implements iService
@@ -108,8 +103,8 @@ type Store interface {
 	DatastreamFinderCreater
 
 	Insert(Measurement) error
-	Query(Query, Pagination) ([]Measurement, *Pagination, error)
-	ListDatastreams() ([]Datastream, error)
+	Query(Filter, Pagination) ([]Measurement, *Pagination, error)
+	ListDatastreams(DatastreamFilter) ([]Datastream, error)
 }
 
 // Service is the measurement service which stores measurement data.
@@ -218,14 +213,18 @@ func (s *Service) StoreMeasurement(m Measurement) error {
 	return s.store.Insert(m)
 }
 
-func (s *Service) QueryMeasurements(q Query, p Pagination) ([]Measurement, *Pagination, error) {
-	measurements, nextPage, err := s.store.Query(q, p)
+func (s *Service) QueryMeasurements(f Filter, p Pagination) ([]Measurement, *Pagination, error) {
+	measurements, nextPage, err := s.store.Query(f, p)
 	if err != nil {
 		return nil, nil, err
 	}
 	return measurements, nextPage, nil
 }
 
-func (s *Service) ListDatastreams(ctx context.Context) ([]Datastream, error) {
-	return s.store.ListDatastreams()
+type DatastreamFilter struct {
+	Sensors []int
+}
+
+func (s *Service) ListDatastreams(ctx context.Context, filter DatastreamFilter) ([]Datastream, error) {
+	return s.store.ListDatastreams(filter)
 }

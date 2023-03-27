@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/measurements/service"
 )
@@ -42,15 +43,10 @@ func (t *HTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
+	createFilter := httpfilter.MustCreate[service.Filter]()
 	return func(w http.ResponseWriter, r *http.Request) {
-		start, end, err := parseTimeRange(r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		filters, err := parseFilters(r)
-		if err != nil {
+		var filters service.Filter
+		if err := createFilter(r.URL.Query(), &filters); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -61,11 +57,7 @@ func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
 			return
 		}
 
-		measurements, nextPage, err := t.svc.QueryMeasurements(service.Query{
-			Start:   start,
-			End:     end,
-			Filters: filters,
-		}, pagination)
+		measurements, nextPage, err := t.svc.QueryMeasurements(filters, pagination)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -87,8 +79,15 @@ func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
 }
 
 func (t *HTTPTransport) httpListDatastream() http.HandlerFunc {
+	createFilter := httpfilter.MustCreate[service.DatastreamFilter]()
 	return func(w http.ResponseWriter, r *http.Request) {
-		ds, err := t.svc.ListDatastreams(r.Context())
+		var filter service.DatastreamFilter
+		if err := createFilter(r.URL.Query(), &filter); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		ds, err := t.svc.ListDatastreams(r.Context(), filter)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -132,25 +131,6 @@ func parseTimeRange(r *http.Request) (time.Time, time.Time, error) {
 	}
 
 	return start, end, nil
-}
-
-func parseFilters(r *http.Request) (service.QueryFilters, error) {
-	var filters service.QueryFilters
-	q := r.URL.Query()
-
-	if len(q["device_id"]) > 0 {
-		filters.DeviceIDs = q["device_id"]
-	}
-
-	if len(q["sensor_code"]) > 0 {
-		filters.SensorCodes = q["sensor_code"]
-	}
-
-	if q.Has("datastream") {
-		filters.Datastream = q.Get("datastream")
-	}
-
-	return filters, nil
 }
 
 // paginatedResponse is a paginated response.

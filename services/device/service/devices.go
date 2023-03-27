@@ -58,7 +58,7 @@ type Device struct {
 	Description         string          `json:"description"`
 	Organisation        string          `json:"organisation"`
 	Sensors             []Sensor        `json:"sensors"`
-	Properties          json.RawMessage `json:"metadata"`
+	Properties          json.RawMessage `json:"properties"`
 	Longitude           *float64        `json:"longitude"`
 	Latitude            *float64        `json:"latitude"`
 	Altitude            *float64        `json:"altitude"`

@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
@@ -80,40 +81,23 @@ func (t *Transport) httpUpdatePipeline() http.HandlerFunc {
 	}
 }
 
-func parsePipelineFilterQuery(r *http.Request) (PipelinesFilter, error) {
-	filter := NewPipelinesFilter()
-	q := r.URL.Query()
-
-	// If there is one or more status query parameters then loop them, validate each and append to the filter list
-	if q.Has("status") {
-		filter.Status = []PipelineStatus{}
-		for _, v := range q["status"] {
-			status, err := StrToStatus(v)
-			if err != nil {
-				return filter, err
-			}
-			filter.Status = append(filter.Status, status)
-		}
-	}
-	if q.Has("step") {
-		filter.Step = q["step"]
-	}
-
-	return filter, nil
+func (PipelineStatus) FromString(str string) (any, error) {
+	return StrToStatus(str)
 }
 
 func (t *Transport) httpListPipelines() http.HandlerFunc {
+	createFilter := httpfilter.MustCreate[PipelinesFilter]()
 	return func(rw http.ResponseWriter, r *http.Request) {
-		f, err := parsePipelineFilterQuery(r)
-		if err != nil {
-			log.Printf("Failed to GetPipeline: %v\n", err)
+		var f PipelinesFilter
+		if err := createFilter(r.URL.Query(), &f); err != nil {
+			log.Printf("Failed to create filter for ListPipelines: %v\n", err)
 			web.HTTPError(rw, err)
 			return
 		}
 
 		p, err := t.service.ListPipelines(r.Context(), f)
 		if err != nil {
-			log.Printf("Failed to GetPipeline: %v\n", err)
+			log.Printf("Failed to ListPipelines: %v\n", err)
 			web.HTTPError(rw, err)
 			return
 		}
@@ -123,6 +107,7 @@ func (t *Transport) httpListPipelines() http.HandlerFunc {
 }
 
 func (t *Transport) httpGetPipeline() http.HandlerFunc {
+	createFilter := httpfilter.MustCreate[PipelinesFilter]()
 	return func(rw http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
 		if _, err := uuid.Parse(id); err != nil {
@@ -132,8 +117,8 @@ func (t *Transport) httpGetPipeline() http.HandlerFunc {
 
 		// We parse the pipeline filters to see if status=inactive is in there
 		// if it's in there then we show the pipeline even if its disabled.
-		f, err := parsePipelineFilterQuery(r)
-		if err != nil {
+		var f PipelinesFilter
+		if err := createFilter(r.URL.Query(), &f); err != nil {
 			log.Printf("Failed to GetPipeline: %v\n", err)
 			web.HTTPError(rw, err)
 			return

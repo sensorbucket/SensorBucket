@@ -87,7 +87,7 @@ func (s *MeasurementStorePSQL) Insert(m service.Measurement) error {
 //   - The query is limited to the limit specified in the pagination + 1 entry, if this extra entry is populated then we
 //     know that there is a next page available and we use this entry to populate the cursor.
 //     The cursor holds the timestamp of the first entry of the next page as seconds since epoch base64
-func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) ([]service.Measurement, *service.Pagination, error) {
+func (s *MeasurementStorePSQL) Query(query service.Filter, p service.Pagination) ([]service.Measurement, *service.Pagination, error) {
 	q := pq.Select(
 		"uplink_message_id",
 		"organisation_id",
@@ -138,14 +138,14 @@ func (s *MeasurementStorePSQL) Query(query service.Query, p service.Pagination) 
 	}
 	q = q.Offset(uint64(p.Skip))
 
-	if len(query.Filters.DeviceIDs) > 0 {
-		q = q.Where(sq.Eq{"device_id": query.Filters.DeviceIDs})
+	if len(query.DeviceIDs) > 0 {
+		q = q.Where(sq.Eq{"device_id": query.DeviceIDs})
 	}
-	if len(query.Filters.SensorCodes) > 0 {
-		q = q.Where(sq.Eq{"sensor_code": query.Filters.SensorCodes})
+	if len(query.SensorCodes) > 0 {
+		q = q.Where(sq.Eq{"sensor_code": query.SensorCodes})
 	}
-	if query.Filters.Datastream != "" {
-		q = q.Where(sq.Eq{"datastream_id": query.Filters.Datastream})
+	if len(query.Datastream) > 0 {
+		q = q.Where(sq.Eq{"datastream_id": query.Datastream})
 	}
 
 	rows, err := q.RunWith(s.db).Query()
@@ -256,14 +256,14 @@ func (s *MeasurementStorePSQL) CreateDatastream(ds *service.Datastream) error {
 	return nil
 }
 
-func (s *MeasurementStorePSQL) ListDatastreams() ([]service.Datastream, error) {
+func (s *MeasurementStorePSQL) ListDatastreams(filter service.DatastreamFilter) ([]service.Datastream, error) {
 	var ds = []service.Datastream{}
-	if err := s.db.Select(&ds, `
-		SELECT
-			"id", "description", "sensor_id", "observed_property", "unit_of_measurement"
-		FROM
-			"datastreams"
-	`); err != nil {
+	q := pq.Select(
+		"id", "description", "sensor_id", "observed_property", "unit_of_measurement",
+	).From("datastreams")
+	query, params, _ := q.ToSql()
+
+	if err := s.db.Select(&ds, query, params...); err != nil {
 		return nil, fmt.Errorf("error selecting datastreams from db: %w", err)
 	}
 
