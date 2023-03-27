@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -114,7 +113,6 @@ func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
 			web.HTTPError(rw, err)
 			return
 		}
-		fmt.Printf("%+v\n", filter)
 		var devices []Device
 
 		// figure out what kind of query this is
