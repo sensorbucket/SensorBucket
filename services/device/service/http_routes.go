@@ -3,10 +3,12 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
@@ -63,121 +65,66 @@ func (t *HTTPTransport) setupRoutes() {
 	// TODO: Should we be able to fetch sensor by global unique ID?
 }
 
-//
 // Routes
-//
-
-func parseQueryFilter(r *http.Request) (DeviceFilter, error) {
-	var filter DeviceFilter
-	q := r.URL.Query()
-
-	// Property filter
-	propertiesFilter := q.Get("properties")
-	if propertiesFilter != "" {
-		if err := json.Unmarshal([]byte(propertiesFilter), &filter.Properties); err != nil {
-			return filter, err
-		}
-	}
-
-	return filter, nil
+type ListFilters struct {
+	North      []float64
+	West       []float64
+	South      []float64
+	East       []float64
+	Latitude   []float64
+	Longitude  []float64
+	Distance   []float64
+	Properties httpfilter.Bytes
 }
 
-func parseBoundingBoxRequest(r *http.Request) (BoundingBox, error) {
-	var err error
+func (f *ListFilters) boundingBox() (BoundingBox, bool) {
 	var bb BoundingBox
-	q := r.URL.Query()
-
-	northQ := q.Get("north")
-	westQ := q.Get("west")
-	southQ := q.Get("south")
-	eastQ := q.Get("east")
-	if northQ != "" && westQ != "" && eastQ != "" && southQ != "" {
-		bb.North, err = strconv.ParseFloat(northQ, 64)
-		if err != nil {
-			return bb, err
-		}
-		bb.West, err = strconv.ParseFloat(westQ, 64)
-		if err != nil {
-			return bb, err
-		}
-		bb.South, err = strconv.ParseFloat(southQ, 64)
-		if err != nil {
-			return bb, err
-		}
-		bb.East, err = strconv.ParseFloat(eastQ, 64)
-		if err != nil {
-			return bb, err
-		}
-
-		// TODO: Validate parameters
+	if len(f.North) == 0 || len(f.West) == 0 || len(f.South) == 0 || len(f.East) == 0 {
+		return bb, false
 	}
-	return bb, nil
+	bb.North = f.North[0]
+	bb.West = f.West[0]
+	bb.East = f.East[0]
+	bb.South = f.South[0]
+	return bb, true
 }
 
-func parseWithinRangeRequest(r *http.Request) (LocationRange, error) {
-	var err error
+func (f *ListFilters) locationRange() (LocationRange, bool) {
 	var lr LocationRange
-	q := r.URL.Query()
-
-	latitudeQ := q.Get("latitude")
-	longitudeQ := q.Get("longitude")
-	distanceQ := q.Get("distance")
-	if latitudeQ != "" && longitudeQ != "" && distanceQ != "" {
-		lr.Latitude, err = strconv.ParseFloat(latitudeQ, 64)
-		if err != nil {
-			return lr, err
-		}
-		lr.Longitude, err = strconv.ParseFloat(longitudeQ, 64)
-		if err != nil {
-			return lr, err
-		}
-		lr.Distance, err = strconv.ParseFloat(distanceQ, 64)
-		if err != nil {
-			return lr, err
-		}
-
-		// TODO: Validate parameters
+	if len(f.Latitude) == 0 || len(f.Longitude) == 0 || len(f.Distance) == 0 {
+		return lr, false
 	}
-
-	return lr, nil
+	lr.Latitude = f.Latitude[0]
+	lr.Longitude = f.Longitude[0]
+	lr.Distance = f.Distance[0]
+	return lr, true
 }
 
-func isWithinRangeRequest(r *http.Request) bool {
-	q := r.URL.Query()
-	return q.Has("latitude") && q.Has("longitude") && q.Has("distance")
-}
-
-func isWithinBoundingBoxRequest(r *http.Request) bool {
-	q := r.URL.Query()
-	return q.Has("north") && q.Has("west") && q.Has("east") && q.Has("south")
+func (f *ListFilters) filters() DeviceFilter {
+	return DeviceFilter{
+		json.RawMessage(f.Properties),
+	}
 }
 
 func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
+	parseFilter := httpfilter.MustCreate[ListFilters]()
 	return func(rw http.ResponseWriter, r *http.Request) {
-		filter, err := parseQueryFilter(r)
-		if err != nil {
+		var filter ListFilters
+		if err := parseFilter(r.URL.Query(), &filter); err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
+		fmt.Printf("%+v\n", filter)
 		var devices []Device
 
 		// figure out what kind of query this is
-		if isWithinRangeRequest(r) {
-			lr, err := parseWithinRangeRequest(r)
-			if err != nil {
-				web.HTTPError(rw, err)
-				return
-			}
-			devices, err = t.svc.ListInRange(r.Context(), lr, filter)
-		} else if isWithinBoundingBoxRequest(r) {
-			bb, err := parseBoundingBoxRequest(r)
-			if err != nil {
-				web.HTTPError(rw, err)
-				return
-			}
-			devices, err = t.svc.ListInBoundingBox(r.Context(), bb, filter)
+		var err error
+		if lr, ok := filter.locationRange(); ok {
+			devices, err = t.svc.ListInRange(r.Context(), lr, filter.filters())
+		} else if bb, ok := filter.boundingBox(); ok {
+			devices, err = t.svc.ListInBoundingBox(r.Context(), bb, filter.filters())
 		} else {
-			devices, err = t.svc.ListDevices(r.Context(), filter)
+			devices, err = t.svc.ListDevices(r.Context(), filter.filters())
 		}
 		if err != nil {
 			web.HTTPError(rw, err)

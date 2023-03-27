@@ -41,7 +41,7 @@ func createSingleConverterFor(t reflect.Type) (FieldSingleConverter, error) {
 			converter := reflect.New(t).Interface().(StringConverter)
 			val, err := converter.FromString(s)
 			if err != nil {
-				return fmt.Errorf("%w: %v", ErrConvertingString, err)
+				return fmt.Errorf("%w: using StringConverter %v", ErrConvertingString, err)
 			}
 			v.Set(reflect.ValueOf(val))
 			return nil
@@ -123,10 +123,20 @@ func singleToMultiConverter(conv FieldSingleConverter, err error) (FieldConverte
 // If the field type is a slice, it creates a converter for its elements and wraps
 // it to handle slices.
 func createFieldConverter(t reflect.Type) (FieldConverter, error) {
-	if t.Kind() != reflect.Slice {
-		return singleToMultiConverter(createSingleConverterFor(t))
+	// Directly try to get a converter for the field type
+	// if no error occured, great! return converter
+	// if a ErrUnsupportedFieldType occured and the field type is a slice, then DONT return
+	//    and continue parsing the individual elements of the slice
+	// Any other error or not slice, then return error
+	fc, err := singleToMultiConverter(createSingleConverterFor(t))
+	if err == nil {
+		return fc, nil
+	}
+	if t.Kind() != reflect.Slice && !errors.Is(err, ErrUnsupportedFieldType) {
+		return nil, err
 	}
 
+	// Create a converter for the elements of the slice
 	conv, err := createSingleConverterFor(t.Elem())
 	if err != nil {
 		return nil, err
