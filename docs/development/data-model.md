@@ -10,6 +10,9 @@ Below is an export of the SensorBucket ERD. Click the image to enlarge it.
 
 ### Organisation
 
+An organisation is the owner of most entities in SensorBucket, such as but not limited to: Devices, Sensors, Groups, Datastreams and more.
+Users belong to organisations and can perform actions on its behalf.
+
 |Column|Description|
 |-|-|
 |ID|-|
@@ -22,7 +25,9 @@ Below is an export of the SensorBucket ERD. Click the image to enlarge it.
 |ArchiveTime|A duration in days after which a new measurements will be archived and removed|
 |State|Organisation state, either: active or inactive|
 
-### OrganisationUser
+### User
+
+A user account with access to SensorBucket. Not yet implemented, might be substituted with an Identity Management service.
 
 |Column|Description|
 |-|-|
@@ -31,12 +36,14 @@ Below is an export of the SensorBucket ERD. Click the image to enlarge it.
 |Password|-|
 |IsActive|-|
 
-### OrganisationUsers
+### OrganisationUser
+
+The join table between users and organisations. A record in this table indicates that a user is part of that organisation.
 
 |Column|Description|
 |-|-|
-|OrganisationID|-|
-|OrganisationUserID|-|
+|OrganisationID|The ID of the organisation|
+|OrganisationUserID|The ID of the user that is a member of this organisation|
 
 ### Device
 
@@ -46,7 +53,7 @@ A device represents a some object that uses sensors to collect data and transmit
 |-|-|
 |ID|-|
 |Code|A user supplied arbitrary code for the device, for organisation internal tracking|
-|Description|-|
+|Description|A user supplied description for this device|
 |OrganisationID|-|
 |Latitude|Optional latitude coordinate in EPSG4326|
 |Longitude|Optional longitude coordinate in EPSG4326|
@@ -61,9 +68,9 @@ An entity that observes one or more properties and returns measurements to the d
 |Column|Description|
 |-|-|
 |ID|-|
-|Code|A user supplied arbitrary code for the device, for organisation internal tracking|
-|Description|-|
-|DeviceID|-|
+|Code|A user supplied arbitrary code for the sensor, for organisation internal tracking|
+|Description|A user supplied description for this sensor|
+|DeviceID|The ID of the device this sensor belongs to|
 |ExternalID|This field is used to match a sensor reading from external data to the internal data. If the device sends measurements sequentially concatenated, then this might be an index number (depends on the worker implementation). If the external source sends a key-value pair, this might be the key.|
 |Properties|A key-value object containing device specific properties|
 |Brand|A user supplied arbitrary sensor brand, for organisation internal tracking|
@@ -75,26 +82,30 @@ A sensor observes one or more properties. A unique combination of sensor and obs
 |Column|Description|
 |-|-|
 |ID|-|
-|Description|-|
-|SensorID|-|
+|Description|A default or user modified description for this datastream|
+|SensorID|The ID of the sensor which produces data to this datastream|
 |ObservedProperty|The "what" that is being observed. This must be unique per sensor, i.e. one sensor cannot have duplicate observed properties. The value is determined by the worker. For a particulate matter sensor this can be: pm2_5_mass, pm10_mass, pm20_mass|
 |UnitOfMeasurement|The unit in which measurements in this datastream are stored. This must comply with the UCUM specification|
 
 ### SensorGroup
 
+A sensor group can hold one or more sensors and allows users to logically group sensors.
+
 |Column|Description|
 |-|-|
 |ID|-|
-|Name|-|
-|Description|-|
-|OrganisationID|-|
+|Name|A user supplied name for the group|
+|Description|A user supplied description|
+|OrganisationID|The ID of the organisation this group belongs to|
 
 ### SensorGroupSensor
 
+As sensor groups are a many-to-many relation, this table manages which sensors belong to what groups.
+
 |Column|Description|
 |-|-|
-|SensorGroupID|-|
-|SensorID|-|
+|SensorGroupID|The ID of the sensor group|
+|SensorID|The ID of the sensor belonging to that group|
 
 ### Pipeline
 A pipeline is a sequence of workers that some uplink data will be processed by. For example, device Multiflexmeter works on TheThingsNetwork and Chirpstack. However, both networks wrap the duplinks different formats. With three workers, two pipelines can be created:
@@ -105,7 +116,7 @@ A pipeline is a sequence of workers that some uplink data will be processed by. 
 |Column|Description|
 |-|-|
 |ID|A UUID formatted identifier|
-|Description|-|
+|Description|A user supplied description|
 |Status|Pipeline status, either: active or inactive|
 |LastStatusChange|The last date and time that the status was changed|
 
