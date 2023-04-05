@@ -19,11 +19,16 @@
 		}
 		return item[key];
 	}
+	function snakeToTitleCase(str: string) {
+		return str.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => {
+			return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+		});
+	}
 	function fieldName(key: Field): any {
 		if (Array.isArray(key)) {
 			return key[0];
 		}
-		return key;
+		return snakeToTitleCase(key.toString());
 	}
 </script>
 

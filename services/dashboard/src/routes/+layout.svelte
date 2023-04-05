@@ -17,6 +17,7 @@
 		<ul>
 			<li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
 			<li><Link to="/" icon="material-symbols:home-outline-rounded">Homepage</Link></li>
+			<li><Link to="/devices" icon="material-symbols:home-outline-rounded">Devices</Link></li>
 		</ul>
 	</nav>
 </sidebar>
