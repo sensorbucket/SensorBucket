@@ -16,6 +16,8 @@ export const API = {
         X.get<APIResponse<Datastream[]>>(`/datastreams?sensor=${id}`).then((r) => r.data.data),
     listPipelines: () =>
         X.get<APIResponse<Pipeline[]>>('/pipelines').then(res => res.data.data),
+    listDatastreams: () =>
+        X.get<APIResponse<Datastream[]>>('/datastreams').then(res => res.data.data),
     getMeasurements: async (start: Date, end: Date, filters: Record<string, any>) =>
         X.get<APIResponse<Measurement[]>>(`/measurements`, {
             params: {
