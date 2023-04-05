@@ -2,13 +2,13 @@ package store
 
 import (
 	"database/sql"
-	"encoding/binary"
-	"encoding/hex"
 	"errors"
 	"fmt"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/measurements/service"
 )
 
@@ -87,7 +87,13 @@ func (s *MeasurementStorePSQL) Insert(m service.Measurement) error {
 //   - The query is limited to the limit specified in the pagination + 1 entry, if this extra entry is populated then we
 //     know that there is a next page available and we use this entry to populate the cursor.
 //     The cursor holds the timestamp of the first entry of the next page as seconds since epoch base64
-func (s *MeasurementStorePSQL) Query(query service.Filter, p service.Pagination) ([]service.Measurement, *service.Pagination, error) {
+type MeasurementQueryPage struct {
+	MeasurementTimestamp time.Time `pagination:"measurement_timestamp,DESC"`
+	ID                   int64     `pagination:"id,DESC"`
+}
+
+func (s *MeasurementStorePSQL) Query(query service.Filter, r pagination.Request) (*pagination.Page[[]service.Measurement], error) {
+	var err error
 	q := pq.Select(
 		"uplink_message_id",
 		"organisation_id",
@@ -126,17 +132,7 @@ func (s *MeasurementStorePSQL) Query(query service.Filter, p service.Pagination)
 		"measurement_expiration",
 	).
 		From("measurements").
-		Where("measurement_timestamp >= ?", query.Start).
-		OrderBy("measurement_timestamp DESC").
-		Limit(uint64(p.Limit + 1))
-
-	// Use cursor otherwise end time
-	if !p.Timestamp.IsZero() {
-		q = q.Where("measurement_timestamp <= to_timestamp(?)", p.Timestamp.Unix())
-	} else {
-		q = q.Where("measurement_timestamp <= ?", query.End)
-	}
-	q = q.Offset(uint64(p.Skip))
+		Where("measurement_timestamp >= ?", query.Start)
 
 	if len(query.DeviceIDs) > 0 {
 		q = q.Where(sq.Eq{"device_id": query.DeviceIDs})
@@ -148,14 +144,20 @@ func (s *MeasurementStorePSQL) Query(query service.Filter, p service.Pagination)
 		q = q.Where(sq.Eq{"datastream_id": query.Datastream})
 	}
 
+	// pagination
+	cursor := pagination.GetCursor[MeasurementQueryPage](r)
+	q, err = pagination.Apply(q, cursor)
+	if err != nil {
+		return nil, err
+	}
+
 	rows, err := q.RunWith(s.db).Query()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer rows.Close()
 
-	var nextPage *service.Pagination
-	list := make([]service.Measurement, 0, p.Limit)
+	list := make([]service.Measurement, 0, cursor.Limit)
 	for rows.Next() {
 		var m service.Measurement
 		err = rows.Scan(
@@ -194,34 +196,17 @@ func (s *MeasurementStorePSQL) Query(query service.Filter, p service.Pagination)
 			&m.MeasurementLongitude,
 			&m.MeasurementAltitude,
 			&m.MeasurementExpiration,
+			&cursor.Columns.MeasurementTimestamp,
+			&cursor.Columns.ID,
 		)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-
-		// We limit the query to p.limit + 1. As long as the list has not reached p.limit
-		// we keep appending it. Once we get our +1 we will use that to  update the pagination
-		if len(list) < p.Limit {
-			list = append(list, m)
-		} else {
-			nextPage = &service.Pagination{}
-			nextPage.Limit = p.Limit
-			nextPage.Timestamp = m.MeasurementTimestamp
-			nextPage.Skip = 0
-			// If our timestamp stayed the same then we have to skip more
-			if nextPage.Timestamp == p.Timestamp {
-				nextPage.Skip = p.Skip
-			}
-			for i := len(list) - 1; i >= 0; i-- {
-				if list[i].MeasurementTimestamp != nextPage.Timestamp {
-					break
-				}
-				nextPage.Skip++
-			}
-		}
+		list = append(list, m)
 	}
 
-	return list, nextPage, nil
+	page := pagination.CreatePageT(list, cursor)
+	return &page, nil
 }
 
 func (s *MeasurementStorePSQL) FindDatastream(sensorID int64, obs string) (*service.Datastream, error) {
@@ -268,19 +253,4 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter service.DatastreamFilter) 
 	}
 
 	return ds, nil
-}
-
-// decodeCursor decodes the pagination cursor which is just a base64 encoded ISO8601 timestamp
-func decodeCursor(cursor string) (uint64, error) {
-	decoded, err := hex.DecodeString(cursor)
-	if err != nil {
-		return 0, err
-	}
-	return binary.BigEndian.Uint64(decoded), nil
-}
-
-func encodeCursor(p service.Pagination, ts uint64) string {
-	data := make([]byte, 8)
-	binary.BigEndian.PutUint64(data, ts)
-	return hex.EncodeToString(data)
 }

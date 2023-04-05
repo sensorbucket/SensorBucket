@@ -74,7 +74,7 @@ type ListFilters struct {
 	Latitude   []float64
 	Longitude  []float64
 	Distance   []float64
-	Properties httpfilter.Bytes
+	Properties []byte
 }
 
 func (f *ListFilters) boundingBox() (BoundingBox, bool) {
@@ -107,17 +107,15 @@ func (f *ListFilters) filters() DeviceFilter {
 }
 
 func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
-	parseFilter := httpfilter.MustCreate[ListFilters]()
 	return func(rw http.ResponseWriter, r *http.Request) {
-		var filter ListFilters
-		if err := parseFilter(r.URL.Query(), &filter); err != nil {
+		filter, err := httpfilter.Parse[ListFilters](r)
+		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
 		var devices []Device
 
 		// figure out what kind of query this is
-		var err error
 		if lr, ok := filter.locationRange(); ok {
 			devices, err = t.svc.ListInRange(r.Context(), lr, filter.filters())
 		} else if bb, ok := filter.boundingBox(); ok {

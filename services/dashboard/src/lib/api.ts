@@ -42,7 +42,7 @@ export const API = {
                     }).then((res) => {
                         ctrl.enqueue(res.data.data);
                         // Request next page
-                        let nextPage = res.data.next;
+                        let nextPage = res.data.links?.next;
 
                         // User canceled stream or all measurements are fetched
                         if (cancelStream || !nextPage) {

@@ -86,16 +86,14 @@ func (PipelineStatus) FromString(str string) (any, error) {
 }
 
 func (t *Transport) httpListPipelines() http.HandlerFunc {
-	createFilter := httpfilter.MustCreate[PipelinesFilter]()
 	return func(rw http.ResponseWriter, r *http.Request) {
-		var f PipelinesFilter
-		if err := createFilter(r.URL.Query(), &f); err != nil {
-			log.Printf("Failed to create filter for ListPipelines: %v\n", err)
+		filter, err := httpfilter.Parse[PipelinesFilter](r)
+		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
 
-		p, err := t.service.ListPipelines(r.Context(), f)
+		p, err := t.service.ListPipelines(r.Context(), *filter)
 		if err != nil {
 			log.Printf("Failed to ListPipelines: %v\n", err)
 			web.HTTPError(rw, err)
@@ -107,7 +105,6 @@ func (t *Transport) httpListPipelines() http.HandlerFunc {
 }
 
 func (t *Transport) httpGetPipeline() http.HandlerFunc {
-	createFilter := httpfilter.MustCreate[PipelinesFilter]()
 	return func(rw http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
 		if _, err := uuid.Parse(id); err != nil {
@@ -117,14 +114,13 @@ func (t *Transport) httpGetPipeline() http.HandlerFunc {
 
 		// We parse the pipeline filters to see if status=inactive is in there
 		// if it's in there then we show the pipeline even if its disabled.
-		var f PipelinesFilter
-		if err := createFilter(r.URL.Query(), &f); err != nil {
-			log.Printf("Failed to GetPipeline: %v\n", err)
+		filter, err := httpfilter.Parse[PipelinesFilter](r)
+		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
 		showInactive := false
-		for _, v := range f.Status {
+		for _, v := range filter.Status {
 			if v == PipelineInactive {
 				showInactive = true
 				break

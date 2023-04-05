@@ -1,16 +1,16 @@
 package transport
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
+	"reflect"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/measurements/service"
 )
@@ -42,57 +42,62 @@ func (t *HTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t.router.ServeHTTP(w, r)
 }
 
+func sliceToSingleHook(t1, t2 reflect.Type, i any) (any, error) {
+	if t1.Kind() == reflect.Slice && t2.Kind() != reflect.Slice {
+		return reflect.ValueOf(i).Index(0).Interface(), nil
+	}
+	return i, nil
+}
+
+func stringToTimeHook(from, to reflect.Type, data any) (any, error) {
+	if to == reflect.TypeOf(time.Time{}) && from == reflect.TypeOf("") {
+		return time.Parse(time.RFC3339, data.(string))
+	}
+	return data, nil
+}
+
 func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
-	createFilter := httpfilter.MustCreate[service.Filter]()
-	return func(w http.ResponseWriter, r *http.Request) {
-		var filters service.Filter
-		if err := createFilter(r.URL.Query(), &filters); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		pagination, err := parsePagination(r)
+	type Params struct {
+		service.Filter     `pagination:",squash"`
+		pagination.Request `pagination:",squash"`
+	}
+	return func(rw http.ResponseWriter, r *http.Request) {
+		params, err := httpfilter.Parse[Params](r)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			web.HTTPError(rw, err)
 			return
 		}
 
-		measurements, nextPage, err := t.svc.QueryMeasurements(filters, pagination)
+		page, err := t.svc.QueryMeasurements(params.Filter, params.Request)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		response := paginatedResponse{
-			Data:  measurements,
-			Count: len(measurements),
+		response := pagination.APIResponse[[]service.Measurement]{
+			Links: pagination.Links{
+				Next: t.buildNextURL(r, page.Cursor),
+			},
+			Data: page.Data,
 		}
-		if nextPage != nil {
-			response.Next, err = t.buildNextURL(r, *nextPage)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-		}
-		sendJSON(w, response)
+		sendJSON(rw, response)
 	}
 }
 
 func (t *HTTPTransport) httpListDatastream() http.HandlerFunc {
-	createFilter := httpfilter.MustCreate[service.DatastreamFilter]()
-	return func(w http.ResponseWriter, r *http.Request) {
-		var filter service.DatastreamFilter
-		if err := createFilter(r.URL.Query(), &filter); err != nil {
-			web.HTTPError(w, err)
+	return func(rw http.ResponseWriter, r *http.Request) {
+		filter, err := httpfilter.Parse[service.DatastreamFilter](r)
+		if err != nil {
+			web.HTTPError(rw, err)
 			return
 		}
 
-		ds, err := t.svc.ListDatastreams(r.Context(), filter)
+		ds, err := t.svc.ListDatastreams(r.Context(), *filter)
 		if err != nil {
-			web.HTTPError(w, err)
+			web.HTTPError(rw, err)
 			return
 		}
-		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+		web.HTTPResponse(rw, http.StatusOK, web.APIResponseAny{
 			Data: ds,
 		})
 	}
@@ -133,75 +138,13 @@ func parseTimeRange(r *http.Request) (time.Time, time.Time, error) {
 	return start, end, nil
 }
 
-// paginatedResponse is a paginated response.
-type paginatedResponse struct {
-	Next  string      `json:"next"`
-	Count int         `json:"count"`
-	Data  interface{} `json:"data"`
-}
-
-func parsePagination(r *http.Request) (service.Pagination, error) {
-	var err error
-	pagination := service.Pagination{
-		Limit: 100,
-	}
-	q := r.URL.Query()
-
-	if q.Has("cursor") {
-		// TODO: Decode cursor to pagination struct
-		cursor, err := url.QueryUnescape(r.URL.Query().Get("cursor"))
-		if err != nil {
-			return pagination, fmt.Errorf("could not get cursor query parameter: %w", err)
-		}
-		pagination, err = decodePagination(cursor)
-		if err != nil {
-			return pagination, err
-		}
-		return pagination, nil
-	}
-
-	//
-	if q.Has("limit") {
-		limitQ := r.URL.Query().Get("limit")
-		pagination.Limit, err = strconv.Atoi(limitQ)
-		if err != nil {
-			return service.Pagination{}, fmt.Errorf("limit must be a number: %w", err)
-		}
-	}
-
-	return pagination, nil
-}
-
-func encodePagination(p service.Pagination) (string, error) {
-	jsonData, err := json.Marshal(p)
-	if err != nil {
-		return "", fmt.Errorf("could not encode pagination: %w", err)
-	}
-	b64Data := base64.StdEncoding.EncodeToString(jsonData)
-	return b64Data, nil
-}
-
-func decodePagination(cursor string) (service.Pagination, error) {
-	jsonData, err := base64.StdEncoding.DecodeString(cursor)
-	if err != nil {
-		return service.Pagination{}, fmt.Errorf("could not decode pagination cursor: %w", err)
-	}
-	var p service.Pagination
-	if err := json.Unmarshal(jsonData, &p); err != nil {
-		return service.Pagination{}, fmt.Errorf("could not decode pagination cursor: %w", err)
-	}
-
-	return p, nil
-}
-
-func (t *HTTPTransport) buildNextURL(r *http.Request, nextPage service.Pagination) (string, error) {
-	cursor, err := encodePagination(nextPage)
-	if err != nil {
-		return "", err
+func (t *HTTPTransport) buildNextURL(r *http.Request, cursor string) string {
+	if cursor == "" {
+		return ""
 	}
 	q := r.URL.Query()
 	q.Set("cursor", cursor)
-	return fmt.Sprintf("%s%s?%s", t.url, r.URL.Path, q.Encode()), nil
+	return fmt.Sprintf("%s%s?%s", t.url, r.URL.Path, q.Encode())
 }
 
 func sendJSON(w http.ResponseWriter, v interface{}) {
