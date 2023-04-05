@@ -17,6 +17,12 @@
 		<ul>
 			<li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
 			<li><Link to="/" icon="material-symbols:home-outline-rounded">Homepage</Link></li>
+			<li><Link to="/devices" icon="material-symbols:device-hub">Devices</Link></li>
+			<li><Link to="/sensors" icon="material-symbols:nest-remote-comfort-sensor">Sensors</Link></li>
+			<li><Link to="/pipelines" icon="eos-icons:pipeline">Pipelines</Link></li>
+			<li>
+				<Link to="/datastreams" icon="fluent:stream-20-filled">Datastreams</Link>
+			</li>
 		</ul>
 	</nav>
 </sidebar>

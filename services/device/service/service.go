@@ -13,6 +13,7 @@ type Store interface {
 	List(DeviceFilter) ([]Device, error)
 	ListInBoundingBox(BoundingBox, DeviceFilter) ([]Device, error)
 	ListInRange(LocationRange, DeviceFilter) ([]Device, error)
+	ListSensors() ([]Sensor, error)
 	Find(id int64) (*Device, error)
 	Save(dev *Device) error
 	Delete(dev *Device) error
@@ -21,6 +22,7 @@ type Service interface {
 	ListDevices(ctx context.Context, filter DeviceFilter) ([]Device, error)
 	ListInRange(ctx context.Context, lr LocationRange, filter DeviceFilter) ([]Device, error)
 	ListInBoundingBox(ctx context.Context, bb BoundingBox, filter DeviceFilter) ([]Device, error)
+	ListSensors(ctx context.Context) ([]Sensor, error)
 	CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error)
 	GetDevice(ctx context.Context, id int64) (*Device, error)
 	AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error
@@ -168,4 +170,8 @@ func (s *ServiceImpl) DeleteDevice(ctx context.Context, dev *Device) error {
 		return err
 	}
 	return nil
+}
+
+func (s *ServiceImpl) ListSensors(ctx context.Context) ([]Sensor, error) {
+	return s.store.ListSensors()
 }
