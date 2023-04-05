@@ -19,6 +19,7 @@
 			<li><Link to="/" icon="material-symbols:home-outline-rounded">Homepage</Link></li>
 			<li><Link to="/devices" icon="material-symbols:home-outline-rounded">Devices</Link></li>
 			<li><Link to="/sensors" icon="material-symbols:home-outline-rounded">Sensors</Link></li>
+			<li><Link to="/pipelines" icon="material-symbols:home-outline-rounded">Pipelines</Link></li>
 		</ul>
 	</nav>
 </sidebar>

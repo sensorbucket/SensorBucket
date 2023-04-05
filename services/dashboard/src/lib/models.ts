@@ -4,6 +4,13 @@ export interface APIResponse<T> {
     count?: number;
     next?: string;
 }
+export interface Pipeline {
+    id: string;
+    description: string;
+    status: "active" | "inactive";
+    steps: string[];
+    last_status_change: string
+}
 export interface BoundingBox {
     north: number;
     east: number;
