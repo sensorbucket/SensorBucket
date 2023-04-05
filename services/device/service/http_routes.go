@@ -56,11 +56,12 @@ func (t *HTTPTransport) setupRoutes() {
 		r.Delete("/", t.httpDeleteDevice())
 
 		r.Route("/sensors", func(r chi.Router) {
-			r.Get("/", t.httpListSensors())
+			r.Get("/", t.httpListDeviceSensors())
 			r.Post("/", t.httpAddSensor())
 			r.Delete("/{sensor_code}", t.httpDeleteSensor())
 		})
 	})
+	r.Get("/sensors", t.httpListSensors())
 	// TODO: Should we be able to fetch sensor by global unique ID?
 }
 
@@ -202,7 +203,7 @@ func (t *HTTPTransport) httpUpdateDevice() http.HandlerFunc {
 	}
 }
 
-func (t *HTTPTransport) httpListSensors() http.HandlerFunc {
+func (t *HTTPTransport) httpListDeviceSensors() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		device := r.Context().Value(ctxDeviceKey).(*Device)
 
@@ -251,6 +252,20 @@ func (t *HTTPTransport) httpDeleteSensor() http.HandlerFunc {
 
 		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
 			Message: "Deleted sensor from device",
+		})
+	}
+}
+
+func (t *HTTPTransport) httpListSensors() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		sensors, err := t.svc.ListSensors(r.Context())
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
+			Message: "listed sensors",
+			Data:    sensors,
 		})
 	}
 }

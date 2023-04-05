@@ -14,9 +14,10 @@ export interface Sensor {
     id: number;
     code: string;
     description: string;
-    measurement_type: string;
     external_id: string;
     properties: Record<string, any>;
+    brand: string;
+    archive_time: number;
 }
 export interface Device {
     id: number;

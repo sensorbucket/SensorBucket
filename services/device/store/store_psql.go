@@ -89,6 +89,18 @@ func (s *PSQLStore) Delete(dev *service.Device) error {
 	return nil
 }
 
+func (s *PSQLStore) ListSensors() ([]service.Sensor, error) {
+	var sensors []service.Sensor
+	if err := s.db.Select(&sensors,
+		`SELECT 
+			id, code, description, external_id, properties, archive_time, brand	
+		FROM sensors`,
+	); err != nil {
+		return nil, err
+	}
+	return sensors, nil
+}
+
 func (s *PSQLStore) createDevice(dev *service.Device) error {
 	if err := s.db.Get(&dev.ID,
 		`
