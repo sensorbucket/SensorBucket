@@ -7,6 +7,7 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/measurements/service"
@@ -92,7 +93,7 @@ type MeasurementQueryPage struct {
 	ID                   int64     `pagination:"id,DESC"`
 }
 
-func (s *MeasurementStorePSQL) Query(query service.Filter, r pagination.Request) (*pagination.Page[[]service.Measurement], error) {
+func (s *MeasurementStorePSQL) Query(query service.Filter, r pagination.Request) (*pagination.Page[service.Measurement], error) {
 	var err error
 	q := pq.Select(
 		"uplink_message_id",
@@ -241,16 +242,44 @@ func (s *MeasurementStorePSQL) CreateDatastream(ds *service.Datastream) error {
 	return nil
 }
 
-func (s *MeasurementStorePSQL) ListDatastreams(filter service.DatastreamFilter) ([]service.Datastream, error) {
+type datastreamPageQuery struct {
+	ID uuid.UUID `pagination:"id,ASC"`
+}
+
+func (s *MeasurementStorePSQL) ListDatastreams(filter service.DatastreamFilter, r pagination.Request) (*pagination.Page[service.Datastream], error) {
+	var err error
 	var ds = []service.Datastream{}
 	q := pq.Select(
 		"id", "description", "sensor_id", "observed_property", "unit_of_measurement",
 	).From("datastreams")
-	query, params, _ := q.ToSql()
 
-	if err := s.db.Select(&ds, query, params...); err != nil {
+	cursor := pagination.GetCursor[datastreamPageQuery](r)
+	q, err = pagination.Apply(q, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.RunWith(s.db).Query()
+	if err != nil {
 		return nil, fmt.Errorf("error selecting datastreams from db: %w", err)
 	}
 
-	return ds, nil
+	for rows.Next() {
+		var d service.Datastream
+		err := rows.Scan(
+			&d.ID,
+			&d.Description,
+			&d.SensorID,
+			&d.ObservedProperty,
+			&d.UnitOfMeasurement,
+			&cursor.Columns.ID,
+		)
+		if err != nil {
+			return nil, err
+		}
+		ds = append(ds, d)
+	}
+
+	page := pagination.CreatePageT(ds, cursor)
+	return &page, nil
 }

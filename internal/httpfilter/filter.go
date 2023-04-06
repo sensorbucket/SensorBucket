@@ -12,8 +12,10 @@ func Parse[T any](r *http.Request) (*T, error) {
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			sliceToSingleHook, stringToTimeHook,
 		),
-		TagName: "pagination",
-		Result:  &t,
+		WeaklyTypedInput: true,
+		Squash:           true,
+		TagName:          "url",
+		Result:           &t,
 	})
 	if err := decoder.Decode(r.URL.Query()); err != nil {
 		return nil, err

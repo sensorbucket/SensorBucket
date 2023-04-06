@@ -63,7 +63,7 @@ type APIResponse[T any] struct {
 
 type Page[T any] struct {
 	Cursor string
-	Data   T
+	Data   []T
 }
 
 type Request struct {
@@ -87,10 +87,10 @@ func GetCursor[T any](r Request) Cursor[T] {
 	// Case 2: Cursor given,
 	c := DecodeCursor[T](r.Cursor)
 	// Normalize cursor limit size
-	if r.Limit == 0 {
-		r.Limit = 100
-	} else if r.Limit > 250 {
-		r.Limit = 250
+	if c.Limit == 0 {
+		c.Limit = 100
+	} else if c.Limit > 250 {
+		c.Limit = 250
 	}
 
 	return c
@@ -101,12 +101,12 @@ type Cursor[T any] struct {
 	Columns T
 }
 
-func CreatePageT[T1 any, T2 any](data []T1, cursor Cursor[T2]) Page[[]T1] {
+func CreatePageT[T1 any, T2 any](data []T1, cursor Cursor[T2]) Page[T1] {
 	var cursorString string
 	if len(data) == int(cursor.Limit) {
 		cursorString = EncodeCursor(cursor)
 	}
-	page := Page[[]T1]{
+	page := Page[T1]{
 		Cursor: cursorString,
 		Data:   data,
 	}

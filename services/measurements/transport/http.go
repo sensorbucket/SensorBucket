@@ -85,21 +85,29 @@ func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
 }
 
 func (t *HTTPTransport) httpListDatastream() http.HandlerFunc {
+	type params struct {
+		service.DatastreamFilter
+		pagination.Request
+	}
 	return func(rw http.ResponseWriter, r *http.Request) {
-		filter, err := httpfilter.Parse[service.DatastreamFilter](r)
+		params, err := httpfilter.Parse[params](r)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
 
-		ds, err := t.svc.ListDatastreams(r.Context(), *filter)
+		page, err := t.svc.ListDatastreams(r.Context(), params.DatastreamFilter, params.Request)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
-		web.HTTPResponse(rw, http.StatusOK, web.APIResponseAny{
-			Data: ds,
-		})
+		response := pagination.APIResponse[[]service.Datastream]{
+			Links: pagination.Links{
+				Next: t.buildNextURL(r, page.Cursor),
+			},
+			Data: page.Data,
+		}
+		sendJSON(rw, response)
 	}
 }
 
