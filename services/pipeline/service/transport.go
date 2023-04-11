@@ -8,19 +8,22 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
 type Transport struct {
 	router  chi.Router
 	service *Service
+	baseURL string
 }
 
-func NewTransport(svc *Service) *Transport {
+func NewTransport(svc *Service, baseURL string) *Transport {
 	r := chi.NewRouter()
 	t := &Transport{
 		router:  r,
 		service: svc,
+		baseURL: baseURL,
 	}
 
 	r.Post("/pipelines", t.httpCreatePipeline())
@@ -86,21 +89,25 @@ func (PipelineStatus) FromString(str string) (any, error) {
 }
 
 func (t *Transport) httpListPipelines() http.HandlerFunc {
+	type filter struct {
+		PipelinesFilter
+		pagination.Request
+	}
 	return func(rw http.ResponseWriter, r *http.Request) {
-		filter, err := httpfilter.Parse[PipelinesFilter](r)
+		filter, err := httpfilter.Parse[filter](r)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
 
-		p, err := t.service.ListPipelines(r.Context(), *filter)
+		page, err := t.service.ListPipelines(r.Context(), filter.PipelinesFilter, filter.Request)
 		if err != nil {
 			log.Printf("Failed to ListPipelines: %v\n", err)
 			web.HTTPError(rw, err)
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusOK, web.APIResponseAny{Message: "Listed pipelines", Data: p})
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, page))
 	}
 }
 

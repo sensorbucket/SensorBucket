@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 )
 
 type Store interface {
 	CreatePipeline(*Pipeline) error
 	UpdatePipeline(*Pipeline) error
-	ListPipelines(PipelinesFilter) ([]Pipeline, error)
+	ListPipelines(PipelinesFilter, pagination.Request) (pagination.Page[Pipeline], error)
 	GetPipeline(string) (*Pipeline, error)
 }
 
@@ -46,8 +48,8 @@ func NewPipelinesFilter() PipelinesFilter {
 	return PipelinesFilter{}
 }
 
-func (s *Service) ListPipelines(ctx context.Context, filter PipelinesFilter) ([]Pipeline, error) {
-	pipelines, err := s.store.ListPipelines(filter)
+func (s *Service) ListPipelines(ctx context.Context, filter PipelinesFilter, p pagination.Request) (pagination.Page[Pipeline], error) {
+	pipelines, err := s.store.ListPipelines(filter, p)
 	return pipelines, err
 }
 

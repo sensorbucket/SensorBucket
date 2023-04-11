@@ -21,6 +21,7 @@ import (
 var (
 	DB_DSN    = env.Must("DB_DSN")
 	HTTP_ADDR = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE = env.Could("HTTP_BASE", "http://localhost:3000/api")
 )
 
 func main() {
@@ -35,7 +36,7 @@ func Run() error {
 		return fmt.Errorf("failed to migrate db: %w", err)
 	}
 	svc := service.New(store.NewPSQLStore(db))
-	transport := service.NewTransport(svc)
+	transport := service.NewTransport(svc, HTTP_BASE)
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
 		ReadTimeout:  5 * time.Second,
