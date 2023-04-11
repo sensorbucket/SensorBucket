@@ -63,7 +63,7 @@
 		{#await dsPromise then datastreams}
 			<div class="overflow-y-scroll flex-grow">
 				<Table
-					data={datastreams?.filter((ds) => ds.sensor_id == selectedSensor?.id) ?? []}
+					data={datastreams ?? []}
 					fields={[
 						'description',
 						['Observed Property', 'observed_property'],
