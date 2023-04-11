@@ -212,15 +212,13 @@ func (t *HTTPTransport) httpDeleteSensor() http.HandlerFunc {
 
 func (t *HTTPTransport) httpListSensors() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		sensors, err := t.svc.ListSensors(r.Context())
+		p, err := httpfilter.Parse[pagination.Request](r)
+		page, err := t.svc.ListSensors(r.Context(), *p)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
-		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
-			Message: "listed sensors",
-			Data:    sensors,
-		})
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
 	}
 }
 

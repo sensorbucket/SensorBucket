@@ -96,16 +96,53 @@ func (s *PSQLStore) Delete(dev *service.Device) error {
 	return nil
 }
 
-func (s *PSQLStore) ListSensors() ([]service.Sensor, error) {
-	var sensors []service.Sensor
-	if err := s.db.Select(&sensors,
-		`SELECT 
-			id, code, description, external_id, properties, archive_time, brand, created_at	
-		FROM sensors`,
-	); err != nil {
+type SensorPaginationQuery struct {
+	CreatedAt time.Time `pagination:"created_at,ASC"`
+	ID        int64     `pagination:"id,ASC"`
+}
+
+func (s *PSQLStore) ListSensors(p pagination.Request) (*pagination.Page[service.Sensor], error) {
+	var err error
+
+	q := pq.Select(
+		"id", "code", "description", "external_id", "properties", "archive_time",
+		"brand", "created_at",
+	).From("sensors")
+
+	cursor := pagination.GetCursor[SensorPaginationQuery](p)
+	q, err = pagination.Apply(q, cursor)
+	if err != nil {
 		return nil, err
 	}
-	return sensors, nil
+
+	rows, err := q.RunWith(s.db).Query()
+	if err != nil {
+		return nil, err
+	}
+
+	var sensors []service.Sensor
+	for rows.Next() {
+		var sensor service.Sensor
+		err := rows.Scan(
+			&sensor.ID,
+			&sensor.Code,
+			&sensor.Description,
+			&sensor.ExternalID,
+			&sensor.Properties,
+			&sensor.ArchiveTime,
+			&sensor.Brand,
+			&sensor.CreatedAt,
+			&cursor.Columns.CreatedAt,
+			&cursor.Columns.ID,
+		)
+		if err != nil {
+			return nil, err
+		}
+		sensors = append(sensors, sensor)
+	}
+
+	page := pagination.CreatePageT(sensors, cursor)
+	return &page, nil
 }
 
 func (s *PSQLStore) createDevice(dev *service.Device) error {
