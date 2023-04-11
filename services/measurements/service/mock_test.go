@@ -4,6 +4,7 @@
 package service_test
 
 import (
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/measurements/service"
 	"sync"
 )
@@ -27,10 +28,10 @@ var _ service.Store = &StoreMock{}
 //			InsertFunc: func(measurement service.Measurement) error {
 //				panic("mock out the Insert method")
 //			},
-//			ListDatastreamsFunc: func() ([]service.Datastream, error) {
+//			ListDatastreamsFunc: func(datastreamFilter service.DatastreamFilter, request pagination.Request) (*pagination.Page[Datastream], error) {
 //				panic("mock out the ListDatastreams method")
 //			},
-//			QueryFunc: func(query service.Query, pagination service.Pagination) ([]service.Measurement, *service.Pagination, error) {
+//			QueryFunc: func(filter service.Filter, request pagination.Request) (*pagination.Page[Measurement], error) {
 //				panic("mock out the Query method")
 //			},
 //		}
@@ -50,10 +51,10 @@ type StoreMock struct {
 	InsertFunc func(measurement service.Measurement) error
 
 	// ListDatastreamsFunc mocks the ListDatastreams method.
-	ListDatastreamsFunc func() ([]service.Datastream, error)
+	ListDatastreamsFunc func(datastreamFilter service.DatastreamFilter, request pagination.Request) (*pagination.Page[Datastream], error)
 
 	// QueryFunc mocks the Query method.
-	QueryFunc func(query service.Filter, pagination service.Pagination) ([]service.Measurement, *service.Pagination, error)
+	QueryFunc func(filter service.Filter, request pagination.Request) (*pagination.Page[Measurement], error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -76,13 +77,17 @@ type StoreMock struct {
 		}
 		// ListDatastreams holds details about calls to the ListDatastreams method.
 		ListDatastreams []struct {
+			// DatastreamFilter is the datastreamFilter argument value.
+			DatastreamFilter service.DatastreamFilter
+			// Request is the request argument value.
+			Request pagination.Request
 		}
 		// Query holds details about calls to the Query method.
 		Query []struct {
-			// Query is the query argument value.
-			Query service.Filter
-			// Pagination is the pagination argument value.
-			Pagination service.Pagination
+			// Filter is the filter argument value.
+			Filter service.Filter
+			// Request is the request argument value.
+			Request pagination.Request
 		}
 	}
 	lockCreateDatastream sync.RWMutex
@@ -193,16 +198,21 @@ func (mock *StoreMock) InsertCalls() []struct {
 }
 
 // ListDatastreams calls ListDatastreamsFunc.
-func (mock *StoreMock) ListDatastreams() ([]service.Datastream, error) {
+func (mock *StoreMock) ListDatastreams(datastreamFilter service.DatastreamFilter, request pagination.Request) (*pagination.Page[Datastream], error) {
 	if mock.ListDatastreamsFunc == nil {
 		panic("StoreMock.ListDatastreamsFunc: method is nil but Store.ListDatastreams was just called")
 	}
 	callInfo := struct {
-	}{}
+		DatastreamFilter service.DatastreamFilter
+		Request          pagination.Request
+	}{
+		DatastreamFilter: datastreamFilter,
+		Request:          request,
+	}
 	mock.lockListDatastreams.Lock()
 	mock.calls.ListDatastreams = append(mock.calls.ListDatastreams, callInfo)
 	mock.lockListDatastreams.Unlock()
-	return mock.ListDatastreamsFunc()
+	return mock.ListDatastreamsFunc(datastreamFilter, request)
 }
 
 // ListDatastreamsCalls gets all the calls that were made to ListDatastreams.
@@ -210,8 +220,12 @@ func (mock *StoreMock) ListDatastreams() ([]service.Datastream, error) {
 //
 //	len(mockedStore.ListDatastreamsCalls())
 func (mock *StoreMock) ListDatastreamsCalls() []struct {
+	DatastreamFilter service.DatastreamFilter
+	Request          pagination.Request
 } {
 	var calls []struct {
+		DatastreamFilter service.DatastreamFilter
+		Request          pagination.Request
 	}
 	mock.lockListDatastreams.RLock()
 	calls = mock.calls.ListDatastreams
@@ -220,21 +234,21 @@ func (mock *StoreMock) ListDatastreamsCalls() []struct {
 }
 
 // Query calls QueryFunc.
-func (mock *StoreMock) Query(query service.Filter, pagination service.Pagination) ([]service.Measurement, *service.Pagination, error) {
+func (mock *StoreMock) Query(filter service.Filter, request pagination.Request) (*pagination.Page[Measurement], error) {
 	if mock.QueryFunc == nil {
 		panic("StoreMock.QueryFunc: method is nil but Store.Query was just called")
 	}
 	callInfo := struct {
-		Query      service.Filter
-		Pagination service.Pagination
+		Filter  service.Filter
+		Request pagination.Request
 	}{
-		Query:      query,
-		Pagination: pagination,
+		Filter:  filter,
+		Request: request,
 	}
 	mock.lockQuery.Lock()
 	mock.calls.Query = append(mock.calls.Query, callInfo)
 	mock.lockQuery.Unlock()
-	return mock.QueryFunc(query, pagination)
+	return mock.QueryFunc(filter, request)
 }
 
 // QueryCalls gets all the calls that were made to Query.
@@ -242,12 +256,12 @@ func (mock *StoreMock) Query(query service.Filter, pagination service.Pagination
 //
 //	len(mockedStore.QueryCalls())
 func (mock *StoreMock) QueryCalls() []struct {
-	Query      service.Filter
-	Pagination service.Pagination
+	Filter  service.Filter
+	Request pagination.Request
 } {
 	var calls []struct {
-		Query      service.Filter
-		Pagination service.Pagination
+		Filter  service.Filter
+		Request pagination.Request
 	}
 	mock.lockQuery.RLock()
 	calls = mock.calls.Query

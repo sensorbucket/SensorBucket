@@ -60,6 +60,7 @@ type Measurement struct {
 	MeasurementAltitude             *float64                  `json:"measurement_altitude"`
 	MeasurementProperties           map[string]any            `json:"measurement_properties"`
 	MeasurementExpiration           time.Time                 `json:"measurement_expiration"`
+	CreatedAt                       time.Time                 `json:"created_at"`
 }
 
 func (m *Measurement) Validate() error {
@@ -188,6 +189,8 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 		MeasurementAltitude:   msg.Device.Altitude,
 		MeasurementProperties: m.Properties,
 		MeasurementExpiration: time.UnixMilli(msg.ReceivedAt).Add(time.Duration(*archiveTimeDays) * 24 * time.Hour),
+
+		CreatedAt: time.Now(),
 	}
 
 	// Measurement location is either explicitly set or falls back to device location

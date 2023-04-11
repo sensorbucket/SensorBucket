@@ -66,6 +66,7 @@ func createInsertQuery(m service.Measurement) (string, []any, error) {
 	values["measurement_location"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.MeasurementLongitude, m.MeasurementLatitude)
 	values["measurement_altitude"] = m.MeasurementAltitude
 	values["measurement_expiration"] = m.MeasurementExpiration
+	values["created_at"] = m.CreatedAt
 
 	return pq.Insert("measurements").SetMap(values).ToSql()
 }
@@ -131,6 +132,7 @@ func (s *MeasurementStorePSQL) Query(query service.Filter, r pagination.Request)
 		"ST_X(measurement_location::geometry) as measurement_longitude",
 		"measurement_altitude",
 		"measurement_expiration",
+		"created_at",
 	).
 		From("measurements").
 		Where("measurement_timestamp >= ?", query.Start)
@@ -197,6 +199,7 @@ func (s *MeasurementStorePSQL) Query(query service.Filter, r pagination.Request)
 			&m.MeasurementLongitude,
 			&m.MeasurementAltitude,
 			&m.MeasurementExpiration,
+			&m.CreatedAt,
 			&cursor.Columns.MeasurementTimestamp,
 			&cursor.Columns.ID,
 		)
@@ -214,7 +217,8 @@ func (s *MeasurementStorePSQL) FindDatastream(sensorID int64, obs string) (*serv
 	var ds service.Datastream
 	query := `
 		SELECT
-			"id", "description", "sensor_id", "observed_property", "unit_of_measurement"
+			"id", "description", "sensor_id", "observed_property", "unit_of_measurement",
+			"created_at"
 		FROM 
 			"datastreams"
 		WHERE
@@ -232,10 +236,13 @@ func (s *MeasurementStorePSQL) FindDatastream(sensorID int64, obs string) (*serv
 func (s *MeasurementStorePSQL) CreateDatastream(ds *service.Datastream) error {
 	_, err := s.db.Exec(`
 	INSERT INTO
-		"datastreams" ("id", "description", "sensor_id", "observed_property", "unit_of_measurement")
+		"datastreams" (
+			"id", "description", "sensor_id", "observed_property", "unit_of_measurement",
+			"created_at
+		)
 	VALUES 
-		($1, $2, $3, $4, $5)
-	`, ds.ID, ds.Description, ds.SensorID, ds.ObservedProperty, ds.UnitOfMeasurement)
+		($1, $2, $3, $4, $5, $6)
+	`, ds.ID, ds.Description, ds.SensorID, ds.ObservedProperty, ds.UnitOfMeasurement, ds.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("database error inserting datastream: %w", err)
 	}
@@ -250,7 +257,7 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter service.DatastreamFilter, 
 	var err error
 	var ds = []service.Datastream{}
 	q := pq.Select(
-		"id", "description", "sensor_id", "observed_property", "unit_of_measurement",
+		"id", "description", "sensor_id", "observed_property", "unit_of_measurement", "created_at",
 	).From("datastreams")
 
 	cursor := pagination.GetCursor[datastreamPageQuery](r)
@@ -272,6 +279,7 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter service.DatastreamFilter, 
 			&d.SensorID,
 			&d.ObservedProperty,
 			&d.UnitOfMeasurement,
+			&d.CreatedAt,
 			&cursor.Columns.ID,
 		)
 		if err != nil {

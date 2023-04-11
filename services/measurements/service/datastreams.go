@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"sensorbucket.nl/sensorbucket/internal/web"
@@ -25,6 +26,7 @@ type Datastream struct {
 	SensorID          int64     `json:"sensor_id" db:"sensor_id"`
 	ObservedProperty  string    `json:"observed_property" db:"observed_property"`
 	UnitOfMeasurement string    `json:"unit_of_measurement" db:"unit_of_measurement"`
+	CreatedAt         time.Time `json:"created_at"`
 }
 
 func newDatastream(sensorID int64, obs, uom string) (*Datastream, error) {
@@ -41,6 +43,7 @@ func newDatastream(sensorID int64, obs, uom string) (*Datastream, error) {
 		SensorID:          sensorID,
 		ObservedProperty:  obs,
 		UnitOfMeasurement: uom,
+		CreatedAt:         time.Now(),
 	}, nil
 }
 
