@@ -71,7 +71,7 @@ func (s *PSQLStore) UpdatePipeline(p *service.Pipeline) error {
 func (s *PSQLStore) ListPipelines(filter service.PipelinesFilter) ([]service.Pipeline, error) {
 	//
 	// Fetch pipelines
-	q := pq.Select("id", "description", "status", "last_status_change").From("pipelines")
+	q := pq.Select("id", "description", "status", "last_status_change", "created_at").From("pipelines")
 	if len(filter.Status) > 0 {
 		q = q.Where(sq.Eq{"status": filter.Status})
 	} else {
@@ -98,7 +98,7 @@ func (s *PSQLStore) ListPipelines(filter service.PipelinesFilter) ([]service.Pip
 		p := service.Pipeline{
 			Steps: []string{},
 		}
-		if err := row.Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange); err != nil {
+		if err := row.Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange, &p.CreatedAt); err != nil {
 			return nil, err
 		}
 		pIDs = append(pIDs, p.ID)
@@ -161,7 +161,7 @@ func (s *PSQLStore) GetPipeline(id string) (*service.Pipeline, error) {
 // Private methods which have DB interface injected. Allows for transactional queries
 func getPipeline(db DB, id string) (*service.Pipeline, error) {
 	var p service.Pipeline
-	if err := db.QueryRowx(`SELECT id, description, status, last_status_change FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange); err != nil {
+	if err := db.QueryRowx(`SELECT id, description, status, last_status_change, created_at FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, service.ErrPipelineNotFound
 		}
@@ -181,7 +181,7 @@ func getPipeline(db DB, id string) (*service.Pipeline, error) {
 }
 
 func createPipeline(db DB, p *service.Pipeline) error {
-	if _, err := db.Exec(`INSERT INTO "pipelines" ("id", "description", "status", "last_status_change") VALUES ($1, $2, $3, $4)`, p.ID, p.Description, p.Status, p.LastStatusChange); err != nil {
+	if _, err := db.Exec(`INSERT INTO "pipelines" ("id", "description", "status", "last_status_change", "created_at") VALUES ($1, $2, $3, $4, $5)`, p.ID, p.Description, p.Status, p.LastStatusChange, p.CreatedAt); err != nil {
 		return err
 	}
 
