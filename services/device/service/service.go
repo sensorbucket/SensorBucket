@@ -5,21 +5,23 @@ package service
 import (
 	"context"
 	"encoding/json"
+
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 )
 
 var _ Service = (*ServiceImpl)(nil)
 
 type Store interface {
-	List(DeviceFilter) ([]Device, error)
-	ListInBoundingBox(DeviceFilter) ([]Device, error)
-	ListInRange(DeviceFilter) ([]Device, error)
+	List(DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
+	ListInBoundingBox(DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
+	ListInRange(DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
 	ListSensors() ([]Sensor, error)
 	Find(id int64) (*Device, error)
 	Save(dev *Device) error
 	Delete(dev *Device) error
 }
 type Service interface {
-	ListDevices(ctx context.Context, filter DeviceFilter) ([]Device, error)
+	ListDevices(ctx context.Context, filter DeviceFilter, r pagination.Request) (*pagination.Page[Device], error)
 	ListSensors(ctx context.Context) ([]Sensor, error)
 	CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error)
 	GetDevice(ctx context.Context, id int64) (*Device, error)
@@ -62,14 +64,14 @@ func (f DeviceFilter) HasRange() bool {
 	return f.Latitude != nil && f.Longitude != nil && f.Distance != nil
 }
 
-func (s *ServiceImpl) ListDevices(ctx context.Context, filter DeviceFilter) ([]Device, error) {
+func (s *ServiceImpl) ListDevices(ctx context.Context, filter DeviceFilter, p pagination.Request) (*pagination.Page[Device], error) {
 	if filter.HasBoundingBox() {
-		return s.store.ListInBoundingBox(filter)
+		return s.store.ListInBoundingBox(filter, p)
 	}
 	if filter.HasRange() {
-		return s.store.ListInRange(filter)
+		return s.store.ListInRange(filter, p)
 	}
-	return s.store.List(filter)
+	return s.store.List(filter, p)
 }
 
 func (s *ServiceImpl) CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error) {

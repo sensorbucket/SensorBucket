@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
@@ -66,6 +67,7 @@ func (t *HTTPTransport) setupRoutes() {
 
 type HTTPDeviceFilters struct {
 	DeviceFilter
+	pagination.Request
 }
 
 func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
@@ -76,15 +78,18 @@ func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
 			return
 		}
 
-		devices, err := t.svc.ListDevices(r.Context(), filter.DeviceFilter)
+		page, err := t.svc.ListDevices(r.Context(), filter.DeviceFilter, filter.Request)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
-		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
-			Message: "listed devices",
-			Data:    devices,
-		})
+
+		response := pagination.APIResponse[[]Device]{
+			Links: pagination.Links{},
+			Data:  page.Data,
+		}
+
+		web.HTTPResponse(rw, http.StatusOK, response)
 	}
 }
 

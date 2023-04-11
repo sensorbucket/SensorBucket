@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/device/service"
 )
 
@@ -50,16 +52,21 @@ func sensorModelsToSensors(models []SensorModel) []service.Sensor {
 	return sensors
 }
 
-func (s *PSQLStore) ListInBoundingBox(filter service.DeviceFilter) ([]service.Device, error) {
-	return newDeviceQueryBuilder().WithFilters(filter).WithinBoundingBox(filter.BoundingBoxFilter).Query(s.db)
+type DevicePaginationQuery struct {
+	CreatedAt time.Time `pagination:"created_at,ASC"`
+	ID        int64     `pagination:"id,ASC"`
 }
 
-func (s *PSQLStore) ListInRange(filter service.DeviceFilter) ([]service.Device, error) {
-	return newDeviceQueryBuilder().WithFilters(filter).WithinRange(filter.RangeFilter).Query(s.db)
+func (s *PSQLStore) ListInBoundingBox(filter service.DeviceFilter, p pagination.Request) (*pagination.Page[service.Device], error) {
+	return newDeviceQueryBuilder().WithPagination(p).WithFilters(filter).WithinBoundingBox(filter.BoundingBoxFilter).Query(s.db)
 }
 
-func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) {
-	return newDeviceQueryBuilder().WithFilters(filter).Query(s.db)
+func (s *PSQLStore) ListInRange(filter service.DeviceFilter, p pagination.Request) (*pagination.Page[service.Device], error) {
+	return newDeviceQueryBuilder().WithPagination(p).WithFilters(filter).WithinRange(filter.RangeFilter).Query(s.db)
+}
+
+func (s *PSQLStore) List(filter service.DeviceFilter, p pagination.Request) (*pagination.Page[service.Device], error) {
+	return newDeviceQueryBuilder().WithPagination(p).WithFilters(filter).Query(s.db)
 }
 
 func (s *PSQLStore) Find(id int64) (*service.Device, error) {
