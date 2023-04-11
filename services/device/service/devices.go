@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"regexp"
+	"time"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
@@ -64,6 +65,7 @@ type Device struct {
 	Altitude            *float64        `json:"altitude"`
 	State               DeviceState     `json:"state"`
 	LocationDescription string          `json:"location_description" db:"location_description"`
+	CreatedAt           time.Time       `json:"created_at" db:"created_at"`
 }
 
 type Sensor struct {
@@ -74,6 +76,7 @@ type Sensor struct {
 	ArchiveTime *int            `json:"archive_time" db:"archive_time"`
 	ExternalID  string          `json:"external_id" db:"external_id"`
 	Properties  json.RawMessage `json:"properties"`
+	CreatedAt   time.Time       `json:"created_at" db:"created_at"`
 }
 
 type NewDeviceOpts struct {
@@ -97,6 +100,7 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 		Organisation:        opts.Organisation,
 		Code:                opts.Code,
 		State:               opts.State,
+		CreatedAt:           time.Now(),
 	}
 
 	if !R_CODE.MatchString(opts.Code) {
@@ -130,6 +134,7 @@ func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 		ExternalID:  opts.ExternalID,
 		Properties:  []byte("{}"),
 		ArchiveTime: opts.ArchiveTime,
+		CreatedAt:   time.Now(),
 	}
 
 	if !R_CODE.MatchString(opts.Code) {

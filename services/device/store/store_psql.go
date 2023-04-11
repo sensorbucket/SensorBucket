@@ -93,7 +93,7 @@ func (s *PSQLStore) ListSensors() ([]service.Sensor, error) {
 	var sensors []service.Sensor
 	if err := s.db.Select(&sensors,
 		`SELECT 
-			id, code, description, external_id, properties, archive_time, brand	
+			id, code, description, external_id, properties, archive_time, brand, created_at	
 		FROM sensors`,
 	); err != nil {
 		return nil, err
@@ -106,14 +106,14 @@ func (s *PSQLStore) createDevice(dev *service.Device) error {
 		`
 			INSERT INTO "devices" (
 				"code", "description", "organisation", "properties", "location",
-				"altitude", "location_description", "state"
+				"altitude", "location_description", "state", "created_at"
 			)
-			VALUES ($1, $2, $3, $4, ST_POINT($5, $6), $7, $8, $9)
+			VALUES ($1, $2, $3, $4, ST_POINT($5, $6), $7, $8, $9, $10)
 			RETURNING id
 		`,
 		dev.Code, dev.Description, dev.Organisation, dev.Properties,
 		dev.Longitude, dev.Latitude, dev.Altitude, dev.LocationDescription,
-		dev.State,
+		dev.State, dev.CreatedAt,
 	); err != nil {
 		return err
 	}
@@ -240,7 +240,7 @@ type SelectQueryMod func(q sq.SelectBuilder) sq.SelectBuilder
 func listSensors(db DB, mods ...SelectQueryMod) ([]SensorModel, error) {
 	q := pq.Select(
 		"s.id", "s.brand", "s.code", "s.description", "s.external_id", "s.properties", "s.archive_time",
-		"s.device_id",
+		"s.device_id", "s.created_at",
 	).From("sensors s")
 
 	// Apply mods
@@ -260,7 +260,7 @@ func listSensors(db DB, mods ...SelectQueryMod) ([]SensorModel, error) {
 		}
 		if err := rows.Scan(
 			&s.ID, &s.Brand, &s.Code, &s.Description, &s.ExternalID, &s.Properties, &s.ArchiveTime,
-			&s.DeviceID,
+			&s.DeviceID, &s.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -274,11 +274,13 @@ func createSensors(tx DB, sensors []SensorModel) error {
 		return nil
 	}
 	q := pq.Insert("sensors").Columns(
-		"code", "brand", "description", "archive_time", "properties", "external_id", "device_id",
+		"code", "brand", "description", "archive_time", "properties", "external_id",
+		"device_id", "created_at",
 	).Suffix("RETURNING id")
 	for _, s := range sensors {
 		q = q.Values(
-			s.Code, s.Brand, s.Description, s.ArchiveTime, s.Properties, s.ExternalID, s.DeviceID,
+			s.Code, s.Brand, s.Description, s.ArchiveTime, s.Properties, s.ExternalID,
+			s.DeviceID, s.CreatedAt,
 		)
 	}
 	query, params, err := q.ToSql()
