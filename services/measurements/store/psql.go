@@ -250,7 +250,8 @@ func (s *MeasurementStorePSQL) CreateDatastream(ds *service.Datastream) error {
 }
 
 type datastreamPageQuery struct {
-	ID uuid.UUID `pagination:"id,ASC"`
+	CreatedAt time.Time `pagination:"created_at,ASC"`
+	ID        uuid.UUID `pagination:"id,ASC"`
 }
 
 func (s *MeasurementStorePSQL) ListDatastreams(filter service.DatastreamFilter, r pagination.Request) (*pagination.Page[service.Datastream], error) {
@@ -280,6 +281,7 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter service.DatastreamFilter, 
 			&d.ObservedProperty,
 			&d.UnitOfMeasurement,
 			&d.CreatedAt,
+			&cursor.Columns.CreatedAt,
 			&cursor.Columns.ID,
 		)
 		if err != nil {
