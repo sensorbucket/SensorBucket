@@ -213,7 +213,7 @@ func (t *HTTPTransport) httpDeleteSensor() http.HandlerFunc {
 func (t *HTTPTransport) httpListSensors() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		p, err := httpfilter.Parse[pagination.Request](r)
-		page, err := t.svc.ListSensors(r.Context(), *p)
+		page, err := t.svc.ListSensors(r.Context(), p)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
