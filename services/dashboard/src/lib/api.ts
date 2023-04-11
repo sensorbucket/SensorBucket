@@ -4,6 +4,16 @@ import type { Datastream, Pipeline, APIResponse, BoundingBox, Device, Measuremen
 
 const api_url = browser ? '/api' : 'http://caddy/api';
 const X = axios.create({ baseURL: api_url, transitional: { silentJSONParsing: false } });
+
+async function* ListDatastreams() {
+    let url = '/datastreams'
+    while (url != "") {
+        const res = await X.get<APIResponse<Datastream[]>>(url, { params: { limit: 25 } })
+        url = res.data?.links?.next ?? ''
+        yield res.data.data
+    }
+}
+
 export const API = {
     X,
     listDevices: () =>
@@ -16,8 +26,9 @@ export const API = {
         X.get<APIResponse<Datastream[]>>(`/datastreams?sensor=${id}`).then((r) => r.data.data),
     listPipelines: () =>
         X.get<APIResponse<Pipeline[]>>('/pipelines').then(res => res.data.data),
-    listDatastreams: () =>
-        X.get<APIResponse<Datastream[]>>('/datastreams').then(res => res.data.data),
+    listDatastreams: (limit = 25, cursor = '') =>
+        X.get<APIResponse<Datastream[]>>('/datastreams', { params: { limit, cursor } }).then(res => res.data),
+    ListDatastreams: ListDatastreams,
     getMeasurements: async (start: Date, end: Date, filters: Record<string, any>) =>
         X.get<APIResponse<Measurement[]>>(`/measurements`, {
             params: {
