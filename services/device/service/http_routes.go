@@ -23,14 +23,16 @@ type middleware = func(next http.Handler) http.Handler
 
 // HTTPTransport ...
 type HTTPTransport struct {
-	svc    Service
-	router chi.Router
+	svc     Service
+	router  chi.Router
+	baseURL string
 }
 
-func NewHTTPTransport(svc Service) *HTTPTransport {
+func NewHTTPTransport(svc Service, baseURL string) *HTTPTransport {
 	transport := &HTTPTransport{
-		svc:    svc,
-		router: chi.NewRouter(),
+		svc:     svc,
+		router:  chi.NewRouter(),
+		baseURL: baseURL,
 	}
 
 	// Register endpoints
@@ -84,12 +86,7 @@ func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
 			return
 		}
 
-		response := pagination.APIResponse[[]Device]{
-			Links: pagination.Links{},
-			Data:  page.Data,
-		}
-
-		web.HTTPResponse(rw, http.StatusOK, response)
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
 	}
 }
 

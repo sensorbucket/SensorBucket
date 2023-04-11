@@ -74,7 +74,7 @@ func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
 			return
 		}
 
-		response := pagination.APIResponse[[]service.Measurement]{
+		response := pagination.APIResponse[service.Measurement]{
 			Links: pagination.Links{
 				Next: t.buildNextURL(r, page.Cursor),
 			},
@@ -101,7 +101,7 @@ func (t *HTTPTransport) httpListDatastream() http.HandlerFunc {
 			web.HTTPError(rw, err)
 			return
 		}
-		response := pagination.APIResponse[[]service.Datastream]{
+		response := pagination.APIResponse[service.Datastream]{
 			Links: pagination.Links{
 				Next: t.buildNextURL(r, page.Cursor),
 			},

@@ -3,6 +3,7 @@ package pagination
 import (
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 
@@ -58,7 +59,7 @@ type APIResponse[T any] struct {
 	Links      Links `json:"links"`
 	PageSize   int   `json:"page_size"`
 	TotalCount int   `json:"total_count"`
-	Data       T     `json:"data"`
+	Data       []T   `json:"data"`
 }
 
 type Page[T any] struct {
@@ -195,4 +196,22 @@ func Apply[T any](q squirrel.SelectBuilder, c Cursor[T]) (squirrel.SelectBuilder
 	}
 
 	return q, nil
+}
+
+func CreateResponse[T any](r *http.Request, baseURL string, page Page[T]) APIResponse[T] {
+	var next string
+	if page.Cursor != "" {
+		q := r.URL.Query()
+		q.Set("cursor", page.Cursor)
+		next = baseURL + r.URL.Path + "?" + q.Encode()
+	}
+
+	response := APIResponse[T]{
+		Links: Links{
+			Next: next,
+		},
+		PageSize: len(page.Data),
+		Data:     page.Data,
+	}
+	return response
 }
