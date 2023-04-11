@@ -1,7 +1,6 @@
 package transport
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -74,13 +73,7 @@ func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
 			return
 		}
 
-		response := pagination.APIResponse[service.Measurement]{
-			Links: pagination.Links{
-				Next: t.buildNextURL(r, page.Cursor),
-			},
-			Data: page.Data,
-		}
-		sendJSON(rw, response)
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.url, *page))
 	}
 }
 
@@ -101,13 +94,7 @@ func (t *HTTPTransport) httpListDatastream() http.HandlerFunc {
 			web.HTTPError(rw, err)
 			return
 		}
-		response := pagination.APIResponse[service.Datastream]{
-			Links: pagination.Links{
-				Next: t.buildNextURL(r, page.Cursor),
-			},
-			Data: page.Data,
-		}
-		sendJSON(rw, response)
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.url, *page))
 	}
 }
 
@@ -144,24 +131,4 @@ func parseTimeRange(r *http.Request) (time.Time, time.Time, error) {
 	}
 
 	return start, end, nil
-}
-
-func (t *HTTPTransport) buildNextURL(r *http.Request, cursor string) string {
-	if cursor == "" {
-		return ""
-	}
-	q := r.URL.Query()
-	q.Set("cursor", cursor)
-	return fmt.Sprintf("%s%s?%s", t.url, r.URL.Path, q.Encode())
-}
-
-func sendJSON(w http.ResponseWriter, v interface{}) {
-	data, err := json.Marshal(v)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(data)
 }
