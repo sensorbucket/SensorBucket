@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -65,64 +64,19 @@ func (t *HTTPTransport) setupRoutes() {
 	// TODO: Should we be able to fetch sensor by global unique ID?
 }
 
-// Routes
-type ListFilters struct {
-	North      []float64
-	West       []float64
-	South      []float64
-	East       []float64
-	Latitude   []float64
-	Longitude  []float64
-	Distance   []float64
-	Properties []byte
-}
-
-func (f *ListFilters) boundingBox() (BoundingBox, bool) {
-	var bb BoundingBox
-	if len(f.North) == 0 || len(f.West) == 0 || len(f.South) == 0 || len(f.East) == 0 {
-		return bb, false
-	}
-	bb.North = f.North[0]
-	bb.West = f.West[0]
-	bb.East = f.East[0]
-	bb.South = f.South[0]
-	return bb, true
-}
-
-func (f *ListFilters) locationRange() (LocationRange, bool) {
-	var lr LocationRange
-	if len(f.Latitude) == 0 || len(f.Longitude) == 0 || len(f.Distance) == 0 {
-		return lr, false
-	}
-	lr.Latitude = f.Latitude[0]
-	lr.Longitude = f.Longitude[0]
-	lr.Distance = f.Distance[0]
-	return lr, true
-}
-
-func (f *ListFilters) filters() DeviceFilter {
-	return DeviceFilter{
-		json.RawMessage(f.Properties),
-	}
+type HTTPDeviceFilters struct {
+	DeviceFilter
 }
 
 func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		filter, err := httpfilter.Parse[ListFilters](r)
+		filter, err := httpfilter.Parse[HTTPDeviceFilters](r)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
-		var devices []Device
 
-		// figure out what kind of query this is
-		if lr, ok := filter.locationRange(); ok {
-			devices, err = t.svc.ListInRange(r.Context(), lr, filter.filters())
-		} else if bb, ok := filter.boundingBox(); ok {
-			devices, err = t.svc.ListInBoundingBox(r.Context(), bb, filter.filters())
-		} else {
-			devices, err = t.svc.ListDevices(r.Context(), filter.filters())
-		}
+		devices, err := t.svc.ListDevices(r.Context(), filter.DeviceFilter)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return

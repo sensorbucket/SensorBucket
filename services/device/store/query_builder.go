@@ -41,7 +41,7 @@ func (b deviceQueryBuilder) WithFilters(f service.DeviceFilter) deviceQueryBuild
 	return b
 }
 
-func (b deviceQueryBuilder) WithinBoundingBox(bb service.BoundingBox) deviceQueryBuilder {
+func (b deviceQueryBuilder) WithinBoundingBox(bb service.BoundingBoxFilter) deviceQueryBuilder {
 	// TODO: check if coordinates are valid?
 	b.query = b.query.Where(
 		`location::geometry @ ST_SetSRID(ST_MakeBox2D(ST_Point(?, ?), ST_Point(?, ?)),4326)`,
@@ -50,7 +50,7 @@ func (b deviceQueryBuilder) WithinBoundingBox(bb service.BoundingBox) deviceQuer
 	return b
 }
 
-func (b deviceQueryBuilder) WithinRange(r service.LocationRange) deviceQueryBuilder {
+func (b deviceQueryBuilder) WithinRange(r service.RangeFilter) deviceQueryBuilder {
 	b.query = b.query.Where(
 		`ST_DWithin(location, ST_MakePoint(?, ?)::geography, ?)`,
 		r.Longitude, r.Latitude, r.Distance,

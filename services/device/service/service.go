@@ -11,8 +11,8 @@ var _ Service = (*ServiceImpl)(nil)
 
 type Store interface {
 	List(DeviceFilter) ([]Device, error)
-	ListInBoundingBox(BoundingBox, DeviceFilter) ([]Device, error)
-	ListInRange(LocationRange, DeviceFilter) ([]Device, error)
+	ListInBoundingBox(DeviceFilter) ([]Device, error)
+	ListInRange(DeviceFilter) ([]Device, error)
 	ListSensors() ([]Sensor, error)
 	Find(id int64) (*Device, error)
 	Save(dev *Device) error
@@ -20,8 +20,6 @@ type Store interface {
 }
 type Service interface {
 	ListDevices(ctx context.Context, filter DeviceFilter) ([]Device, error)
-	ListInRange(ctx context.Context, lr LocationRange, filter DeviceFilter) ([]Device, error)
-	ListInBoundingBox(ctx context.Context, bb BoundingBox, filter DeviceFilter) ([]Device, error)
 	ListSensors(ctx context.Context) ([]Sensor, error)
 	CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error)
 	GetDevice(ctx context.Context, id int64) (*Device, error)
@@ -41,31 +39,37 @@ func New(store Store) *ServiceImpl {
 }
 
 type DeviceFilter struct {
+	BoundingBoxFilter
+	RangeFilter
 	Properties json.RawMessage `json:"properties"`
 }
-type BoundingBox struct {
-	North float64 `json:"north"`
-	West  float64 `json:"west"`
-	South float64 `json:"south"`
-	East  float64 `json:"east"`
+type BoundingBoxFilter struct {
+	North *float64 `json:"north"`
+	West  *float64 `json:"west"`
+	South *float64 `json:"south"`
+	East  *float64 `json:"east"`
 }
-type LocationRange struct {
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
-	Distance  float64 `json:"range"`
+type RangeFilter struct {
+	Latitude  *float64 `json:"latitude"`
+	Longitude *float64 `json:"longitude"`
+	Distance  *float64 `json:"range"`
+}
+
+func (f DeviceFilter) HasBoundingBox() bool {
+	return f.North != nil && f.West != nil && f.East != nil && f.South != nil
+}
+func (f DeviceFilter) HasRange() bool {
+	return f.Latitude != nil && f.Longitude != nil && f.Distance != nil
 }
 
 func (s *ServiceImpl) ListDevices(ctx context.Context, filter DeviceFilter) ([]Device, error) {
-	devices, err := s.store.List(filter)
-	return devices, err
-}
-func (s *ServiceImpl) ListInRange(ctx context.Context, lr LocationRange, filter DeviceFilter) ([]Device, error) {
-	devices, err := s.store.ListInRange(lr, filter)
-	return devices, err
-}
-func (s *ServiceImpl) ListInBoundingBox(ctx context.Context, bb BoundingBox, filter DeviceFilter) ([]Device, error) {
-	devices, err := s.store.ListInBoundingBox(bb, filter)
-	return devices, err
+	if filter.HasBoundingBox() {
+		return s.store.ListInBoundingBox(filter)
+	}
+	if filter.HasRange() {
+		return s.store.ListInRange(filter)
+	}
+	return s.store.List(filter)
 }
 
 func (s *ServiceImpl) CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error) {

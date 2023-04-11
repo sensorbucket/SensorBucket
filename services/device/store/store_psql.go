@@ -50,12 +50,12 @@ func sensorModelsToSensors(models []SensorModel) []service.Sensor {
 	return sensors
 }
 
-func (s *PSQLStore) ListInBoundingBox(bb service.BoundingBox, filter service.DeviceFilter) ([]service.Device, error) {
-	return newDeviceQueryBuilder().WithFilters(filter).WithinBoundingBox(bb).Query(s.db)
+func (s *PSQLStore) ListInBoundingBox(filter service.DeviceFilter) ([]service.Device, error) {
+	return newDeviceQueryBuilder().WithFilters(filter).WithinBoundingBox(filter.BoundingBoxFilter).Query(s.db)
 }
 
-func (s *PSQLStore) ListInRange(r service.LocationRange, filter service.DeviceFilter) ([]service.Device, error) {
-	return newDeviceQueryBuilder().WithFilters(filter).WithinRange(r).Query(s.db)
+func (s *PSQLStore) ListInRange(filter service.DeviceFilter) ([]service.Device, error) {
+	return newDeviceQueryBuilder().WithFilters(filter).WithinRange(filter.RangeFilter).Query(s.db)
 }
 
 func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) {
