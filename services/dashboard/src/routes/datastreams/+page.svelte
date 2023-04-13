@@ -1,36 +1,31 @@
 <script lang="ts">
-	import { API } from '$lib/api';
+	import { ListDatastreams } from '$lib/api';
 	import Card from '$lib/Card.svelte';
 	import Table from '$lib/Table.svelte';
 	import { Paginator } from '$lib/paginator.ts';
 
-	let paginator = new Paginator(API.ListDatastreams());
+	let paginator = new Paginator(ListDatastreams());
 </script>
 
 <div class="grid">
 	<Card title="Datastreams" area="1/1/2/2">
-		<div class="flex justify-end items-center">
+		<div class="flex justify-end items-center my-1">
 			<button
-				class="border border-primary rounded px-2 py-1 mx-4"
+				class="text-white px-2 border-primary-600 border border-r-0 bg-primary-500 rounded-l"
 				on:click|preventDefault={() => {
 					paginator.page--;
-				}}>Prev</button
-			>
-			<span class="mx-4">{$paginator.page + 1}</span>
+				}}
+				>Previous page
+			</button>
+			<span class="px-4 border-primary-600 border-y bg-primary-500">{$paginator.page + 1}</span>
 			<button
-				class="border border-primary rounded px-2 py-1 mx-4"
-				on:click|preventDefault={() => paginator.page++}>Next</button
+				class="px-2 text-white border-primary-600 border border-l-0 bg-primary-500 rounded-r"
+				on:click|preventDefault={() => paginator.page++}>Next page</button
 			>
 		</div>
 		<Table
 			data={$paginator.data}
-			fields={[
-				['ID', 'id'],
-				'description',
-				'sensor_id',
-				'observed_property',
-				'unit_of_measurement'
-			]}
+			fields={['id', 'description', 'sensor_id', 'observed_property', 'unit_of_measurement']}
 		/>
 	</Card>
 </div>
