@@ -11,45 +11,6 @@ import (
 	"github.com/fxamacker/cbor/v2"
 )
 
-type Order string
-
-const (
-	ASC  Order = "ASC"
-	DESC Order = "DESC"
-)
-
-type Field struct {
-	Column string
-	Order  Order
-}
-
-// Fields determines what fields the query cursor is based on.
-// an example: { "created_at": pagination.ASC, "id": pagination.ASC }
-// TODO: The order of keys is important, this should probably be an array of some sorts
-type Fields []Field
-
-func (f Fields) toOrder() string {
-	orders := make([]string, len(f))
-	for ix, v := range f {
-		orders[ix] = v.Column + " " + string(v.Order)
-	}
-	return strings.Join(orders, ", ")
-}
-
-type Defaults struct {
-	defaultLimit uint64
-	maxLimit     uint64
-	fields       Fields
-}
-
-func NewDefaults(defaultLimit, maxLimit uint64, fields Fields) *Defaults {
-	return &Defaults{
-		defaultLimit: defaultLimit,
-		maxLimit:     maxLimit,
-		fields:       fields,
-	}
-}
-
 type Links struct {
 	Previous string `json:"previous"`
 	Next     string `json:"next"`
