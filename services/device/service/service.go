@@ -5,24 +5,24 @@ package service
 import (
 	"context"
 	"encoding/json"
+
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 )
 
 var _ Service = (*ServiceImpl)(nil)
 
 type Store interface {
-	List(DeviceFilter) ([]Device, error)
-	ListInBoundingBox(BoundingBox, DeviceFilter) ([]Device, error)
-	ListInRange(LocationRange, DeviceFilter) ([]Device, error)
-	ListSensors() ([]Sensor, error)
+	List(DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
+	ListInBoundingBox(DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
+	ListInRange(DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
+	ListSensors(pagination.Request) (*pagination.Page[Sensor], error)
 	Find(id int64) (*Device, error)
 	Save(dev *Device) error
 	Delete(dev *Device) error
 }
 type Service interface {
-	ListDevices(ctx context.Context, filter DeviceFilter) ([]Device, error)
-	ListInRange(ctx context.Context, lr LocationRange, filter DeviceFilter) ([]Device, error)
-	ListInBoundingBox(ctx context.Context, bb BoundingBox, filter DeviceFilter) ([]Device, error)
-	ListSensors(ctx context.Context) ([]Sensor, error)
+	ListDevices(ctx context.Context, filter DeviceFilter, r pagination.Request) (*pagination.Page[Device], error)
+	ListSensors(ctx context.Context, r pagination.Request) (*pagination.Page[Sensor], error)
 	CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error)
 	GetDevice(ctx context.Context, id int64) (*Device, error)
 	AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error
@@ -41,31 +41,37 @@ func New(store Store) *ServiceImpl {
 }
 
 type DeviceFilter struct {
+	BoundingBoxFilter
+	RangeFilter
 	Properties json.RawMessage `json:"properties"`
 }
-type BoundingBox struct {
-	North float64 `json:"north"`
-	West  float64 `json:"west"`
-	South float64 `json:"south"`
-	East  float64 `json:"east"`
+type BoundingBoxFilter struct {
+	North *float64 `json:"north"`
+	West  *float64 `json:"west"`
+	South *float64 `json:"south"`
+	East  *float64 `json:"east"`
 }
-type LocationRange struct {
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
-	Distance  float64 `json:"range"`
+type RangeFilter struct {
+	Latitude  *float64 `json:"latitude"`
+	Longitude *float64 `json:"longitude"`
+	Distance  *float64 `json:"range"`
 }
 
-func (s *ServiceImpl) ListDevices(ctx context.Context, filter DeviceFilter) ([]Device, error) {
-	devices, err := s.store.List(filter)
-	return devices, err
+func (f DeviceFilter) HasBoundingBox() bool {
+	return f.North != nil && f.West != nil && f.East != nil && f.South != nil
 }
-func (s *ServiceImpl) ListInRange(ctx context.Context, lr LocationRange, filter DeviceFilter) ([]Device, error) {
-	devices, err := s.store.ListInRange(lr, filter)
-	return devices, err
+func (f DeviceFilter) HasRange() bool {
+	return f.Latitude != nil && f.Longitude != nil && f.Distance != nil
 }
-func (s *ServiceImpl) ListInBoundingBox(ctx context.Context, bb BoundingBox, filter DeviceFilter) ([]Device, error) {
-	devices, err := s.store.ListInBoundingBox(bb, filter)
-	return devices, err
+
+func (s *ServiceImpl) ListDevices(ctx context.Context, filter DeviceFilter, p pagination.Request) (*pagination.Page[Device], error) {
+	if filter.HasBoundingBox() {
+		return s.store.ListInBoundingBox(filter, p)
+	}
+	if filter.HasRange() {
+		return s.store.ListInRange(filter, p)
+	}
+	return s.store.List(filter, p)
 }
 
 func (s *ServiceImpl) CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error) {
@@ -172,6 +178,6 @@ func (s *ServiceImpl) DeleteDevice(ctx context.Context, dev *Device) error {
 	return nil
 }
 
-func (s *ServiceImpl) ListSensors(ctx context.Context) ([]Sensor, error) {
-	return s.store.ListSensors()
+func (s *ServiceImpl) ListSensors(ctx context.Context, p pagination.Request) (*pagination.Page[Sensor], error) {
+	return s.store.ListSensors(p)
 }

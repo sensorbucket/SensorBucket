@@ -28,11 +28,14 @@ var _ service.Store = &StoreMock{}
 //			ListFunc: func(deviceFilter service.DeviceFilter) ([]service.Device, error) {
 //				panic("mock out the List method")
 //			},
-//			ListInBoundingBoxFunc: func(boundingBox service.BoundingBox, deviceFilter service.DeviceFilter) ([]service.Device, error) {
+//			ListInBoundingBoxFunc: func(deviceFilter service.DeviceFilter) ([]service.Device, error) {
 //				panic("mock out the ListInBoundingBox method")
 //			},
-//			ListInRangeFunc: func(locationRange service.LocationRange, deviceFilter service.DeviceFilter) ([]service.Device, error) {
+//			ListInRangeFunc: func(deviceFilter service.DeviceFilter) ([]service.Device, error) {
 //				panic("mock out the ListInRange method")
+//			},
+//			ListSensorsFunc: func() ([]service.Sensor, error) {
+//				panic("mock out the ListSensors method")
 //			},
 //			SaveFunc: func(dev *service.Device) error {
 //				panic("mock out the Save method")
@@ -54,10 +57,13 @@ type StoreMock struct {
 	ListFunc func(deviceFilter service.DeviceFilter) ([]service.Device, error)
 
 	// ListInBoundingBoxFunc mocks the ListInBoundingBox method.
-	ListInBoundingBoxFunc func(boundingBox service.BoundingBox, deviceFilter service.DeviceFilter) ([]service.Device, error)
+	ListInBoundingBoxFunc func(deviceFilter service.DeviceFilter) ([]service.Device, error)
 
 	// ListInRangeFunc mocks the ListInRange method.
-	ListInRangeFunc func(locationRange service.LocationRange, deviceFilter service.DeviceFilter) ([]service.Device, error)
+	ListInRangeFunc func(deviceFilter service.DeviceFilter) ([]service.Device, error)
+
+	// ListSensorsFunc mocks the ListSensors method.
+	ListSensorsFunc func() ([]service.Sensor, error)
 
 	// SaveFunc mocks the Save method.
 	SaveFunc func(dev *service.Device) error
@@ -81,17 +87,16 @@ type StoreMock struct {
 		}
 		// ListInBoundingBox holds details about calls to the ListInBoundingBox method.
 		ListInBoundingBox []struct {
-			// BoundingBox is the boundingBox argument value.
-			BoundingBox service.BoundingBox
 			// DeviceFilter is the deviceFilter argument value.
 			DeviceFilter service.DeviceFilter
 		}
 		// ListInRange holds details about calls to the ListInRange method.
 		ListInRange []struct {
-			// LocationRange is the locationRange argument value.
-			LocationRange service.LocationRange
 			// DeviceFilter is the deviceFilter argument value.
 			DeviceFilter service.DeviceFilter
+		}
+		// ListSensors holds details about calls to the ListSensors method.
+		ListSensors []struct {
 		}
 		// Save holds details about calls to the Save method.
 		Save []struct {
@@ -104,6 +109,7 @@ type StoreMock struct {
 	lockList              sync.RWMutex
 	lockListInBoundingBox sync.RWMutex
 	lockListInRange       sync.RWMutex
+	lockListSensors       sync.RWMutex
 	lockSave              sync.RWMutex
 }
 
@@ -204,21 +210,19 @@ func (mock *StoreMock) ListCalls() []struct {
 }
 
 // ListInBoundingBox calls ListInBoundingBoxFunc.
-func (mock *StoreMock) ListInBoundingBox(boundingBox service.BoundingBox, deviceFilter service.DeviceFilter) ([]service.Device, error) {
+func (mock *StoreMock) ListInBoundingBox(deviceFilter service.DeviceFilter) ([]service.Device, error) {
 	if mock.ListInBoundingBoxFunc == nil {
 		panic("StoreMock.ListInBoundingBoxFunc: method is nil but Store.ListInBoundingBox was just called")
 	}
 	callInfo := struct {
-		BoundingBox  service.BoundingBox
 		DeviceFilter service.DeviceFilter
 	}{
-		BoundingBox:  boundingBox,
 		DeviceFilter: deviceFilter,
 	}
 	mock.lockListInBoundingBox.Lock()
 	mock.calls.ListInBoundingBox = append(mock.calls.ListInBoundingBox, callInfo)
 	mock.lockListInBoundingBox.Unlock()
-	return mock.ListInBoundingBoxFunc(boundingBox, deviceFilter)
+	return mock.ListInBoundingBoxFunc(deviceFilter)
 }
 
 // ListInBoundingBoxCalls gets all the calls that were made to ListInBoundingBox.
@@ -226,11 +230,9 @@ func (mock *StoreMock) ListInBoundingBox(boundingBox service.BoundingBox, device
 //
 //	len(mockedStore.ListInBoundingBoxCalls())
 func (mock *StoreMock) ListInBoundingBoxCalls() []struct {
-	BoundingBox  service.BoundingBox
 	DeviceFilter service.DeviceFilter
 } {
 	var calls []struct {
-		BoundingBox  service.BoundingBox
 		DeviceFilter service.DeviceFilter
 	}
 	mock.lockListInBoundingBox.RLock()
@@ -240,21 +242,19 @@ func (mock *StoreMock) ListInBoundingBoxCalls() []struct {
 }
 
 // ListInRange calls ListInRangeFunc.
-func (mock *StoreMock) ListInRange(locationRange service.LocationRange, deviceFilter service.DeviceFilter) ([]service.Device, error) {
+func (mock *StoreMock) ListInRange(deviceFilter service.DeviceFilter) ([]service.Device, error) {
 	if mock.ListInRangeFunc == nil {
 		panic("StoreMock.ListInRangeFunc: method is nil but Store.ListInRange was just called")
 	}
 	callInfo := struct {
-		LocationRange service.LocationRange
-		DeviceFilter  service.DeviceFilter
+		DeviceFilter service.DeviceFilter
 	}{
-		LocationRange: locationRange,
-		DeviceFilter:  deviceFilter,
+		DeviceFilter: deviceFilter,
 	}
 	mock.lockListInRange.Lock()
 	mock.calls.ListInRange = append(mock.calls.ListInRange, callInfo)
 	mock.lockListInRange.Unlock()
-	return mock.ListInRangeFunc(locationRange, deviceFilter)
+	return mock.ListInRangeFunc(deviceFilter)
 }
 
 // ListInRangeCalls gets all the calls that were made to ListInRange.
@@ -262,16 +262,41 @@ func (mock *StoreMock) ListInRange(locationRange service.LocationRange, deviceFi
 //
 //	len(mockedStore.ListInRangeCalls())
 func (mock *StoreMock) ListInRangeCalls() []struct {
-	LocationRange service.LocationRange
-	DeviceFilter  service.DeviceFilter
+	DeviceFilter service.DeviceFilter
 } {
 	var calls []struct {
-		LocationRange service.LocationRange
-		DeviceFilter  service.DeviceFilter
+		DeviceFilter service.DeviceFilter
 	}
 	mock.lockListInRange.RLock()
 	calls = mock.calls.ListInRange
 	mock.lockListInRange.RUnlock()
+	return calls
+}
+
+// ListSensors calls ListSensorsFunc.
+func (mock *StoreMock) ListSensors() ([]service.Sensor, error) {
+	if mock.ListSensorsFunc == nil {
+		panic("StoreMock.ListSensorsFunc: method is nil but Store.ListSensors was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockListSensors.Lock()
+	mock.calls.ListSensors = append(mock.calls.ListSensors, callInfo)
+	mock.lockListSensors.Unlock()
+	return mock.ListSensorsFunc()
+}
+
+// ListSensorsCalls gets all the calls that were made to ListSensors.
+// Check the length with:
+//
+//	len(mockedStore.ListSensorsCalls())
+func (mock *StoreMock) ListSensorsCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockListSensors.RLock()
+	calls = mock.calls.ListSensors
+	mock.lockListSensors.RUnlock()
 	return calls
 }
 
@@ -335,11 +360,8 @@ var _ service.Service = &ServiceMock{}
 //			ListDevicesFunc: func(ctx context.Context, filter service.DeviceFilter) ([]service.Device, error) {
 //				panic("mock out the ListDevices method")
 //			},
-//			ListInBoundingBoxFunc: func(ctx context.Context, bb service.BoundingBox, filter service.DeviceFilter) ([]service.Device, error) {
-//				panic("mock out the ListInBoundingBox method")
-//			},
-//			ListInRangeFunc: func(ctx context.Context, lr service.LocationRange, filter service.DeviceFilter) ([]service.Device, error) {
-//				panic("mock out the ListInRange method")
+//			ListSensorsFunc: func(ctx context.Context) ([]service.Sensor, error) {
+//				panic("mock out the ListSensors method")
 //			},
 //			UpdateDeviceFunc: func(ctx context.Context, dev *service.Device, opt service.UpdateDeviceOpts) error {
 //				panic("mock out the UpdateDevice method")
@@ -369,11 +391,8 @@ type ServiceMock struct {
 	// ListDevicesFunc mocks the ListDevices method.
 	ListDevicesFunc func(ctx context.Context, filter service.DeviceFilter) ([]service.Device, error)
 
-	// ListInBoundingBoxFunc mocks the ListInBoundingBox method.
-	ListInBoundingBoxFunc func(ctx context.Context, bb service.BoundingBox, filter service.DeviceFilter) ([]service.Device, error)
-
-	// ListInRangeFunc mocks the ListInRange method.
-	ListInRangeFunc func(ctx context.Context, lr service.LocationRange, filter service.DeviceFilter) ([]service.Device, error)
+	// ListSensorsFunc mocks the ListSensors method.
+	ListSensorsFunc func(ctx context.Context) ([]service.Sensor, error)
 
 	// UpdateDeviceFunc mocks the UpdateDevice method.
 	UpdateDeviceFunc func(ctx context.Context, dev *service.Device, opt service.UpdateDeviceOpts) error
@@ -426,23 +445,10 @@ type ServiceMock struct {
 			// Filter is the filter argument value.
 			Filter service.DeviceFilter
 		}
-		// ListInBoundingBox holds details about calls to the ListInBoundingBox method.
-		ListInBoundingBox []struct {
+		// ListSensors holds details about calls to the ListSensors method.
+		ListSensors []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Bb is the bb argument value.
-			Bb service.BoundingBox
-			// Filter is the filter argument value.
-			Filter service.DeviceFilter
-		}
-		// ListInRange holds details about calls to the ListInRange method.
-		ListInRange []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Lr is the lr argument value.
-			Lr service.LocationRange
-			// Filter is the filter argument value.
-			Filter service.DeviceFilter
 		}
 		// UpdateDevice holds details about calls to the UpdateDevice method.
 		UpdateDevice []struct {
@@ -454,15 +460,14 @@ type ServiceMock struct {
 			Opt service.UpdateDeviceOpts
 		}
 	}
-	lockAddSensor         sync.RWMutex
-	lockCreateDevice      sync.RWMutex
-	lockDeleteDevice      sync.RWMutex
-	lockDeleteSensor      sync.RWMutex
-	lockGetDevice         sync.RWMutex
-	lockListDevices       sync.RWMutex
-	lockListInBoundingBox sync.RWMutex
-	lockListInRange       sync.RWMutex
-	lockUpdateDevice      sync.RWMutex
+	lockAddSensor    sync.RWMutex
+	lockCreateDevice sync.RWMutex
+	lockDeleteDevice sync.RWMutex
+	lockDeleteSensor sync.RWMutex
+	lockGetDevice    sync.RWMutex
+	lockListDevices  sync.RWMutex
+	lockListSensors  sync.RWMutex
+	lockUpdateDevice sync.RWMutex
 }
 
 // AddSensor calls AddSensorFunc.
@@ -689,83 +694,35 @@ func (mock *ServiceMock) ListDevicesCalls() []struct {
 	return calls
 }
 
-// ListInBoundingBox calls ListInBoundingBoxFunc.
-func (mock *ServiceMock) ListInBoundingBox(ctx context.Context, bb service.BoundingBox, filter service.DeviceFilter) ([]service.Device, error) {
-	if mock.ListInBoundingBoxFunc == nil {
-		panic("ServiceMock.ListInBoundingBoxFunc: method is nil but Service.ListInBoundingBox was just called")
+// ListSensors calls ListSensorsFunc.
+func (mock *ServiceMock) ListSensors(ctx context.Context) ([]service.Sensor, error) {
+	if mock.ListSensorsFunc == nil {
+		panic("ServiceMock.ListSensorsFunc: method is nil but Service.ListSensors was just called")
 	}
 	callInfo := struct {
-		Ctx    context.Context
-		Bb     service.BoundingBox
-		Filter service.DeviceFilter
+		Ctx context.Context
 	}{
-		Ctx:    ctx,
-		Bb:     bb,
-		Filter: filter,
+		Ctx: ctx,
 	}
-	mock.lockListInBoundingBox.Lock()
-	mock.calls.ListInBoundingBox = append(mock.calls.ListInBoundingBox, callInfo)
-	mock.lockListInBoundingBox.Unlock()
-	return mock.ListInBoundingBoxFunc(ctx, bb, filter)
+	mock.lockListSensors.Lock()
+	mock.calls.ListSensors = append(mock.calls.ListSensors, callInfo)
+	mock.lockListSensors.Unlock()
+	return mock.ListSensorsFunc(ctx)
 }
 
-// ListInBoundingBoxCalls gets all the calls that were made to ListInBoundingBox.
+// ListSensorsCalls gets all the calls that were made to ListSensors.
 // Check the length with:
 //
-//	len(mockedService.ListInBoundingBoxCalls())
-func (mock *ServiceMock) ListInBoundingBoxCalls() []struct {
-	Ctx    context.Context
-	Bb     service.BoundingBox
-	Filter service.DeviceFilter
+//	len(mockedService.ListSensorsCalls())
+func (mock *ServiceMock) ListSensorsCalls() []struct {
+	Ctx context.Context
 } {
 	var calls []struct {
-		Ctx    context.Context
-		Bb     service.BoundingBox
-		Filter service.DeviceFilter
+		Ctx context.Context
 	}
-	mock.lockListInBoundingBox.RLock()
-	calls = mock.calls.ListInBoundingBox
-	mock.lockListInBoundingBox.RUnlock()
-	return calls
-}
-
-// ListInRange calls ListInRangeFunc.
-func (mock *ServiceMock) ListInRange(ctx context.Context, lr service.LocationRange, filter service.DeviceFilter) ([]service.Device, error) {
-	if mock.ListInRangeFunc == nil {
-		panic("ServiceMock.ListInRangeFunc: method is nil but Service.ListInRange was just called")
-	}
-	callInfo := struct {
-		Ctx    context.Context
-		Lr     service.LocationRange
-		Filter service.DeviceFilter
-	}{
-		Ctx:    ctx,
-		Lr:     lr,
-		Filter: filter,
-	}
-	mock.lockListInRange.Lock()
-	mock.calls.ListInRange = append(mock.calls.ListInRange, callInfo)
-	mock.lockListInRange.Unlock()
-	return mock.ListInRangeFunc(ctx, lr, filter)
-}
-
-// ListInRangeCalls gets all the calls that were made to ListInRange.
-// Check the length with:
-//
-//	len(mockedService.ListInRangeCalls())
-func (mock *ServiceMock) ListInRangeCalls() []struct {
-	Ctx    context.Context
-	Lr     service.LocationRange
-	Filter service.DeviceFilter
-} {
-	var calls []struct {
-		Ctx    context.Context
-		Lr     service.LocationRange
-		Filter service.DeviceFilter
-	}
-	mock.lockListInRange.RLock()
-	calls = mock.calls.ListInRange
-	mock.lockListInRange.RUnlock()
+	mock.lockListSensors.RLock()
+	calls = mock.calls.ListSensors
+	mock.lockListSensors.RUnlock()
 	return calls
 }
 

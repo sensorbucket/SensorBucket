@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
@@ -23,14 +23,16 @@ type middleware = func(next http.Handler) http.Handler
 
 // HTTPTransport ...
 type HTTPTransport struct {
-	svc    Service
-	router chi.Router
+	svc     Service
+	router  chi.Router
+	baseURL string
 }
 
-func NewHTTPTransport(svc Service) *HTTPTransport {
+func NewHTTPTransport(svc Service, baseURL string) *HTTPTransport {
 	transport := &HTTPTransport{
-		svc:    svc,
-		router: chi.NewRouter(),
+		svc:     svc,
+		router:  chi.NewRouter(),
+		baseURL: baseURL,
 	}
 
 	// Register endpoints
@@ -65,74 +67,26 @@ func (t *HTTPTransport) setupRoutes() {
 	// TODO: Should we be able to fetch sensor by global unique ID?
 }
 
-// Routes
-type ListFilters struct {
-	North      []float64
-	West       []float64
-	South      []float64
-	East       []float64
-	Latitude   []float64
-	Longitude  []float64
-	Distance   []float64
-	Properties httpfilter.Bytes
-}
-
-func (f *ListFilters) boundingBox() (BoundingBox, bool) {
-	var bb BoundingBox
-	if len(f.North) == 0 || len(f.West) == 0 || len(f.South) == 0 || len(f.East) == 0 {
-		return bb, false
-	}
-	bb.North = f.North[0]
-	bb.West = f.West[0]
-	bb.East = f.East[0]
-	bb.South = f.South[0]
-	return bb, true
-}
-
-func (f *ListFilters) locationRange() (LocationRange, bool) {
-	var lr LocationRange
-	if len(f.Latitude) == 0 || len(f.Longitude) == 0 || len(f.Distance) == 0 {
-		return lr, false
-	}
-	lr.Latitude = f.Latitude[0]
-	lr.Longitude = f.Longitude[0]
-	lr.Distance = f.Distance[0]
-	return lr, true
-}
-
-func (f *ListFilters) filters() DeviceFilter {
-	return DeviceFilter{
-		json.RawMessage(f.Properties),
-	}
+type HTTPDeviceFilters struct {
+	DeviceFilter
+	pagination.Request
 }
 
 func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
-	parseFilter := httpfilter.MustCreate[ListFilters]()
 	return func(rw http.ResponseWriter, r *http.Request) {
-		var filter ListFilters
-		if err := parseFilter(r.URL.Query(), &filter); err != nil {
-			web.HTTPError(rw, err)
-			return
-		}
-		var devices []Device
-
-		// figure out what kind of query this is
-		var err error
-		if lr, ok := filter.locationRange(); ok {
-			devices, err = t.svc.ListInRange(r.Context(), lr, filter.filters())
-		} else if bb, ok := filter.boundingBox(); ok {
-			devices, err = t.svc.ListInBoundingBox(r.Context(), bb, filter.filters())
-		} else {
-			devices, err = t.svc.ListDevices(r.Context(), filter.filters())
-		}
+		filter, err := httpfilter.Parse[HTTPDeviceFilters](r)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
-		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
-			Message: "listed devices",
-			Data:    devices,
-		})
+
+		page, err := t.svc.ListDevices(r.Context(), filter.DeviceFilter, filter.Request)
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
 	}
 }
 
@@ -258,15 +212,13 @@ func (t *HTTPTransport) httpDeleteSensor() http.HandlerFunc {
 
 func (t *HTTPTransport) httpListSensors() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		sensors, err := t.svc.ListSensors(r.Context())
+		p, err := httpfilter.Parse[pagination.Request](r)
+		page, err := t.svc.ListSensors(r.Context(), p)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
-		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
-			Message: "listed sensors",
-			Data:    sensors,
-		})
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
 	}
 }
 

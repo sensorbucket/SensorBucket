@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { API } from './api';
-	import { resize } from './useResize.ts';
+	import { ToStream, QueryMeasurements } from './api';
 	import uPlot from 'uplot';
 	import 'uplot/dist/uPlot.min.css';
 	import { parseISO } from 'date-fns';
@@ -58,8 +57,7 @@
 		if (stream) {
 			stream.cancel();
 		}
-		console.log('New measurement stream:', start, end, datastream.id);
-		stream = API.streamMeasurements(start, end, { datastream: datastream.id });
+		stream = ToStream(QueryMeasurements(start, end, { datastream: datastream.id }));
 		stream.pipeThrough(transform()).pipeTo(writer());
 	}
 

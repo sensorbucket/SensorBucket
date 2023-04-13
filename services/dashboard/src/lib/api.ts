@@ -4,68 +4,76 @@ import type { Datastream, Pipeline, APIResponse, BoundingBox, Device, Measuremen
 
 const api_url = browser ? '/api' : 'http://caddy/api';
 const X = axios.create({ baseURL: api_url, transitional: { silentJSONParsing: false } });
-export const API = {
-    X,
-    listDevices: () =>
-        X.get<APIResponse<Device[]>>('/devices').then((response) => response.data.data),
-    listDevicesInBoundingBox: (bb: BoundingBox) =>
-        X.get<APIResponse<Device[]>>('/devices', { params: bb }).then((response) => response.data.data),
-    listSensors: () =>
-        X.get<APIResponse<Sensor[]>>('/sensors').then(res => res.data.data),
-    listDatastreamsForSensor: async (id: number) =>
-        X.get<APIResponse<Datastream[]>>(`/datastreams?sensor=${id}`).then((r) => r.data.data),
-    listPipelines: () =>
-        X.get<APIResponse<Pipeline[]>>('/pipelines').then(res => res.data.data),
-    listDatastreams: () =>
-        X.get<APIResponse<Datastream[]>>('/datastreams').then(res => res.data.data),
-    getMeasurements: async (start: Date, end: Date, filters: Record<string, any>) =>
-        X.get<APIResponse<Measurement[]>>(`/measurements`, {
-            params: {
-                ...filters,
-                start: start.toISOString(),
-                end: end.toISOString()
-            }
-        }).then((r) => r.data.data),
-    streamMeasurements: (start: Date, end: Date, filters: Record<string, any>) => {
-        let cancelStream = false;
-        const rs = new ReadableStream({
-            start(ctrl) {
-                // Request measurements from the API endpoint
-                // Enqueue measurements
-                // Extract next page link,
-                // Request measurements with next page link
-                // Repeat
-                function nextChunk(url: string, query?: Record<string, any>) {
-                    // Initial request
-                    X.get<APIResponse<Measurement[]>>(url, {
-                        params: query
-                    }).then((res) => {
-                        ctrl.enqueue(res.data.data);
-                        // Request next page
-                        let nextPage = res.data.next;
 
-                        // User canceled stream or all measurements are fetched
-                        if (cancelStream || !nextPage) {
-                            ctrl.close();
-                            return;
-                        }
+interface CommonParameters {
 
-                        // Fetch next page
-                        nextChunk(nextPage);
-                    });
-                }
-
-                // Initial request
-                nextChunk('/measurements', {
-                    ...filters,
-                    start: start.toISOString(),
-                    end: end.toISOString()
-                });
-            },
-            cancel() {
-                cancelStream = true;
-            }
-        });
-        return rs;
-    }
 };
+
+export async function* ListDatastreams(params: CommonParameters = {}) {
+    let url = '/datastreams'
+    while (url != "") {
+        const res = await X.get<APIResponse<Datastream[]>>(url, { params: { limit: 25, ...params } })
+        url = res.data?.links?.next ?? ''
+        yield res.data.data
+    }
+}
+
+export async function* ListSensors(params: CommonParameters = {}) {
+    let url = '/sensors'
+    while (url != "") {
+        const res = await X.get<APIResponse<Sensor[]>>(url, { params: { limit: 25, ...params } })
+        url = res.data?.links?.next ?? ''
+        yield res.data.data
+    }
+}
+
+export async function* ListDevices(params: CommonParameters = {}) {
+    let url = '/devices'
+    while (url != "") {
+        const res = await X.get<APIResponse<Device[]>>(url, { params: { limit: 25, ...params } })
+        url = res.data?.links?.next ?? ''
+        yield res.data.data
+    }
+}
+
+export async function* ListPipelines(params: CommonParameters = {}) {
+    let url = '/pipelines'
+    while (url != "") {
+        const res = await X.get<APIResponse<Pipeline[]>>(url, { params: { limit: 25, ...params } })
+        url = res.data?.links?.next ?? ''
+        yield res.data.data
+    }
+}
+
+export async function* QueryMeasurements(start: Date, end: Date, params: CommonParameters = {}) {
+    let url = '/measurements'
+    while (url != "") {
+        const res = await X.get<APIResponse<Pipeline[]>>(url, {
+            params: {
+                // Defaults
+                limit: 100,
+                // Custom parameters
+                ...params,
+                // Required
+                start: start.toISOString(),
+                end: end.toISOString(),
+            }
+        })
+        url = res.data?.links?.next ?? ''
+        yield res.data.data
+    }
+}
+
+export function ToStream<T>(iterator: AsyncGenerator<T>): ReadableStream<T> {
+    return new ReadableStream({
+        async pull(controller) {
+            const { value, done } = await iterator.next();
+
+            if (done) {
+                controller.close();
+            } else {
+                controller.enqueue(value);
+            }
+        }
+    });
+}

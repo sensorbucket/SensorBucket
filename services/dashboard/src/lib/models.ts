@@ -1,6 +1,10 @@
 export interface APIResponse<T> {
     message: string;
     data: T;
+    links?: {
+        next?: string
+        previous?: string
+    };
     count?: number;
     next?: string;
 }

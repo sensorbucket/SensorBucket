@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/pipeline/service"
 )
 
@@ -68,10 +70,16 @@ func (s *PSQLStore) UpdatePipeline(p *service.Pipeline) error {
 	return tx.Commit()
 }
 
-func (s *PSQLStore) ListPipelines(filter service.PipelinesFilter) ([]service.Pipeline, error) {
-	//
+type pipelinePaginationQuery struct {
+	CreatedAt time.Time `pagination:"created_at,ASC"`
+	ID        string    `pagination:"id,ASC"`
+}
+
+func (s *PSQLStore) ListPipelines(filter service.PipelinesFilter, p pagination.Request) (pagination.Page[service.Pipeline], error) {
+	var page pagination.Page[service.Pipeline]
+	var err error
 	// Fetch pipelines
-	q := pq.Select("id", "description", "status", "last_status_change").From("pipelines")
+	q := pq.Select("id", "description", "status", "last_status_change", "created_at").From("pipelines")
 	if len(filter.Status) > 0 {
 		q = q.Where(sq.Eq{"status": filter.Status})
 	} else {
@@ -82,14 +90,21 @@ func (s *PSQLStore) ListPipelines(filter service.PipelinesFilter) ([]service.Pip
 		q = q.Where(pipelineIDsThatHaveSteps)
 	}
 
+	// Pagination
+	cursor := pagination.GetCursor[pipelinePaginationQuery](p)
+	q, err = pagination.Apply(q, cursor)
+	if err != nil {
+		return page, err
+	}
+
 	query, params, err := q.ToSql()
 	if err != nil {
-		return nil, err
+		return page, err
 	}
 	// Perform query
 	row, err := s.db.Queryx(query, params...)
 	if err != nil {
-		return nil, err
+		return page, err
 	}
 	// Map rows to model
 	pIDs := make([]string, 0)
@@ -98,14 +113,17 @@ func (s *PSQLStore) ListPipelines(filter service.PipelinesFilter) ([]service.Pip
 		p := service.Pipeline{
 			Steps: []string{},
 		}
-		if err := row.Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange); err != nil {
-			return nil, err
+		if err := row.Scan(
+			&p.ID, &p.Description, &p.Status, &p.LastStatusChange, &p.CreatedAt,
+			&cursor.Columns.CreatedAt, &cursor.Columns.ID,
+		); err != nil {
+			return page, err
 		}
 		pIDs = append(pIDs, p.ID)
 		pipelines = append(pipelines, p)
 	}
 	if len(pipelines) == 0 {
-		return pipelines, nil
+		return page, nil
 	}
 
 	//
@@ -118,12 +136,12 @@ func (s *PSQLStore) ListPipelines(filter service.PipelinesFilter) ([]service.Pip
 		OrderBy("pipeline_step ASC").
 		ToSql()
 	if err != nil {
-		return nil, err
+		return page, err
 	}
 	// Perform query
 	row, err = s.db.Queryx(query, params...)
 	if err != nil {
-		return nil, err
+		return page, err
 	}
 	// Map steps to pipeline
 	stepMap := make(map[string][]string)
@@ -131,7 +149,7 @@ func (s *PSQLStore) ListPipelines(filter service.PipelinesFilter) ([]service.Pip
 		var pID string
 		var pStep string
 		if err := row.Scan(&pID, &pStep); err != nil {
-			return nil, err
+			return page, err
 		}
 
 		m, ok := stepMap[pID]
@@ -151,7 +169,9 @@ func (s *PSQLStore) ListPipelines(filter service.PipelinesFilter) ([]service.Pip
 		p.Steps = steps
 	}
 
-	return pipelines, nil
+	// Create pagination page
+	page = pagination.CreatePageT(pipelines, cursor)
+	return page, nil
 }
 
 func (s *PSQLStore) GetPipeline(id string) (*service.Pipeline, error) {
@@ -161,7 +181,7 @@ func (s *PSQLStore) GetPipeline(id string) (*service.Pipeline, error) {
 // Private methods which have DB interface injected. Allows for transactional queries
 func getPipeline(db DB, id string) (*service.Pipeline, error) {
 	var p service.Pipeline
-	if err := db.QueryRowx(`SELECT id, description, status, last_status_change FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange); err != nil {
+	if err := db.QueryRowx(`SELECT id, description, status, last_status_change, created_at FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, service.ErrPipelineNotFound
 		}
@@ -181,7 +201,7 @@ func getPipeline(db DB, id string) (*service.Pipeline, error) {
 }
 
 func createPipeline(db DB, p *service.Pipeline) error {
-	if _, err := db.Exec(`INSERT INTO "pipelines" ("id", "description", "status", "last_status_change") VALUES ($1, $2, $3, $4)`, p.ID, p.Description, p.Status, p.LastStatusChange); err != nil {
+	if _, err := db.Exec(`INSERT INTO "pipelines" ("id", "description", "status", "last_status_change", "created_at") VALUES ($1, $2, $3, $4, $5)`, p.ID, p.Description, p.Status, p.LastStatusChange, p.CreatedAt); err != nil {
 		return err
 	}
 

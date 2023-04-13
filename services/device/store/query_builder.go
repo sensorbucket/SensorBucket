@@ -3,6 +3,7 @@ package store
 import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/device/service"
 )
 
@@ -12,8 +13,9 @@ var (
 )
 
 type deviceQueryBuilder struct {
-	query sq.SelectBuilder
-	err   error
+	query  sq.SelectBuilder
+	cursor pagination.Cursor[DevicePaginationQuery]
+	err    error
 }
 
 func newDeviceQueryBuilder() deviceQueryBuilder {
@@ -28,9 +30,18 @@ func newDeviceQueryBuilder() deviceQueryBuilder {
 		"ST_Y(location::geometry) AS latitude",
 		"altitude",
 		"state",
+		"created_at",
 	).From("devices")
 
 	return deviceQueryBuilder{query: q}
+}
+
+func (b deviceQueryBuilder) WithPagination(p pagination.Request) deviceQueryBuilder {
+	if b.err != nil {
+		return b
+	}
+	b.cursor = pagination.GetCursor[DevicePaginationQuery](p)
+	return b
 }
 
 func (b deviceQueryBuilder) WithFilters(f service.DeviceFilter) deviceQueryBuilder {
@@ -40,7 +51,7 @@ func (b deviceQueryBuilder) WithFilters(f service.DeviceFilter) deviceQueryBuild
 	return b
 }
 
-func (b deviceQueryBuilder) WithinBoundingBox(bb service.BoundingBox) deviceQueryBuilder {
+func (b deviceQueryBuilder) WithinBoundingBox(bb service.BoundingBoxFilter) deviceQueryBuilder {
 	// TODO: check if coordinates are valid?
 	b.query = b.query.Where(
 		`location::geometry @ ST_SetSRID(ST_MakeBox2D(ST_Point(?, ?), ST_Point(?, ?)),4326)`,
@@ -49,7 +60,7 @@ func (b deviceQueryBuilder) WithinBoundingBox(bb service.BoundingBox) deviceQuer
 	return b
 }
 
-func (b deviceQueryBuilder) WithinRange(r service.LocationRange) deviceQueryBuilder {
+func (b deviceQueryBuilder) WithinRange(r service.RangeFilter) deviceQueryBuilder {
 	b.query = b.query.Where(
 		`ST_DWithin(location, ST_MakePoint(?, ?)::geography, ?)`,
 		r.Longitude, r.Latitude, r.Distance,
@@ -57,15 +68,24 @@ func (b deviceQueryBuilder) WithinRange(r service.LocationRange) deviceQueryBuil
 	return b
 }
 
-func (b deviceQueryBuilder) Query(db *sqlx.DB) ([]service.Device, error) {
-	deviceModels := []DeviceModel{}
+func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[service.Device], error) {
+	if b.err != nil {
+		return nil, b.err
+	}
 
-	// Fetch devices
-	rows, err := b.query.RunWith(db).Query()
+	// Apply pagination
+	q, err := pagination.Apply(b.query, b.cursor)
 	if err != nil {
 		return nil, err
 	}
 
+	// Fetch devices
+	rows, err := q.RunWith(db).Query()
+	if err != nil {
+		return nil, err
+	}
+
+	deviceModels := []DeviceModel{}
 	for rows.Next() {
 		var model DeviceModel
 		err := rows.Scan(
@@ -79,6 +99,9 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) ([]service.Device, error) {
 			&model.Latitude,
 			&model.Altitude,
 			&model.State,
+			&model.CreatedAt,
+			&b.cursor.Columns.CreatedAt,
+			&b.cursor.Columns.ID,
 		)
 		if err != nil {
 			return nil, err
@@ -116,5 +139,7 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) ([]service.Device, error) {
 		devices[ix] = model.Device
 	}
 
-	return devices, nil
+	// Create pagination Page
+	page := pagination.CreatePageT(devices, b.cursor)
+	return &page, nil
 }

@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/device/service"
 )
 
@@ -50,16 +52,21 @@ func sensorModelsToSensors(models []SensorModel) []service.Sensor {
 	return sensors
 }
 
-func (s *PSQLStore) ListInBoundingBox(bb service.BoundingBox, filter service.DeviceFilter) ([]service.Device, error) {
-	return newDeviceQueryBuilder().WithFilters(filter).WithinBoundingBox(bb).Query(s.db)
+type DevicePaginationQuery struct {
+	CreatedAt time.Time `pagination:"created_at,ASC"`
+	ID        int64     `pagination:"id,ASC"`
 }
 
-func (s *PSQLStore) ListInRange(r service.LocationRange, filter service.DeviceFilter) ([]service.Device, error) {
-	return newDeviceQueryBuilder().WithFilters(filter).WithinRange(r).Query(s.db)
+func (s *PSQLStore) ListInBoundingBox(filter service.DeviceFilter, p pagination.Request) (*pagination.Page[service.Device], error) {
+	return newDeviceQueryBuilder().WithPagination(p).WithFilters(filter).WithinBoundingBox(filter.BoundingBoxFilter).Query(s.db)
 }
 
-func (s *PSQLStore) List(filter service.DeviceFilter) ([]service.Device, error) {
-	return newDeviceQueryBuilder().WithFilters(filter).Query(s.db)
+func (s *PSQLStore) ListInRange(filter service.DeviceFilter, p pagination.Request) (*pagination.Page[service.Device], error) {
+	return newDeviceQueryBuilder().WithPagination(p).WithFilters(filter).WithinRange(filter.RangeFilter).Query(s.db)
+}
+
+func (s *PSQLStore) List(filter service.DeviceFilter, p pagination.Request) (*pagination.Page[service.Device], error) {
+	return newDeviceQueryBuilder().WithPagination(p).WithFilters(filter).Query(s.db)
 }
 
 func (s *PSQLStore) Find(id int64) (*service.Device, error) {
@@ -89,16 +96,53 @@ func (s *PSQLStore) Delete(dev *service.Device) error {
 	return nil
 }
 
-func (s *PSQLStore) ListSensors() ([]service.Sensor, error) {
-	var sensors []service.Sensor
-	if err := s.db.Select(&sensors,
-		`SELECT 
-			id, code, description, external_id, properties, archive_time, brand	
-		FROM sensors`,
-	); err != nil {
+type SensorPaginationQuery struct {
+	CreatedAt time.Time `pagination:"created_at,ASC"`
+	ID        int64     `pagination:"id,ASC"`
+}
+
+func (s *PSQLStore) ListSensors(p pagination.Request) (*pagination.Page[service.Sensor], error) {
+	var err error
+
+	q := pq.Select(
+		"id", "code", "description", "external_id", "properties", "archive_time",
+		"brand", "created_at",
+	).From("sensors")
+
+	cursor := pagination.GetCursor[SensorPaginationQuery](p)
+	q, err = pagination.Apply(q, cursor)
+	if err != nil {
 		return nil, err
 	}
-	return sensors, nil
+
+	rows, err := q.RunWith(s.db).Query()
+	if err != nil {
+		return nil, err
+	}
+
+	var sensors []service.Sensor
+	for rows.Next() {
+		var sensor service.Sensor
+		err := rows.Scan(
+			&sensor.ID,
+			&sensor.Code,
+			&sensor.Description,
+			&sensor.ExternalID,
+			&sensor.Properties,
+			&sensor.ArchiveTime,
+			&sensor.Brand,
+			&sensor.CreatedAt,
+			&cursor.Columns.CreatedAt,
+			&cursor.Columns.ID,
+		)
+		if err != nil {
+			return nil, err
+		}
+		sensors = append(sensors, sensor)
+	}
+
+	page := pagination.CreatePageT(sensors, cursor)
+	return &page, nil
 }
 
 func (s *PSQLStore) createDevice(dev *service.Device) error {
@@ -106,14 +150,14 @@ func (s *PSQLStore) createDevice(dev *service.Device) error {
 		`
 			INSERT INTO "devices" (
 				"code", "description", "organisation", "properties", "location",
-				"altitude", "location_description", "state"
+				"altitude", "location_description", "state", "created_at"
 			)
-			VALUES ($1, $2, $3, $4, ST_POINT($5, $6), $7, $8, $9)
+			VALUES ($1, $2, $3, $4, ST_POINT($5, $6), $7, $8, $9, $10)
 			RETURNING id
 		`,
 		dev.Code, dev.Description, dev.Organisation, dev.Properties,
 		dev.Longitude, dev.Latitude, dev.Altitude, dev.LocationDescription,
-		dev.State,
+		dev.State, dev.CreatedAt,
 	); err != nil {
 		return err
 	}
@@ -240,7 +284,7 @@ type SelectQueryMod func(q sq.SelectBuilder) sq.SelectBuilder
 func listSensors(db DB, mods ...SelectQueryMod) ([]SensorModel, error) {
 	q := pq.Select(
 		"s.id", "s.brand", "s.code", "s.description", "s.external_id", "s.properties", "s.archive_time",
-		"s.device_id",
+		"s.device_id", "s.created_at",
 	).From("sensors s")
 
 	// Apply mods
@@ -260,7 +304,7 @@ func listSensors(db DB, mods ...SelectQueryMod) ([]SensorModel, error) {
 		}
 		if err := rows.Scan(
 			&s.ID, &s.Brand, &s.Code, &s.Description, &s.ExternalID, &s.Properties, &s.ArchiveTime,
-			&s.DeviceID,
+			&s.DeviceID, &s.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -274,11 +318,13 @@ func createSensors(tx DB, sensors []SensorModel) error {
 		return nil
 	}
 	q := pq.Insert("sensors").Columns(
-		"code", "brand", "description", "archive_time", "properties", "external_id", "device_id",
+		"code", "brand", "description", "archive_time", "properties", "external_id",
+		"device_id", "created_at",
 	).Suffix("RETURNING id")
 	for _, s := range sensors {
 		q = q.Values(
-			s.Code, s.Brand, s.Description, s.ArchiveTime, s.Properties, s.ExternalID, s.DeviceID,
+			s.Code, s.Brand, s.Description, s.ArchiveTime, s.Properties, s.ExternalID,
+			s.DeviceID, s.CreatedAt,
 		)
 	}
 	query, params, err := q.ToSql()

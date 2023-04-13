@@ -42,6 +42,7 @@ type Pipeline struct {
 	Status           PipelineStatus `json:"status"`
 	Steps            []string       `json:"steps"`
 	LastStatusChange time.Time      `json:"last_status_change"`
+	CreatedAt        time.Time      `json:"created_at"`
 }
 
 func NewPipeline(description string, steps []string) (*Pipeline, error) {
@@ -49,6 +50,7 @@ func NewPipeline(description string, steps []string) (*Pipeline, error) {
 		ID:          uuid.Must(uuid.NewRandom()).String(),
 		Description: description,
 		Status:      PipelineActive,
+		CreatedAt:   time.Now(),
 	}
 
 	if err := p.SetSteps(steps); err != nil {

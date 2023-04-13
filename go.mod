@@ -40,6 +40,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/opencontainers/runc v1.1.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/x448/float16 v0.8.4 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/net v0.2.0 // indirect
@@ -69,9 +70,11 @@ require (
 )
 
 require (
+	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgx/v5 v5.0.0-alpha.3
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/samber/lo v1.37.0
 	github.com/testcontainers/testcontainers-go v0.17.0
 )

@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/samber/lo"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	deviceservice "sensorbucket.nl/sensorbucket/services/device/service"
 )
@@ -59,6 +60,7 @@ type Measurement struct {
 	MeasurementAltitude             *float64                  `json:"measurement_altitude"`
 	MeasurementProperties           map[string]any            `json:"measurement_properties"`
 	MeasurementExpiration           time.Time                 `json:"measurement_expiration"`
+	CreatedAt                       time.Time                 `json:"created_at"`
 }
 
 func (m *Measurement) Validate() error {
@@ -81,18 +83,12 @@ type Filter struct {
 	Datastream  []string
 }
 
-// Pagination represents the pagination information for the measurements query.
-type Pagination struct {
-	Limit     int
-	Skip      int
-	Timestamp time.Time
-}
-
 // iService is an interface for the service's exported interface, it can be used as a developer reference
 type iService interface {
 	StoreMeasurement(Measurement) error
 	StorePipelineMessage(context.Context, pipeline.Message) error
-	QueryMeasurements(Filter, Pagination) ([]Measurement, *Pagination, error)
+	QueryMeasurements(Filter, pagination.Request) (*pagination.Page[Measurement], error)
+	ListDatastreams(ctx context.Context, filter DatastreamFilter, r pagination.Request) (*pagination.Page[Datastream], error)
 }
 
 // Ensure Service implements iService
@@ -103,8 +99,8 @@ type Store interface {
 	DatastreamFinderCreater
 
 	Insert(Measurement) error
-	Query(Filter, Pagination) ([]Measurement, *Pagination, error)
-	ListDatastreams(DatastreamFilter) ([]Datastream, error)
+	Query(Filter, pagination.Request) (*pagination.Page[Measurement], error)
+	ListDatastreams(DatastreamFilter, pagination.Request) (*pagination.Page[Datastream], error)
 }
 
 // Service is the measurement service which stores measurement data.
@@ -193,6 +189,8 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 		MeasurementAltitude:   msg.Device.Altitude,
 		MeasurementProperties: m.Properties,
 		MeasurementExpiration: time.UnixMilli(msg.ReceivedAt).Add(time.Duration(*archiveTimeDays) * 24 * time.Hour),
+
+		CreatedAt: time.Now(),
 	}
 
 	// Measurement location is either explicitly set or falls back to device location
@@ -213,18 +211,18 @@ func (s *Service) StoreMeasurement(m Measurement) error {
 	return s.store.Insert(m)
 }
 
-func (s *Service) QueryMeasurements(f Filter, p Pagination) ([]Measurement, *Pagination, error) {
-	measurements, nextPage, err := s.store.Query(f, p)
+func (s *Service) QueryMeasurements(f Filter, r pagination.Request) (*pagination.Page[Measurement], error) {
+	page, err := s.store.Query(f, r)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return measurements, nextPage, nil
+	return page, nil
 }
 
 type DatastreamFilter struct {
-	Sensors []int
+	Sensor []int
 }
 
-func (s *Service) ListDatastreams(ctx context.Context, filter DatastreamFilter) ([]Datastream, error) {
-	return s.store.ListDatastreams(filter)
+func (s *Service) ListDatastreams(ctx context.Context, filter DatastreamFilter, r pagination.Request) (*pagination.Page[Datastream], error) {
+	return s.store.ListDatastreams(filter, r)
 }

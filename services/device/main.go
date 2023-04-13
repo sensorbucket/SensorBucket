@@ -22,6 +22,7 @@ import (
 var (
 	DB_DSN    = env.Must("DB_DSN")
 	HTTP_ADDR = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE = env.Could("HTTP_BASE", "http://localhost:3000/api")
 )
 
 func main() {
@@ -39,7 +40,7 @@ func Run() error {
 	}
 
 	svc := service.New(store.NewPSQLStore(db))
-	trsp := service.NewHTTPTransport(svc)
+	trsp := service.NewHTTPTransport(svc, HTTP_BASE)
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
 		ReadTimeout:  5 * time.Second,

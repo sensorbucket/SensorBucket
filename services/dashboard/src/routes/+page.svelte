@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { API } from '$lib/api';
+	import { ListDatastreams } from '$lib/api';
 	import Card from '$lib/Card.svelte';
 	import DatastreamChart from '$lib/DatastreamChart.svelte';
 	import type { Device, Sensor, Datastream } from '$lib/models';
@@ -16,12 +16,21 @@
 	let devicesAsMap = true;
 
 	let selectedDatastream: Datastream | null = null;
-	let dsPromise: Promise<Datastream[]>;
+	let datastreams: Datastream[] = [];
 	let startDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
 	let endDate = new Date();
 
 	function fetchDatastreams(id: number) {
-		dsPromise = API.listDatastreamsForSensor(id);
+		ListDatastreams({ sensor: id })
+			.next()
+			.then((result) => {
+				if (result.done) {
+					datastreams = [];
+					return;
+				}
+				datastreams = result.value;
+				return;
+			});
 	}
 	$: {
 		if (selectedSensor != null) fetchDatastreams(selectedSensor.id);
@@ -60,10 +69,10 @@
 		/>
 	</Card>
 	<Card title="Datastreams" area="1/3/1/4">
-		{#await dsPromise then datastreams}
+		{#if datastreams.length > 0}
 			<div class="overflow-y-scroll flex-grow">
 				<Table
-					data={datastreams?.filter((ds) => ds.sensor_id == selectedSensor?.id) ?? []}
+					data={datastreams}
 					fields={[
 						'description',
 						['Observed Property', 'observed_property'],
@@ -73,13 +82,7 @@
 					on:select={(e) => (selectedDatastream = e.detail)}
 				/>
 			</div>
-		{:catch e}
-			<button
-				class="text-red-500 font-bold text-center underline"
-				on:click|preventDefault={() => selectedSensor && fetchDatastreams(selectedSensor.id)}
-				>Error loading datastreams, try again?</button
-			>
-		{/await}
+		{/if}
 	</Card>
 	<Card title="Measurements" area="2/1/3/4">
 		<div slot="util">
