@@ -3,7 +3,7 @@ export interface APIResponse<T> {
     data: T;
     links?: {
         next?: string
-        previous: string
+        previous?: string
     };
     count?: number;
     next?: string;

@@ -64,48 +64,16 @@ export async function* QueryMeasurements(start: Date, end: Date, params: CommonP
     }
 }
 
-export const API = {
-    X,
-    streamMeasurements: (start: Date, end: Date, filters: Record<string, any>) => {
-        let cancelStream = false;
-        const rs = new ReadableStream({
-            start(ctrl) {
-                // Request measurements from the API endpoint
-                // Enqueue measurements
-                // Extract next page link,
-                // Request measurements with next page link
-                // Repeat
-                function nextChunk(url: string, query?: Record<string, any>) {
-                    // Initial request
-                    X.get<APIResponse<Measurement[]>>(url, {
-                        params: query
-                    }).then((res) => {
-                        ctrl.enqueue(res.data.data);
-                        // Request next page
-                        let nextPage = res.data.links?.next;
+export function ToStream<T>(iterator: AsyncGenerator<T>): ReadableStream<T> {
+    return new ReadableStream({
+        async pull(controller) {
+            const { value, done } = await iterator.next();
 
-                        // User canceled stream or all measurements are fetched
-                        if (cancelStream || !nextPage) {
-                            ctrl.close();
-                            return;
-                        }
-
-                        // Fetch next page
-                        nextChunk(nextPage);
-                    });
-                }
-
-                // Initial request
-                nextChunk('/measurements', {
-                    ...filters,
-                    start: start.toISOString(),
-                    end: end.toISOString()
-                });
-            },
-            cancel() {
-                cancelStream = true;
+            if (done) {
+                controller.close();
+            } else {
+                controller.enqueue(value);
             }
-        });
-        return rs;
-    }
-};
+        }
+    });
+}

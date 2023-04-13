@@ -28,7 +28,7 @@ export class Paginator<T> {
         }
     }
 
-    get data() {
+    get data(): T[] {
         return this.pages[this._page] ?? [];
     }
 
