@@ -70,18 +70,16 @@
 	</Card>
 	<Card title="Datastreams" area="1/3/1/4">
 		{#if datastreams.length > 0}
-			<div class="overflow-y-scroll flex-grow">
-				<Table
-					data={datastreams}
-					fields={[
-						'description',
-						['Observed Property', 'observed_property'],
-						['Unit', 'unit_of_measurement']
-					]}
-					isSelected={(ds) => ds.id == selectedDatastream?.id}
-					on:select={(e) => (selectedDatastream = e.detail)}
-				/>
-			</div>
+			<Table
+				data={datastreams}
+				fields={[
+					'description',
+					['Observed Property', 'observed_property'],
+					['Unit', 'unit_of_measurement']
+				]}
+				isSelected={(ds) => ds.id == selectedDatastream?.id}
+				on:select={(e) => (selectedDatastream = e.detail)}
+			/>
 		{/if}
 	</Card>
 	<Card title="Measurements" area="2/1/3/4">
