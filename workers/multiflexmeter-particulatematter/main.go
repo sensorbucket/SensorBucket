@@ -116,8 +116,7 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 	// Process measurements
 	for i := 0; i < len(data); i += 2 {
 		measurement := int16(data[i])<<8 | int16(data[i+1])
-		milligrams := float64(measurement) / 10.0
-		err := msg.NewMeasurement().SetSensor("0").SetValue(milligrams, "pm_2.5", "ug/m3").Add()
+		err := msg.NewMeasurement().SetSensor("0").SetValue(float64(measurement), "pm_2.5", "ug/m3").Add()
 		if err != nil {
 			return msg, err
 		}
