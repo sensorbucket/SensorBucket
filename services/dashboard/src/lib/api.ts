@@ -13,7 +13,7 @@ export async function* ListDatastreams(params: CommonParameters = {}) {
     let url = '/datastreams'
     params = {
         // Defaults
-        limit: 250,
+        limit: 25,
         // Custom parameters
         ...params,
     }
@@ -29,7 +29,7 @@ export async function* ListSensors(params: CommonParameters = {}) {
     let url = '/sensors'
     params = {
         // Defaults
-        limit: 250,
+        limit: 25,
         // Custom parameters
         ...params,
     }
@@ -45,7 +45,7 @@ export async function* ListDevices(params: CommonParameters = {}) {
     let url = '/devices'
     params = {
         // Defaults
-        limit: 250,
+        limit: 25,
         // Custom parameters
         ...params,
     }
@@ -61,7 +61,7 @@ export async function* ListPipelines(params: CommonParameters = {}) {
     let url = '/pipelines'
     params = {
         // Defaults
-        limit: 250,
+        limit: 25,
         // Custom parameters
         ...params,
     }
