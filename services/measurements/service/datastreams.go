@@ -26,7 +26,7 @@ type Datastream struct {
 	SensorID          int64     `json:"sensor_id" db:"sensor_id"`
 	ObservedProperty  string    `json:"observed_property" db:"observed_property"`
 	UnitOfMeasurement string    `json:"unit_of_measurement" db:"unit_of_measurement"`
-	CreatedAt         time.Time `json:"created_at"`
+	CreatedAt         time.Time `json:"created_at" db:"created_at"`
 }
 
 func newDatastream(sensorID int64, obs, uom string) (*Datastream, error) {

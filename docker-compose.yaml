@@ -81,6 +81,17 @@ services:
     - AMQP_QUEUE=multiflexmeter-groundwater-level
     - AMQP_XCHG=pipeline.messages
 
+  worker_multiflexmeter_pm:
+    build: .
+    volumes:
+      - .:/workspace:cached
+    environment:
+    - APP_NAME=multiflexmeter-particulatematter
+    - APP_TYPE=worker
+    - AMQP_HOST=amqp://guest:guest@mq:5672/
+    - AMQP_QUEUE=multiflexmeter-particulatematter
+    - AMQP_XCHG=pipeline.messages
+
   db:
     image: timescale/timescaledb-postgis:latest-pg12
     ports:

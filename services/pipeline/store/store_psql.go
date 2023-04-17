@@ -181,7 +181,7 @@ func (s *PSQLStore) GetPipeline(id string) (*service.Pipeline, error) {
 // Private methods which have DB interface injected. Allows for transactional queries
 func getPipeline(db DB, id string) (*service.Pipeline, error) {
 	var p service.Pipeline
-	if err := db.QueryRowx(`SELECT id, description, status, last_status_change, created_at FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange); err != nil {
+	if err := db.QueryRowx(`SELECT id, description, status, last_status_change, created_at FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange, &p.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, service.ErrPipelineNotFound
 		}
