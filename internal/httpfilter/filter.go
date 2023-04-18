@@ -1,23 +1,26 @@
 package httpfilter
 
 import (
+	"encoding/json"
 	"net/http"
+	"reflect"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/gorilla/schema"
 )
+
+var d = schema.NewDecoder()
+
+func init() {
+	d.RegisterConverter(json.RawMessage{}, convertJSON)
+}
+
+func convertJSON(v string) reflect.Value {
+	return reflect.ValueOf(json.RawMessage(v))
+}
 
 func Parse[T any](r *http.Request) (T, error) {
 	var t T
-	decoder, _ := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			sliceToSingleHook, stringToTimeHook,
-		),
-		WeaklyTypedInput: true,
-		Squash:           true,
-		TagName:          "url",
-		Result:           &t,
-	})
-	if err := decoder.Decode(r.URL.Query()); err != nil {
+	if err := d.Decode(&t, r.URL.Query()); err != nil {
 		return t, err
 	}
 	return t, nil

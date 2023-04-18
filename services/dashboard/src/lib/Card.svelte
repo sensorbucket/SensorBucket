@@ -9,5 +9,7 @@
 		<slot name="util" />
 	</div>
 	<hr class="my-1" />
-	<slot />
+	<div class="overflow-y-auto flex-grow">
+		<slot />
+	</div>
 </div>

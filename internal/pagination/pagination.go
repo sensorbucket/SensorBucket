@@ -7,8 +7,13 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/Masterminds/squirrel"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/fxamacker/cbor/v2"
+)
+
+const (
+	MAX_LIMIT     = 1000
+	DEFAULT_LIMIT = 100
 )
 
 type Links struct {
@@ -36,9 +41,9 @@ type Request struct {
 func GetCursor[T any](r Request) Cursor[T] {
 	// Normalize request limit size
 	if r.Limit == 0 {
-		r.Limit = 100
-	} else if r.Limit > 250 {
-		r.Limit = 250
+		r.Limit = DEFAULT_LIMIT
+	} else if r.Limit > MAX_LIMIT {
+		r.Limit = MAX_LIMIT
 	}
 
 	// Case 1: New request, cursor empty
@@ -50,9 +55,9 @@ func GetCursor[T any](r Request) Cursor[T] {
 	c := DecodeCursor[T](r.Cursor)
 	// Normalize cursor limit size
 	if c.Limit == 0 {
-		c.Limit = 100
-	} else if c.Limit > 250 {
-		c.Limit = 250
+		c.Limit = DEFAULT_LIMIT
+	} else if c.Limit > MAX_LIMIT {
+		c.Limit = MAX_LIMIT
 	}
 
 	return c
@@ -76,7 +81,11 @@ func CreatePageT[T1 any, T2 any](data []T1, cursor Cursor[T2]) Page[T1] {
 }
 
 func EncodeCursor[T any](f Cursor[T]) string {
-	data, err := cbor.Marshal(&f)
+	opt := cbor.CanonicalEncOptions()
+	opt.Time = cbor.TimeUnix
+	enc, _ := opt.EncMode()
+
+	data, err := enc.Marshal(&f)
 	if err != nil {
 		panic(err)
 	}
@@ -101,7 +110,31 @@ type whereCol struct {
 	order  string
 }
 
-func Apply[T any](q squirrel.SelectBuilder, c Cursor[T]) (squirrel.SelectBuilder, error) {
+func multiColumnCompare(columns []whereCol) sq.Sqlizer {
+	if len(columns) == 0 {
+		return nil
+	}
+	clause := sq.Or{}
+	for i := 0; i < len(columns); i++ {
+		and := sq.And{}
+		for j := 0; j <= i; j++ {
+			col := columns[j]
+			if j == i {
+				if col.order == "ASC" {
+					and = append(and, sq.Gt{col.column: col.value})
+				} else {
+					and = append(and, sq.Lt{col.column: col.value})
+				}
+				continue
+			}
+			and = append(and, sq.Eq{col.column: col.value})
+		}
+		clause = append(clause, and)
+	}
+	return clause
+}
+
+func Apply[T any](q sq.SelectBuilder, c Cursor[T]) (sq.SelectBuilder, error) {
 	q = q.Limit(c.Limit)
 	rt := reflect.TypeOf(c.Columns)
 	rv := reflect.ValueOf(c.Columns)
@@ -135,26 +168,12 @@ func Apply[T any](q squirrel.SelectBuilder, c Cursor[T]) (squirrel.SelectBuilder
 
 		columns = append(columns, whereCol{
 			column: column,
-			order:  order,
 			value:  rvf.Interface(),
+			order:  order,
 		})
 	}
 
-	for ix, v := range columns {
-		if ix == len(columns)-1 {
-			if v.order == "ASC" {
-				q = q.Where(squirrel.Gt{v.column: v.value})
-			} else {
-				q = q.Where(squirrel.Lt{v.column: v.value})
-			}
-			continue
-		}
-		if v.order == "ASC" {
-			q = q.Where(squirrel.GtOrEq{v.column: v.value})
-		} else {
-			q = q.Where(squirrel.LtOrEq{v.column: v.value})
-		}
-	}
+	q = q.Where(multiColumnCompare(columns))
 
 	return q, nil
 }

@@ -238,7 +238,7 @@ func (s *MeasurementStorePSQL) CreateDatastream(ds *service.Datastream) error {
 	INSERT INTO
 		"datastreams" (
 			"id", "description", "sensor_id", "observed_property", "unit_of_measurement",
-			"created_at
+			"created_at"
 		)
 	VALUES 
 		($1, $2, $3, $4, $5, $6)

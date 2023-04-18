@@ -88,7 +88,6 @@ func (t *HTTPTransport) httpListDatastream() http.HandlerFunc {
 			web.HTTPError(rw, err)
 			return
 		}
-		fmt.Printf("Got params: %+v\n", params)
 
 		page, err := t.svc.ListDatastreams(r.Context(), params.DatastreamFilter, params.Request)
 		if err != nil {

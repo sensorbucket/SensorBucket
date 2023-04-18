@@ -8,7 +8,7 @@
 </script>
 
 <div class="grid">
-	<Card title="Datastreams" area="1/1/2/2">
+	<Card title="Devices" area="1/1/2/2">
 		<div class="flex justify-end items-center my-1">
 			<button
 				class="text-white px-2 border-primary-600 border border-r-0 bg-primary-500 rounded-l"
