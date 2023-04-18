@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	MAX_LIMIT = 1000
+	MAX_LIMIT     = 1000
+	DEFAULT_LIMIT = 100
 )
 
 type Links struct {
@@ -40,7 +41,7 @@ type Request struct {
 func GetCursor[T any](r Request) Cursor[T] {
 	// Normalize request limit size
 	if r.Limit == 0 {
-		r.Limit = 100
+		r.Limit = DEFAULT_LIMIT
 	} else if r.Limit > MAX_LIMIT {
 		r.Limit = MAX_LIMIT
 	}
@@ -54,7 +55,7 @@ func GetCursor[T any](r Request) Cursor[T] {
 	c := DecodeCursor[T](r.Cursor)
 	// Normalize cursor limit size
 	if c.Limit == 0 {
-		c.Limit = 100
+		c.Limit = DEFAULT_LIMIT
 	} else if c.Limit > MAX_LIMIT {
 		c.Limit = MAX_LIMIT
 	}

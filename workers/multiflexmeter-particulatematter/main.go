@@ -108,18 +108,15 @@ func processMessage(msg pipeline.Message) (pipeline.Message, error) {
 		return msg, nil
 	}
 
-	// Check if data length is a multiple of 2
-	if len(data)%2 != 0 {
+	if len(data) != 2 {
 		return msg, errors.New("incorrect payload length")
 	}
 
 	// Process measurements
-	for i := 0; i < len(data); i += 2 {
-		measurement := int16(data[i])<<8 | int16(data[i+1])
-		err := msg.NewMeasurement().SetSensor("0").SetValue(float64(measurement), "pm_2.5", "ug/m3").Add()
-		if err != nil {
-			return msg, err
-		}
+	measurement := int16(data[0])<<8 | int16(data[1])
+	err := msg.NewMeasurement().SetSensor("0").SetValue(float64(measurement), "pm_2.5", "ug/m3").Add()
+	if err != nil {
+		return msg, err
 	}
 
 	return msg, nil
