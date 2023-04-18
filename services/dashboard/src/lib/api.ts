@@ -77,7 +77,7 @@ export async function* QueryMeasurements(start: Date, end: Date, params: CommonP
     let url = '/measurements'
     params = {
         // Defaults
-        limit: 250,
+        limit: 1000,
         // Custom parameters
         ...params,
         // Required

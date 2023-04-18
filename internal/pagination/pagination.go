@@ -11,6 +11,10 @@ import (
 	"github.com/fxamacker/cbor/v2"
 )
 
+const (
+	MAX_LIMIT = 1000
+)
+
 type Links struct {
 	Previous string `json:"previous"`
 	Next     string `json:"next"`
@@ -37,8 +41,8 @@ func GetCursor[T any](r Request) Cursor[T] {
 	// Normalize request limit size
 	if r.Limit == 0 {
 		r.Limit = 100
-	} else if r.Limit > 250 {
-		r.Limit = 250
+	} else if r.Limit > MAX_LIMIT {
+		r.Limit = MAX_LIMIT
 	}
 
 	// Case 1: New request, cursor empty
@@ -51,8 +55,8 @@ func GetCursor[T any](r Request) Cursor[T] {
 	// Normalize cursor limit size
 	if c.Limit == 0 {
 		c.Limit = 100
-	} else if c.Limit > 250 {
-		c.Limit = 250
+	} else if c.Limit > MAX_LIMIT {
+		c.Limit = MAX_LIMIT
 	}
 
 	return c
