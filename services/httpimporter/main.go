@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/rs/cors"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/httpimporter/service"
@@ -47,7 +48,7 @@ func Run() error {
 	// Setup HTTP
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
-		Handler:      svc,
+		Handler:      cors.AllowAll().Handler(svc),
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
 	}

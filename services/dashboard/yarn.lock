@@ -889,6 +889,7 @@ __metadata:
     typescript: ^4.9.4
     uplot: ^1.6.24
     vite: ^4.0.0
+    vite-plugin-iso-import: ^1.0.0
   languageName: unknown
   linkType: soft
 
@@ -1021,6 +1022,13 @@ __metadata:
   version: 2.0.3
   resolution: "err-code@npm:2.0.3"
   checksum: 8b7b1be20d2de12d2255c0bc2ca638b7af5171142693299416e6a9339bd7d88fc8d7707d913d78e0993176005405a236b066b45666b27b797252c771156ace54
+  languageName: node
+  linkType: hard
+
+"es-module-lexer@npm:^1.1.0":
+  version: 1.2.1
+  resolution: "es-module-lexer@npm:1.2.1"
+  checksum: c4145b853e1491eaa5d591e4580926d242978c38071ad3d09165c3b6d50314cc0ae3bf6e1dec81a9e53768b9299df2063d2e4a67d7742a5029ddeae6c4fc26f0
   languageName: node
   linkType: hard
 
@@ -2668,6 +2676,18 @@ __metadata:
   version: 1.0.2
   resolution: "util-deprecate@npm:1.0.2"
   checksum: 474acf1146cb2701fe3b074892217553dfcf9a031280919ba1b8d651a068c9b15d863b7303cb15bd00a862b498e6cf4ad7b4a08fb134edd5a6f7641681cb54a2
+  languageName: node
+  linkType: hard
+
+"vite-plugin-iso-import@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "vite-plugin-iso-import@npm:1.0.0"
+  dependencies:
+    es-module-lexer: ^1.1.0
+    magic-string: ^0.27.0
+  peerDependencies:
+    vite: ^2.0.0 || ^3.0.0 || ^4.0.0
+  checksum: ea095584bf009bfc289fc518fc8e61059c039beb84e8d2e8a4f468eebef3f2e0efe68a6e255be78404d1f31f188f8015d8cb5246e5f7b498e0c298e362d43b80
   languageName: node
   linkType: hard
 

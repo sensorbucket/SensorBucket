@@ -11,6 +11,8 @@ info:
 servers:
   - description: Local
     url: 'http://localhost:3000/api'
+  - description: Production
+    url: 'https://sensorbucket.nl/api'
 paths: 
   /devices:
     get:
@@ -766,7 +768,11 @@ components:
     Authorization:
       type: http
       scheme: bearer
+    basicAuth:    
+      type: http
+      scheme: basic
 security:
+  - basicAuth: []
   - Authorization: []
 tags:
   - name: Devices

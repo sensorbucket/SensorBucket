@@ -1,15 +1,16 @@
 <script lang="ts">
-	import { ListDatastreams } from '$lib/api';
+	import { ListDatastreams, ListDevices } from '$lib/api';
 	import Card from '$lib/Card.svelte';
 	import DatastreamChart from '$lib/DatastreamChart.svelte';
 	import type { Device, Sensor, Datastream } from '$lib/models';
 	import Table from '$lib/Table.svelte';
-	import type { PageData } from './$types';
 	import DateInput from './DateInput.svelte';
 	import DeviceMapTable from './DeviceMapTable.svelte';
 
-	export let data: PageData;
-	const { devices } = data;
+	let devices: Device[] = [];
+	ListDevices()
+		.next()
+		.then((v) => (devices = v.value));
 
 	let selectedDevice: Device | null = null;
 	let selectedSensor: Sensor | null = null;

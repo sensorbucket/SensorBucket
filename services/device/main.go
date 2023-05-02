@@ -13,6 +13,7 @@ import (
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
+	"github.com/rs/cors"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/services/device/migrations"
 	"sensorbucket.nl/sensorbucket/services/device/service"
@@ -45,7 +46,7 @@ func Run() error {
 		Addr:         HTTP_ADDR,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
-		Handler:      trsp,
+		Handler:      cors.AllowAll().Handler(trsp),
 	}
 
 	errC := make(chan error, 1)

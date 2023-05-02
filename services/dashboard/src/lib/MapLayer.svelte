@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as L from 'leaflet';
+	import * as L from 'leaflet?client';
 	import { onDestroy } from 'svelte';
 	import { getLayer } from './map';
 

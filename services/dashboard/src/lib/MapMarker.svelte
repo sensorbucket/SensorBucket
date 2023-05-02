@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as L from 'leaflet';
+	import * as L from 'leaflet?client';
 	import { onDestroy, createEventDispatcher } from 'svelte';
 	const dispatch = createEventDispatcher();
 	import { getLayer } from './map.ts';

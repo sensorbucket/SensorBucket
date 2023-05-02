@@ -14,11 +14,20 @@ services:
       dockerfile: Dockerfile
       target: dev
     command: yarn dev --host=0.0.0.0 --port=3000
+    environment:
+      - EP_DATASTREAMS=http://caddy/api/datastreams
+      - EP_SENSORS=http://caddy/api/sensors
+      - EP_DEVICES=http://caddy/api/devices
+      - EP_PIPELINES=http://caddy/api/pipelines
+      - EP_MEASUREMENTS=http://caddy/api/measurements
     volumes:
       - ./services/dashboard:/app:cached
 
   device:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: dev
     environment:
     - APP_NAME=device
     - DB_DSN=postgresql://deviceservice:deviceservice@db:5432/deviceservice?sslmode=disable
@@ -26,7 +35,10 @@ services:
       - ./:/workspace:cached
 
   pipeline:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: dev
     environment:
     - APP_NAME=pipeline
     - DB_DSN=postgresql://pipelineservice:pipelineservice@db:5432/pipelineservice?sslmode=disable
@@ -35,7 +47,10 @@ services:
       - ./:/workspace:cached
 
   httpimporter:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: dev
     volumes:
       - .:/workspace:cached
     environment:
@@ -46,7 +61,10 @@ services:
     - SVC_PIPELINE=http://pipeline:3000
 
   measurements:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: dev
     volumes:
       - .:/workspace:cached
     environment:
@@ -59,7 +77,10 @@ services:
     - AMQP_QUEUE=measurement_service_q
 
   worker_thethingsnetwork:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: dev
     volumes:
       - .:/workspace:cached
     environment:
@@ -71,7 +92,10 @@ services:
     - SVC_DEVICE=http://device:3000
 
   worker_multiflexmeter:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: dev
     volumes:
       - .:/workspace:cached
     environment:
@@ -82,7 +106,10 @@ services:
     - AMQP_XCHG=pipeline.messages
 
   worker_multiflexmeter_pm:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: dev
     volumes:
       - .:/workspace:cached
     environment:

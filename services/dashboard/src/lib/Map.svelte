@@ -1,6 +1,6 @@
 <script lang="ts">
 	import 'leaflet/dist/leaflet.css';
-	import * as L from 'leaflet';
+	import * as L from 'leaflet?client';
 	import { createEventDispatcher } from 'svelte';
 	const dispatch = createEventDispatcher();
 	import { setContext } from 'svelte';

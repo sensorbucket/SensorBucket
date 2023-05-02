@@ -1,6 +1,4 @@
-FROM golang:1.18-alpine AS builder
-ARG APP_TYPE="worker"
-ARG APP_NAME="multiflexmeter-groundwater-level"
+FROM golang:1.18 AS builder
 WORKDIR /sensorbucket
 
 COPY go.mod .
@@ -8,8 +6,8 @@ COPY go.sum .
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 go build -ldflags '-extldflags "-static"' -tags timetzdata -o /app ${APP_TYPE}s/${APP_NAME}/main.go
+RUN CGO_ENABLED=0 go build -ldflags '-extldflags "-static"' -tags timetzdata -o /worker workers/multiflexmeter-groundwater-level/main.go
 
-FROM scratch AS server
-COPY --from=builder /app /app
-ENTRYPOINT [ "/app" ]
+FROM scratch AS production
+COPY --from=builder /worker /worker
+ENTRYPOINT ["/worker"]

@@ -12,7 +12,6 @@
 	export let selectedDevice: Device | null = null;
 	export let view: 'table' | 'map' = 'map';
 
-	let viewDevices = devices;
 	let usePDOK = false;
 
 	function onDeviceSelect(device: Device) {
@@ -38,7 +37,7 @@
 		{:else}
 			<MapLayer />
 		{/if}
-		{#each viewDevices as dev}
+		{#each devices as dev}
 			{#if dev.latitude && dev.longitude}
 				{#if selectedDevice?.id === dev.id}
 					<MapMarker
