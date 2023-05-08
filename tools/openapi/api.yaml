@@ -1,0 +1,58 @@
+openapi: 3.0.0
+info:
+  title: Sensorbucket API
+  version: '1.0'
+  license:
+    name: EUPLv2
+    url: 'https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt'
+  description: |
+    SensorBucket processes data from different sources and devices into a single standardized format. 
+    An applications connected to SensorBucket, can use all devices SensorBucket supports.
+
+    Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker
+    that receives data from an AMQP source, process said data and output in the expected worker output format.
+
+    Find out more at: https://docs.sensorbucket.nl/
+  contact:
+    name: Provincie Zeeland
+    url: 'https://zeeland.nl'
+servers:
+  - description: Production
+    url: 'https://sensorbucket.nl/api'
+  - description: Local docker environment
+    url: 'http://localhost:3000/api'
+paths: 
+  /devices:
+    $ref: 'path-devices.yaml'
+  /devices/{id}:
+    $ref: 'path-devices-by-id.yaml'
+  /devices/{device_id}/sensors:
+    $ref: 'path-devices-by-sensors.yaml'
+  /device/{device_id}/sensors/{sensor_code}:
+    $ref: 'path-devices-by-sensors-id.yaml'
+  /sensors:
+    $ref: 'path-sensors.yaml'
+  /measurements:
+    $ref: 'path-measurements.yaml'
+  /datastreams:
+    $ref: 'path-datastreams.yaml'
+  /pipelines:
+    $ref: 'path-pipelines.yaml'
+  /pipelines/{id}:
+    $ref: 'path-pipelines-by-id.yaml'
+  /uplinks/{pipeline_id}:
+    $ref: 'path-uplinks-by-pipeline.yaml'
+components:
+  securitySchemes:
+    basicAuth:    
+      description: |
+        Temporary default authentication method until token based authentication is implemented.
+      type: http
+      scheme: basic
+security:
+  - basicAuth: []
+tags:
+  - name: Devices
+  - name: Pipelines
+  - name: Measurements
+  - name: Uplink
