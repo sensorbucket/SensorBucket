@@ -1,0 +1,38 @@
+delete:
+  operationId: DeleteDeviceSensor
+  summary: Delete sensor
+  description: |
+    Delete a sensor from the system. 
+
+    Since a sensor can only be related to one and only one device at a time, the sensor will be deleted from the system completely
+  tags: ["Devices"]
+  parameters: 
+    - name: device_id
+      description: The identifier of the device
+      in: path
+      required: true
+      schema:
+        type: number
+    - name: sensor_code
+      description: The code of the sensor
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Deleted sensor from device
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Deleted sensor from device
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+    '404':
+      $ref: './responses.yaml#/404'

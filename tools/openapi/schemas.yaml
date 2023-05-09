@@ -1,0 +1,338 @@
+paginatedResponse:
+  type: object
+  properties:
+    links:
+      type: object
+      properties:
+        previous:
+          type: string
+        next:
+          type: string
+    page_size:
+      type: integer
+    total_count:
+      type: integer
+    data:
+      type: array
+      items: {}
+        
+createDeviceRequest:
+  type: object
+  required:
+    - code
+  properties:
+    code:
+      type: string
+      example: mfm1000
+    description:
+      type: string
+      example: Grasfield pipe 24
+#    organisation:
+#      type: string
+#      example: provincie_zeeland
+    latitude:
+      type: number
+      example: 1.2345
+    longitude:
+      type: number
+      example: 1.2345
+    location_description:
+      type: string
+      example: "Description of location"
+    properties:
+      type: object
+      example:
+        eui: "060708090A0B0C0D"
+
+updateDeviceRequest:
+    type: object
+    properties:
+      description:
+        type: number
+        example: 1
+      latitude:
+        type: number
+        example: 1.2345
+      longitude:
+        type: number
+        example: 1.2345
+      location_description:
+        type: string
+        example: "Description of location"
+      properties:
+        type: object
+        example:
+          eui: "060708090A0B0C0D"
+
+device:
+  type: object
+  properties:
+    id:
+      type: number
+      example: 1
+    code:
+      type: string
+      example: mfm1000
+    description:
+      type: string
+      example: Grasfield pipe 24
+    organisation:
+      type: string
+      example: provincie_zeeland
+    properties:
+      type: object
+      example:
+        eui: "060708090A0B0C0D"
+    latitude:
+      type: number
+      example: 1.2345
+    longitude:
+      type: number
+      example: 1.2345
+    location_description:
+      type: string
+      example: "Description of location"
+    sensors:
+      type: array
+      items:
+        $ref: '#/sensor'
+
+createSensorRequest:
+  type: object
+  required:
+    - code
+    - external_id
+  properties:
+    code:
+      type: string
+      example: S123
+    description:
+      type: string
+      example: Pressure sensor at 5 meters depth
+    external_id:
+      type: string
+      example: "5"
+    brand:
+      type: string
+      example: "sensor brand ABC"
+    properties:
+      type: object
+      example: 
+        mount_height: 15cm
+    archive_time:
+      type: number
+      example: 7
+
+sensor:
+  type: object
+  properties:
+    id:
+      type: number
+      example: 1
+    code:
+      type: string
+      example: S123
+    description:
+      type: string
+      example: Pressure sensor at 5 meters depth
+    external_id:
+      type: string
+      example: "5"
+    brand:
+      type: string
+      example: "SensorCompany LTD. SCL115"
+    archive_time:
+      type: number
+      example: 7
+    properties:
+      type: object
+      example: 
+        mount_height: 15cm
+    created_at:
+      type: string
+      format: iso8601
+      example: 2023-05-17T15:00:00Z
+
+measurement:
+  type: object
+  properties:
+    uplink_message_id:
+      type: string
+      example: ca29e28e-eeb6-4662-922c-6cf6a36ccb6e
+    device_id:
+      type: number
+      example: 5
+    device_code:
+      type: string
+      example: mfm1000
+    device_description:
+      type: string
+      example: Particulate matter device
+    device_latitude:
+      type: number
+      example: 5.131313
+    device_longitude:
+      type: number
+      example: 5.131313
+    device_altitude:
+      type: number
+      example: 5.131313
+    device_location_description:
+      type: string
+      example: Grasfield pipe 24
+    device_properties:
+      type: object
+      example:
+        eui: "060708090A0B0C0D"
+    device_state:
+      type: number
+      example: 0
+    sensor_id:
+      type: number
+      example: 3 
+    sensor_code:
+      type: string
+      example: S123
+    sensor_description:
+      type: string
+      example: Pressure sensor at 5 meters depth
+    sensor_external_id:
+      type: string
+      example: "5"
+    sensor_properties:
+      type: object
+      example: {}
+    sensor_brand:
+      type: string
+      example: "SensorCompany Inc. SC123" 
+    sensor_archive_time:
+      type: number
+      example: 7 
+    datastream_id:
+      type: string
+      format: uuid
+      example: 153205d7-bdfc-4a0b-9de5-c6fa04c665f6
+    datastream_description:
+      type: string
+      example: "Concentration of particles smaller than 2.5 micrometer" 
+    datastream_observed_property:
+      type: string
+      example: "pm2.5" 
+    datastream_unit_of_measurement:
+      type: string
+      example: "ug/cm3"
+    measurement_timestamp:
+      type: string
+      format: iso8601
+      example: "2022-01-01T00:00:00Z"
+    measurement_value:
+      type: number
+      example: 3.44
+    measurement_latitude:
+      type: number
+      example: 3.44
+    measurement_longitude:
+      type: number
+      example: 3.44
+    measurement_altitude:
+      type: number
+      example: 3.44
+    measurement_properties:
+      type: object
+    measurement_expiration:
+      type: string
+      format: iso8601
+      example: "2022-01-01T00:00:00Z"
+    created_at:
+      type: string
+      format: iso8601
+      example: 2022-01-01T00:00:00Z
+
+pipeline:
+  type: object
+  properties:
+    id:
+      type: string
+      example: 9d4a0944-c11d-42ef-880f-a97c9619c5c0
+    description:
+      type: string
+      example: Pipeline for Multiflexmeter Groundwater devices
+    steps:
+      type: array
+      items:
+        type: string
+      example:
+        - "TTN@1.0.0"
+        - "MFMGroundwater@1.0.0"
+    status:
+      type: string
+      oneOf:
+        - active
+        - inactive
+      example: active
+    last_status_change:
+      type: string
+      format: iso8601
+      example: 2022-01-01T00:00:00Z
+    created_at:
+      type: string
+      format: iso8601
+      example: 2022-01-01T00:00:00Z
+
+
+createPipelineRequest:
+  type: object
+  properties:
+    description:
+      type: string
+      example: Pipeline for Multiflexmeter Groundwater devices
+    steps:
+      type: array
+      items:
+        type: string
+      example:
+        - "TTN@1.0.0"
+        - "MFMGroundwater@1.0.0"
+
+updatePipelineRequest:
+  type: object
+  properties:
+    description:
+      type: string
+      example: Pipeline for Multiflexmeter Groundwater devices
+    steps:
+      type: array
+      items:
+        type: string
+      example:
+        - "TTN@1.0.0"
+        - "MFMGroundwater@1.0.0"
+    status:
+      type: string
+      description: |
+        Used to change a pipeline from inactive to active or vice-versa. 
+        Moving from active to inactive can also be achieve by `DELETE`ing the pipeline resource.
+      oneOf:
+        - active
+        - inactive
+      example: active
+
+datastream:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    description:
+      type: string
+    sensor_id:
+      type: number
+    observed_property:
+      type: string
+    unit_of_measurement:
+      type: string
+      format: ucum
+    created_at:
+      type: string
+      format: iso8601
+      example: 2022-01-01T00:00:00Z

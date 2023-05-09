@@ -1,0 +1,131 @@
+get:
+  operationId: GetPipeline
+  summary: Get pipeline
+  description: |
+    Get the pipeline with the given identifier.
+
+    This endpoint by default returns a 404 Not Found for inactive pipelines.
+    To get an inactive pipeline, provide the `status=inactive` query parameter.
+  tags: ["Pipelines"]
+  parameters:
+    - name: id
+      description: The UUID of the pipeline
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: status
+      description: |
+        The status of the pipeline. Use `inactive` to view inactive pipelines instead of getting a 404 error
+      in: query
+      example: 
+      - active
+      - inactive
+      schema:
+        type: array
+        items:
+          type: string
+  responses:
+    '200':
+      description: Fetched pipeline
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Fetched pipeline
+              data:
+                $ref: 'schemas.yaml#/pipeline'
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+    '404':
+      description: |
+        The request failed because the requested resource could not be found or because the resource is disabled
+
+patch:
+  operationId: UpdatePipeline
+  summary: Update pipeline
+  description: |
+    Update some properties of the pipeline with the given identifier. 
+
+    Setting an invalid state or making an invalid state transition will result in an error.
+  tags: ["Pipelines"]
+  parameters:
+    - name: id
+      description: The UUID of the pipeline
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody: 
+    content: 
+      application/json:
+        schema:
+          $ref: 'schemas.yaml#/updatePipelineRequest'
+  responses:
+    '200':
+      description: Updated pipeline
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Updated pipeline
+              data:
+                $ref: 'schemas.yaml#/pipeline'
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+    '404':
+      description: |
+        The request failed because the requested resource could not be found or because the resource is disabled
+    '405':  
+      description: |
+        The request failed because the request is invalid.
+delete:
+  operationId: DisablePipeline
+  summary: Disable pipeline
+  description: |
+    Disables a pipeline by setting its status to inactive.
+
+    Inactive pipelines will - by default - not appear in the `ListPipelines` and `GetPipeline` endpoints,
+    unless the `status=inactive` query parameter is given on that endpoint.
+  tags: ['Pipelines']
+  parameters:
+    - name: id
+      description: The UUID of the pipeline
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: pipeline disabled
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Disabled pipeline
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+    '404':
+      description: |
+        The request failed because the requested resource could not be found or because the resource is disabled
+    '405':  
+      description: |
+        The request failed because the request is invalid.

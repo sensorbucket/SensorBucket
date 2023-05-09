@@ -1,0 +1,51 @@
+get:
+  x-is-paginated: true
+  operationId: ListDatastreams
+  summary: List all datastreams
+  description: |
+    List all datastreams.
+
+    A sensor can produce one or more timeseries of measurements. Such a unique timeserie is called a datastream.  
+
+    **For example:** A Particulate Matter sensor might return count the number of particles smaller than 2.5 μg/cm2, 5 μg/cm2 and 10 μg/cm2.
+    this is one sensor producing three datastreams.
+
+    Another example would be a worker which processes raw incoming values into meaningful data.
+    An underwater pressure sensor might supply its measurement in milli Amperes, but the worker converts it to watercolumn in meters.
+    The sensor now has two datastreams. Presusre in millivolt and watercolumn in meters.
+  tags: ["Measurements"]
+  parameters:
+    - in: query
+      name: sensor
+      description: only return datastreams that are produced by the given sensor identifier
+      schema:
+        type: number
+    - in: query
+      name: cursor
+      description: The cursor for the current page
+      schema:
+        type: string
+    - in: query
+      name: limit
+      description: |
+        The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+      schema:
+        type: number
+  responses:
+    '200':
+      description: Fetched datastreams
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: './schemas.yaml#/paginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "schemas.yaml#/datastream"
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
