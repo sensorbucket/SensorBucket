@@ -48,3 +48,4 @@ nav:
   - Development:
     - Architecture: development/architecture.md
     - Data Model: development/data-model.md
+  - API Reference: ./api/index.html

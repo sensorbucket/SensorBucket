@@ -38,12 +38,12 @@ jobs:
     - name: Setup Pages
       id: pages
       uses: actions/configure-pages@v3
-    - run: mkdir -p public/api
-    - run: mkdocs build -d public
+    - run: mkdir -p docs/api
     - name: Bundle OpenAPI spec with Redoc
       uses: seeebiii/redoc-cli-github-action@v10
       with:
-        args: 'bundle tools/openapi/api.yaml -o public/api/index.html'
+        args: 'bundle tools/openapi/api.yaml -o docs/api/index.html'
+    - run: mkdocs build -d public
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v1
       with:
