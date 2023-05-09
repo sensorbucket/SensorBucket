@@ -1,4 +1,4 @@
-[![SensorBucket Logo](./docs/sensorbucket-logo.png)](https://sensorbucket.nl)
+[![SensorBucket Logo](./docs/sensorbucket-logo-full.png)](https://sensorbucket.nl)
 
 [![EUPL-1.2](https://img.shields.io/badge/license-EUPL--1.2-blue.svg)](https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt)
 [![GitHub release](https://img.shields.io/github/release/sensorbucket/SensorBucket.svg)](https://GitHub.com/sensorbucket/SensorBucket/releases)
