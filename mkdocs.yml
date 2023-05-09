@@ -1,6 +1,6 @@
-site_name: Sensorbucket
-repo_url: https://gitlab.com/sensorbucket
-repo_name: Sensorbucket
+site_name: SensorBucket
+repo_url: https://github.com/sensorbucket/sensorbucket
+repo_name: SensorBucket
 theme:
   name: material
   logo: sensorbucket-logo-white.png
