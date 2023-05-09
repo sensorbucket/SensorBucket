@@ -147,7 +147,7 @@ services:
     environment:
       - URL=/dev/api/ref/api.yaml
     volumes:
-      - ./tools/openapi/ref:/usr/share/nginx/html/ref
+      - ./tools/openapi:/usr/share/nginx/html/ref
 
 networks:
   default:
