@@ -67,7 +67,7 @@ patch:
     content: 
       application/json:
         schema:
-          $ref: 'schemas.yaml#/updatePipelineDTO'
+          $ref: 'schemas.yaml#/updatePipelineRequest'
   responses:
     '200':
       description: Updated pipeline

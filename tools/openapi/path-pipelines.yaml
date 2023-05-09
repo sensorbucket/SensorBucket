@@ -73,7 +73,7 @@ post:
     content: 
       application/json:
         schema:
-          $ref: 'schemas.yaml#/createPipelineDTO'
+          $ref: 'schemas.yaml#/createPipelineRequest'
   responses:
     '200':
       description: Created pipeline

@@ -51,7 +51,7 @@ patch:
     content:
       application/json:
         schema:
-          $ref: 'schemas.yaml#/updateDeviceDTO'
+          $ref: 'schemas.yaml#/updateDeviceRequest'
   responses:
     '200':
       description: Updated device properties

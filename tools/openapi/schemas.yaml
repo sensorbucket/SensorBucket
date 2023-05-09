@@ -44,7 +44,7 @@ createDeviceRequest:
       example:
         eui: "060708090A0B0C0D"
 
-updateDeviceDTO:
+updateDeviceRequest:
     type: object
     properties:
       description:
@@ -243,6 +243,10 @@ measurement:
       type: string
       format: iso8601
       example: "2022-01-01T00:00:00Z"
+    created_at:
+      type: string
+      format: iso8601
+      example: 2022-01-01T00:00:00Z
 
 pipeline:
   type: object
@@ -260,8 +264,23 @@ pipeline:
       example:
         - "TTN@1.0.0"
         - "MFMGroundwater@1.0.0"
+    status:
+      type: string
+      oneOf:
+        - active
+        - inactive
+      example: active
+    last_status_change:
+      type: string
+      format: iso8601
+      example: 2022-01-01T00:00:00Z
+    created_at:
+      type: string
+      format: iso8601
+      example: 2022-01-01T00:00:00Z
 
-createPipelineDTO:
+
+createPipelineRequest:
   type: object
   properties:
     description:
@@ -275,7 +294,7 @@ createPipelineDTO:
         - "TTN@1.0.0"
         - "MFMGroundwater@1.0.0"
 
-updatePipelineDTO:
+updatePipelineRequest:
   type: object
   properties:
     description:
@@ -288,6 +307,15 @@ updatePipelineDTO:
       example:
         - "TTN@1.0.0"
         - "MFMGroundwater@1.0.0"
+    status:
+      type: string
+      description: |
+        Used to change a pipeline from inactive to active or vice-versa. 
+        Moving from active to inactive can also be achieve by `DELETE`ing the pipeline resource.
+      oneOf:
+        - active
+        - inactive
+      example: active
 
 datastream:
   type: object
@@ -304,3 +332,7 @@ datastream:
     unit_of_measurement:
       type: string
       format: ucum
+    created_at:
+      type: string
+      format: iso8601
+      example: 2022-01-01T00:00:00Z

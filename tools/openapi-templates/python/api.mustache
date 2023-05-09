@@ -1,4 +1,8 @@
 # coding: utf-8
+# # This template file is fetched from openapi-generator and modified
+# # Run `openapi-generator-cli author template -g python-nextgen -o outputfolder`
+# # to get all template files, make the required modifications. If a template is 
+# # missing it will fallback to the default template.
 
 {{>partial_header}}
 
@@ -49,7 +53,21 @@ class {{classname}}(object):
 {{/asyncio}}
     
 {{#vendorExtensions.x-is-paginated}}
+    @validate_arguments
     def {{operationId}}_gen(self, {{#allParams}}{{paramName}} : {{{vendorExtensions.x-py-typing}}}{{^required}} = None{{/required}}, {{/allParams}}{{#asyncio}}async_req: Optional[bool]=None, {{/asyncio}}**kwargs) -> {{#asyncio}}Union[{{{returnType}}}{{^returnType}}None{{/returnType}}, Awaitable[{{{returnType}}}{{^returnType}}None{{/returnType}}]]{{/asyncio}}{{^asyncio}}{{{returnType}}}{{^returnType}}None{{/returnType}}{{/asyncio}}:  # noqa: E501
+        """{{#isDeprecated}}(Deprecated) {{/isDeprecated}}{{{summary}}}{{^summary}}{{operationId}}{{/summary}}  # noqa: E501
+        This method wraps the API pagination logic and returns an generator which at each iteration fetches a new page.
+
+{{#notes}}
+        {{{.}}}  # noqa: E501
+{{/notes}}
+
+{{#allParams}}
+        :param {{paramName}}:{{#description}} {{{.}}}{{/description}}{{#required}} (required){{/required}}{{#optional}}(optional){{/optional}}
+        :type {{paramName}}: {{dataType}}{{#optional}}, optional{{/optional}}
+{{/allParams}}
+        :rtype: {{returnType}}{{^returnType}}None{{/returnType}}
+        """
         result = self.{{operationId}}({{#allParams}}{{paramName}}={{paramName}},{{/allParams}})
         yield result.data
         while result.links.next != "":
