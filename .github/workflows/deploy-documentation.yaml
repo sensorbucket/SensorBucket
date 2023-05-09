@@ -37,7 +37,7 @@ jobs:
     - name: Bundle OpenAPI spec with Redoc
       uses: seeebiii/redoc-cli-github-action@v10
       with:
-        args: 'bundle test/petstore.yml -o public/api'
+        args: 'bundle tools/openapi/api.yaml -o public/api'
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
