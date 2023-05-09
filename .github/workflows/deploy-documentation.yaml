@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - deploy-docs-github
     paths:
       - 'docs/**'
       - 'tools/openapi/**'
@@ -39,11 +38,12 @@ jobs:
     - name: Setup Pages
       id: pages
       uses: actions/configure-pages@v3
+    - run: mkdir -p public/api
     - run: mkdocs build -d public
     - name: Bundle OpenAPI spec with Redoc
       uses: seeebiii/redoc-cli-github-action@v10
       with:
-        args: 'bundle tools/openapi/api.yaml -o public/api'
+        args: 'bundle tools/openapi/api.yaml -o public/api/index.html'
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v1
       with:
