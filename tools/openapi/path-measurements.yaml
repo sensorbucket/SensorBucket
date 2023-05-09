@@ -1,4 +1,5 @@
 get:
+  x-is-paginated: true
   operationId: QueryMeasurements
   summary: Query measurements
   description: |
@@ -66,7 +67,7 @@ get:
                   data:
                     type: array
                     items:
-                      $ref: "schemas.yaml#/measurementDTO"
+                      $ref: "schemas.yaml#/measurement"
     '401':
       $ref: './responses.yaml#/401'
     '403':

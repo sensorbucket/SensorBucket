@@ -124,3 +124,7 @@ $RECYCLE.BIN/
 
 # MKDocs generated files
 public/
+
+# Generated tool files
+tools/generated/
+

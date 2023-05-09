@@ -1,4 +1,5 @@
 get:
+  x-is-paginated: true
   operationId: ListDevices
   summary: List devices
   description: |
@@ -86,7 +87,7 @@ get:
                   data:
                     type: array
                     items:
-                      $ref: 'schemas.yaml#/deviceDTO'
+                      $ref: 'schemas.yaml#/device'
     '401':
       $ref: './responses.yaml#/401'
     '403':
@@ -118,7 +119,7 @@ post:
                 type: string
                 example: created device
               data:
-                $ref: 'schemas.yaml#/deviceDTO'
+                $ref: 'schemas.yaml#/device'
     '401':
       $ref: './responses.yaml#/401'
     '403':

@@ -25,7 +25,7 @@ get:
                 type: string
                 example: Fetched device
               data:
-                $ref: 'schemas.yaml#/deviceDTO'
+                $ref: 'schemas.yaml#/device'
     '401':
       $ref: './responses.yaml#/401'
     '403':

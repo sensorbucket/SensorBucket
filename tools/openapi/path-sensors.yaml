@@ -1,4 +1,5 @@
 get:
+  x-is-paginated: true
   operationId: ListSensors
   summary: List sensors
   description: |
@@ -29,7 +30,7 @@ get:
                   data:
                     type: array
                     items:
-                      $ref: "schemas.yaml#/sensorDTO"
+                      $ref: "schemas.yaml#/sensor"
     '401':
       $ref: './responses.yaml#/401'
     '403':

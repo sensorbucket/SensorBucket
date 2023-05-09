@@ -1,4 +1,5 @@
 get:
+  x-is-paginated: true
   operationId: ListPipelines
   summary: List pipelines
   description: |
@@ -50,7 +51,7 @@ get:
                   data:
                     type: array
                     items:
-                      $ref: 'schemas.yaml#/pipelineDTO'
+                      $ref: 'schemas.yaml#/pipeline'
     '401':
       $ref: './responses.yaml#/401'
     '403':
@@ -85,7 +86,7 @@ post:
                 type: string
                 example: Created pipeline
               data:
-                $ref: 'schemas.yaml#/pipelineDTO'
+                $ref: 'schemas.yaml#/pipeline'
     '401':
       $ref: './responses.yaml#/401'
     '403':

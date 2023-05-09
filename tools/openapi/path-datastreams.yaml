@@ -1,4 +1,5 @@
 get:
+  x-is-paginated: true
   operationId: ListDatastreams
   summary: List all datastreams
   description: |
@@ -43,7 +44,7 @@ get:
                   data:
                     type: array
                     items:
-                      $ref: "schemas.yaml#/datastreamDTO"
+                      $ref: "schemas.yaml#/datastream"
     '401':
       $ref: './responses.yaml#/401'
     '403':

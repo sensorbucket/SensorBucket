@@ -64,7 +64,7 @@ updateDeviceDTO:
         example:
           eui: "060708090A0B0C0D"
 
-deviceDTO:
+device:
   type: object
   properties:
     id:
@@ -95,7 +95,7 @@ deviceDTO:
     sensors:
       type: array
       items:
-        $ref: '#/sensorDTO'
+        $ref: '#/sensor'
 
 createSensorRequest:
   type: object
@@ -123,7 +123,7 @@ createSensorRequest:
       type: number
       example: 7
 
-sensorDTO:
+sensor:
   type: object
   properties:
     id:
@@ -153,15 +153,12 @@ sensorDTO:
       format: iso8601
       example: 2023-05-17T15:00:00Z
 
-measurementDTO:
+measurement:
   type: object
   properties:
     uplink_message_id:
       type: string
       example: ca29e28e-eeb6-4662-922c-6cf6a36ccb6e
-    timestamp:
-      type: number
-      example: 123456789
     device_id:
       type: number
       example: 5
@@ -170,32 +167,29 @@ measurementDTO:
       example: mfm1000
     device_description:
       type: string
+      example: Particulate matter device
+    device_latitude:
+      type: number
+      example: 5.131313
+    device_longitude:
+      type: number
+      example: 5.131313
+    device_altitude:
+      type: number
+      example: 5.131313
+    device_location_description:
+      type: string
       example: Grasfield pipe 24
     device_properties:
       type: object
       example:
         eui: "060708090A0B0C0D"
-    latitude:
+    device_state:
       type: number
-      example: 50.123456
-    longitude:
+      example: 0
+    sensor_id:
       type: number
-      example: 3.12345
-    location_name:
-      type: string
-      example: Bridgeton Waters
-    location_latitude:
-      type: number
-      example: 50.12345678
-    location_longitude:
-      type: number
-      example: 3.12345678
-    measurement_type:
-      type: string
-      example: pressure
-    measurement_type_unit:
-      type: string
-      example: hPa
+      example: 3 
     sensor_code:
       type: string
       example: S123
@@ -208,11 +202,49 @@ measurementDTO:
     sensor_properties:
       type: object
       example: {}
-    value:
+    sensor_brand:
+      type: string
+      example: "SensorCompany Inc. SC123" 
+    sensor_archive_time:
+      type: number
+      example: 7 
+    datastream_id:
+      type: string
+      format: uuid
+      example: 153205d7-bdfc-4a0b-9de5-c6fa04c665f6
+    datastream_description:
+      type: string
+      example: "Concentration of particles smaller than 2.5 micrometer" 
+    datastream_observed_property:
+      type: string
+      example: "pm2.5" 
+    datastream_unit_of_measurement:
+      type: string
+      example: "ug/cm3"
+    measurement_timestamp:
+      type: string
+      format: iso8601
+      example: "2022-01-01T00:00:00Z"
+    measurement_value:
       type: number
       example: 3.44
+    measurement_latitude:
+      type: number
+      example: 3.44
+    measurement_longitude:
+      type: number
+      example: 3.44
+    measurement_altitude:
+      type: number
+      example: 3.44
+    measurement_properties:
+      type: object
+    measurement_expiration:
+      type: string
+      format: iso8601
+      example: "2022-01-01T00:00:00Z"
 
-pipelineDTO:
+pipeline:
   type: object
   properties:
     id:
@@ -257,7 +289,7 @@ updatePipelineDTO:
         - "TTN@1.0.0"
         - "MFMGroundwater@1.0.0"
 
-datastreamDTO:
+datastream:
   type: object
   properties:
     id:

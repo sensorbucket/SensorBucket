@@ -38,7 +38,7 @@ get:
                 type: string
                 example: Fetched pipeline
               data:
-                $ref: 'schemas.yaml#/pipelineDTO'
+                $ref: 'schemas.yaml#/pipeline'
     '401':
       $ref: './responses.yaml#/401'
     '403':
@@ -80,7 +80,7 @@ patch:
                 type: string
                 example: Updated pipeline
               data:
-                $ref: 'schemas.yaml#/pipelineDTO'
+                $ref: 'schemas.yaml#/pipeline'
     '401':
       $ref: './responses.yaml#/401'
     '403':
