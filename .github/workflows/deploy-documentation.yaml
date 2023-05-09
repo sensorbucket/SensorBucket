@@ -1,0 +1,41 @@
+name: Build and Deploy Pages
+
+on:
+  push:
+    branches:
+      - main
+      - deploy-docs-github
+    paths:
+      - 'docs/**'
+      - 'tools/openapi/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+
+    - name: Build pages
+      uses: docker://ghcr.io/sensorbucket/mkdocs:latest
+      with:
+        entrypoint: ['/usr/bin/env']
+        args: mkdocs build -d public
+
+    - name: Bundle OpenAPI spec with Redoc
+      uses: Redocly/redoc@v2
+      with:
+        spec: 'tools/openapi/api.yml'
+        output: 'public/openapi.html'
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./public
+
