@@ -35,10 +35,9 @@ jobs:
     - run: mkdocs build -d public
 
     - name: Bundle OpenAPI spec with Redoc
-      uses: Redocly/redoc@v2
+      uses: seeebiii/redoc-cli-github-action@v10
       with:
-        spec: 'tools/openapi/api.yml'
-        output: 'public/openapi.html'
+        args: 'bundle test/petstore.yml -o public/api'
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
