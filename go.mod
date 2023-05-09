@@ -8,7 +8,6 @@ require (
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/magefile/mage v1.13.0
 	github.com/rabbitmq/amqp091-go v1.3.4
 	github.com/rs/cors v1.8.2
 	github.com/stretchr/testify v1.8.1
@@ -28,7 +27,6 @@ require (
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/gorilla/schema v1.2.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
@@ -40,7 +38,6 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/opencontainers/runc v1.1.3 // indirect
-	github.com/pasztorpisti/qs v0.0.0-20171216220353-8d6c33ee906c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
@@ -75,8 +72,8 @@ require (
 	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/google/uuid v1.3.0
+	github.com/gorilla/schema v1.2.0
 	github.com/jackc/pgx/v5 v5.0.0-alpha.3
-	github.com/mitchellh/mapstructure v1.5.0
 	github.com/samber/lo v1.37.0
 	github.com/testcontainers/testcontainers-go v0.17.0
 )
