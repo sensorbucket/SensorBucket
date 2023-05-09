@@ -11,20 +11,24 @@ on:
       - 'mkdocs.yml'
       - '.github/workflows/**'
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cnacel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
-      with:
-        submodules: 'recursive'
-
+      uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:
         python-version: 3
-
     - uses: actions/cache@v3
       with:
         key: mkdocs-material-${{ github.ref }} 
@@ -32,30 +36,26 @@ jobs:
         restore-keys: |
           mkdocs-material-
     - run: pip install mkdocs-material mkdocs-glightbox
+    - name: Setup Pages
+      id: pages
+      uses: actions/configure-pages@v3
     - run: mkdocs build -d public
-
     - name: Bundle OpenAPI spec with Redoc
       uses: seeebiii/redoc-cli-github-action@v10
       with:
         args: 'bundle tools/openapi/api.yaml -o public/api'
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v1
+      with:
+        paths: ./public/
 
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs:
-      - build
+    needs: build
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
-        with:
-          # Upload entire repository
-          path: 'public/'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
