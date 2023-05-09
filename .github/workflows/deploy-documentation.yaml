@@ -21,11 +21,18 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - name: Build pages
-      uses: docker://ghcr.io/sensorbucket/mkdocs:latest
+    - uses: actions/setup-python@v4
       with:
-        entrypoint: ['/usr/bin/env']
-        args: mkdocs build -d public
+        python-version: 3
+
+    - uses: actions/cache@v3
+      with:
+        key: mkdocs-material-${{ github.ref }} 
+        path: .cache
+        restore-keys: |
+          mkdocs-material-
+    - run: pip install mkdocs-material mkdocs-glightbox
+    - run: mkdocs build -d public
 
     - name: Bundle OpenAPI spec with Redoc
       uses: Redocly/redoc@v2
