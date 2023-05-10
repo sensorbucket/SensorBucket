@@ -1,5 +1,10 @@
 paginatedResponse:
   type: object
+  required:
+    - links
+    - page_size
+    - total_count
+    - data
   properties:
     links:
       type: object
@@ -155,6 +160,20 @@ sensor:
 
 measurement:
   type: object
+  required:
+    - uplink_message_id
+    - device_id
+    - device_code
+    - device_state
+    - sensor_id
+    - sensor_code
+    - sensor_external_id
+    - datastream_id
+    - datastream_observed_property
+    - datastream_unit_of_measurement
+    - measurement_timestamp
+    - measurement_value
+    - measurement_expiration
   properties:
     uplink_message_id:
       type: string
@@ -312,9 +331,6 @@ updatePipelineRequest:
       description: |
         Used to change a pipeline from inactive to active or vice-versa. 
         Moving from active to inactive can also be achieve by `DELETE`ing the pipeline resource.
-      oneOf:
-        - active
-        - inactive
       example: active
 
 datastream:

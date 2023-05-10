@@ -3,7 +3,7 @@ info:
   title: Sensorbucket API
   version: '1.0'
   license:
-    name: EUPLv2
+    name: EUPLv1.2
     url: 'https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt'
   description: |
     SensorBucket processes data from different sources and devices into a single standardized format. 
@@ -13,9 +13,12 @@ info:
     that receives data from an AMQP source, process said data and output in the expected worker output format.
 
     Find out more at: https://developer.sensorbucket.nl/
+
+    Developed and designed by Provincie Zeeland and Pollex
   contact:
-    name: Provincie Zeeland
-    url: 'https://zeeland.nl'
+    name: Tim van Osch
+    email: info@pollex.nl
+    url: 'https://sensorbucket.nl'
 servers:
   - description: Production
     url: 'https://sensorbucket.nl/api'

@@ -12,8 +12,8 @@ import warnings
 import urllib
 
 from pydantic import validate_arguments, ValidationError
-from typing_extensions import Annotated{{#asyncio}}
-from typing import overload, Optional, Union, Awaitable{{/asyncio}}
+from typing_extensions import Annotated
+from typing import Generator {{#asyncio}}, overload, Optional, Union, Awaitable{{/asyncio}}
 
 {{#imports}}
 {{import}}
@@ -25,7 +25,6 @@ from {{packageName}}.exceptions import (  # noqa: F401
     ApiTypeError,
     ApiValueError
 )
-
 
 {{#operations}}
 class {{classname}}(object):
@@ -54,7 +53,7 @@ class {{classname}}(object):
     
 {{#vendorExtensions.x-is-paginated}}
     @validate_arguments
-    def {{operationId}}_gen(self, {{#allParams}}{{paramName}} : {{{vendorExtensions.x-py-typing}}}{{^required}} = None{{/required}}, {{/allParams}}{{#asyncio}}async_req: Optional[bool]=None, {{/asyncio}}**kwargs) -> {{#asyncio}}Union[{{{returnType}}}{{^returnType}}None{{/returnType}}, Awaitable[{{{returnType}}}{{^returnType}}None{{/returnType}}]]{{/asyncio}}{{^asyncio}}{{{returnType}}}{{^returnType}}None{{/returnType}}{{/asyncio}}:  # noqa: E501
+    def {{operationId}}_gen(self, {{#allParams}}{{paramName}} : {{{vendorExtensions.x-py-typing}}}{{^required}} = None{{/required}}, {{/allParams}}{{#asyncio}}async_req: Optional[bool]=None, {{/asyncio}}**kwargs) -> Generator[{{{returnType}}}, None, None]:  # noqa: E501
         """{{#isDeprecated}}(Deprecated) {{/isDeprecated}}{{{summary}}}{{^summary}}{{operationId}}{{/summary}}  # noqa: E501
         This method wraps the API pagination logic and returns an generator which at each iteration fetches a new page.
 
@@ -66,14 +65,14 @@ class {{classname}}(object):
         :param {{paramName}}:{{#description}} {{{.}}}{{/description}}{{#required}} (required){{/required}}{{#optional}}(optional){{/optional}}
         :type {{paramName}}: {{dataType}}{{#optional}}, optional{{/optional}}
 {{/allParams}}
-        :rtype: {{returnType}}{{^returnType}}None{{/returnType}}
+        :rtype: Generator[{{returnType}}{{^returnType}}None{{/returnType}}]
         """
         result = self.{{operationId}}({{#allParams}}{{paramName}}={{paramName}},{{/allParams}})
-        yield result.data
+        yield result
         while result.links.next != "":
             cursor = urllib.parse.parse_qs(urllib.parse.urlparse(result.links.next).query)['cursor'][0]
             result = self.{{operationId}}({{#allParams}}{{paramName}} = {{paramName}},{{/allParams}})
-            yield result.data
+            yield result
 {{/vendorExtensions.x-is-paginated}}
 
     @validate_arguments

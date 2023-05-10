@@ -32,3 +32,13 @@ docs:
 	@echo "Starting live docs"
 	-@docker run --rm -p 8080:8000 --init -v $(CURDIR):/docs ghcr.io/sensorbucket/mkdocs:latest
 	@echo "Stopped live docs"
+
+python:
+ifeq ($(strip $(outdir)),)
+	@echo "Error: please specify out location by providing the 'outdir' variable"
+else
+	@echo "Generating python client from spec"
+	@mkdir -p $(outdir)
+	@docker run --rm -v $(CURDIR):/sensorbucket -v $(outdir):/target --user `id -u` openapitools/openapi-generator-cli generate -i /sensorbucket/tools/openapi/api.yaml -g python-nextgen -t /sensorbucket/tools/openapi-templates/python -o /target \
+		--additional-properties=packageName=sensorbucket,packageUrl='https://sensorbucket.nl'
+endif
