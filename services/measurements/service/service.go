@@ -23,6 +23,7 @@ var (
 )
 
 type Measurement struct {
+	ID                              int                       `json:"-"`
 	UplinkMessageID                 string                    `json:"uplink_message_id"`
 	OrganisationID                  int                       `json:"organisation_id"`
 	OrganisationName                string                    `json:"organisation_name"`
