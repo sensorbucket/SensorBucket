@@ -47,7 +47,7 @@
 </script>
 
 <div class="layout">
-	<Card title="Devices" area="1/1/2/2">
+	<Card title="Devices" area="1/1/2/4">
 		<section slot="util">
 			<span>{selectedDevice?.code ?? ''}</span>
 			<button on:click={() => (devicesAsMap = !devicesAsMap)} class="underline text-sm">
@@ -61,7 +61,7 @@
 			on:select={(e) => onDeviceChange(e.detail)}
 		/>
 	</Card>
-	<Card title="Sensors" area="1/2/1/3">
+	<Card title="Sensors" area="2/1/2/2">
 		<Table
 			data={selectedDevice?.sensors ?? []}
 			fields={['code', ['External ID', 'external_id']]}
@@ -69,11 +69,12 @@
 			on:select={(e) => (selectedSensor = e.detail)}
 		/>
 	</Card>
-	<Card title="Datastreams" area="1/3/1/4">
+	<Card title="Datastreams" area="2/2/2/4">
 		{#if datastreams.length > 0}
 			<Table
 				data={datastreams}
 				fields={[
+					'id',
 					'description',
 					['Observed Property', 'observed_property'],
 					['Unit', 'unit_of_measurement']
@@ -83,7 +84,7 @@
 			/>
 		{/if}
 	</Card>
-	<Card title="Measurements" area="2/1/3/4">
+	<Card title="Measurements" area="3/1/4/4">
 		<div slot="util">
 			<label for="startdate" class="font-bold">Start: </label>
 			<DateInput id="startdate" value={startDate} on:change={(e) => (startDate = e.detail)} />
@@ -99,7 +100,7 @@
 <style>
 	.layout {
 		@apply grid gap-4;
-		grid-template-rows: minmax(33vh, 28rem) 48rem;
+		grid-template-rows: minmax(33vh, 28rem) minmax(33vh, 28rem) 48rem;
 		grid-template-columns: 1fr 1fr 1fr;
 	}
 </style>
