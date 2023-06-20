@@ -15,11 +15,11 @@ services:
       target: dev
     command: yarn dev --host=0.0.0.0 --port=3000
     environment:
-      - EP_DATASTREAMS=http://caddy/api/datastreams
-      - EP_SENSORS=http://caddy/api/sensors
-      - EP_DEVICES=http://caddy/api/devices
-      - EP_PIPELINES=http://caddy/api/pipelines
-      - EP_MEASUREMENTS=http://caddy/api/measurements
+      - PUBLIC_EP_DATASTREAMS=http://caddy/api/datastreams
+      - PUBLIC_EP_SENSORS=http://caddy/api/sensors
+      - PUBLIC_EP_DEVICES=http://caddy/api/devices
+      - PUBLIC_EP_PIPELINES=http://caddy/api/pipelines
+      - PUBLIC_EP_MEASUREMENTS=http://caddy/api/measurements
     volumes:
       - ./services/dashboard:/app:cached
 
