@@ -85,11 +85,11 @@ func decodeUplink(data []byte) (map[string]float64, error) {
 	}
 	return map[string]float64{
 		"no2":             float64(toShort(data, 0)),
-		"no2_op1":         float64(toShort(data, 1)),
-		"no2_op2":         float64(toShort(data, 2)),
+		"no2_op1":         float64(toShort(data, 1)) / 10.0,
+		"no2_op2":         float64(toShort(data, 2)) / 10.0,
 		"ox":              float64(toShort(data, 3)),
-		"ox_op1":          float64(toShort(data, 4)),
-		"ox_op2":          float64(toShort(data, 5)),
+		"ox_op1":          float64(toShort(data, 4)) / 10.0,
+		"ox_op2":          float64(toShort(data, 5)) / 10.0,
 		"humidity":        float64(toShort(data, 6)) / 100.0,
 		"pressure":        float64(toShort(data, 7)) / 10.0,
 		"temperature":     float64(toShort(data, 8)) / 100.0,
