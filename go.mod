@@ -4,6 +4,8 @@ go 1.18
 
 replace github.com/docker/docker => github.com/docker/docker v20.10.3-0.20221013203545-33ab36d6b304+incompatible // 22.06 branch
 
+replace github.com/matryer/moq => /home/timvosch/src/moq
+
 require (
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/jackc/pgx/v4 v4.15.0
