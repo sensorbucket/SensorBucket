@@ -34,6 +34,20 @@ services:
     volumes:
       - ./:/workspace:cached
 
+  tracing:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    environment:
+    - APP_NAME=tracing
+    - APP_TYPE=service
+    - AMQP_QUEUE=tracing
+    - AMQP_HOST=amqp://guest:guest@mq:5672/
+    - REDIS_ADDR=redis:6379
+    volumes:
+      - ./:/workspace:cached
+
   pipeline:
     build: 
       context: .
@@ -141,6 +155,9 @@ services:
 
   mq:
     image: rabbitmq:3.8-management
+
+  redis:
+    image: redis
 
   openapi:
     image: swaggerapi/swagger-editor
