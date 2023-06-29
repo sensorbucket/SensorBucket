@@ -18,11 +18,11 @@ type RedisStateStore struct {
 	stateTTL   time.Duration
 }
 
-func NewRedisStore(client *redis.Client) *RedisStateStore {
+func NewRedisStore(client *redis.Client, archiveTTL, stateTTL time.Duration) *RedisStateStore {
 	return &RedisStateStore{
 		redis:      client,
-		archiveTTL: 7 * 24 * time.Hour,
-		stateTTL:   1 * time.Hour,
+		archiveTTL: archiveTTL,
+		stateTTL:   stateTTL,
 	}
 }
 
