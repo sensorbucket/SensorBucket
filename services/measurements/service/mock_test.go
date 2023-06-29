@@ -28,10 +28,10 @@ var _ service.Store = &StoreMock{}
 //			InsertFunc: func(measurement service.Measurement) error {
 //				panic("mock out the Insert method")
 //			},
-//			ListDatastreamsFunc: func(datastreamFilter service.DatastreamFilter, request pagination.Request) (*pagination.Page[Datastream], error) {
+//			ListDatastreamsFunc: func(datastreamFilter service.DatastreamFilter, request pagination.Request) (*pagination.Page[service.Datastream], error) {
 //				panic("mock out the ListDatastreams method")
 //			},
-//			QueryFunc: func(filter service.Filter, request pagination.Request) (*pagination.Page[Measurement], error) {
+//			QueryFunc: func(filter service.Filter, request pagination.Request) (*pagination.Page[service.Measurement], error) {
 //				panic("mock out the Query method")
 //			},
 //		}
@@ -51,10 +51,10 @@ type StoreMock struct {
 	InsertFunc func(measurement service.Measurement) error
 
 	// ListDatastreamsFunc mocks the ListDatastreams method.
-	ListDatastreamsFunc func(datastreamFilter service.DatastreamFilter, request pagination.Request) (*pagination.Page[Datastream], error)
+	ListDatastreamsFunc func(datastreamFilter service.DatastreamFilter, request pagination.Request) (*pagination.Page[service.Datastream], error)
 
 	// QueryFunc mocks the Query method.
-	QueryFunc func(filter service.Filter, request pagination.Request) (*pagination.Page[Measurement], error)
+	QueryFunc func(filter service.Filter, request pagination.Request) (*pagination.Page[service.Measurement], error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -198,7 +198,7 @@ func (mock *StoreMock) InsertCalls() []struct {
 }
 
 // ListDatastreams calls ListDatastreamsFunc.
-func (mock *StoreMock) ListDatastreams(datastreamFilter service.DatastreamFilter, request pagination.Request) (*pagination.Page[Datastream], error) {
+func (mock *StoreMock) ListDatastreams(datastreamFilter service.DatastreamFilter, request pagination.Request) (*pagination.Page[service.Datastream], error) {
 	if mock.ListDatastreamsFunc == nil {
 		panic("StoreMock.ListDatastreamsFunc: method is nil but Store.ListDatastreams was just called")
 	}
@@ -234,7 +234,7 @@ func (mock *StoreMock) ListDatastreamsCalls() []struct {
 }
 
 // Query calls QueryFunc.
-func (mock *StoreMock) Query(filter service.Filter, request pagination.Request) (*pagination.Page[Measurement], error) {
+func (mock *StoreMock) Query(filter service.Filter, request pagination.Request) (*pagination.Page[service.Measurement], error) {
 	if mock.QueryFunc == nil {
 		panic("StoreMock.QueryFunc: method is nil but Store.Query was just called")
 	}
