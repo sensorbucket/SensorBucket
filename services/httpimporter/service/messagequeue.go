@@ -40,5 +40,5 @@ func (mq *MessageQueueAMQP) Publish(msg *pipeline.Message) error {
 	if err != nil {
 		return err
 	}
-	return mq.publisher.Publish(step, amqp091.Publishing{Body: msgData})
+	return mq.publisher.Publish(step, amqp091.Publishing{Body: msgData, MessageId: msg.ID})
 }

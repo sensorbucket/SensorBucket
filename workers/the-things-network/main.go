@@ -91,7 +91,8 @@ func processDelivery(c <-chan amqp091.Delivery, p *mq.AMQPPublisher) {
 			return fmt.Errorf("could not marshal pipelines message: %v", err)
 		}
 		p.Publish(topic, amqp091.Publishing{
-			Body: msgJSON,
+			Body:      msgJSON,
+			MessageId: delivery.MessageId,
 		})
 		return nil
 	}
