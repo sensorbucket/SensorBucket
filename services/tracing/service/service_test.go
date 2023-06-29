@@ -47,3 +47,8 @@ func TestServiceShouldArchiveOriginalMessage(t *testing.T) {
 	assert.Equal(t, delivery.Body, calls[0].Delivery.Body)
 	assert.Equal(t, delivery.MessageId, calls[0].Delivery.MessageId)
 }
+
+func TestServiceShouldUnsetIfMessageIsFinished(t *testing.T) {
+	// TODO: Implement
+	t.Fail()
+}
