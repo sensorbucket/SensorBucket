@@ -40,7 +40,7 @@ func (s *RedisStateStore) StepsRemainingFor(ctx context.Context, id, step string
 }
 
 func (s *RedisStateStore) UpdateState(ctx context.Context, id, step string, remainder int, topic string, timestamp time.Time) error {
-	err := s.redis.HSet(ctx, redisMessageKey(id, step), "remainder", remainder, "topic", topic, "timestamp", timestamp).Err()
+	err := s.redis.HSet(ctx, redisMessageKey(id, step), "id", id, "remainder", remainder, "topic", topic, "timestamp", timestamp).Err()
 	s.redis.Expire(ctx, redisMessageKey(id, step), s.stateTTL)
 	return err
 }
