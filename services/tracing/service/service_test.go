@@ -29,11 +29,8 @@ func TestServiceShouldArchiveOriginalMessage(t *testing.T) {
 		},
 	}
 	state := &MessageStateStorerMock{
-		UpdateStateFunc: func(ctx context.Context, id, key string, stepsRemaining int, currentStep string, timestamp time.Time) error {
+		UpdateStateFunc: func(ctx context.Context, id string, timestamp time.Time) error {
 			return nil
-		},
-		StepsRemainingForFunc: func(ctx context.Context, id, step string) (int, error) {
-			return 1, nil
 		},
 	}
 	svc := tracing.New(state, archiver)
@@ -70,11 +67,8 @@ func TestServiceShouldUnsetIfMessageIsFinished(t *testing.T) {
 		},
 	}
 	state := &MessageStateStorerMock{
-		UpdateStateFunc: func(ctx context.Context, id, key string, stepsRemaining int, currentStep string, timestamp time.Time) error {
+		UpdateStateFunc: func(ctx context.Context, id string, timestamp time.Time) error {
 			return nil
-		},
-		StepsRemainingForFunc: func(ctx context.Context, id, step string) (int, error) {
-			return 1, nil
 		},
 		FinishStateFunc: func(ctx context.Context, id string) error {
 			return nil

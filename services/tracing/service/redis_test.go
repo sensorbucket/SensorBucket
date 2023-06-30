@@ -48,31 +48,25 @@ func TestStateManagementAndArchiving(t *testing.T) {
 	archiveTTL := 15 * time.Minute
 	stateTTL := 5 * time.Minute
 	stateStore := tracing.NewRedisStore(redis, archiveTTL, stateTTL)
-	step := "latest"
 	topic := "testtopic"
 	now := time.Now()
 
-	t.Run("Steps remaining should default if not set", func(t *testing.T) {
+	t.Run("Should update state", func(t *testing.T) {
 		messageID := uuid.NewString()
-		remainder, err := stateStore.StepsRemainingFor(ctx, messageID, step)
+		stateKey := fmt.Sprintf("messages:%s", messageID)
+
+		err := stateStore.UpdateState(ctx, messageID, now)
 		require.NoError(t, err)
 
-		assert.Equal(t, 9999, remainder)
-	})
-
-	t.Run("Steps remaining should reflect updated state", func(t *testing.T) {
-		messageID := uuid.NewString()
-		stepsRemaining := 5
-		err := stateStore.UpdateState(ctx, messageID, step, stepsRemaining, topic, now)
-		gotRemainder, err := stateStore.StepsRemainingFor(ctx, messageID, step)
+		redisTime, err := redis.HGet(ctx, stateKey, "timestamp").Time()
 		require.NoError(t, err)
+		assert.WithinDuration(t, now, redisTime, time.Second)
 
-		assert.Equal(t, stepsRemaining, gotRemainder)
 	})
 
 	t.Run("Should set TTL on archive and state", func(t *testing.T) {
 		messageID := uuid.NewString()
-		latestStateKey := fmt.Sprintf("messages:%s:step:latest", messageID)
+		stateKey := fmt.Sprintf("messages:%s", messageID)
 		archiveKey := fmt.Sprintf("messages:%s:topic:%s:archive", messageID, topic)
 		delivery := amqp091.Delivery{
 			MessageId:  messageID,
@@ -80,13 +74,13 @@ func TestStateManagementAndArchiving(t *testing.T) {
 			Body:       []byte("testbody"),
 		}
 
-		err := stateStore.UpdateState(ctx, messageID, step, 0, topic, now)
+		err := stateStore.UpdateState(ctx, messageID, now)
 		require.NoError(t, err)
 		err = stateStore.Archive(ctx, delivery)
 		require.NoError(t, err)
 
 		assert.Greater(t, redis.TTL(ctx, archiveKey).Val(), archiveTTL-time.Minute)
-		assert.Greater(t, redis.TTL(ctx, latestStateKey).Val(), stateTTL-time.Minute)
+		assert.Greater(t, redis.TTL(ctx, stateKey).Val(), stateTTL-time.Minute)
 	})
 }
 
@@ -97,7 +91,7 @@ func TestFinishStateShouldRemoveMessageStateKeys(t *testing.T) {
 	archiveTTL := 15 * time.Minute
 	stateTTL := 5 * time.Minute
 	stateStore := tracing.NewRedisStore(redis, archiveTTL, stateTTL)
-	key := fmt.Sprintf("messages:%s:step:latest", messageID)
+	key := fmt.Sprintf("messages:%s", messageID)
 
 	err := redis.HSet(ctx, key, "timestamp", time.Now()).Err()
 	require.NoError(t, err)

@@ -1,6 +1,6 @@
 package tracing
 
-//go:generate moq -pkg tracing_test -out mock_test.go . MessageStateStorer MessageArchiver
+//go:generate moq -pkg tracing_test -out mock_test.go . MessageStateStorer MessageArchiver MessageStateIterator
 
 import (
 	"context"
@@ -39,8 +39,7 @@ func Run(ctx context.Context, amqpHost, amqpQueue string, state MessageStateStor
 }
 
 type MessageStateStorer interface {
-	StepsRemainingFor(ctx context.Context, id, step string) (int, error)
-	UpdateState(ctx context.Context, id, step string, stepsRemaining int, topic string, timestamp time.Time) error
+	UpdateState(ctx context.Context, id string, timestamp time.Time) error
 	FinishState(ctx context.Context, id string) error
 }
 
@@ -88,27 +87,15 @@ func (s *Service) ProcessDelivery(del amqp091.Delivery) error {
 	return nil
 }
 
-const LATEST_STEP = "latest"
-
 func (s *Service) ProcessPipelineMessage(id, topic string, msg pipeline.Message) error {
 	ctx := context.TODO()
 
-	stepsRemaining, err := s.stateStore.StepsRemainingFor(ctx, id, LATEST_STEP)
-	if err != nil {
-		return err
-	}
-	err = s.stateStore.UpdateState(ctx, id, fmt.Sprint(len(msg.PipelineSteps)), len(msg.PipelineSteps), topic, time.Now())
+	err := s.stateStore.UpdateState(ctx, id, time.Now())
 	if err != nil {
 		return err
 	}
 
-	// Update "latest" state if this message is newer than the current "latest" state
-	if len(msg.PipelineSteps) > 0 && len(msg.PipelineSteps) < stepsRemaining {
-		err = s.stateStore.UpdateState(ctx, id, LATEST_STEP, len(msg.PipelineSteps), topic, time.Now())
-		if err != nil {
-			return err
-		}
-	} else if len(msg.PipelineSteps) == 0 {
+	if len(msg.PipelineSteps) == 0 {
 		// Finished
 		err = s.stateStore.FinishState(ctx, id)
 		if err != nil {
