@@ -102,3 +102,38 @@ func TestFinishStateShouldRemoveMessageStateKeys(t *testing.T) {
 	exists := redis.Exists(ctx, key).Val()
 	assert.EqualValues(t, 0, exists)
 }
+
+func TestNextShouldIterateOverMessageStates(t *testing.T) {
+	ctx := context.Background()
+	redis := createRedis(t)
+	states := []tracing.MessageState{
+		{
+			ID:        uuid.NewString(),
+			Timestamp: time.Now(),
+		},
+		{
+			ID:        uuid.NewString(),
+			Timestamp: time.Now(),
+		},
+		{
+			ID:        uuid.NewString(),
+			Timestamp: time.Now(),
+		},
+		{
+			ID:        uuid.NewString(),
+			Timestamp: time.Now(),
+		},
+	}
+	for _, state := range states {
+		err := redis.HSet(ctx, fmt.Sprintf("messages:%s", state.ID), "id", state.ID, "timestamp", state.Timestamp).Err()
+		require.NoError(t, err)
+	}
+	archiveTTL := 15 * time.Minute
+	stateTTL := 5 * time.Minute
+	store := tracing.NewRedisStore(redis, archiveTTL, stateTTL)
+
+	_, messages, err := store.Next(ctx, nil)
+	require.NoError(t, err)
+
+	assert.EqualValues(t, states, messages)
+}

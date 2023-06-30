@@ -2,14 +2,17 @@ package tracing
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
+	tracing "sensorbucket.nl/sensorbucket/services/tracing/service"
 )
 
 var _ MessageStateStorer = (*RedisStateStore)(nil)
+var _ MessageStateIterator = (*RedisStateStore)(nil)
 var _ MessageArchiver = (*RedisStateStore)(nil)
 
 type RedisStateStore struct {
@@ -34,6 +37,40 @@ func (s *RedisStateStore) UpdateState(ctx context.Context, id string, timestamp 
 
 func (s *RedisStateStore) FinishState(ctx context.Context, id string) error {
 	return s.redis.Del(ctx, redisStateKey(id)).Err()
+}
+
+func (s *RedisStateStore) Next(ctx context.Context, cursor any) (any, []tracing.MessageState, error) {
+	var count int64 = 100
+	states := []tracing.MessageState{}
+	var c uint64
+	if cursor != nil {
+		var ok bool
+		c, ok = cursor.(uint64)
+		if !ok {
+			return nil, nil, errors.New("Invalid cursor")
+		}
+	}
+
+	keys, c := s.redis.Scan(ctx, c, redisStateKey("*"), count).Val()
+	for _, key := range keys {
+		msgID, err := s.redis.HGet(ctx, key, "id").Result()
+		if err != nil {
+			continue
+		}
+		ts, err := s.redis.HGet(ctx, key, "timestamp").Time()
+		if err != nil {
+			continue
+		}
+		states = append(states, MessageState{
+			ID:        msgID,
+			Timestamp: ts,
+		})
+	}
+
+	if c == 0 {
+		cursor = nil
+	}
+	return cursor, states, nil
 }
 
 func (s *RedisStateStore) Archive(ctx context.Context, del amqp091.Delivery) error {

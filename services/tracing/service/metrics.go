@@ -1,15 +1,24 @@
 package tracing
 
 import (
-	"context"
-	"fmt"
 	"time"
-
-	"github.com/redis/go-redis/v9"
 )
 
+type MessageState struct {
+	ID        string
+	Timestamp time.Time
+}
+
+type MessageStateIterator interface {
+	Next(cursor any) (any, []MessageState, error)
+}
+
 type MetricsService struct {
-	redis redis.Client
+	iterator MessageStateIterator
+}
+
+func NewMetricsService(iterator MessageStateIterator) *MetricsService {
+	return &MetricsService{iterator}
 }
 
 type Metrics struct {
@@ -21,35 +30,19 @@ type Metrics struct {
 	CountAbove300s uint
 }
 
-func (s *MetricsService) calculate() (Metrics, error) {
-	ctx := context.Background()
+func (s *MetricsService) Calculate() (Metrics, error) {
 	var metrics Metrics
 
-	pattern := "messages:*:step:latest"
-	var cursor uint64 = 0
-	var pageSize int64 = 100
-	keys, cursor, err := s.redis.Scan(ctx, cursor, pattern, pageSize).Result()
-	if err != nil {
-		return metrics, err
-	}
+	var cursor any = nil
+	cursor, messages, err := s.iterator.Next(cursor)
 
 	// loop over pages until the end
-	for cursor != 0 {
+	for {
 		// Update total count
-		metrics.Count += uint(len(keys))
-		// Loop over keys and calculate metrics
-		for _, key := range keys {
-			//id, err := s.redis.HGet(ctx, key, "id").Result()
-			//if err != nil {
-			//	fmt.Printf("could not get id for key '%s': %v\n", key, err)
-			//    continue
-			//}
-			since, err := s.redis.HGet(ctx, key, "timestamp").Time()
-			if err != nil {
-				fmt.Printf("could not get timestamp for key '%s': %v\n", key, err)
-				continue
-			}
-			duration := time.Since(since)
+		metrics.Count += uint(len(messages))
+		// Loop over messages and calculate metrics
+		for _, msg := range messages {
+			duration := time.Since(msg.Timestamp)
 			switch {
 			case duration < 5*time.Second:
 				// Do nothing
@@ -65,11 +58,12 @@ func (s *MetricsService) calculate() (Metrics, error) {
 				metrics.CountAbove300s++
 			}
 		}
-
-		// Get next page
-		keys, cursor, err = s.redis.Scan(ctx, cursor, pattern, pageSize).Result()
+		cursor, messages, err = s.iterator.Next(cursor)
 		if err != nil {
 			return metrics, err
+		}
+		if cursor == nil {
+			break
 		}
 	}
 

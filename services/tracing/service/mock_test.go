@@ -24,10 +24,7 @@ var _ tracing.MessageStateStorer = &MessageStateStorerMock{}
 //			FinishStateFunc: func(ctx context.Context, id string) error {
 //				panic("mock out the FinishState method")
 //			},
-//			StepsRemainingForFunc: func(ctx context.Context, id string, step string) (int, error) {
-//				panic("mock out the StepsRemainingFor method")
-//			},
-//			UpdateStateFunc: func(ctx context.Context, id string, step string, stepsRemaining int, topic string, timestamp time.Time) error {
+//			UpdateStateFunc: func(ctx context.Context, id string, timestamp time.Time) error {
 //				panic("mock out the UpdateState method")
 //			},
 //		}
@@ -40,11 +37,8 @@ type MessageStateStorerMock struct {
 	// FinishStateFunc mocks the FinishState method.
 	FinishStateFunc func(ctx context.Context, id string) error
 
-	// StepsRemainingForFunc mocks the StepsRemainingFor method.
-	StepsRemainingForFunc func(ctx context.Context, id string, step string) (int, error)
-
 	// UpdateStateFunc mocks the UpdateState method.
-	UpdateStateFunc func(ctx context.Context, id string, step string, stepsRemaining int, topic string, timestamp time.Time) error
+	UpdateStateFunc func(ctx context.Context, id string, timestamp time.Time) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -55,34 +49,18 @@ type MessageStateStorerMock struct {
 			// ID is the id argument value.
 			ID string
 		}
-		// StepsRemainingFor holds details about calls to the StepsRemainingFor method.
-		StepsRemainingFor []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// ID is the id argument value.
-			ID string
-			// Step is the step argument value.
-			Step string
-		}
 		// UpdateState holds details about calls to the UpdateState method.
 		UpdateState []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// ID is the id argument value.
 			ID string
-			// Step is the step argument value.
-			Step string
-			// StepsRemaining is the stepsRemaining argument value.
-			StepsRemaining int
-			// Topic is the topic argument value.
-			Topic string
 			// Timestamp is the timestamp argument value.
 			Timestamp time.Time
 		}
 	}
-	lockFinishState       sync.RWMutex
-	lockStepsRemainingFor sync.RWMutex
-	lockUpdateState       sync.RWMutex
+	lockFinishState sync.RWMutex
+	lockUpdateState sync.RWMutex
 }
 
 // FinishState calls FinishStateFunc.
@@ -121,70 +99,24 @@ func (mock *MessageStateStorerMock) FinishStateCalls() []struct {
 	return calls
 }
 
-// StepsRemainingFor calls StepsRemainingForFunc.
-func (mock *MessageStateStorerMock) StepsRemainingFor(ctx context.Context, id string, step string) (int, error) {
-	if mock.StepsRemainingForFunc == nil {
-		panic("MessageStateStorerMock.StepsRemainingForFunc: method is nil but MessageStateStorer.StepsRemainingFor was just called")
-	}
-	callInfo := struct {
-		Ctx  context.Context
-		ID   string
-		Step string
-	}{
-		Ctx:  ctx,
-		ID:   id,
-		Step: step,
-	}
-	mock.lockStepsRemainingFor.Lock()
-	mock.calls.StepsRemainingFor = append(mock.calls.StepsRemainingFor, callInfo)
-	mock.lockStepsRemainingFor.Unlock()
-	return mock.StepsRemainingForFunc(ctx, id, step)
-}
-
-// StepsRemainingForCalls gets all the calls that were made to StepsRemainingFor.
-// Check the length with:
-//
-//	len(mockedMessageStateStorer.StepsRemainingForCalls())
-func (mock *MessageStateStorerMock) StepsRemainingForCalls() []struct {
-	Ctx  context.Context
-	ID   string
-	Step string
-} {
-	var calls []struct {
-		Ctx  context.Context
-		ID   string
-		Step string
-	}
-	mock.lockStepsRemainingFor.RLock()
-	calls = mock.calls.StepsRemainingFor
-	mock.lockStepsRemainingFor.RUnlock()
-	return calls
-}
-
 // UpdateState calls UpdateStateFunc.
-func (mock *MessageStateStorerMock) UpdateState(ctx context.Context, id string, step string, stepsRemaining int, topic string, timestamp time.Time) error {
+func (mock *MessageStateStorerMock) UpdateState(ctx context.Context, id string, timestamp time.Time) error {
 	if mock.UpdateStateFunc == nil {
 		panic("MessageStateStorerMock.UpdateStateFunc: method is nil but MessageStateStorer.UpdateState was just called")
 	}
 	callInfo := struct {
-		Ctx            context.Context
-		ID             string
-		Step           string
-		StepsRemaining int
-		Topic          string
-		Timestamp      time.Time
+		Ctx       context.Context
+		ID        string
+		Timestamp time.Time
 	}{
-		Ctx:            ctx,
-		ID:             id,
-		Step:           step,
-		StepsRemaining: stepsRemaining,
-		Topic:          topic,
-		Timestamp:      timestamp,
+		Ctx:       ctx,
+		ID:        id,
+		Timestamp: timestamp,
 	}
 	mock.lockUpdateState.Lock()
 	mock.calls.UpdateState = append(mock.calls.UpdateState, callInfo)
 	mock.lockUpdateState.Unlock()
-	return mock.UpdateStateFunc(ctx, id, step, stepsRemaining, topic, timestamp)
+	return mock.UpdateStateFunc(ctx, id, timestamp)
 }
 
 // UpdateStateCalls gets all the calls that were made to UpdateState.
@@ -192,20 +124,14 @@ func (mock *MessageStateStorerMock) UpdateState(ctx context.Context, id string, 
 //
 //	len(mockedMessageStateStorer.UpdateStateCalls())
 func (mock *MessageStateStorerMock) UpdateStateCalls() []struct {
-	Ctx            context.Context
-	ID             string
-	Step           string
-	StepsRemaining int
-	Topic          string
-	Timestamp      time.Time
+	Ctx       context.Context
+	ID        string
+	Timestamp time.Time
 } {
 	var calls []struct {
-		Ctx            context.Context
-		ID             string
-		Step           string
-		StepsRemaining int
-		Topic          string
-		Timestamp      time.Time
+		Ctx       context.Context
+		ID        string
+		Timestamp time.Time
 	}
 	mock.lockUpdateState.RLock()
 	calls = mock.calls.UpdateState
@@ -282,5 +208,71 @@ func (mock *MessageArchiverMock) ArchiveCalls() []struct {
 	mock.lockArchive.RLock()
 	calls = mock.calls.Archive
 	mock.lockArchive.RUnlock()
+	return calls
+}
+
+// Ensure, that MessageStateIteratorMock does implement tracing.MessageStateIterator.
+// If this is not the case, regenerate this file with moq.
+var _ tracing.MessageStateIterator = &MessageStateIteratorMock{}
+
+// MessageStateIteratorMock is a mock implementation of tracing.MessageStateIterator.
+//
+//	func TestSomethingThatUsesMessageStateIterator(t *testing.T) {
+//
+//		// make and configure a mocked tracing.MessageStateIterator
+//		mockedMessageStateIterator := &MessageStateIteratorMock{
+//			NextFunc: func(cursor any) (any, []tracing.MessageState, error) {
+//				panic("mock out the Next method")
+//			},
+//		}
+//
+//		// use mockedMessageStateIterator in code that requires tracing.MessageStateIterator
+//		// and then make assertions.
+//
+//	}
+type MessageStateIteratorMock struct {
+	// NextFunc mocks the Next method.
+	NextFunc func(cursor any) (any, []tracing.MessageState, error)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// Next holds details about calls to the Next method.
+		Next []struct {
+			// Cursor is the cursor argument value.
+			Cursor any
+		}
+	}
+	lockNext sync.RWMutex
+}
+
+// Next calls NextFunc.
+func (mock *MessageStateIteratorMock) Next(cursor any) (any, []tracing.MessageState, error) {
+	if mock.NextFunc == nil {
+		panic("MessageStateIteratorMock.NextFunc: method is nil but MessageStateIterator.Next was just called")
+	}
+	callInfo := struct {
+		Cursor any
+	}{
+		Cursor: cursor,
+	}
+	mock.lockNext.Lock()
+	mock.calls.Next = append(mock.calls.Next, callInfo)
+	mock.lockNext.Unlock()
+	return mock.NextFunc(cursor)
+}
+
+// NextCalls gets all the calls that were made to Next.
+// Check the length with:
+//
+//	len(mockedMessageStateIterator.NextCalls())
+func (mock *MessageStateIteratorMock) NextCalls() []struct {
+	Cursor any
+} {
+	var calls []struct {
+		Cursor any
+	}
+	mock.lockNext.RLock()
+	calls = mock.calls.Next
+	mock.lockNext.RUnlock()
 	return calls
 }

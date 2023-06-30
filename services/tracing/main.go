@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"sensorbucket.nl/sensorbucket/internal/env"
@@ -25,7 +26,9 @@ func main() {
 		Addr: REDIS_ADDR,
 	})
 	// Build Archiver and StateStorer
-	store := tracing.NewRedisStore(rc)
+	archiveTTL := 24 * time.Hour
+	stateTTL := 1 * time.Hour
+	store := tracing.NewRedisStore(rc, archiveTTL, stateTTL)
 
 	if err := tracing.Run(ctx, AMQP_HOST, AMQP_QUEUE, store, store); err != nil {
 		fmt.Fprintf(os.Stderr, "Fatal error: %v", err)
