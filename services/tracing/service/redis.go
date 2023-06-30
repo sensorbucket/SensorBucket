@@ -45,6 +45,10 @@ func (s *RedisStateStore) UpdateState(ctx context.Context, id, step string, rema
 	return err
 }
 
+func (s *RedisStateStore) FinishState(ctx context.Context, id string) error {
+	return s.redis.Del(ctx, redisMessageKey(id, "latest")).Err()
+}
+
 func (s *RedisStateStore) Archive(ctx context.Context, del amqp091.Delivery) error {
 	return s.redis.Set(ctx, redisArchiveKey(del.MessageId, del.RoutingKey), string(del.Body), s.archiveTTL).Err()
 }

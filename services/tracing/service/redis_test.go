@@ -89,3 +89,22 @@ func TestStateManagementAndArchiving(t *testing.T) {
 		assert.Greater(t, redis.TTL(ctx, latestStateKey).Val(), stateTTL-time.Minute)
 	})
 }
+
+func TestFinishStateShouldRemoveMessageStateKeys(t *testing.T) {
+	ctx := context.Background()
+	messageID := uuid.NewString()
+	redis := createRedis(t)
+	archiveTTL := 15 * time.Minute
+	stateTTL := 5 * time.Minute
+	stateStore := tracing.NewRedisStore(redis, archiveTTL, stateTTL)
+	key := fmt.Sprintf("messages:%s:step:latest", messageID)
+
+	err := redis.HSet(ctx, key, "timestamp", time.Now()).Err()
+	require.NoError(t, err)
+
+	err = stateStore.FinishState(ctx, messageID)
+	require.NoError(t, err)
+
+	exists := redis.Exists(ctx, key).Val()
+	assert.EqualValues(t, 0, exists)
+}

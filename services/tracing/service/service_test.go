@@ -48,7 +48,44 @@ func TestServiceShouldArchiveOriginalMessage(t *testing.T) {
 	assert.Equal(t, delivery.MessageId, calls[0].Delivery.MessageId)
 }
 
+func createDelivery(t *testing.T, id, topic string, steps []string) amqp091.Delivery {
+	msg := pipeline.NewMessage(id, steps)
+	msgJSON, err := json.Marshal(&msg)
+	require.NoError(t, err)
+	delivery := amqp091.Delivery{
+		Body:       msgJSON,
+		RoutingKey: topic,
+		MessageId:  msg.ID,
+	}
+	return delivery
+}
+
 func TestServiceShouldUnsetIfMessageIsFinished(t *testing.T) {
-	// TODO: Implement
-	t.Fail()
+	var err error
+	delivery1 := createDelivery(t, uuid.NewString(), "b", []string{"a"})
+	delivery2 := createDelivery(t, delivery1.MessageId, "a", []string{})
+	archiver := &MessageArchiverMock{
+		ArchiveFunc: func(ctx context.Context, delivery amqp091.Delivery) error {
+			return nil
+		},
+	}
+	state := &MessageStateStorerMock{
+		UpdateStateFunc: func(ctx context.Context, id, key string, stepsRemaining int, currentStep string, timestamp time.Time) error {
+			return nil
+		},
+		StepsRemainingForFunc: func(ctx context.Context, id, step string) (int, error) {
+			return 1, nil
+		},
+		FinishStateFunc: func(ctx context.Context, id string) error {
+			return nil
+		},
+	}
+	svc := tracing.New(state, archiver)
+
+	err = svc.ProcessDelivery(delivery1)
+	require.NoError(t, err)
+	assert.Len(t, state.UpdateStateCalls(), 1)
+	err = svc.ProcessDelivery(delivery2)
+	require.NoError(t, err)
+	assert.Len(t, state.FinishStateCalls(), 1)
 }

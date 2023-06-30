@@ -41,6 +41,7 @@ func Run(ctx context.Context, amqpHost, amqpQueue string, state MessageStateStor
 type MessageStateStorer interface {
 	StepsRemainingFor(ctx context.Context, id, step string) (int, error)
 	UpdateState(ctx context.Context, id, step string, stepsRemaining int, topic string, timestamp time.Time) error
+	FinishState(ctx context.Context, id string) error
 }
 
 type MessageArchiver interface {
@@ -102,8 +103,14 @@ func (s *Service) ProcessPipelineMessage(id, topic string, msg pipeline.Message)
 	}
 
 	// Update "latest" state if this message is newer than the current "latest" state
-	if len(msg.PipelineSteps) < stepsRemaining {
+	if len(msg.PipelineSteps) > 0 && len(msg.PipelineSteps) < stepsRemaining {
 		err = s.stateStore.UpdateState(ctx, id, LATEST_STEP, len(msg.PipelineSteps), topic, time.Now())
+		if err != nil {
+			return err
+		}
+	} else if len(msg.PipelineSteps) == 0 {
+		// Finished
+		err = s.stateStore.FinishState(ctx, id)
 		if err != nil {
 			return err
 		}

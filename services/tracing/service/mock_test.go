@@ -21,6 +21,9 @@ var _ tracing.MessageStateStorer = &MessageStateStorerMock{}
 //
 //		// make and configure a mocked tracing.MessageStateStorer
 //		mockedMessageStateStorer := &MessageStateStorerMock{
+//			FinishStateFunc: func(ctx context.Context, id string) error {
+//				panic("mock out the FinishState method")
+//			},
 //			StepsRemainingForFunc: func(ctx context.Context, id string, step string) (int, error) {
 //				panic("mock out the StepsRemainingFor method")
 //			},
@@ -34,6 +37,9 @@ var _ tracing.MessageStateStorer = &MessageStateStorerMock{}
 //
 //	}
 type MessageStateStorerMock struct {
+	// FinishStateFunc mocks the FinishState method.
+	FinishStateFunc func(ctx context.Context, id string) error
+
 	// StepsRemainingForFunc mocks the StepsRemainingFor method.
 	StepsRemainingForFunc func(ctx context.Context, id string, step string) (int, error)
 
@@ -42,6 +48,13 @@ type MessageStateStorerMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// FinishState holds details about calls to the FinishState method.
+		FinishState []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID string
+		}
 		// StepsRemainingFor holds details about calls to the StepsRemainingFor method.
 		StepsRemainingFor []struct {
 			// Ctx is the ctx argument value.
@@ -67,8 +80,45 @@ type MessageStateStorerMock struct {
 			Timestamp time.Time
 		}
 	}
+	lockFinishState       sync.RWMutex
 	lockStepsRemainingFor sync.RWMutex
 	lockUpdateState       sync.RWMutex
+}
+
+// FinishState calls FinishStateFunc.
+func (mock *MessageStateStorerMock) FinishState(ctx context.Context, id string) error {
+	if mock.FinishStateFunc == nil {
+		panic("MessageStateStorerMock.FinishStateFunc: method is nil but MessageStateStorer.FinishState was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		ID  string
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockFinishState.Lock()
+	mock.calls.FinishState = append(mock.calls.FinishState, callInfo)
+	mock.lockFinishState.Unlock()
+	return mock.FinishStateFunc(ctx, id)
+}
+
+// FinishStateCalls gets all the calls that were made to FinishState.
+// Check the length with:
+//
+//	len(mockedMessageStateStorer.FinishStateCalls())
+func (mock *MessageStateStorerMock) FinishStateCalls() []struct {
+	Ctx context.Context
+	ID  string
+} {
+	var calls []struct {
+		Ctx context.Context
+		ID  string
+	}
+	mock.lockFinishState.RLock()
+	calls = mock.calls.FinishState
+	mock.lockFinishState.RUnlock()
+	return calls
 }
 
 // StepsRemainingFor calls StepsRemainingForFunc.
