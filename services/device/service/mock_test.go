@@ -5,6 +5,7 @@ package service_test
 
 import (
 	"context"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/device/service"
 	"sync"
 )
@@ -25,16 +26,16 @@ var _ service.Store = &StoreMock{}
 //			FindFunc: func(id int64) (*service.Device, error) {
 //				panic("mock out the Find method")
 //			},
-//			ListFunc: func(deviceFilter service.DeviceFilter) ([]service.Device, error) {
+//			ListFunc: func(deviceFilter service.DeviceFilter, request pagination.Request) (*pagination.Page[service.Device], error) {
 //				panic("mock out the List method")
 //			},
-//			ListInBoundingBoxFunc: func(deviceFilter service.DeviceFilter) ([]service.Device, error) {
+//			ListInBoundingBoxFunc: func(deviceFilter service.DeviceFilter, request pagination.Request) (*pagination.Page[service.Device], error) {
 //				panic("mock out the ListInBoundingBox method")
 //			},
-//			ListInRangeFunc: func(deviceFilter service.DeviceFilter) ([]service.Device, error) {
+//			ListInRangeFunc: func(deviceFilter service.DeviceFilter, request pagination.Request) (*pagination.Page[service.Device], error) {
 //				panic("mock out the ListInRange method")
 //			},
-//			ListSensorsFunc: func() ([]service.Sensor, error) {
+//			ListSensorsFunc: func(request pagination.Request) (*pagination.Page[service.Sensor], error) {
 //				panic("mock out the ListSensors method")
 //			},
 //			SaveFunc: func(dev *service.Device) error {
@@ -54,16 +55,16 @@ type StoreMock struct {
 	FindFunc func(id int64) (*service.Device, error)
 
 	// ListFunc mocks the List method.
-	ListFunc func(deviceFilter service.DeviceFilter) ([]service.Device, error)
+	ListFunc func(deviceFilter service.DeviceFilter, request pagination.Request) (*pagination.Page[service.Device], error)
 
 	// ListInBoundingBoxFunc mocks the ListInBoundingBox method.
-	ListInBoundingBoxFunc func(deviceFilter service.DeviceFilter) ([]service.Device, error)
+	ListInBoundingBoxFunc func(deviceFilter service.DeviceFilter, request pagination.Request) (*pagination.Page[service.Device], error)
 
 	// ListInRangeFunc mocks the ListInRange method.
-	ListInRangeFunc func(deviceFilter service.DeviceFilter) ([]service.Device, error)
+	ListInRangeFunc func(deviceFilter service.DeviceFilter, request pagination.Request) (*pagination.Page[service.Device], error)
 
 	// ListSensorsFunc mocks the ListSensors method.
-	ListSensorsFunc func() ([]service.Sensor, error)
+	ListSensorsFunc func(request pagination.Request) (*pagination.Page[service.Sensor], error)
 
 	// SaveFunc mocks the Save method.
 	SaveFunc func(dev *service.Device) error
@@ -84,19 +85,27 @@ type StoreMock struct {
 		List []struct {
 			// DeviceFilter is the deviceFilter argument value.
 			DeviceFilter service.DeviceFilter
+			// Request is the request argument value.
+			Request pagination.Request
 		}
 		// ListInBoundingBox holds details about calls to the ListInBoundingBox method.
 		ListInBoundingBox []struct {
 			// DeviceFilter is the deviceFilter argument value.
 			DeviceFilter service.DeviceFilter
+			// Request is the request argument value.
+			Request pagination.Request
 		}
 		// ListInRange holds details about calls to the ListInRange method.
 		ListInRange []struct {
 			// DeviceFilter is the deviceFilter argument value.
 			DeviceFilter service.DeviceFilter
+			// Request is the request argument value.
+			Request pagination.Request
 		}
 		// ListSensors holds details about calls to the ListSensors method.
 		ListSensors []struct {
+			// Request is the request argument value.
+			Request pagination.Request
 		}
 		// Save holds details about calls to the Save method.
 		Save []struct {
@@ -178,19 +187,21 @@ func (mock *StoreMock) FindCalls() []struct {
 }
 
 // List calls ListFunc.
-func (mock *StoreMock) List(deviceFilter service.DeviceFilter) ([]service.Device, error) {
+func (mock *StoreMock) List(deviceFilter service.DeviceFilter, request pagination.Request) (*pagination.Page[service.Device], error) {
 	if mock.ListFunc == nil {
 		panic("StoreMock.ListFunc: method is nil but Store.List was just called")
 	}
 	callInfo := struct {
 		DeviceFilter service.DeviceFilter
+		Request      pagination.Request
 	}{
 		DeviceFilter: deviceFilter,
+		Request:      request,
 	}
 	mock.lockList.Lock()
 	mock.calls.List = append(mock.calls.List, callInfo)
 	mock.lockList.Unlock()
-	return mock.ListFunc(deviceFilter)
+	return mock.ListFunc(deviceFilter, request)
 }
 
 // ListCalls gets all the calls that were made to List.
@@ -199,9 +210,11 @@ func (mock *StoreMock) List(deviceFilter service.DeviceFilter) ([]service.Device
 //	len(mockedStore.ListCalls())
 func (mock *StoreMock) ListCalls() []struct {
 	DeviceFilter service.DeviceFilter
+	Request      pagination.Request
 } {
 	var calls []struct {
 		DeviceFilter service.DeviceFilter
+		Request      pagination.Request
 	}
 	mock.lockList.RLock()
 	calls = mock.calls.List
@@ -210,19 +223,21 @@ func (mock *StoreMock) ListCalls() []struct {
 }
 
 // ListInBoundingBox calls ListInBoundingBoxFunc.
-func (mock *StoreMock) ListInBoundingBox(deviceFilter service.DeviceFilter) ([]service.Device, error) {
+func (mock *StoreMock) ListInBoundingBox(deviceFilter service.DeviceFilter, request pagination.Request) (*pagination.Page[service.Device], error) {
 	if mock.ListInBoundingBoxFunc == nil {
 		panic("StoreMock.ListInBoundingBoxFunc: method is nil but Store.ListInBoundingBox was just called")
 	}
 	callInfo := struct {
 		DeviceFilter service.DeviceFilter
+		Request      pagination.Request
 	}{
 		DeviceFilter: deviceFilter,
+		Request:      request,
 	}
 	mock.lockListInBoundingBox.Lock()
 	mock.calls.ListInBoundingBox = append(mock.calls.ListInBoundingBox, callInfo)
 	mock.lockListInBoundingBox.Unlock()
-	return mock.ListInBoundingBoxFunc(deviceFilter)
+	return mock.ListInBoundingBoxFunc(deviceFilter, request)
 }
 
 // ListInBoundingBoxCalls gets all the calls that were made to ListInBoundingBox.
@@ -231,9 +246,11 @@ func (mock *StoreMock) ListInBoundingBox(deviceFilter service.DeviceFilter) ([]s
 //	len(mockedStore.ListInBoundingBoxCalls())
 func (mock *StoreMock) ListInBoundingBoxCalls() []struct {
 	DeviceFilter service.DeviceFilter
+	Request      pagination.Request
 } {
 	var calls []struct {
 		DeviceFilter service.DeviceFilter
+		Request      pagination.Request
 	}
 	mock.lockListInBoundingBox.RLock()
 	calls = mock.calls.ListInBoundingBox
@@ -242,19 +259,21 @@ func (mock *StoreMock) ListInBoundingBoxCalls() []struct {
 }
 
 // ListInRange calls ListInRangeFunc.
-func (mock *StoreMock) ListInRange(deviceFilter service.DeviceFilter) ([]service.Device, error) {
+func (mock *StoreMock) ListInRange(deviceFilter service.DeviceFilter, request pagination.Request) (*pagination.Page[service.Device], error) {
 	if mock.ListInRangeFunc == nil {
 		panic("StoreMock.ListInRangeFunc: method is nil but Store.ListInRange was just called")
 	}
 	callInfo := struct {
 		DeviceFilter service.DeviceFilter
+		Request      pagination.Request
 	}{
 		DeviceFilter: deviceFilter,
+		Request:      request,
 	}
 	mock.lockListInRange.Lock()
 	mock.calls.ListInRange = append(mock.calls.ListInRange, callInfo)
 	mock.lockListInRange.Unlock()
-	return mock.ListInRangeFunc(deviceFilter)
+	return mock.ListInRangeFunc(deviceFilter, request)
 }
 
 // ListInRangeCalls gets all the calls that were made to ListInRange.
@@ -263,9 +282,11 @@ func (mock *StoreMock) ListInRange(deviceFilter service.DeviceFilter) ([]service
 //	len(mockedStore.ListInRangeCalls())
 func (mock *StoreMock) ListInRangeCalls() []struct {
 	DeviceFilter service.DeviceFilter
+	Request      pagination.Request
 } {
 	var calls []struct {
 		DeviceFilter service.DeviceFilter
+		Request      pagination.Request
 	}
 	mock.lockListInRange.RLock()
 	calls = mock.calls.ListInRange
@@ -274,16 +295,19 @@ func (mock *StoreMock) ListInRangeCalls() []struct {
 }
 
 // ListSensors calls ListSensorsFunc.
-func (mock *StoreMock) ListSensors() ([]service.Sensor, error) {
+func (mock *StoreMock) ListSensors(request pagination.Request) (*pagination.Page[service.Sensor], error) {
 	if mock.ListSensorsFunc == nil {
 		panic("StoreMock.ListSensorsFunc: method is nil but Store.ListSensors was just called")
 	}
 	callInfo := struct {
-	}{}
+		Request pagination.Request
+	}{
+		Request: request,
+	}
 	mock.lockListSensors.Lock()
 	mock.calls.ListSensors = append(mock.calls.ListSensors, callInfo)
 	mock.lockListSensors.Unlock()
-	return mock.ListSensorsFunc()
+	return mock.ListSensorsFunc(request)
 }
 
 // ListSensorsCalls gets all the calls that were made to ListSensors.
@@ -291,8 +315,10 @@ func (mock *StoreMock) ListSensors() ([]service.Sensor, error) {
 //
 //	len(mockedStore.ListSensorsCalls())
 func (mock *StoreMock) ListSensorsCalls() []struct {
+	Request pagination.Request
 } {
 	var calls []struct {
+		Request pagination.Request
 	}
 	mock.lockListSensors.RLock()
 	calls = mock.calls.ListSensors
@@ -357,10 +383,10 @@ var _ service.Service = &ServiceMock{}
 //			GetDeviceFunc: func(ctx context.Context, id int64) (*service.Device, error) {
 //				panic("mock out the GetDevice method")
 //			},
-//			ListDevicesFunc: func(ctx context.Context, filter service.DeviceFilter) ([]service.Device, error) {
+//			ListDevicesFunc: func(ctx context.Context, filter service.DeviceFilter, r pagination.Request) (*pagination.Page[service.Device], error) {
 //				panic("mock out the ListDevices method")
 //			},
-//			ListSensorsFunc: func(ctx context.Context) ([]service.Sensor, error) {
+//			ListSensorsFunc: func(ctx context.Context, r pagination.Request) (*pagination.Page[service.Sensor], error) {
 //				panic("mock out the ListSensors method")
 //			},
 //			UpdateDeviceFunc: func(ctx context.Context, dev *service.Device, opt service.UpdateDeviceOpts) error {
@@ -389,10 +415,10 @@ type ServiceMock struct {
 	GetDeviceFunc func(ctx context.Context, id int64) (*service.Device, error)
 
 	// ListDevicesFunc mocks the ListDevices method.
-	ListDevicesFunc func(ctx context.Context, filter service.DeviceFilter) ([]service.Device, error)
+	ListDevicesFunc func(ctx context.Context, filter service.DeviceFilter, r pagination.Request) (*pagination.Page[service.Device], error)
 
 	// ListSensorsFunc mocks the ListSensors method.
-	ListSensorsFunc func(ctx context.Context) ([]service.Sensor, error)
+	ListSensorsFunc func(ctx context.Context, r pagination.Request) (*pagination.Page[service.Sensor], error)
 
 	// UpdateDeviceFunc mocks the UpdateDevice method.
 	UpdateDeviceFunc func(ctx context.Context, dev *service.Device, opt service.UpdateDeviceOpts) error
@@ -444,11 +470,15 @@ type ServiceMock struct {
 			Ctx context.Context
 			// Filter is the filter argument value.
 			Filter service.DeviceFilter
+			// R is the r argument value.
+			R pagination.Request
 		}
 		// ListSensors holds details about calls to the ListSensors method.
 		ListSensors []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
+			// R is the r argument value.
+			R pagination.Request
 		}
 		// UpdateDevice holds details about calls to the UpdateDevice method.
 		UpdateDevice []struct {
@@ -659,21 +689,23 @@ func (mock *ServiceMock) GetDeviceCalls() []struct {
 }
 
 // ListDevices calls ListDevicesFunc.
-func (mock *ServiceMock) ListDevices(ctx context.Context, filter service.DeviceFilter) ([]service.Device, error) {
+func (mock *ServiceMock) ListDevices(ctx context.Context, filter service.DeviceFilter, r pagination.Request) (*pagination.Page[service.Device], error) {
 	if mock.ListDevicesFunc == nil {
 		panic("ServiceMock.ListDevicesFunc: method is nil but Service.ListDevices was just called")
 	}
 	callInfo := struct {
 		Ctx    context.Context
 		Filter service.DeviceFilter
+		R      pagination.Request
 	}{
 		Ctx:    ctx,
 		Filter: filter,
+		R:      r,
 	}
 	mock.lockListDevices.Lock()
 	mock.calls.ListDevices = append(mock.calls.ListDevices, callInfo)
 	mock.lockListDevices.Unlock()
-	return mock.ListDevicesFunc(ctx, filter)
+	return mock.ListDevicesFunc(ctx, filter, r)
 }
 
 // ListDevicesCalls gets all the calls that were made to ListDevices.
@@ -683,10 +715,12 @@ func (mock *ServiceMock) ListDevices(ctx context.Context, filter service.DeviceF
 func (mock *ServiceMock) ListDevicesCalls() []struct {
 	Ctx    context.Context
 	Filter service.DeviceFilter
+	R      pagination.Request
 } {
 	var calls []struct {
 		Ctx    context.Context
 		Filter service.DeviceFilter
+		R      pagination.Request
 	}
 	mock.lockListDevices.RLock()
 	calls = mock.calls.ListDevices
@@ -695,19 +729,21 @@ func (mock *ServiceMock) ListDevicesCalls() []struct {
 }
 
 // ListSensors calls ListSensorsFunc.
-func (mock *ServiceMock) ListSensors(ctx context.Context) ([]service.Sensor, error) {
+func (mock *ServiceMock) ListSensors(ctx context.Context, r pagination.Request) (*pagination.Page[service.Sensor], error) {
 	if mock.ListSensorsFunc == nil {
 		panic("ServiceMock.ListSensorsFunc: method is nil but Service.ListSensors was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
+		R   pagination.Request
 	}{
 		Ctx: ctx,
+		R:   r,
 	}
 	mock.lockListSensors.Lock()
 	mock.calls.ListSensors = append(mock.calls.ListSensors, callInfo)
 	mock.lockListSensors.Unlock()
-	return mock.ListSensorsFunc(ctx)
+	return mock.ListSensorsFunc(ctx, r)
 }
 
 // ListSensorsCalls gets all the calls that were made to ListSensors.
@@ -716,9 +752,11 @@ func (mock *ServiceMock) ListSensors(ctx context.Context) ([]service.Sensor, err
 //	len(mockedService.ListSensorsCalls())
 func (mock *ServiceMock) ListSensorsCalls() []struct {
 	Ctx context.Context
+	R   pagination.Request
 } {
 	var calls []struct {
 		Ctx context.Context
+		R   pagination.Request
 	}
 	mock.lockListSensors.RLock()
 	calls = mock.calls.ListSensors

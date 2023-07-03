@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/device/migrations"
 	"sensorbucket.nl/sensorbucket/services/device/service"
 	"sensorbucket.nl/sensorbucket/services/device/store"
@@ -106,7 +107,8 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 	})
 
 	t.Run("listing created device", func(t *testing.T) {
-		devs, err := store.List(service.DeviceFilter{})
+		page, err := store.List(service.DeviceFilter{}, pagination.Request{})
+		devs := page.Data
 		assert.NoError(t, err)
 		assert.Len(t, devs, 1)
 		assert.Equal(t, dev.ID, devs[0].ID, "store.List results in changes")
