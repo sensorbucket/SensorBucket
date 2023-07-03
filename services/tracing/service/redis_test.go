@@ -109,19 +109,19 @@ func TestNextShouldIterateOverMessageStates(t *testing.T) {
 	states := []tracing.MessageState{
 		{
 			ID:        uuid.NewString(),
-			Timestamp: time.Now(),
+			Timestamp: time.Now().Round(time.Minute),
 		},
 		{
 			ID:        uuid.NewString(),
-			Timestamp: time.Now(),
+			Timestamp: time.Now().Round(time.Minute),
 		},
 		{
 			ID:        uuid.NewString(),
-			Timestamp: time.Now(),
+			Timestamp: time.Now().Round(time.Minute),
 		},
 		{
 			ID:        uuid.NewString(),
-			Timestamp: time.Now(),
+			Timestamp: time.Now().Round(time.Minute),
 		},
 	}
 	for _, state := range states {
@@ -135,5 +135,5 @@ func TestNextShouldIterateOverMessageStates(t *testing.T) {
 	_, messages, err := store.Next(ctx, nil)
 	require.NoError(t, err)
 
-	assert.EqualValues(t, states, messages)
+	assert.ElementsMatch(t, states, messages)
 }

@@ -11,32 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rabbitmq/amqp091-go"
-	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
-
-func Run(ctx context.Context, amqpHost, amqpQueue string, state MessageStateStorer, archiver MessageArchiver) error {
-	svc := New(state, archiver)
-	amqp := mq.NewAMQPConsumer(amqpHost, amqpQueue, func(c *amqp091.Channel) error {
-		// TODO: Setup queue, exchange etc
-		_, err := c.QueueDeclare(amqpQueue, false, false, false, false, nil)
-		return err
-	})
-	go amqp.Start()
-
-	go func() {
-		for del := range amqp.Consume() {
-			svc.ProcessDelivery(del)
-		}
-	}()
-	fmt.Print("Running\n")
-
-	// Wait for interrupt
-	<-ctx.Done()
-	fmt.Print("Shutting down gracefully\n")
-	amqp.Shutdown()
-	return nil
-}
 
 type MessageStateStorer interface {
 	UpdateState(ctx context.Context, id string, timestamp time.Time) error

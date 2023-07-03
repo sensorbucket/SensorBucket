@@ -1,8 +1,14 @@
 package tracing
 
 import (
+	"context"
+	"fmt"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
+
+var _ prometheus.Collector = (*MetricsService)(nil)
 
 type MessageState struct {
 	ID        string
@@ -10,7 +16,7 @@ type MessageState struct {
 }
 
 type MessageStateIterator interface {
-	Next(cursor any) (any, []MessageState, error)
+	Next(context context.Context, cursor any) (any, []MessageState, error)
 }
 
 type MetricsService struct {
@@ -18,7 +24,10 @@ type MetricsService struct {
 }
 
 func NewMetricsService(iterator MessageStateIterator) *MetricsService {
-	return &MetricsService{iterator}
+	svc := &MetricsService{
+		iterator: iterator,
+	}
+	return svc
 }
 
 type Metrics struct {
@@ -31,10 +40,11 @@ type Metrics struct {
 }
 
 func (s *MetricsService) Calculate() (Metrics, error) {
+	ctx := context.TODO()
 	var metrics Metrics
 
 	var cursor any = nil
-	cursor, messages, err := s.iterator.Next(cursor)
+	cursor, messages, err := s.iterator.Next(ctx, cursor)
 
 	// loop over pages until the end
 	for {
@@ -58,7 +68,7 @@ func (s *MetricsService) Calculate() (Metrics, error) {
 				metrics.CountAbove300s++
 			}
 		}
-		cursor, messages, err = s.iterator.Next(cursor)
+		cursor, messages, err = s.iterator.Next(ctx, cursor)
 		if err != nil {
 			return metrics, err
 		}
@@ -68,4 +78,60 @@ func (s *MetricsService) Calculate() (Metrics, error) {
 	}
 
 	return metrics, nil
+}
+
+func (s *MetricsService) Collect(ch chan<- prometheus.Metric) {
+	metr, err := s.Calculate()
+	if err != nil {
+		ch <- prometheus.NewInvalidMetric(countDesc, fmt.Errorf("could not calculate metrics: %w", err))
+		return
+	}
+	ch <- prometheus.MustNewConstMetric(
+		countDesc,
+		prometheus.GaugeValue,
+		float64(metr.Count),
+		"all",
+	)
+	ch <- prometheus.MustNewConstMetric(
+		countDesc,
+		prometheus.GaugeValue,
+		float64(metr.CountBelow30s),
+		"30s",
+	)
+	ch <- prometheus.MustNewConstMetric(
+		countDesc,
+		prometheus.GaugeValue,
+		float64(metr.CountBelow60s),
+		"60s",
+	)
+	ch <- prometheus.MustNewConstMetric(
+		countDesc,
+		prometheus.GaugeValue,
+		float64(metr.CountBelow120s),
+		"120s",
+	)
+	ch <- prometheus.MustNewConstMetric(
+		countDesc,
+		prometheus.GaugeValue,
+		float64(metr.CountBelow300s),
+		"300s",
+	)
+	ch <- prometheus.MustNewConstMetric(
+		countDesc,
+		prometheus.GaugeValue,
+		float64(metr.CountAbove300s),
+		"300s+",
+	)
+}
+
+var (
+	countDesc = prometheus.NewDesc(
+		"sensorbucket_messages_in_pipeline_count",
+		"The amount of messages currently in the pipeline by time spent in current step",
+		[]string{"duration"}, nil,
+	)
+)
+
+func (s *MetricsService) Describe(ch chan<- *prometheus.Desc) {
+	prometheus.DescribeByCollect(s, ch)
 }

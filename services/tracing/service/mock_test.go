@@ -221,7 +221,7 @@ var _ tracing.MessageStateIterator = &MessageStateIteratorMock{}
 //
 //		// make and configure a mocked tracing.MessageStateIterator
 //		mockedMessageStateIterator := &MessageStateIteratorMock{
-//			NextFunc: func(cursor any) (any, []tracing.MessageState, error) {
+//			NextFunc: func(contextMoqParam context.Context, cursor any) (any, []tracing.MessageState, error) {
 //				panic("mock out the Next method")
 //			},
 //		}
@@ -232,12 +232,14 @@ var _ tracing.MessageStateIterator = &MessageStateIteratorMock{}
 //	}
 type MessageStateIteratorMock struct {
 	// NextFunc mocks the Next method.
-	NextFunc func(cursor any) (any, []tracing.MessageState, error)
+	NextFunc func(contextMoqParam context.Context, cursor any) (any, []tracing.MessageState, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// Next holds details about calls to the Next method.
 		Next []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
 			// Cursor is the cursor argument value.
 			Cursor any
 		}
@@ -246,19 +248,21 @@ type MessageStateIteratorMock struct {
 }
 
 // Next calls NextFunc.
-func (mock *MessageStateIteratorMock) Next(cursor any) (any, []tracing.MessageState, error) {
+func (mock *MessageStateIteratorMock) Next(contextMoqParam context.Context, cursor any) (any, []tracing.MessageState, error) {
 	if mock.NextFunc == nil {
 		panic("MessageStateIteratorMock.NextFunc: method is nil but MessageStateIterator.Next was just called")
 	}
 	callInfo := struct {
-		Cursor any
+		ContextMoqParam context.Context
+		Cursor          any
 	}{
-		Cursor: cursor,
+		ContextMoqParam: contextMoqParam,
+		Cursor:          cursor,
 	}
 	mock.lockNext.Lock()
 	mock.calls.Next = append(mock.calls.Next, callInfo)
 	mock.lockNext.Unlock()
-	return mock.NextFunc(cursor)
+	return mock.NextFunc(contextMoqParam, cursor)
 }
 
 // NextCalls gets all the calls that were made to Next.
@@ -266,10 +270,12 @@ func (mock *MessageStateIteratorMock) Next(cursor any) (any, []tracing.MessageSt
 //
 //	len(mockedMessageStateIterator.NextCalls())
 func (mock *MessageStateIteratorMock) NextCalls() []struct {
-	Cursor any
+	ContextMoqParam context.Context
+	Cursor          any
 } {
 	var calls []struct {
-		Cursor any
+		ContextMoqParam context.Context
+		Cursor          any
 	}
 	mock.lockNext.RLock()
 	calls = mock.calls.Next

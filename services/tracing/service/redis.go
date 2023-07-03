@@ -8,7 +8,6 @@ import (
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
-	tracing "sensorbucket.nl/sensorbucket/services/tracing/service"
 )
 
 var _ MessageStateStorer = (*RedisStateStore)(nil)
@@ -39,9 +38,9 @@ func (s *RedisStateStore) FinishState(ctx context.Context, id string) error {
 	return s.redis.Del(ctx, redisStateKey(id)).Err()
 }
 
-func (s *RedisStateStore) Next(ctx context.Context, cursor any) (any, []tracing.MessageState, error) {
+func (s *RedisStateStore) Next(ctx context.Context, cursor any) (any, []MessageState, error) {
 	var count int64 = 100
-	states := []tracing.MessageState{}
+	states := []MessageState{}
 	var c uint64
 	if cursor != nil {
 		var ok bool

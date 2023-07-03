@@ -1,6 +1,7 @@
 package tracing_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 func TestMetrics(t *testing.T) {
 	now := time.Now()
 	it := &MessageStateIteratorMock{
-		NextFunc: func(cursor any) (any, []tracing.MessageState, error) {
+		NextFunc: func(ctx context.Context, cursor any) (any, []tracing.MessageState, error) {
 			return nil, []tracing.MessageState{
 				{
 					ID:        uuid.NewString(),

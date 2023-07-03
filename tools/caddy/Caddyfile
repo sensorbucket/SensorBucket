@@ -9,6 +9,7 @@ handle_path /api/* {
     }
     reverse_proxy /measurements* measurements:3000
     reverse_proxy /datastreams* measurements:3000
+    reverse_proxy /metrics/tracing tracing:2112
 }
 
 redir /dev/mq /dev/mq/
