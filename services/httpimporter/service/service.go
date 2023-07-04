@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
-	pipelineService "sensorbucket.nl/sensorbucket/services/pipeline/service"
+	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
 
 var (
@@ -25,7 +25,7 @@ type MessageQueue interface {
 	Publish(*pipeline.Message) error
 }
 type PipelineService interface {
-	Get(string) (*pipelineService.Pipeline, error)
+	Get(string) (*processing.Pipeline, error)
 }
 type HTTPImporter struct {
 	router   chi.Router

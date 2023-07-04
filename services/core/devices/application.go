@@ -1,6 +1,6 @@
 package devices
 
-//go:generate moq -pkg service_test -out mock_test.go . Store Service
+//go:generate moq -pkg devices_test -out mock_test.go . Store Service
 
 import (
 	"context"

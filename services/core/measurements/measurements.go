@@ -1,6 +1,6 @@
 package measurements
 
-//go:generate moq -pkg service_test -out mock_test.go . Store DatastreamFinderCreater
+//go:generate moq -pkg measurements_test -out mock_test.go . Store DatastreamFinderCreater
 
 import (
 	"encoding/json"
