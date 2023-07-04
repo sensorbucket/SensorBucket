@@ -27,14 +27,16 @@ func NewHTTP(svc *measurements.Service, url string) *HTTPTransport {
 		svc:    svc,
 		url:    url,
 	}
+	t.SetupRoutes(t.router)
+	return t
+}
 
-	t.router.Get("/health", func(rw http.ResponseWriter, r *http.Request) {
+func (t *HTTPTransport) SetupRoutes(r chi.Router) {
+	r.Get("/health", func(rw http.ResponseWriter, r *http.Request) {
 		rw.Write([]byte("healthy"))
 	})
-	t.router.Get("/measurements", t.httpGetMeasurements())
-	t.router.Get("/datastreams", t.httpListDatastream())
-
-	return t
+	r.Get("/measurements", t.httpGetMeasurements())
+	r.Get("/datastreams", t.httpListDatastream())
 }
 
 func (t *HTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {

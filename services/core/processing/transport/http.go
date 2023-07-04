@@ -20,20 +20,21 @@ type Transport struct {
 }
 
 func NewTransport(svc *processing.Service, baseURL string) *Transport {
-	r := chi.NewRouter()
 	t := &Transport{
-		router:  r,
+		router:  chi.NewRouter(),
 		service: svc,
 		baseURL: baseURL,
 	}
+	t.SetupRoutes(t.router)
+	return t
+}
 
+func (t *Transport) SetupRoutes(r chi.Router) {
 	r.Post("/pipelines", t.httpCreatePipeline())
 	r.Get("/pipelines", t.httpListPipelines())
 	r.Get("/pipelines/{id}", t.httpGetPipeline())
 	r.Patch("/pipelines/{id}", t.httpUpdatePipeline())
 	r.Delete("/pipelines/{id}", t.httpDeletePipeline())
-
-	return t
 }
 
 func (t Transport) ServeHTTP(rw http.ResponseWriter, r *http.Request) {

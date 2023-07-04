@@ -4,7 +4,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
-	"sensorbucket.nl/sensorbucket/services/device/service"
+	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
 
 var (
@@ -44,14 +44,14 @@ func (b deviceQueryBuilder) WithPagination(p pagination.Request) deviceQueryBuil
 	return b
 }
 
-func (b deviceQueryBuilder) WithFilters(f service.DeviceFilter) deviceQueryBuilder {
+func (b deviceQueryBuilder) WithFilters(f devices.DeviceFilter) deviceQueryBuilder {
 	if f.Properties != nil {
 		b.query = b.query.Where("properties::jsonb @> ?::jsonb", f.Properties)
 	}
 	return b
 }
 
-func (b deviceQueryBuilder) WithinBoundingBox(bb service.BoundingBoxFilter) deviceQueryBuilder {
+func (b deviceQueryBuilder) WithinBoundingBox(bb devices.BoundingBoxFilter) deviceQueryBuilder {
 	// TODO: check if coordinates are valid?
 	b.query = b.query.Where(
 		`location::geometry @ ST_SetSRID(ST_MakeBox2D(ST_Point(?, ?), ST_Point(?, ?)),4326)`,
@@ -60,7 +60,7 @@ func (b deviceQueryBuilder) WithinBoundingBox(bb service.BoundingBoxFilter) devi
 	return b
 }
 
-func (b deviceQueryBuilder) WithinRange(r service.RangeFilter) deviceQueryBuilder {
+func (b deviceQueryBuilder) WithinRange(r devices.RangeFilter) deviceQueryBuilder {
 	b.query = b.query.Where(
 		`ST_DWithin(location, ST_MakePoint(?, ?)::geography, ?)`,
 		r.Longitude, r.Latitude, r.Distance,
@@ -68,7 +68,7 @@ func (b deviceQueryBuilder) WithinRange(r service.RangeFilter) deviceQueryBuilde
 	return b
 }
 
-func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[service.Device], error) {
+func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[devices.Device], error) {
 	if b.err != nil {
 		return nil, b.err
 	}
@@ -116,7 +116,7 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[service.Device]
 		// Create an array of all device ids, used to filter upcoming queries
 		ids[ix] = dev.ID
 		// Initialize default fields
-		dev.Sensors = []service.Sensor{}
+		dev.Sensors = []devices.Sensor{}
 		// Create a map for id => device ptr, used to add sensors and location
 		devMap[dev.ID] = dev
 	}
@@ -134,7 +134,7 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[service.Device]
 		dev.Sensors = append(dev.Sensors, *model.Sensor)
 	}
 
-	devices := make([]service.Device, len(deviceModels))
+	devices := make([]devices.Device, len(deviceModels))
 	for ix, model := range deviceModels {
 		devices[ix] = model.Device
 	}

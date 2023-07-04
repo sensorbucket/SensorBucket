@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
 	"time"
 
@@ -18,6 +21,9 @@ import (
 	measurementsinfra "sensorbucket.nl/sensorbucket/services/core/measurements/infra"
 	measurementtransport "sensorbucket.nl/sensorbucket/services/core/measurements/transport"
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
+	"sensorbucket.nl/sensorbucket/services/core/processing"
+	processinginfra "sensorbucket.nl/sensorbucket/services/core/processing/infra"
+	processingtransport "sensorbucket.nl/sensorbucket/services/core/processing/transport"
 )
 
 var (
@@ -34,6 +40,10 @@ func main() {
 }
 
 func Run() error {
+	// Create shutdown context
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
 	db, err := createDB()
 	if err != nil {
 		return fmt.Errorf("could not create database connection: %w", err)
@@ -51,13 +61,33 @@ func Run() error {
 	measurementservice := measurements.New(measurementstore, sysArchiveTime)
 	measurementhttp := measurementtransport.NewHTTP(measurementservice, HTTP_BASE)
 
-	r := chi.NewRouter()
-	r.Mount("/devices", deviceshttp)
-	r.Mount("/measurements", measurementhttp)
-	httpsrv := createHTTPServer(r)
+	processingstore := processinginfra.NewPSQLStore(db)
+	processingservice := processing.New(processingstore)
+	processinghttp := processingtransport.NewTransport(processingservice, HTTP_BASE)
 
-	// TODO: make better
-	return httpsrv.ListenAndServe()
+	// Setup HTTP Transport
+	r := chi.NewRouter()
+	deviceshttp.SetupRoutes(r)
+	measurementhttp.SetupRoutes(r)
+	processinghttp.SetupRoutes(r)
+	httpsrv := createHTTPServer(r)
+	go httpsrv.ListenAndServe()
+	log.Printf("HTTP Listening: %s\n", httpsrv.Addr)
+
+	// Wait for shutdown signal
+	log.Println("Server running, send interrupt (i.e. CTRL+C) to initiate shutdown")
+	<-ctx.Done()
+	log.Println("Shutting down... send another interrupt to force shutdown")
+
+	// Create timeout for graceful shutdown
+	ctxTO, cancelTO := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancelTO()
+
+	// Shutdown transports
+	httpsrv.Shutdown(ctxTO)
+
+	log.Println("Shutdown complete")
+	return nil
 }
 
 func createHTTPServer(h http.Handler) *http.Server {

@@ -37,7 +37,7 @@ func NewHTTPTransport(svc devices.Service, baseURL string) *HTTPTransport {
 	}
 
 	// Register endpoints
-	transport.setupRoutes()
+	transport.SetupRoutes(transport.router)
 
 	return transport
 }
@@ -46,10 +46,8 @@ func (t *HTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t.router.ServeHTTP(w, r)
 }
 
-// setupRoutes creates router for the user setupRoutes
-func (t *HTTPTransport) setupRoutes() {
-	r := t.router
-
+// SetupRoutes creates router for the user SetupRoutes
+func (t *HTTPTransport) SetupRoutes(r chi.Router) {
 	r.Get("/devices", t.httpListDevices())
 	r.Post("/devices", t.httpCreateDevice())
 	r.Route("/devices/{device_id}", func(r chi.Router) {
