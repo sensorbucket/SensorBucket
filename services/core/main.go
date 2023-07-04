@@ -14,6 +14,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/cors"
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infrastructure"
 	devicetransport "sensorbucket.nl/sensorbucket/services/core/devices/transport"
@@ -27,10 +28,12 @@ import (
 )
 
 var (
-	DB_DSN           = env.Must("DB_DSN")
-	HTTP_ADDR        = env.Could("HTTP_ADDR", ":3000")
-	HTTP_BASE        = env.Could("HTTP_BASE", "http://localhost:3000/api")
-	SYS_ARCHIVE_TIME = env.Could("SYS_ARCHIVE_TIME", "30")
+	DB_DSN                  = env.Must("DB_DSN")
+	AMQP_HOST               = env.Must("AMQP_HOST")
+	AMQP_QUEUE_MEASUREMENTS = env.Could("AMQP_QUEUE_MEASUREMENTS", "measurements")
+	HTTP_ADDR               = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE               = env.Could("HTTP_BASE", "http://localhost:3000/api")
+	SYS_ARCHIVE_TIME        = env.Could("SYS_ARCHIVE_TIME", "30")
 )
 
 func main() {
@@ -74,6 +77,11 @@ func Run() error {
 	go httpsrv.ListenAndServe()
 	log.Printf("HTTP Listening: %s\n", httpsrv.Addr)
 
+	// Setup MQ Transports
+	amqpConn := mq.NewConnection(AMQP_HOST)
+	measurementtransport.StartMQ(measurementservice, amqpConn, AMQP_QUEUE_MEASUREMENTS)
+	go amqpConn.Start()
+
 	// Wait for shutdown signal
 	log.Println("Server running, send interrupt (i.e. CTRL+C) to initiate shutdown")
 	<-ctx.Done()
@@ -85,6 +93,7 @@ func Run() error {
 
 	// Shutdown transports
 	httpsrv.Shutdown(ctxTO)
+	amqpConn.Shutdown()
 
 	log.Println("Shutdown complete")
 	return nil
