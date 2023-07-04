@@ -1,4 +1,4 @@
-package store
+package measurementsinfra
 
 import (
 	"database/sql"
