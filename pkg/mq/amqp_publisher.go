@@ -6,13 +6,13 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type publishMessage struct {
-	topic      string
-	publishing amqp.Publishing
+type PublishMessage struct {
+	Topic      string
+	Publishing amqp.Publishing
 }
 
-func Produce(conn *AMQPConnection, xchg string, setup AMQPSetupFunc) chan<- publishMessage {
-	ch := make(chan publishMessage, 10)
+func Produce(conn *AMQPConnection, xchg string, setup AMQPSetupFunc) chan<- PublishMessage {
+	ch := make(chan PublishMessage, 10)
 	newConnection := conn.UseConnection()
 	returns := make(chan amqp.Return)
 
@@ -43,7 +43,7 @@ func Produce(conn *AMQPConnection, xchg string, setup AMQPSetupFunc) chan<- publ
 					if !ok {
 						continue loopNewConnection
 					}
-					amqpChan.Publish(xchg, msg.topic, true, false, msg.publishing)
+					amqpChan.Publish(xchg, msg.Topic, true, false, msg.Publishing)
 				}
 			}
 		}

@@ -52,7 +52,7 @@ services:
     - HTTP_ADDR=:3000
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_XCHG=pipeline.messages
-    - SVC_PIPELINE=http://pipeline:3000
+    - SVC_PIPELINE=http://core:3000
 
   worker_thethingsnetwork:
     build: 

@@ -11,27 +11,28 @@ import (
 var _ MessageQueue = (*MessageQueueAMQP)(nil)
 
 type MessageQueueAMQP struct {
-	publisher *mq.AMQPPublisher
-	exchange  string
+	connection *mq.AMQPConnection
+	publisher  chan<- mq.PublishMessage
 }
 
 func NewAMQPQueue(host, exchange string) *MessageQueueAMQP {
-	publisher := mq.NewAMQPPublisher(host, exchange, func(c *amqp091.Channel) error {
-		return c.ExchangeDeclare(exchange, "topic", true, false, false, false, amqp091.Table{})
+	amqpConn := mq.NewConnection(host)
+	produceChan := mq.Produce(amqpConn, exchange, func(c *amqp091.Channel) error {
+		return nil
 	})
 	return &MessageQueueAMQP{
-		publisher: publisher,
-		exchange:  exchange,
+		connection: amqpConn,
+		publisher:  produceChan,
 	}
 }
-func (mq *MessageQueueAMQP) Start() {
-	mq.publisher.Start()
+func (m *MessageQueueAMQP) Start() {
+	m.connection.Start()
 }
-func (mq *MessageQueueAMQP) Shutdown() {
-	mq.publisher.Shutdown()
+func (m *MessageQueueAMQP) Shutdown() {
+	m.connection.Shutdown()
 }
 
-func (mq *MessageQueueAMQP) Publish(msg *pipeline.Message) error {
+func (m *MessageQueueAMQP) Publish(msg *pipeline.Message) error {
 	step, err := msg.NextStep()
 	if err != nil {
 		return err
@@ -40,5 +41,12 @@ func (mq *MessageQueueAMQP) Publish(msg *pipeline.Message) error {
 	if err != nil {
 		return err
 	}
-	return mq.publisher.Publish(step, amqp091.Publishing{Body: msgData})
+	m.publisher <- mq.PublishMessage{
+		Topic: step,
+		Publishing: amqp091.Publishing{
+			MessageId: msg.ID,
+			Body:      msgData,
+		},
+	}
+	return nil
 }
