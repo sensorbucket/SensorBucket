@@ -16,7 +16,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
-	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infrastructure"
+	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
 	devicetransport "sensorbucket.nl/sensorbucket/services/core/devices/transport"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	measurementsinfra "sensorbucket.nl/sensorbucket/services/core/measurements/infra"

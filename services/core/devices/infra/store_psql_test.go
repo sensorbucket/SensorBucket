@@ -15,7 +15,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
-	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infrastructure"
+	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
 )
 
