@@ -123,3 +123,11 @@ func (c *AMQPConnection) UseConnection() <-chan *amqp.Connection {
 	c.usersLock.Unlock()
 	return user
 }
+
+func (c *AMQPConnection) Consume(queue string, setup AMQPSetupFunc) <-chan amqp.Delivery {
+	return Consume(c, queue, setup)
+}
+
+func (c *AMQPConnection) Produce(xchg string, setup AMQPSetupFunc) chan<- PublishMessage {
+	return Produce(c, xchg, setup)
+}

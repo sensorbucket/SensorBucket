@@ -97,6 +97,20 @@ services:
     - AMQP_QUEUE=multiflexmeter-particulatematter
     - AMQP_XCHG=pipeline.messages
 
+  worker_pzld_sensorbox:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - .:/workspace:cached
+    environment:
+    - APP_NAME=pzld-sensorbox
+    - APP_TYPE=worker
+    - AMQP_HOST=amqp://guest:guest@mq:5672/
+    - AMQP_QUEUE=pzld-sensorbox
+    - AMQP_XCHG=pipeline.messages
+
   db:
     image: timescale/timescaledb-postgis:latest-pg12
     ports:
