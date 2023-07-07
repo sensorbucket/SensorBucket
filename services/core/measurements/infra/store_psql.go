@@ -78,7 +78,10 @@ func (s *MeasurementStorePSQL) Insert(m measurements.Measurement) error {
 	}
 
 	_, err = s.db.Exec(query, params...)
-	return err
+	if err != nil {
+		return fmt.Errorf("could not insert new measurement: %w", err)
+	}
+	return nil
 }
 
 // Query returns measurements from the database
@@ -234,15 +237,21 @@ func (s *MeasurementStorePSQL) FindDatastream(sensorID int64, obs string) (*meas
 }
 
 func (s *MeasurementStorePSQL) CreateDatastream(ds *measurements.Datastream) error {
-	_, err := s.db.Exec(`
+	// TODO: Why can't uuid be marshalled by pgx?
+	//
+	uuidB, err := ds.ID.MarshalBinary()
+	if err != nil {
+		return err
+	}
+	_, err = s.db.Exec(`
 	INSERT INTO
 		"datastreams" (
-			"id", "description", "sensor_id", "observed_property", "unit_of_measurement",
+			id, "description", "sensor_id", "observed_property", "unit_of_measurement",
 			"created_at"
 		)
 	VALUES 
 		($1, $2, $3, $4, $5, $6)
-	`, ds.ID, ds.Description, ds.SensorID, ds.ObservedProperty, ds.UnitOfMeasurement, ds.CreatedAt)
+	`, uuidB, ds.Description, ds.SensorID, ds.ObservedProperty, ds.UnitOfMeasurement, ds.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("database error inserting datastream: %w", err)
 	}

@@ -67,7 +67,7 @@ services:
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_QUEUE=the-things-network
     - AMQP_XCHG=pipeline.messages
-    - SVC_DEVICE=http://device:3000
+    - SVC_DEVICE=http://core:3000
 
   worker_multiflexmeter:
     build: 
