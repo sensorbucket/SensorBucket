@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/rabbitmq/amqp091-go"
+
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
@@ -17,7 +18,7 @@ type MessageQueueAMQP struct {
 
 func NewAMQPQueue(host, exchange string) *MessageQueueAMQP {
 	amqpConn := mq.NewConnection(host)
-	produceChan := mq.Produce(amqpConn, exchange, func(c *amqp091.Channel) error {
+	produceChan := mq.Publisher(amqpConn, exchange, func(c *amqp091.Channel) error {
 		return nil
 	})
 	return &MessageQueueAMQP{
@@ -25,9 +26,11 @@ func NewAMQPQueue(host, exchange string) *MessageQueueAMQP {
 		publisher:  produceChan,
 	}
 }
+
 func (m *MessageQueueAMQP) Start() {
 	m.connection.Start()
 }
+
 func (m *MessageQueueAMQP) Shutdown() {
 	m.connection.Shutdown()
 }

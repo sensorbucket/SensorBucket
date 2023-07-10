@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/rabbitmq/amqp091-go"
+
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
@@ -29,7 +30,7 @@ func Run(process Processor) error {
 		return err
 	}
 	mqConn := mq.NewConnection(AMQP_HOST)
-	publisher := mqConn.Produce(AMQP_XCHG, func(c *amqp091.Channel) error {
+	publisher := mqConn.Publisher(AMQP_XCHG, func(c *amqp091.Channel) error {
 		return c.ExchangeDeclare(AMQP_XCHG, "topic", true, false, false, false, nil)
 	})
 	consumer := mqConn.Consume(AMQP_QUEUE, func(c *amqp091.Channel) error {
@@ -52,9 +53,7 @@ func Run(process Processor) error {
 	return nil
 }
 
-var (
-	ErrNoDeviceMatch = errors.New("no device in device service matches EUI of uplink")
-)
+var ErrNoDeviceMatch = errors.New("no device in device service matches EUI of uplink")
 
 func startConsuming(c <-chan amqp091.Delivery, process Processor, p chan<- mq.PublishMessage) {
 	consume := func(delivery amqp091.Delivery) error {

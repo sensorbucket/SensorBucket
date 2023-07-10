@@ -128,6 +128,6 @@ func (c *AMQPConnection) Consume(queue string, setup AMQPSetupFunc) <-chan amqp.
 	return Consume(c, queue, setup)
 }
 
-func (c *AMQPConnection) Produce(xchg string, setup AMQPSetupFunc) chan<- PublishMessage {
-	return Produce(c, xchg, setup)
+func (c *AMQPConnection) Publisher(xchg string, setup AMQPSetupFunc) chan<- PublishMessage {
+	return Publisher(c, xchg, setup)
 }

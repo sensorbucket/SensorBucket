@@ -11,7 +11,7 @@ type PublishMessage struct {
 	Publishing amqp.Publishing
 }
 
-func Produce(conn *AMQPConnection, xchg string, setup AMQPSetupFunc) chan<- PublishMessage {
+func Publisher(conn *AMQPConnection, xchg string, setup AMQPSetupFunc) chan<- PublishMessage {
 	ch := make(chan PublishMessage, 10)
 	newConnection := conn.UseConnection()
 	returns := make(chan amqp.Return)
