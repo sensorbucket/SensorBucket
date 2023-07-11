@@ -13,18 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-<<<<<<< HEAD:services/core/devices/infra/store_psql_test.go
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
-=======
-	"sensorbucket.nl/sensorbucket/internal/pagination"
-	"sensorbucket.nl/sensorbucket/services/device/migrations"
-	"sensorbucket.nl/sensorbucket/services/device/service"
-	"sensorbucket.nl/sensorbucket/services/device/store"
->>>>>>> main:services/device/store/store_psql_test.go
 )
 
 func ptr[T any](v T) *T {
@@ -115,11 +108,7 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 	})
 
 	t.Run("listing created device", func(t *testing.T) {
-<<<<<<< HEAD:services/core/devices/infra/store_psql_test.go
 		page, err := store.List(devices.DeviceFilter{}, pagination.Request{})
-=======
-		page, err := store.List(service.DeviceFilter{}, pagination.Request{})
->>>>>>> main:services/device/store/store_psql_test.go
 		devs := page.Data
 		assert.NoError(t, err)
 		assert.Len(t, devs, 1)
