@@ -100,6 +100,7 @@ type MeasurementQueryPage struct {
 func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Request) (*pagination.Page[measurements.Measurement], error) {
 	var err error
 	q := pq.Select(
+		"id",
 		"uplink_message_id",
 		"organisation_id",
 		"organisation_name",
@@ -138,7 +139,8 @@ func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Req
 		"created_at",
 	).
 		From("measurements").
-		Where("measurement_timestamp >= ?", query.Start)
+		Where("measurement_timestamp >= ?", query.Start).
+		Where("measurement_timestamp <= ?", query.End)
 
 	if len(query.DeviceIDs) > 0 {
 		q = q.Where(sq.Eq{"device_id": query.DeviceIDs})
@@ -167,6 +169,7 @@ func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Req
 	for rows.Next() {
 		var m measurements.Measurement
 		err = rows.Scan(
+			&m.ID,
 			&m.UplinkMessageID,
 			&m.OrganisationID,
 			&m.OrganisationName,

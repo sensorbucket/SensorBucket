@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/samber/lo"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	"sensorbucket.nl/sensorbucket/services/core/devices"

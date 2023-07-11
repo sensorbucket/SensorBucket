@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
@@ -145,7 +146,6 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 		assert.Equal(t, dev.Organisation, readDev.Organisation, "store.Save(update) and store.Find result in changes")
 		assert.Equal(t, dev.Properties, readDev.Properties, "store.Save(update) and store.Find result in changes")
 	})
-
 }
 
 func TestShouldAddSensor(t *testing.T) {
