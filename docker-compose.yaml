@@ -118,7 +118,7 @@ services:
     volumes:
       - ./tools/postgres.d:/docker-entrypoint-initdb.d
     environment:
-    - POSTGRES_USER=user
+    - POSTGRES_USER=sensorbucket
     - POSTGRES_PASSWORD=sensorbucket
     - POSTGRES_DB=sensorbucket
   dbweb:

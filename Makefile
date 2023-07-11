@@ -42,13 +42,3 @@ else
 	@docker run --rm -v $(CURDIR):/sensorbucket -v $(outdir):/target --user `id -u` openapitools/openapi-generator-cli generate -i /sensorbucket/tools/openapi/api.yaml -g python-nextgen -t /sensorbucket/tools/openapi-templates/python -o /target \
 		--additional-properties=packageName=sensorbucket,packageUrl='https://sensorbucket.nl'
 endif
-
-go:
-ifeq ($(strip $(outdir)),)
-	@echo "Error: please specify out location by providing the 'outdir' variable"
-else
-	@echo "Generating go client from spec"
-	@mkdir -p $(outdir)
-	@docker run --rm -v $(CURDIR):/sensorbucket -v $(outdir):/target --user `id -u` openapitools/openapi-generator-cli generate -i /sensorbucket/tools/openapi/api.yaml -g go -o /target \
-		--additional-properties=packageName=sensorbucket,packageUrl='https://sensorbucket.nl'
-endif
