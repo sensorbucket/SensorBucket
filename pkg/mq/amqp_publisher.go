@@ -2,6 +2,7 @@ package mq
 
 import (
 	"log"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -43,6 +44,7 @@ func Publisher(conn *AMQPConnection, xchg string, setup AMQPSetupFunc) chan<- Pu
 					if !ok {
 						continue loopNewConnection
 					}
+					msg.Publishing.Timestamp = time.Now()
 					amqpChan.Publish(xchg, msg.Topic, true, false, msg.Publishing)
 				}
 			}
