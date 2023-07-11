@@ -12,7 +12,7 @@ services:
     build: 
       context: ./services/dashboard
       dockerfile: Dockerfile
-      target: dev
+      target: builder
     command: yarn dev --host=0.0.0.0 --port=3000
     environment:
       - PUBLIC_EP_DATASTREAMS=http://caddy/api/datastreams
@@ -122,14 +122,7 @@ services:
     - POSTGRES_PASSWORD=sensorbucket
     - POSTGRES_DB=sensorbucket
   dbweb:
-    image: michalhosna/adminer
-    environment:
-        ADMINER_DRIVER: pgsql
-        ADMINER_SERVER: db
-        ADMINER_DB: sensorbucket
-        ADMINER_USERNAME: user
-        ADMINER_PASSWORD: sensorbucket
-        ADMINER_AUTOLOGIN: 1
+    image: dockette/adminer:pgsql
 
   mq:
     image: rabbitmq:3.8-management
