@@ -5,8 +5,8 @@ package service_test
 
 import (
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
+	"sensorbucket.nl/sensorbucket/services/core/processing"
 	"sensorbucket.nl/sensorbucket/services/httpimporter/service"
-	pipelineService "sensorbucket.nl/sensorbucket/services/pipeline/service"
 	"sync"
 )
 
@@ -86,7 +86,7 @@ var _ service.PipelineService = &PipelineServiceMock{}
 //
 //		// make and configure a mocked service.PipelineService
 //		mockedPipelineService := &PipelineServiceMock{
-//			GetFunc: func(s string) (*pipelineService.Pipeline, error) {
+//			GetFunc: func(s string) (*processing.Pipeline, error) {
 //				panic("mock out the Get method")
 //			},
 //		}
@@ -97,7 +97,7 @@ var _ service.PipelineService = &PipelineServiceMock{}
 //	}
 type PipelineServiceMock struct {
 	// GetFunc mocks the Get method.
-	GetFunc func(s string) (*pipelineService.Pipeline, error)
+	GetFunc func(s string) (*processing.Pipeline, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -111,7 +111,7 @@ type PipelineServiceMock struct {
 }
 
 // Get calls GetFunc.
-func (mock *PipelineServiceMock) Get(s string) (*pipelineService.Pipeline, error) {
+func (mock *PipelineServiceMock) Get(s string) (*processing.Pipeline, error) {
 	if mock.GetFunc == nil {
 		panic("PipelineServiceMock.GetFunc: method is nil but PipelineService.Get was just called")
 	}

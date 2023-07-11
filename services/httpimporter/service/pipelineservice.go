@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
-	pipelineService "sensorbucket.nl/sensorbucket/services/pipeline/service"
+	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
 
 var _ PipelineService = (*PipelineServiceHTTP)(nil)
@@ -20,7 +20,7 @@ func NewPipelineServiceHTTP(serviceHost string) *PipelineServiceHTTP {
 	return &PipelineServiceHTTP{host: serviceHost}
 }
 
-func (p *PipelineServiceHTTP) Get(uuid string) (*pipelineService.Pipeline, error) {
+func (p *PipelineServiceHTTP) Get(uuid string) (*processing.Pipeline, error) {
 	res, err := http.Get(fmt.Sprintf("%s/pipelines/%s", p.host, uuid))
 	if err != nil {
 		return nil, fmt.Errorf("could not get pipeline definition: %w", err)
@@ -39,7 +39,7 @@ func (p *PipelineServiceHTTP) Get(uuid string) (*pipelineService.Pipeline, error
 		return nil, &err
 	}
 
-	var body web.APIResponse[pipelineService.Pipeline]
+	var body web.APIResponse[processing.Pipeline]
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
 		return nil, fmt.Errorf("could not parse pipeline service response: %w", err)
 	}

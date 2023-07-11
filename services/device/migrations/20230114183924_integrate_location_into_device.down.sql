@@ -1,2 +1,0 @@
--- Revert location device merge
-

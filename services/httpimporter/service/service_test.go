@@ -12,21 +12,21 @@ import (
 	"github.com/stretchr/testify/assert"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
+	"sensorbucket.nl/sensorbucket/services/core/processing"
 	"sensorbucket.nl/sensorbucket/services/httpimporter/service"
-	pipelineservice "sensorbucket.nl/sensorbucket/services/pipeline/service"
 )
 
 func TestFetchesPipelineFromPipelineService(t *testing.T) {
 	// Arrange
-	pipelineModel := &pipelineservice.Pipeline{
+	pipelineModel := &processing.Pipeline{
 		ID:          uuid.NewString(),
-		Status:      pipelineservice.PipelineActive,
+		Status:      processing.PipelineActive,
 		Description: "",
 		Steps:       []string{"a", "b", "c"},
 	}
 	var pipelineRequestedID string
 	pipelineService := &PipelineServiceMock{
-		GetFunc: func(id string) (*pipelineservice.Pipeline, error) {
+		GetFunc: func(id string) (*processing.Pipeline, error) {
 			pipelineRequestedID = id
 			return pipelineModel, nil
 		},
@@ -76,7 +76,7 @@ func TestReportInvalidUUID(t *testing.T) {
 func TestPassOnPipelineErrorToRequester(t *testing.T) {
 	pipelineServiceError := web.NewError(http.StatusTeapot, "I am a teapot", "TEST_ERR")
 	pipelineService := &PipelineServiceMock{
-		GetFunc: func(s string) (*pipelineservice.Pipeline, error) {
+		GetFunc: func(s string) (*processing.Pipeline, error) {
 			return nil, pipelineServiceError
 		},
 	}
@@ -99,14 +99,14 @@ func TestPassOnPipelineErrorToRequester(t *testing.T) {
 
 func TestItWillPublishReceivedPostRequestToMessageQueue(t *testing.T) {
 	requestData := []byte(`{"hello":"world"}`)
-	pipelineModel := &pipelineservice.Pipeline{
+	pipelineModel := &processing.Pipeline{
 		ID:          uuid.NewString(),
-		Status:      pipelineservice.PipelineActive,
+		Status:      processing.PipelineActive,
 		Description: "",
 		Steps:       []string{"a", "b", "c"},
 	}
 	pipelineService := &PipelineServiceMock{
-		GetFunc: func(s string) (*pipelineservice.Pipeline, error) {
+		GetFunc: func(s string) (*processing.Pipeline, error) {
 			return pipelineModel, nil
 		},
 	}

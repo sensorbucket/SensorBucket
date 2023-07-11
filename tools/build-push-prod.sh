@@ -22,6 +22,7 @@ docker build -t ${PROD_CR}/dashboard:${PROD_VER} services/dashboard/
 docker build -t ${PROD_CR}/worker-the-things-network:${PROD_VER} -f workers/the-things-network/Dockerfile . 
 docker build -t ${PROD_CR}/worker-multiflexmeter-groundwater:${PROD_VER} -f workers/multiflexmeter-groundwater-level/Dockerfile . 
 docker build -t ${PROD_CR}/worker-multiflexmeter-particulatematter:${PROD_VER} -f workers/multiflexmeter-particulatematter/Dockerfile . 
+docker build -t ${PROD_CR}/worker-pzld-sensorbox:${PROD_VER} -f workers/pzld-sensorbox/Dockerfile . 
 
 
 docker push ${PROD_CR}/httpimporter:${PROD_VER} 
@@ -32,3 +33,4 @@ docker push ${PROD_CR}/dashboard:${PROD_VER}
 docker push ${PROD_CR}/worker-the-things-network:${PROD_VER} 
 docker push ${PROD_CR}/worker-multiflexmeter-groundwater:${PROD_VER} 
 docker push ${PROD_CR}/worker-multiflexmeter-particulatematter:${PROD_VER} 
+docker push ${PROD_CR}/worker-pzld-sensorbox:${PROD_VER} 

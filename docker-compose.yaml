@@ -12,7 +12,7 @@ services:
     build: 
       context: ./services/dashboard
       dockerfile: Dockerfile
-      target: dev
+      target: builder
     command: yarn dev --host=0.0.0.0 --port=3000
     environment:
       - PUBLIC_EP_DATASTREAMS=http://caddy/api/datastreams
@@ -23,28 +23,22 @@ services:
     volumes:
       - ./services/dashboard:/app:cached
 
-  device:
-    build: 
+  core:
+    build:
       context: .
       dockerfile: Dockerfile
       target: dev
-    environment:
-    - APP_NAME=device
-    - DB_DSN=postgresql://deviceservice:deviceservice@db:5432/deviceservice?sslmode=disable
     volumes:
-      - ./:/workspace:cached
-
-  pipeline:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      target: dev
+      - .:/workspace:cached
     environment:
-    - APP_NAME=pipeline
-    - DB_DSN=postgresql://pipelineservice:pipelineservice@db:5432/pipelineservice?sslmode=disable
+    - APP_NAME=core
+    - APP_TYPE=service
+    - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/sensorbucket?sslmode=disable
     - HTTP_ADDR=:3000
-    volumes:
-      - ./:/workspace:cached
+    - AMQP_HOST=amqp://guest:guest@mq:5672/
+    - AMQP_XCHG=pipeline.messages
+    - SVC_PIPELINE=http://pipeline:3000
+
 
   httpimporter:
     build: 
@@ -58,23 +52,7 @@ services:
     - HTTP_ADDR=:3000
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_XCHG=pipeline.messages
-    - SVC_PIPELINE=http://pipeline:3000
-
-  measurements:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      target: dev
-    volumes:
-      - .:/workspace:cached
-    environment:
-    - APP_NAME=measurements
-    - HTTP_BASE=http://localhost:3000/api
-    - HTTP_ADDR=:3000
-    - DB_DSN=postgresql://measurementservice:measurementservice@db:5432/measurementservice?sslmode=disable
-    - AMQP_HOST=amqp://guest:guest@mq:5672/
-    - AMQP_XCHG=pipeline.measurement.tx
-    - AMQP_QUEUE=measurement_service_q
+    - SVC_PIPELINE=http://core:3000
 
   worker_thethingsnetwork:
     build: 
@@ -89,7 +67,7 @@ services:
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_QUEUE=the-things-network
     - AMQP_XCHG=pipeline.messages
-    - SVC_DEVICE=http://device:3000
+    - SVC_DEVICE=http://core:3000
 
   worker_multiflexmeter:
     build: 
@@ -119,6 +97,20 @@ services:
     - AMQP_QUEUE=multiflexmeter-particulatematter
     - AMQP_XCHG=pipeline.messages
 
+  worker_pzld_sensorbox:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - .:/workspace:cached
+    environment:
+    - APP_NAME=pzld-sensorbox
+    - APP_TYPE=worker
+    - AMQP_HOST=amqp://guest:guest@mq:5672/
+    - AMQP_QUEUE=pzld-sensorbox
+    - AMQP_XCHG=pipeline.messages
+
   db:
     image: timescale/timescaledb-postgis:latest-pg12
     ports:
@@ -126,18 +118,11 @@ services:
     volumes:
       - ./tools/postgres.d:/docker-entrypoint-initdb.d
     environment:
-    - POSTGRES_USER=user
+    - POSTGRES_USER=sensorbucket
     - POSTGRES_PASSWORD=sensorbucket
     - POSTGRES_DB=sensorbucket
   dbweb:
-    image: michalhosna/adminer
-    environment:
-        ADMINER_DRIVER: pgsql
-        ADMINER_SERVER: db
-        ADMINER_DB: sensorbucket
-        ADMINER_USERNAME: user
-        ADMINER_PASSWORD: sensorbucket
-        ADMINER_AUTOLOGIN: 1
+    image: dockette/adminer:pgsql
 
   mq:
     image: rabbitmq:3.8-management

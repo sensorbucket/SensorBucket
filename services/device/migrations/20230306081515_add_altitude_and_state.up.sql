@@ -1,6 +1,0 @@
-BEGIN;
-
-ALTER TABLE "devices" ADD "altitude" DOUBLE PRECISION;
-ALTER TABLE "devices" ADD "state" SMALLINT NOT NULL DEFAULT(0);
-
-COMMIT;

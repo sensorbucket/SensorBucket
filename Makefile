@@ -21,7 +21,7 @@ restart:
 	@docker-compose -f $(CURDIR)/docker-compose.yaml restart $(service)
 
 logs:
-	@docker-compose logs -f $(service)
+	@docker-compose logs -fn 50 $(service)
 
 api:
 	@echo "Starting live openapi docs"

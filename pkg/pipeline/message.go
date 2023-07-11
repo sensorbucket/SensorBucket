@@ -5,14 +5,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	deviceservice "sensorbucket.nl/sensorbucket/services/device/service"
+	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
 
 var (
 	ErrMessageNoSteps = errors.New("pipeline message has no steps remaining")
 )
 
-type Device deviceservice.Device
+type Device devices.Device
 type Measurement struct {
 	Timestamp         int64          `json:"timestamp"`
 	SensorExternalID  string         `json:"sensor_external_id"`
