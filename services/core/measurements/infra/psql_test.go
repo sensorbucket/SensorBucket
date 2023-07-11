@@ -1,4 +1,4 @@
-package store_test
+package measurementsinfra_test
 
 import (
 	"context"
@@ -14,10 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
-	"sensorbucket.nl/sensorbucket/services/measurements/migrations"
-	"sensorbucket.nl/sensorbucket/services/measurements/service"
-	"sensorbucket.nl/sensorbucket/services/measurements/store"
+	"sensorbucket.nl/sensorbucket/services/core/measurements"
+	measurementsinfra "sensorbucket.nl/sensorbucket/services/core/measurements/infra"
+	"sensorbucket.nl/sensorbucket/services/core/migrations"
 )
 
 //go:embed seed_test.sql
@@ -75,17 +76,17 @@ func timeParse(t *testing.T, s string) time.Time {
 
 func TestShouldQueryCorrectly(t *testing.T) {
 	db := createPostgresServer(t)
-	store := store.NewPSQL(db)
+	store := measurementsinfra.NewPSQL(db)
 
 	testCases := []struct {
 		desc string
-		filt service.Filter
+		filt measurements.Filter
 		req  pagination.Request
 		exp  []int
 	}{
 		{
 			desc: "",
-			filt: service.Filter{
+			filt: measurements.Filter{
 				Start: timeParse(t, "2022-01-01T04:00:00Z"),
 				End:   timeParse(t, "2022-01-01T09:00:00Z"),
 			},
@@ -97,7 +98,7 @@ func TestShouldQueryCorrectly(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			page, err := store.Query(tC.filt, tC.req)
 			assert.NoError(t, err)
-			ids := lo.Map(page.Data, func(d service.Measurement, ix int) int { return d.ID })
+			ids := lo.Map(page.Data, func(d measurements.Measurement, ix int) int { return d.ID })
 			assert.Len(t, page.Data, len(tC.exp), "number of returned items differs from expected")
 			assert.ElementsMatch(t, tC.exp, ids, "expected ids not found")
 		})
