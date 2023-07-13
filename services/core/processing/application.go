@@ -2,8 +2,11 @@ package processing
 
 import (
 	"context"
+	"fmt"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/ingress"
+	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
 
 type Store interface {
@@ -14,11 +17,17 @@ type Store interface {
 }
 
 type Service struct {
-	store Store
+	store                    Store
+	pipelineMessageProcessor PipelineMessageProcessor
+	measurementStorer        MeasurementStorer
+	measurementNotifier      NewMeasurementNotifier
 }
 
-func New(store Store) *Service {
-	s := &Service{store}
+func New(store Store, messageProcessor PipelineMessageProcessor) *Service {
+	s := &Service{
+		store:                    store,
+		pipelineMessageProcessor: messageProcessor,
+	}
 	return s
 }
 
@@ -122,5 +131,20 @@ func (s *Service) EnablePipeline(ctx context.Context, id string) error {
 	if err := s.store.UpdatePipeline(p); err != nil {
 		return err
 	}
+	return nil
+}
+
+// ProcessIngressDTO will intiate the processing of the given ingress data
+func (s *Service) ProcessIngressDTO(ctx context.Context, dto ingress.DTO) error {
+	pl, err := s.GetPipeline(ctx, dto.PipelineID, false)
+	if err != nil {
+		return fmt.Errorf("ProcessIngressData could not get pipeline: %w", err)
+	}
+
+	// Convert ingress DTO to pipeline message
+	return pl.Process(dto.Payload, s.pipelineMessageProcessor)
+}
+
+func (s *Service) ProcessPipelineResult(ctx context.Context, msg pipeline.Message) error {
 	return nil
 }

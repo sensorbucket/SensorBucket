@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
 
 var (
@@ -104,4 +106,34 @@ func (p *Pipeline) SetSteps(steps []string) error {
 	p.Steps = steps
 
 	return nil
+}
+
+func (p *Pipeline) NewMessage(payload []byte) (pipeline.Message, error) {
+	var message pipeline.Message
+	if p.Status == PipelineInactive {
+		return message, ErrPipelineNotActive
+	}
+	now := time.Now().UnixMilli()
+	message = pipeline.Message{
+		ID:            uuid.NewString(),
+		ReceivedAt:    now,
+		PipelineID:    p.ID,
+		PipelineSteps: p.Steps,
+		Timestamp:     now,
+		Measurements:  []pipeline.Measurement{},
+	}
+	message.Payload = payload
+	return message, nil
+}
+
+type PipelineMessageProcessor interface {
+	ProcessPipelineMessage(pipeline.Message) error
+}
+
+func (p *Pipeline) Process(payload []byte, processor PipelineMessageProcessor) error {
+	message, err := p.NewMessage(payload)
+	if err != nil {
+		return fmt.Errorf("Process could not create pipeline message: %w", err)
+	}
+	return processor.ProcessPipelineMessage(message)
 }
