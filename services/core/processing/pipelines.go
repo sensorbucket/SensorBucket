@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
@@ -22,7 +23,7 @@ type PipelineStatus string
 
 const (
 	PipelineActive   PipelineStatus = "active"
-	PipelineInactive                = "inactive"
+	PipelineInactive PipelineStatus = "inactive"
 )
 
 func StrToStatus(str string) (PipelineStatus, error) {

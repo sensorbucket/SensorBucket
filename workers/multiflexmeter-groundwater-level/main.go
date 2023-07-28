@@ -37,6 +37,9 @@ func process(msg pipeline.Message) (pipeline.Message, error) {
 	// First bit indicates if there is another measurement appended
 	if data[2]&0x80 > 0 {
 		millivolt, columnMeters, err := valueToMeasurements(data[5:])
+		if err != nil {
+			return msg, err
+		}
 		err = msg.NewMeasurement().SetSensor("1").SetValue(millivolt, "pressure", "mV").Add()
 		if err != nil {
 			return msg, err

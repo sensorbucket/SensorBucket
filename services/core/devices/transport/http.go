@@ -6,18 +6,17 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
 
-var (
-	ErrHTTPDeviceIDInvalid = web.NewError(
-		http.StatusBadRequest,
-		"Device ID must be an integer",
-		"DEVICE_ID_INVALID",
-	)
+var ErrHTTPDeviceIDInvalid = web.NewError(
+	http.StatusBadRequest,
+	"Device ID must be an integer",
+	"DEVICE_ID_INVALID",
 )
 
 type middleware = func(next http.Handler) http.Handler
@@ -212,6 +211,10 @@ func (t *HTTPTransport) httpDeleteSensor() http.HandlerFunc {
 func (t *HTTPTransport) httpListSensors() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		p, err := httpfilter.Parse[pagination.Request](r)
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
 		page, err := t.svc.ListSensors(r.Context(), p)
 		if err != nil {
 			web.HTTPError(rw, err)

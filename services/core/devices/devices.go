@@ -111,8 +111,14 @@ func NewDevice(opts NewDeviceOpts) (*Device, error) {
 		dev.Properties = opts.Properties
 	}
 
-	if err := dev.SetLocation(opts.Latitude, opts.Longitude, opts.Altitude); err != nil {
-		return nil, err
+	if opts.Latitude != nil && opts.Longitude != nil {
+		var altitude float64 = 0
+		if opts.Altitude != nil {
+			altitude = *opts.Altitude
+		}
+		if err := dev.SetLocation(*opts.Latitude, *opts.Longitude, altitude); err != nil {
+			return nil, err
+		}
 	}
 
 	return &dev, nil
@@ -183,6 +189,7 @@ func (d *Device) GetSensorByCode(code string) (*Sensor, error) {
 
 	return nil, ErrSensorNotFound
 }
+
 func (d *Device) GetSensorByExternalID(eid string) (*Sensor, error) {
 	for _, sensor := range d.Sensors {
 		if sensor.ExternalID == eid {
@@ -206,17 +213,18 @@ func (d *Device) DeleteSensorByID(id int64) error {
 	return ErrSensorNotFound
 }
 
-func (d *Device) SetLocation(lat, lng, alt *float64) error {
-	if lat == nil || lng == nil || alt == nil {
-		d.Latitude = nil
-		d.Longitude = nil
-		d.Altitude = nil
-	}
-	if *lat < -90 || *lat > 90 || *lng < -180 || *lng > 180 {
+func (d *Device) ClearLocation() {
+	d.Latitude = nil
+	d.Longitude = nil
+	d.Altitude = nil
+}
+
+func (d *Device) SetLocation(lat, lng, alt float64) error {
+	if lat < -90 || lat > 90 || lng < -180 || lng > 180 {
 		return ErrInvalidCoordinates
 	}
-	d.Latitude = lat
-	d.Longitude = lng
-	d.Altitude = alt
+	d.Latitude = &lat
+	d.Longitude = &lng
+	d.Altitude = &alt
 	return nil
 }

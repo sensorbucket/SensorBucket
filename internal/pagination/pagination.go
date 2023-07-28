@@ -152,12 +152,12 @@ func Apply[T any](q sq.SelectBuilder, c Cursor[T]) (sq.SelectBuilder, error) {
 
 		tagParts := strings.Split(tag, ",")
 		if len(tagParts) != 2 {
-			return q, fmt.Errorf("invalid pagination tag on struct %s, for field %s\n", rt.Name(), rf.Name)
+			return q, fmt.Errorf("invalid pagination tag on struct %s, for field %s", rt.Name(), rf.Name)
 		}
 
 		column, order := tagParts[0], strings.ToUpper(tagParts[1])
 		if order != "ASC" && order != "DESC" {
-			return q, fmt.Errorf("invalid order in pagination tag on struct %s, for field %s\n", rt.Name(), rf.Name)
+			return q, fmt.Errorf("invalid order in pagination tag on struct %s, for field %s", rt.Name(), rf.Name)
 		}
 		q = q.OrderBy(column + " " + order).Column(column)
 
