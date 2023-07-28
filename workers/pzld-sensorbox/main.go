@@ -56,6 +56,9 @@ func main() {
 }
 
 func process(msg pipeline.Message) (pipeline.Message, error) {
+	if msg.Metadata["fport"] != 1 {
+		return msg, nil
+	}
 	measurements, err := decodeUplink(msg.Payload)
 	if err != nil {
 		return msg, err

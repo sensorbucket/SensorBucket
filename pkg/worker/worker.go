@@ -71,9 +71,12 @@ func startConsuming(c <-chan amqp091.Delivery, process Processor, p chan<- mq.Pu
 
 		// Publish result
 		topic, err := msg.NextStep()
+		if err != nil {
+			return fmt.Errorf("message has no steps remaining: %w", err)
+		}
 		msgJSON, err := json.Marshal(msg)
 		if err != nil {
-			return fmt.Errorf("could not marshal pipelines message: %v", err)
+			return fmt.Errorf("could not marshal pipelines message: %w", err)
 		}
 		p <- mq.PublishMessage{Topic: topic, Publishing: amqp091.Publishing{
 			Body: msgJSON,
