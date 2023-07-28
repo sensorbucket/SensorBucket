@@ -30,6 +30,7 @@ type TTNMessage struct {
 	Timestamp string `json:"received_at"`
 	Uplink    struct {
 		FrmPayload []byte `json:"frm_payload,omitempty"`
+		FPort      int    `json:"f_port,omitempty"`
 		RxMetaData []struct {
 			GatewayId struct {
 				EUI       string `json:"eui,omitempty"`
@@ -58,6 +59,7 @@ func process(msg pipeline.Message) (pipeline.Message, error) {
 	}
 	msg.Device = device
 	msg.Payload = ttn.Uplink.FrmPayload
+	msg.Metadata["fport"] = ttn.Uplink.FPort
 	ts, err := time.Parse(time.RFC3339, ttn.Timestamp)
 	if err != nil {
 		log.Printf("Error while parsing timestamp from uplink metadata: %v\n", err)
