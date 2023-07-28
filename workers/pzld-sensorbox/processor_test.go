@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
 
@@ -54,6 +55,9 @@ func TestProcess(t *testing.T) {
 			PipelineSteps: []string{},
 			Timestamp:     time.Now().UnixMilli(),
 			Payload:       data,
+			Metadata: map[string]any{
+				"fport": 1,
+			},
 		}
 		t.Run(tC.desc, func(t *testing.T) {
 			result, err := process(msg)
