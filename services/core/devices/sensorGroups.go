@@ -1,5 +1,13 @@
 package devices
 
+import (
+	"net/http"
+
+	"sensorbucket.nl/sensorbucket/internal/web"
+)
+
+var ErrSensorGroupNotFound = web.NewError(http.StatusNotFound, "Sensor group not found", "SENSOR_GROUP_NOT_FOUND")
+
 type SensorGroup struct {
 	ID          int64   `json:"id"`
 	Name        string  `json:"name"`

@@ -23,6 +23,7 @@ type DeviceStore interface {
 type SensorGroupStore interface {
 	Save(group *SensorGroup) error
 	List(p pagination.Request) (*pagination.Page[SensorGroup], error)
+	Get(id int64) (*SensorGroup, error)
 }
 
 type Service struct {
@@ -193,4 +194,8 @@ func (s *Service) CreateSensorGroup(ctx context.Context, name, description strin
 
 func (s *Service) ListSensorGroups(ctx context.Context, p pagination.Request) (*pagination.Page[SensorGroup], error) {
 	return s.sensorGroupStore.List(p)
+}
+
+func (s *Service) GetSensorGroup(ctx context.Context, id int64) (*SensorGroup, error) {
+	return s.sensorGroupStore.Get(id)
 }

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
@@ -70,15 +71,28 @@ type IntegrationTestSuite struct {
 	suite.Suite
 	svc       *devices.Service
 	transport *devicetransport.HTTPTransport
+	sg1       *devices.SensorGroup
+	sg2       *devices.SensorGroup
+	sg3       *devices.SensorGroup
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
+	var err error
 	baseURL := "http://testurl"
 	db := createPostgresServer(s.T())
 	deviceStore := deviceinfra.NewPSQLStore(db)
 	sensorGroupStore := deviceinfra.NewPSQLSensorGroupStore(db)
 	s.svc = devices.New(deviceStore, sensorGroupStore)
 	s.transport = devicetransport.NewHTTPTransport(s.svc, baseURL)
+
+	// Create three groups
+	ctx := context.Background()
+	s.sg1, err = s.svc.CreateSensorGroup(ctx, "SG1", "")
+	require.NoError(s.T(), err, "creating sensorgroup")
+	s.sg2, err = s.svc.CreateSensorGroup(ctx, "SG2", "")
+	require.NoError(s.T(), err, "creating sensorgroup")
+	s.sg3, err = s.svc.CreateSensorGroup(ctx, "SG3", "")
+	require.NoError(s.T(), err, "creating sensorgroup")
 }
 
 func (s *IntegrationTestSuite) TestCreateSensorGroup() {
@@ -106,13 +120,6 @@ func (s *IntegrationTestSuite) TestCreateSensorGroup() {
 
 func (s *IntegrationTestSuite) TestShouldListAndReadSensorGroups() {
 	// Arrange
-	ctx := context.Background()
-	sg1, err := s.svc.CreateSensorGroup(ctx, "SG1", "")
-	require.NoError(s.T(), err, "creating sensorgroup")
-	sg2, err := s.svc.CreateSensorGroup(ctx, "SG2", "")
-	require.NoError(s.T(), err, "creating sensorgroup")
-	sg3, err := s.svc.CreateSensorGroup(ctx, "SG3", "")
-	require.NoError(s.T(), err, "creating sensorgroup")
 
 	// Act
 	request := httptest.NewRequest("GET", "/sensor-groups", nil)
@@ -120,12 +127,24 @@ func (s *IntegrationTestSuite) TestShouldListAndReadSensorGroups() {
 	s.transport.ServeHTTP(recorder, request)
 
 	// Assert
-	require.NoError(s.T(), err, "reading recorder result body")
 	assert.Equal(s.T(), http.StatusOK, recorder.Result().StatusCode)
 	var response web.APIResponse[[]devices.SensorGroup]
 	require.NoError(s.T(), json.NewDecoder(recorder.Result().Body).Decode(&response))
 	responseGroupNames := lo.Map(response.Data, func(item devices.SensorGroup, ix int) string { return item.Name })
-	assert.Subset(s.T(), responseGroupNames, []string{sg1.Name, sg2.Name, sg3.Name})
+	assert.Subset(s.T(), responseGroupNames, []string{s.sg1.Name, s.sg2.Name, s.sg3.Name})
+}
+
+func (s *IntegrationTestSuite) TestShouldGetSingleSensorGroup() {
+	// Act
+	request := httptest.NewRequest("GET", "/sensor-groups/"+strconv.Itoa(int(s.sg2.ID)), nil)
+	recorder := httptest.NewRecorder()
+	s.transport.ServeHTTP(recorder, request)
+
+	// Assert
+	require.Equal(s.T(), http.StatusOK, recorder.Result().StatusCode)
+	var response web.APIResponse[devices.SensorGroup]
+	require.NoError(s.T(), json.NewDecoder(recorder.Result().Body).Decode(&response))
+	assert.Equal(s.T(), *s.sg2, response.Data)
 }
 
 func TestIntegrationSuite(t *testing.T) {

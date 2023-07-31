@@ -67,6 +67,7 @@ func (t *HTTPTransport) SetupRoutes(r chi.Router) {
 	r.Route("/sensor-groups", func(r chi.Router) {
 		r.Post("/", t.httpCreateSensorGroup())
 		r.Get("/", t.httpListSensorGroups())
+		r.Get("/{id}", t.httpGetSensorGroup())
 	})
 }
 
@@ -271,6 +272,27 @@ func (t *HTTPTransport) httpListSensorGroups() http.HandlerFunc {
 			return
 		}
 		web.HTTPResponse(w, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
+	}
+}
+
+func (t *HTTPTransport) httpGetSensorGroup() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		qID := chi.URLParam(r, "id")
+		id, err := strconv.ParseInt(qID, 10, 64)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		sg, err := t.svc.GetSensorGroup(r.Context(), id)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+			Data: sg,
+		})
 	}
 }
 

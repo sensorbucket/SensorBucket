@@ -367,6 +367,9 @@ var _ devices.SensorGroupStore = &SensorGroupStoreMock{}
 //
 //		// make and configure a mocked devices.SensorGroupStore
 //		mockedSensorGroupStore := &SensorGroupStoreMock{
+//			GetFunc: func(id int64) (*devices.SensorGroup, error) {
+//				panic("mock out the Get method")
+//			},
 //			ListFunc: func(p pagination.Request) (*pagination.Page[devices.SensorGroup], error) {
 //				panic("mock out the List method")
 //			},
@@ -380,6 +383,9 @@ var _ devices.SensorGroupStore = &SensorGroupStoreMock{}
 //
 //	}
 type SensorGroupStoreMock struct {
+	// GetFunc mocks the Get method.
+	GetFunc func(id int64) (*devices.SensorGroup, error)
+
 	// ListFunc mocks the List method.
 	ListFunc func(p pagination.Request) (*pagination.Page[devices.SensorGroup], error)
 
@@ -388,6 +394,11 @@ type SensorGroupStoreMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// Get holds details about calls to the Get method.
+		Get []struct {
+			// ID is the id argument value.
+			ID int64
+		}
 		// List holds details about calls to the List method.
 		List []struct {
 			// P is the p argument value.
@@ -399,8 +410,41 @@ type SensorGroupStoreMock struct {
 			Group *devices.SensorGroup
 		}
 	}
+	lockGet  sync.RWMutex
 	lockList sync.RWMutex
 	lockSave sync.RWMutex
+}
+
+// Get calls GetFunc.
+func (mock *SensorGroupStoreMock) Get(id int64) (*devices.SensorGroup, error) {
+	if mock.GetFunc == nil {
+		panic("SensorGroupStoreMock.GetFunc: method is nil but SensorGroupStore.Get was just called")
+	}
+	callInfo := struct {
+		ID int64
+	}{
+		ID: id,
+	}
+	mock.lockGet.Lock()
+	mock.calls.Get = append(mock.calls.Get, callInfo)
+	mock.lockGet.Unlock()
+	return mock.GetFunc(id)
+}
+
+// GetCalls gets all the calls that were made to Get.
+// Check the length with:
+//
+//	len(mockedSensorGroupStore.GetCalls())
+func (mock *SensorGroupStoreMock) GetCalls() []struct {
+	ID int64
+} {
+	var calls []struct {
+		ID int64
+	}
+	mock.lockGet.RLock()
+	calls = mock.calls.Get
+	mock.lockGet.RUnlock()
+	return calls
 }
 
 // List calls ListFunc.

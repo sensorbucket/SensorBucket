@@ -145,3 +145,47 @@ func (s *PSQLSensorGroupStore) List(p pagination.Request) (*pagination.Page[devi
 	page := pagination.CreatePageT(groups, cursor)
 	return &page, nil
 }
+
+func (s *PSQLSensorGroupStore) Get(id int64) (*devices.SensorGroup, error) {
+	q := pq.Select("sg.id", "sg.name", "sg.description", "sgs.sensor_id").From("sensor_groups sg").
+		LeftJoin("sensor_groups_sensors sgs on sgs.sensor_group_id = sg.id").Where(sq.Eq{"sg.id": id})
+
+	rows, err := q.RunWith(s.db).Query()
+	if err != nil {
+		return nil, err
+	}
+
+	var group *devices.SensorGroup
+	for rows.Next() {
+		var (
+			groupID          int64
+			sensorID         *int64
+			groupName        string
+			groupDescription string
+		)
+		if err := rows.Scan(
+			&groupID, &groupName, &groupDescription, &sensorID,
+		); err != nil {
+			return nil, fmt.Errorf("scanning sensor group: %w", err)
+		}
+
+		// If group is nil, then first create it
+		if group == nil {
+			group = &devices.SensorGroup{
+				ID:          groupID,
+				Name:        groupName,
+				Description: groupDescription,
+				Sensors:     make([]int64, 0),
+			}
+		}
+		// If sensorID is nil, then this is a group without sensors
+		if sensorID != nil {
+			group.Sensors = append(group.Sensors, *sensorID)
+		}
+	}
+	// If group still nil, then no rows found
+	if group == nil {
+		return nil, devices.ErrSensorGroupNotFound
+	}
+	return group, nil
+}

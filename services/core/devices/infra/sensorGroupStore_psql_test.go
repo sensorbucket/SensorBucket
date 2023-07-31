@@ -69,3 +69,14 @@ func (s *SensorGroupStoreSuite) TestSensorGroupListGroups() {
 
 	assert.Subset(s.T(), page.Data, []devices.SensorGroup{*sg1, *sg2, *sg3})
 }
+
+func (s *SensorGroupStoreSuite) TestSensorGroupFind() {
+	sg1, err := devices.NewSensorGroup("sg1", "")
+	require.NoError(s.T(), err)
+	require.NoError(s.T(), s.store.Save(sg1))
+
+	// Act
+	sg1db, err := s.store.Get(sg1.ID)
+	require.NoError(s.T(), err, "store find error")
+	assert.Equal(s.T(), sg1, sg1db)
+}
