@@ -1,10 +1,10 @@
 package devices
 
 type SensorGroup struct {
-	ID          int64
-	Name        string
-	Description string
-	Sensors     []int64
+	ID          int64   `json:"id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Sensors     []int64 `json:"sensors"`
 }
 
 func NewSensorGroup(name, description string) (*SensorGroup, error) {

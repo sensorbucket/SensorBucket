@@ -3,11 +3,13 @@ package deviceinfra
 import (
 	"context"
 	"fmt"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/samber/lo"
 
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
 
@@ -85,4 +87,61 @@ func (s *PSQLSensorGroupStore) Save(group *devices.SensorGroup) error {
 	}
 
 	return tx.Commit()
+}
+
+func (s *PSQLSensorGroupStore) List(p pagination.Request) (*pagination.Page[devices.SensorGroup], error) {
+	type SensorGroupPaginationQuery struct {
+		CreatedAt time.Time `pagination:"sg.created_at,ASC"`
+		ID        int64     `pagination:"sg.id,ASC"`
+	}
+	var err error
+	q := pq.Select("sg.id", "sg.name", "sg.description", "sgs.sensor_id").From("sensor_groups sg").
+		LeftJoin("sensor_groups_sensors sgs on sgs.sensor_group_id = sg.id")
+
+	cursor := pagination.GetCursor[SensorGroupPaginationQuery](p)
+	q, err = pagination.Apply(q, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.RunWith(s.db).Query()
+	if err != nil {
+		return nil, err
+	}
+
+	groupMap := make(map[int64]devices.SensorGroup)
+	for rows.Next() {
+		var (
+			groupID          int64
+			sensorID         *int64
+			groupName        string
+			groupDescription string
+		)
+		if err := rows.Scan(
+			&groupID, &groupName, &groupDescription, &sensorID,
+			&cursor.Columns.CreatedAt, &cursor.Columns.ID,
+		); err != nil {
+			return nil, fmt.Errorf("scanning sensor group: %w", err)
+		}
+
+		group, ok := groupMap[groupID]
+		// If ok is false, then this group mustbe instantiate
+		if !ok {
+			group = devices.SensorGroup{
+				ID:          groupID,
+				Name:        groupName,
+				Description: groupDescription,
+				Sensors:     make([]int64, 0),
+			}
+		}
+		// If sensorID is nil, then this is a group without sensors
+		if sensorID != nil {
+			group.Sensors = append(group.Sensors, *sensorID)
+		}
+		groupMap[groupID] = group
+	}
+
+	groups := lo.Values(groupMap)
+	page := pagination.CreatePageT(groups, cursor)
+	return &page, nil
 }

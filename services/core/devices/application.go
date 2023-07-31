@@ -22,6 +22,7 @@ type DeviceStore interface {
 
 type SensorGroupStore interface {
 	Save(group *SensorGroup) error
+	List(p pagination.Request) (*pagination.Page[SensorGroup], error)
 }
 
 type Service struct {
@@ -188,4 +189,8 @@ func (s *Service) CreateSensorGroup(ctx context.Context, name, description strin
 		return nil, fmt.Errorf("could not store sensor group: %w", err)
 	}
 	return group, nil
+}
+
+func (s *Service) ListSensorGroups(ctx context.Context, p pagination.Request) (*pagination.Page[SensorGroup], error) {
+	return s.sensorGroupStore.List(p)
 }

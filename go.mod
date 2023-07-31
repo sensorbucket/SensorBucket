@@ -2,30 +2,21 @@ module sensorbucket.nl/sensorbucket
 
 go 1.18
 
-replace github.com/docker/docker => github.com/docker/docker v20.10.3-0.20221013203545-33ab36d6b304+incompatible // 22.06 branch
-
-replace (
-	github.com/cucumber/godog => github.com/laurazard/godog v0.0.0-20220922095256-4c4b17abdae7
-
-	golang.org/x/oauth2 => golang.org/x/oauth2 v0.1.0
-
-	// For k8s dependencies, we use a replace directive, to prevent them being
-	// upgraded to the version specified in containerd, which is not relevant to the
-	// version needed.
-	// See https://github.com/docker/buildx/pull/948 for details.
-	// https://github.com/docker/buildx/blob/v0.8.1/go.mod#L62-L64
-	k8s.io/api => k8s.io/api v0.22.4
-	k8s.io/apimachinery => k8s.io/apimachinery v0.22.4
-	k8s.io/client-go => k8s.io/client-go v0.22.4
-)
-
 require (
+	github.com/Jeffail/gabs/v2 v2.7.0
+	github.com/Masterminds/squirrel v1.5.2
+	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/go-chi/chi/v5 v5.0.7
-	github.com/jackc/pgx/v4 v4.15.0
+	github.com/golang-migrate/migrate/v4 v4.15.2
+	github.com/google/uuid v1.3.0
+	github.com/gorilla/schema v1.2.0
+	github.com/jackc/pgx/v5 v5.0.0-alpha.3
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/rabbitmq/amqp091-go v1.3.4
 	github.com/rs/cors v1.8.2
+	github.com/samber/lo v1.37.0
 	github.com/stretchr/testify v1.8.4
+	github.com/testcontainers/testcontainers-go v0.21.0
 )
 
 require golang.org/x/sys v0.8.0 // indirect
@@ -40,7 +31,6 @@ require (
 	github.com/docker/docker v23.0.5+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -68,15 +58,9 @@ require (
 )
 
 require (
-	github.com/Masterminds/squirrel v1.5.2
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
-	github.com/jackc/pgconn v1.11.0 // indirect
-	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgproto3/v2 v2.2.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
-	github.com/jackc/pgtype v1.10.0 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lib/pq v1.10.5 // indirect
@@ -85,14 +69,4 @@ require (
 	golang.org/x/crypto v0.2.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-)
-
-require (
-	github.com/fxamacker/cbor/v2 v2.4.0
-	github.com/golang-migrate/migrate/v4 v4.15.2
-	github.com/google/uuid v1.3.0
-	github.com/gorilla/schema v1.2.0
-	github.com/jackc/pgx/v5 v5.0.0-alpha.3
-	github.com/samber/lo v1.37.0
-	github.com/testcontainers/testcontainers-go v0.21.0
 )

@@ -2,6 +2,7 @@ CREATE TABLE sensor_groups (
     id BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY,
     name varchar NOT NULL,
     description varchar NOT NULL DEFAULT(''),
+	created_at timestamptz(0) NOT NULL DEFAULT(NOW() AT TIME ZONE 'UTC'),
 
     PRIMARY KEY(id)
 );

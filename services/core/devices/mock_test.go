@@ -367,6 +367,9 @@ var _ devices.SensorGroupStore = &SensorGroupStoreMock{}
 //
 //		// make and configure a mocked devices.SensorGroupStore
 //		mockedSensorGroupStore := &SensorGroupStoreMock{
+//			ListFunc: func(p pagination.Request) (*pagination.Page[devices.SensorGroup], error) {
+//				panic("mock out the List method")
+//			},
 //			SaveFunc: func(group *devices.SensorGroup) error {
 //				panic("mock out the Save method")
 //			},
@@ -377,18 +380,59 @@ var _ devices.SensorGroupStore = &SensorGroupStoreMock{}
 //
 //	}
 type SensorGroupStoreMock struct {
+	// ListFunc mocks the List method.
+	ListFunc func(p pagination.Request) (*pagination.Page[devices.SensorGroup], error)
+
 	// SaveFunc mocks the Save method.
 	SaveFunc func(group *devices.SensorGroup) error
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// List holds details about calls to the List method.
+		List []struct {
+			// P is the p argument value.
+			P pagination.Request
+		}
 		// Save holds details about calls to the Save method.
 		Save []struct {
 			// Group is the group argument value.
 			Group *devices.SensorGroup
 		}
 	}
+	lockList sync.RWMutex
 	lockSave sync.RWMutex
+}
+
+// List calls ListFunc.
+func (mock *SensorGroupStoreMock) List(p pagination.Request) (*pagination.Page[devices.SensorGroup], error) {
+	if mock.ListFunc == nil {
+		panic("SensorGroupStoreMock.ListFunc: method is nil but SensorGroupStore.List was just called")
+	}
+	callInfo := struct {
+		P pagination.Request
+	}{
+		P: p,
+	}
+	mock.lockList.Lock()
+	mock.calls.List = append(mock.calls.List, callInfo)
+	mock.lockList.Unlock()
+	return mock.ListFunc(p)
+}
+
+// ListCalls gets all the calls that were made to List.
+// Check the length with:
+//
+//	len(mockedSensorGroupStore.ListCalls())
+func (mock *SensorGroupStoreMock) ListCalls() []struct {
+	P pagination.Request
+} {
+	var calls []struct {
+		P pagination.Request
+	}
+	mock.lockList.RLock()
+	calls = mock.calls.List
+	mock.lockList.RUnlock()
+	return calls
 }
 
 // Save calls SaveFunc.
