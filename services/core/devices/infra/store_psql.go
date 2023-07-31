@@ -15,7 +15,7 @@ import (
 var (
 	pq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	_ devices.Store = (*PSQLStore)(nil)
+	_ devices.DeviceStore = (*PSQLStore)(nil)
 )
 
 type DB interface {

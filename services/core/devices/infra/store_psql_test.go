@@ -24,7 +24,7 @@ func ptr[T any](v T) *T {
 	return &v
 }
 
-func createPostgresServer(t *testing.T) (*sqlx.DB, error) {
+func createPostgresServer(t *testing.T) *sqlx.DB {
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
 		Image: "docker.io/timescale/timescaledb-postgis:latest-pg12",
@@ -43,37 +43,29 @@ func createPostgresServer(t *testing.T) (*sqlx.DB, error) {
 		ContainerRequest: req,
 		Started:          true,
 	})
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 	t.Cleanup(func() {
 		pgc.Terminate(ctx)
 	})
 
 	containerPort, err := pgc.MappedPort(ctx, "5432")
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 	host, err := pgc.Host(ctx)
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 	db := sqlx.MustOpen("pgx", fmt.Sprintf(
 		"host=%s port=%s user=sensorbucket password=password dbname=sensorbucket sslmode=disable",
 		host, containerPort.Port(),
 	))
 	db.MustExec("CREATE EXTENSION postgis;")
 	err = migrations.MigratePostgres(db.DB)
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 
-	return db, nil
+	return db
 }
 
 func TestShouldCreateAndFetchDevice(t *testing.T) {
-	db, err := createPostgresServer(t)
-	require.NoError(t, err)
+	var err error
+	db := createPostgresServer(t)
 	store := deviceinfra.NewPSQLStore(db)
 	dev := &devices.Device{
 		Code:                "test",
@@ -149,6 +141,7 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 }
 
 func TestShouldAddSensor(t *testing.T) {
+	var err error
 	s1 := devices.NewSensorOpts{
 		Code:        "s1",
 		ExternalID:  "0",
@@ -167,8 +160,7 @@ func TestShouldAddSensor(t *testing.T) {
 		LocationDescription: "location_description",
 		CreatedAt:           time.Now(),
 	}
-	db, err := createPostgresServer(t)
-	require.NoError(t, err)
+	db := createPostgresServer(t)
 	store := deviceinfra.NewPSQLStore(db)
 
 	// Save initial device state

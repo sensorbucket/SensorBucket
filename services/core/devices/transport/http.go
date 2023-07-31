@@ -2,6 +2,7 @@ package devicetransport
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -23,12 +24,12 @@ type middleware = func(next http.Handler) http.Handler
 
 // HTTPTransport ...
 type HTTPTransport struct {
-	svc     devices.Service
+	svc     *devices.Service
 	router  chi.Router
 	baseURL string
 }
 
-func NewHTTPTransport(svc devices.Service, baseURL string) *HTTPTransport {
+func NewHTTPTransport(svc *devices.Service, baseURL string) *HTTPTransport {
 	transport := &HTTPTransport{
 		svc:     svc,
 		router:  chi.NewRouter(),
@@ -63,6 +64,7 @@ func (t *HTTPTransport) SetupRoutes(r chi.Router) {
 	})
 	r.Get("/sensors", t.httpListSensors())
 	// TODO: Should we be able to fetch sensor by global unique ID?
+	r.Post("/sensor-groups", t.httpCreateSensorGroup())
 }
 
 type HTTPDeviceFilters struct {
@@ -221,6 +223,35 @@ func (t *HTTPTransport) httpListSensors() http.HandlerFunc {
 			return
 		}
 		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
+	}
+}
+
+//
+// Sensor Groups
+//
+
+func (t *HTTPTransport) httpCreateSensorGroup() http.HandlerFunc {
+	type request struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req request
+		if err := web.DecodeJSON(r, &req); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		group, err := t.svc.CreateSensorGroup(r.Context(), req.Name, req.Description)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
+			Message: fmt.Sprintf("Created sensor group '%s'", group.Name),
+			Data:    group,
+		})
 	}
 }
 

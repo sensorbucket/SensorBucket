@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/cors"
+
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
@@ -53,7 +54,8 @@ func Run() error {
 	}
 
 	devicestore := deviceinfra.NewPSQLStore(db)
-	deviceservice := devices.New(devicestore)
+	sensorGroupStore := deviceinfra.NewPSQLSensorGroupStore(db)
+	deviceservice := devices.New(devicestore, sensorGroupStore)
 	deviceshttp := devicetransport.NewHTTPTransport(deviceservice, HTTP_BASE)
 
 	sysArchiveTime, err := strconv.Atoi(SYS_ARCHIVE_TIME)

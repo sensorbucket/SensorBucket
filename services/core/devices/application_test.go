@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
 
@@ -37,12 +38,12 @@ func TestServiceDeviceUpdates(t *testing.T) {
 		LocationDescription: "location_description_a",
 	}
 	var newDevice devices.Device
-	store := &StoreMock{SaveFunc: func(dev *devices.Device) error {
+	store := &DeviceStoreMock{SaveFunc: func(dev *devices.Device) error {
 		newDevice = *dev
 		return nil
 	}}
 
-	svc := devices.New(store)
+	svc := devices.New(store, nil)
 
 	err := svc.UpdateDevice(context.Background(), &originalDevice, updateDTO)
 	assert.NoError(t, err)
@@ -68,11 +69,11 @@ func TestServiceCreateDevice(t *testing.T) {
 		LocationDescription: "location_description_a",
 	}
 	var storedDev *devices.Device
-	store := &StoreMock{SaveFunc: func(dev *devices.Device) error {
+	store := &DeviceStoreMock{SaveFunc: func(dev *devices.Device) error {
 		storedDev = dev
 		return nil
 	}}
-	svc := devices.New(store)
+	svc := devices.New(store, nil)
 
 	_, err := svc.CreateDevice(context.Background(), newDTO)
 	assert.NoError(t, err)
@@ -108,12 +109,12 @@ func TestServiceShouldAddSensor(t *testing.T) {
 		Properties:  json.RawMessage("{}"),
 		ArchiveTime: ptr(1000),
 	}
-	store := &StoreMock{
+	store := &DeviceStoreMock{
 		SaveFunc: func(dev *devices.Device) error {
 			return nil
 		},
 	}
-	svc := devices.New(store)
+	svc := devices.New(store, nil)
 
 	// Act
 	err := svc.AddSensor(ctx, &dev, sensorDTO)
