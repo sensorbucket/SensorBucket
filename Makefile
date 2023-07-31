@@ -30,7 +30,7 @@ api:
 
 docs:
 	@echo "Starting live docs"
-	-@docker run --rm -p 8080:8000 --init -v $(CURDIR):/docs ghcr.io/sensorbucket/mkdocs:latest
+	-@docker run --rm -p 8000:8000 --init -v $(CURDIR):/docs ghcr.io/sensorbucket/mkdocs:latest
 	@echo "Stopped live docs"
 
 python:

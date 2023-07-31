@@ -1,0 +1,67 @@
+get:
+  x-is-paginated: true
+  operationId: ListSensorGroups
+  summary: List sensor groups
+  description: |
+    Fetch a list of sensor groups.
+    
+  tags: ["Devices"]
+  parameters:
+    - in: query
+      name: cursor
+      description: The cursor for the current page
+      schema:
+        type: string
+    - in: query
+      name: limit
+      description: |
+        The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+      schema:
+        type: number
+  responses:
+    '200':
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: './schemas.yaml#/paginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: 'schemas.yaml#/sensorintGroup'
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+
+post:
+  operationId: CreateSensorGroup
+  summary: Create sensor group
+  description: |
+    Create a new sensor group.
+  tags: ["Devices"]
+  requestBody: 
+    content:
+      application/json:
+        schema: 
+          $ref: 'schemas.yaml#/createSensorGroupRequest'
+  responses:
+    '201':
+      description: Created
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: created sensor group
+              data:
+                $ref: 'schemas.yaml#/sensorGroup'
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'

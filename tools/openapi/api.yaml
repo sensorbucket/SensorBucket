@@ -35,6 +35,10 @@ paths:
     $ref: 'path-devices-by-sensors-id.yaml'
   /sensors:
     $ref: 'path-sensors.yaml'
+  /sensor-group:
+    $ref: 'path-sensorgroups.yaml'
+  /sensor-group/{id}:
+    $ref: 'path-sensorgroups-by-id.yaml'
   /measurements:
     $ref: 'path-measurements.yaml'
   /datastreams:

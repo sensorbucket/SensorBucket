@@ -352,3 +352,24 @@ datastream:
       type: string
       format: iso8601
       example: 2022-01-01T00:00:00Z
+
+sensorGroup:
+  type: object
+  properties:
+    id:
+      type: number
+    name:
+      type: string
+    description:
+      type: string
+    sensors:
+      type: array
+      items:
+          $ref: '#/sensor'
+createSensorGroupRequest:
+  type: object
+  properties:
+    name:
+      type: string
+    description:
+      type: string
