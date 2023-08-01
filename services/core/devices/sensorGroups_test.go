@@ -24,12 +24,12 @@ func TestSensorGroupAddingRemovingSensors(t *testing.T) {
 	s1.ID = 2
 
 	assert.Len(t, group.Sensors, 0, "group has sensors even though its a new group, should be zero")
-	group.Add(s1)
+	assert.NoError(t, group.Add(s1))
 	assert.Len(t, group.Sensors, 1, "group has no sensors after adding one")
-	group.Add(s2)
+	assert.NoError(t, group.Add(s2))
 	assert.Len(t, group.Sensors, 2, "group should have 2 sensors")
-	group.Add(s1)
+	assert.NoError(t, group.Add(s1))
 	assert.Len(t, group.Sensors, 2, "group should still have 2 sensors after adding duplicate")
-	group.Remove(s1.ID)
+	assert.NoError(t, group.Remove(s1.ID))
 	assert.Len(t, group.Sensors, 1, "group should have 1 sensors after removing one of the two")
 }

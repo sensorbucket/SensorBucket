@@ -39,8 +39,8 @@ func (s *SensorGroupStoreSuite) TestSensorGroupStoreSavesCorrect() {
 
 	group, err := devices.NewSensorGroup("test", "Some description")
 	assert.NoError(t, err)
-	group.Add(&d1.Sensors[0])
-	group.Add(&d1.Sensors[1])
+	s.NoError(group.Add(&d1.Sensors[0]))
+	s.NoError(group.Add(&d1.Sensors[1]))
 
 	// Act
 	err = s.store.Save(group)
@@ -86,14 +86,14 @@ func (s *SensorGroupStoreSuite) TestSensorGroupAddDeleteSensor() {
 	require.NoError(s.T(), err)
 	require.NoError(s.T(), s.store.Save(sg1))
 
-	sg1.Add(&s.seedDevices[0].Sensors[0])
+	s.NoError(sg1.Add(&s.seedDevices[0].Sensors[0]))
 	require.NoError(s.T(), s.store.Save(sg1))
 
 	sg1db, err := s.store.Get(sg1.ID)
 	require.NoError(s.T(), err, "store get error")
 	assert.Equal(s.T(), sg1, sg1db)
 
-	sg1.Remove(s.seedDevices[0].Sensors[0].ID)
+	s.NoError(sg1.Remove(s.seedDevices[0].Sensors[0].ID))
 	require.NoError(s.T(), s.store.Save(sg1))
 
 	sg1db, err = s.store.Get(sg1.ID)

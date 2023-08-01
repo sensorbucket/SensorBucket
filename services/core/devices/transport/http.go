@@ -3,9 +3,9 @@ package devicetransport
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -303,23 +303,21 @@ func (t *HTTPTransport) httpGetSensorGroup() http.HandlerFunc {
 }
 
 func (t *HTTPTransport) httpAddSensorToSensorGroup() http.HandlerFunc {
+	type request struct {
+		SensorID int64 `json:"sensor_id"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		sensorGroupID, err := urlParamInt64(r, "id")
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
+		var req request
+		if err := web.DecodeJSON(r, &req); err != nil {
 			web.HTTPError(w, err)
 			return
 		}
-		sensorID, err := strconv.ParseInt(string(body), 10, 64)
-		if err != nil {
-			web.HTTPError(w, err)
-			return
-		}
-		err = t.svc.AddSensorToSensorGroup(r.Context(), sensorGroupID, sensorID)
+		err = t.svc.AddSensorToSensorGroup(r.Context(), sensorGroupID, req.SensorID)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -348,7 +346,7 @@ func (t *HTTPTransport) httpDeleteSensorFromSensorGroup() http.HandlerFunc {
 			return
 		}
 		web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
-			Message: "Added sensor to group",
+			Message: "Deleted sensor from group",
 		})
 	}
 }
@@ -411,13 +409,13 @@ func (t *HTTPTransport) useDeviceResolver() middleware {
 }
 
 func urlParamInt64(r *http.Request, name string) (int64, error) {
-	q := chi.URLParam(r, name)
+	q := strings.Trim(chi.URLParam(r, name), " \r\n")
 	if q == "" {
-		return 0, fmt.Errorf("could not parse url parameter: missing %s url parameter", name)
+		return 0, web.NewError(http.StatusBadRequest, fmt.Sprintf("could not parse url parameter: missing %s url parameter", name), "")
 	}
 	i, err := strconv.ParseInt(q, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("could not parse url parameter: %w", err)
+		return 0, web.NewError(http.StatusBadRequest, fmt.Sprintf("parameter %s is not an integer: %s", name, err), "")
 	}
 	return i, nil
 }

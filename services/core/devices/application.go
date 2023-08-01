@@ -216,7 +216,10 @@ func (s *Service) AddSensorToSensorGroup(ctx context.Context, groupID, sensorID 
 		return err
 	}
 
-	group.Add(sensor)
+	err = group.Add(sensor)
+	if err != nil {
+		return fmt.Errorf("could not add sensor to sensor group: %w", err)
+	}
 
 	if err := s.sensorGroupStore.Save(group); err != nil {
 		return err
@@ -234,7 +237,10 @@ func (s *Service) DeleteSensorFromSensorGroup(ctx context.Context, groupID, sens
 		return err
 	}
 
-	group.Remove(sensor.ID)
+	err = group.Remove(sensor.ID)
+	if err != nil {
+		return fmt.Errorf("could not remove sensor from sensor group: %w", err)
+	}
 
 	if err := s.sensorGroupStore.Save(group); err != nil {
 		return err

@@ -8,7 +8,11 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
-var ErrSensorGroupNotFound = web.NewError(http.StatusNotFound, "Sensor group not found", "SENSOR_GROUP_NOT_FOUND")
+var (
+	ErrSensorGroupDuplicateSensor = web.NewError(http.StatusBadRequest, "sensor group already has this sensor", "SENSOR_GROUP_DUPLICATE_SENSOR")
+	ErrSensorGroupNotFound        = web.NewError(http.StatusNotFound, "sensor group not found", "SENSOR_GROUP_NOT_FOUND")
+	ErrSensorGroupSensorNotFound  = web.NewError(http.StatusBadRequest, "sensor not found in sensor group", "SENSOR_GROUP_SENSOR_NOT_FOUND")
+)
 
 type SensorGroup struct {
 	ID          int64   `json:"id"`
@@ -25,20 +29,22 @@ func NewSensorGroup(name, description string) (*SensorGroup, error) {
 	}, nil
 }
 
-func (g *SensorGroup) Add(sensor *Sensor) {
+func (g *SensorGroup) Add(sensor *Sensor) error {
 	if g.Contains(sensor.ID) {
-		return
+		return ErrSensorGroupDuplicateSensor
 	}
 	g.Sensors = append(g.Sensors, sensor.ID)
+	return nil
 }
 
-func (g *SensorGroup) Remove(id int64) {
+func (g *SensorGroup) Remove(id int64) error {
 	ix := lo.IndexOf(g.Sensors, id)
 	if ix == -1 {
-		return
+		return ErrSensorGroupSensorNotFound
 	}
 	g.Sensors[ix] = g.Sensors[len(g.Sensors)-1]
 	g.Sensors = g.Sensors[:len(g.Sensors)-1]
+	return nil
 }
 
 func (g *SensorGroup) Contains(id int64) bool {

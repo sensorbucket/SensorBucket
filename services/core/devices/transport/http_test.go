@@ -174,11 +174,14 @@ func (s *IntegrationTestSuite) TestShouldAddRemoveSensorsFromSensorGroup() {
 	addReq := httptest.NewRequest(
 		"POST",
 		fmt.Sprintf("/sensor-groups/%d/sensors", s.sg3.ID),
-		bytes.NewBufferString(fmt.Sprintf("%d", sensorID)),
+		bytes.NewBufferString(fmt.Sprintf(`{"sensor_id": %d}`, sensorID)),
 	)
+	addReq.Header.Set("content-type", "application/json")
 	addRec := httptest.NewRecorder()
 	s.transport.ServeHTTP(addRec, addReq)
-	s.Require().Equal(http.StatusCreated, addRec.Result().StatusCode)
+	addBody, err := io.ReadAll(addRec.Body)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusCreated, addRec.Result().StatusCode, "incorrect statuscode, body: "+string(addBody))
 
 	// Validate that the sensor was added
 	group := get()
