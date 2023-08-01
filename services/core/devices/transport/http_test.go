@@ -24,6 +24,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
+	seed "sensorbucket.nl/sensorbucket/services/core/devices/infra/test_seed"
 	devicetransport "sensorbucket.nl/sensorbucket/services/core/devices/transport"
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
 )
@@ -74,12 +75,19 @@ type IntegrationTestSuite struct {
 	sg1       *devices.SensorGroup
 	sg2       *devices.SensorGroup
 	sg3       *devices.SensorGroup
+	d1        *devices.Device
+	d2        *devices.Device
+	d3        *devices.Device
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
 	var err error
 	baseURL := "http://testurl"
 	db := createPostgresServer(s.T())
+	seedDevices := seed.Devices(s.T(), db)
+	s.d1 = &seedDevices[0]
+	s.d2 = &seedDevices[1]
+	s.d3 = &seedDevices[2]
 	deviceStore := deviceinfra.NewPSQLStore(db)
 	sensorGroupStore := deviceinfra.NewPSQLSensorGroupStore(db)
 	s.svc = devices.New(deviceStore, sensorGroupStore)
@@ -145,6 +153,50 @@ func (s *IntegrationTestSuite) TestShouldGetSingleSensorGroup() {
 	var response web.APIResponse[devices.SensorGroup]
 	require.NoError(s.T(), json.NewDecoder(recorder.Result().Body).Decode(&response))
 	assert.Equal(s.T(), *s.sg2, response.Data)
+}
+
+func (s *IntegrationTestSuite) TestShouldAddRemoveSensorsFromSensorGroup() {
+	get := func() devices.SensorGroup {
+		getReq := httptest.NewRequest(
+			"GET",
+			fmt.Sprintf("/sensor-groups/%d", s.sg3.ID),
+			nil,
+		)
+		getRec := httptest.NewRecorder()
+		s.transport.ServeHTTP(getRec, getReq)
+		s.Require().Equal(http.StatusOK, getRec.Result().StatusCode)
+		var getResponseBody web.APIResponse[devices.SensorGroup]
+		s.Require().NoError(json.NewDecoder(getRec.Body).Decode(&getResponseBody))
+		return getResponseBody.Data
+	}
+
+	sensorID := s.d1.Sensors[0].ID
+	addReq := httptest.NewRequest(
+		"POST",
+		fmt.Sprintf("/sensor-groups/%d/sensors", s.sg3.ID),
+		bytes.NewBufferString(fmt.Sprintf("%d", sensorID)),
+	)
+	addRec := httptest.NewRecorder()
+	s.transport.ServeHTTP(addRec, addReq)
+	s.Require().Equal(http.StatusCreated, addRec.Result().StatusCode)
+
+	// Validate that the sensor was added
+	group := get()
+	s.Equal([]int64{sensorID}, group.Sensors)
+
+	// Remove sensor
+	delReq := httptest.NewRequest(
+		"DELETE",
+		fmt.Sprintf("/sensor-groups/%d/sensors/%d", s.sg3.ID, sensorID),
+		nil,
+	)
+	delRec := httptest.NewRecorder()
+	s.transport.ServeHTTP(delRec, delReq)
+	s.Require().Equal(http.StatusCreated, delRec.Result().StatusCode)
+
+	// Validate that the sensor was removed
+	group = get()
+	s.Equal([]int64{}, group.Sensors)
 }
 
 func TestIntegrationSuite(t *testing.T) {

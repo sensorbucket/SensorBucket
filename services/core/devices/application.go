@@ -18,6 +18,7 @@ type DeviceStore interface {
 	Find(id int64) (*Device, error)
 	Save(dev *Device) error
 	Delete(dev *Device) error
+	GetSensor(id int64) (*Sensor, error)
 }
 
 type SensorGroupStore interface {
@@ -181,6 +182,10 @@ func (s *Service) ListSensors(ctx context.Context, p pagination.Request) (*pagin
 	return s.store.ListSensors(p)
 }
 
+func (s *Service) GetSensor(ctx context.Context, id int64) (*Sensor, error) {
+	return s.store.GetSensor(id)
+}
+
 func (s *Service) CreateSensorGroup(ctx context.Context, name, description string) (*SensorGroup, error) {
 	group, err := NewSensorGroup(name, description)
 	if err != nil {
@@ -198,4 +203,40 @@ func (s *Service) ListSensorGroups(ctx context.Context, p pagination.Request) (*
 
 func (s *Service) GetSensorGroup(ctx context.Context, id int64) (*SensorGroup, error) {
 	return s.sensorGroupStore.Get(id)
+}
+
+func (s *Service) AddSensorToSensorGroup(ctx context.Context, groupID, sensorID int64) error {
+	group, err := s.GetSensorGroup(ctx, groupID)
+	if err != nil {
+		return err
+	}
+	sensor, err := s.GetSensor(ctx, sensorID)
+	if err != nil {
+		return err
+	}
+
+	group.Add(sensor)
+
+	if err := s.sensorGroupStore.Save(group); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Service) DeleteSensorFromSensorGroup(ctx context.Context, groupID, sensorID int64) error {
+	group, err := s.GetSensorGroup(ctx, groupID)
+	if err != nil {
+		return err
+	}
+	sensor, err := s.GetSensor(ctx, sensorID)
+	if err != nil {
+		return err
+	}
+
+	group.Remove(sensor.ID)
+
+	if err := s.sensorGroupStore.Save(group); err != nil {
+		return err
+	}
+	return nil
 }

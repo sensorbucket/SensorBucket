@@ -3,6 +3,7 @@ package devicetransport
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -67,7 +68,11 @@ func (t *HTTPTransport) SetupRoutes(r chi.Router) {
 	r.Route("/sensor-groups", func(r chi.Router) {
 		r.Post("/", t.httpCreateSensorGroup())
 		r.Get("/", t.httpListSensorGroups())
-		r.Get("/{id}", t.httpGetSensorGroup())
+		r.Route("/{id}", func(r chi.Router) {
+			r.Get("/", t.httpGetSensorGroup())
+			r.Post("/sensors", t.httpAddSensorToSensorGroup())
+			r.Delete("/sensors/{sid}", t.httpDeleteSensorFromSensorGroup())
+		})
 	})
 }
 
@@ -296,6 +301,57 @@ func (t *HTTPTransport) httpGetSensorGroup() http.HandlerFunc {
 	}
 }
 
+func (t *HTTPTransport) httpAddSensorToSensorGroup() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sensorGroupID, err := urlParamInt64(r, "id")
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		sensorID, err := strconv.ParseInt(string(body), 10, 64)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		err = t.svc.AddSensorToSensorGroup(r.Context(), sensorGroupID, sensorID)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
+			Message: "Added sensor to group",
+		})
+	}
+}
+
+func (t *HTTPTransport) httpDeleteSensorFromSensorGroup() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sensorGroupID, err := urlParamInt64(r, "id")
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		sensorID, err := urlParamInt64(r, "sid")
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		err = t.svc.DeleteSensorFromSensorGroup(r.Context(), sensorGroupID, sensorID)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
+			Message: "Added sensor to group",
+		})
+	}
+}
+
 //
 // Helpers
 //
@@ -328,4 +384,16 @@ func (t *HTTPTransport) useDeviceResolver() middleware {
 		}
 		return http.HandlerFunc(mw)
 	}
+}
+
+func urlParamInt64(r *http.Request, name string) (int64, error) {
+	q := chi.URLParam(r, name)
+	if q == "" {
+		return 0, fmt.Errorf("could not parse url parameter: missing %s url parameter", name)
+	}
+	i, err := strconv.ParseInt(q, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("could not parse url parameter: %w", err)
+	}
+	return i, nil
 }

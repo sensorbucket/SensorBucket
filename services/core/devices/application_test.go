@@ -132,3 +132,87 @@ func TestServiceShouldAddSensor(t *testing.T) {
 	assert.Equal(t, sensorDTO.ExternalID, dto.ExternalID)
 	assert.Equal(t, sensorDTO.ArchiveTime, dto.ArchiveTime)
 }
+
+func TestServiceShouldAddSensorToSensorGroup(t *testing.T) {
+	ctx := context.Background()
+	var sensorGroupID int64 = 5
+	var sensorID int64 = 10
+	deviceStore := &DeviceStoreMock{
+		GetSensorFunc: func(id int64) (*devices.Sensor, error) {
+			if id != sensorID {
+				return nil, devices.ErrSensorNotFound
+			}
+			return &devices.Sensor{
+				ID:   sensorID,
+				Code: "Sensor",
+			}, nil
+		},
+	}
+	sensorGroupStore := &SensorGroupStoreMock{
+		GetFunc: func(id int64) (*devices.SensorGroup, error) {
+			if id != sensorGroupID {
+				return nil, devices.ErrSensorGroupNotFound
+			}
+			return &devices.SensorGroup{
+				ID:      sensorGroupID,
+				Name:    "testgroup",
+				Sensors: []int64{},
+			}, nil
+		},
+		SaveFunc: func(group *devices.SensorGroup) error {
+			return nil
+		},
+	}
+	svc := devices.New(deviceStore, sensorGroupStore)
+
+	// Act
+	err := svc.AddSensorToSensorGroup(ctx, sensorGroupID, sensorID)
+
+	// Assert
+	assert.NoError(t, err)
+	if assert.Len(t, sensorGroupStore.SaveCalls(), 1, "Should save new group") {
+		assert.Equal(t, []int64{sensorID}, sensorGroupStore.SaveCalls()[0].Group.Sensors, "Should have added sensor to group")
+	}
+}
+
+func TestServiceShouldDeleteSensorFromSensorGroup(t *testing.T) {
+	ctx := context.Background()
+	var sensorGroupID int64 = 5
+	var sensorID int64 = 10
+	deviceStore := &DeviceStoreMock{
+		GetSensorFunc: func(id int64) (*devices.Sensor, error) {
+			if id != sensorID {
+				return nil, devices.ErrSensorNotFound
+			}
+			return &devices.Sensor{
+				ID:   sensorID,
+				Code: "Sensor",
+			}, nil
+		},
+	}
+	sensorGroupStore := &SensorGroupStoreMock{
+		GetFunc: func(id int64) (*devices.SensorGroup, error) {
+			if id != sensorGroupID {
+				return nil, devices.ErrSensorGroupNotFound
+			}
+			return &devices.SensorGroup{
+				ID:      sensorGroupID,
+				Name:    "testgroup",
+				Sensors: []int64{sensorID},
+			}, nil
+		},
+		SaveFunc: func(group *devices.SensorGroup) error {
+			return nil
+		},
+	}
+	svc := devices.New(deviceStore, sensorGroupStore)
+
+	// Act
+	err := svc.DeleteSensorFromSensorGroup(ctx, sensorGroupID, sensorID)
+
+	// Assert
+	assert.NoError(t, err)
+	if assert.Len(t, sensorGroupStore.SaveCalls(), 1, "Should save new group") {
+		assert.Equal(t, []int64{}, sensorGroupStore.SaveCalls()[0].Group.Sensors, "Should have removed sensor to group")
+	}
+}

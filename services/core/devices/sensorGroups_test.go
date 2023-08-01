@@ -9,7 +9,7 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
 
-func TestSensorGroupShouldAddSensorButNotDuplicate(t *testing.T) {
+func TestSensorGroupAddingRemovingSensors(t *testing.T) {
 	group, err := devices.NewSensorGroup("sg1", "")
 	require.NoError(t, err, "Creating new sensor group")
 	s1, err := devices.NewSensor(devices.NewSensorOpts{
@@ -17,10 +17,19 @@ func TestSensorGroupShouldAddSensorButNotDuplicate(t *testing.T) {
 	})
 	require.NoError(t, err, "Creating sensor")
 	s1.ID = 1
+	s2, err := devices.NewSensor(devices.NewSensorOpts{
+		Code: "S2",
+	})
+	require.NoError(t, err, "Creating sensor")
+	s1.ID = 2
 
 	assert.Len(t, group.Sensors, 0, "group has sensors even though its a new group, should be zero")
 	group.Add(s1)
 	assert.Len(t, group.Sensors, 1, "group has no sensors after adding one")
+	group.Add(s2)
+	assert.Len(t, group.Sensors, 2, "group should have 2 sensors")
 	group.Add(s1)
-	assert.Len(t, group.Sensors, 1, "group has two sensors after adding duplicate, should be one")
+	assert.Len(t, group.Sensors, 2, "group should still have 2 sensors after adding duplicate")
+	group.Remove(s1.ID)
+	assert.Len(t, group.Sensors, 1, "group should have 1 sensors after removing one of the two")
 }

@@ -23,7 +23,7 @@ func NewPSQLSensorGroupStore(db *sqlx.DB) *PSQLSensorGroupStore {
 	return &PSQLSensorGroupStore{db}
 }
 
-func create(db DB, group *devices.SensorGroup) error {
+func createSensorGroup(db DB, group *devices.SensorGroup) error {
 	err := db.Get(&group.ID, `
         INSERT INTO sensor_groups (name, description)
         VALUES ($1, $2) RETURNING id;
@@ -65,16 +65,30 @@ func saveGroupSensors(db DB, group *devices.SensorGroup) error {
 	return nil
 }
 
+func updateSensorGroup(db DB, group *devices.SensorGroup) error {
+	if _, err := db.Exec(`
+	UPDATE 
+		sensor_groups
+	SET
+        description = $2, name = $3
+	WHERE
+		id=$1`,
+		group.ID, group.Description, group.Name,
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *PSQLSensorGroupStore) Save(group *devices.SensorGroup) error {
 	tx, err := s.db.BeginTxx(context.TODO(), nil)
 	if err != nil {
 		return fmt.Errorf("could not start transaction: %w", err)
 	}
 	if group.ID == 0 {
-		err = create(tx, group)
+		err = createSensorGroup(tx, group)
 	} else {
-		// err = update(tx, group)
-		panic("Updating sensor group currently not implemented")
+		err = updateSensorGroup(tx, group)
 	}
 	if err != nil {
 		tx.Rollback()

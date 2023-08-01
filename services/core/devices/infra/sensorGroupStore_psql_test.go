@@ -80,3 +80,23 @@ func (s *SensorGroupStoreSuite) TestSensorGroupFind() {
 	require.NoError(s.T(), err, "store find error")
 	assert.Equal(s.T(), sg1, sg1db)
 }
+
+func (s *SensorGroupStoreSuite) TestSensorGroupAddDeleteSensor() {
+	sg1, err := devices.NewSensorGroup("sg1", "")
+	require.NoError(s.T(), err)
+	require.NoError(s.T(), s.store.Save(sg1))
+
+	sg1.Add(&s.seedDevices[0].Sensors[0])
+	require.NoError(s.T(), s.store.Save(sg1))
+
+	sg1db, err := s.store.Get(sg1.ID)
+	require.NoError(s.T(), err, "store get error")
+	assert.Equal(s.T(), sg1, sg1db)
+
+	sg1.Remove(s.seedDevices[0].Sensors[0].ID)
+	require.NoError(s.T(), s.store.Save(sg1))
+
+	sg1db, err = s.store.Get(sg1.ID)
+	require.NoError(s.T(), err, "store get error")
+	assert.Equal(s.T(), sg1, sg1db)
+}

@@ -3,6 +3,8 @@ package devices
 import (
 	"net/http"
 
+	"github.com/samber/lo"
+
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
@@ -28,6 +30,15 @@ func (g *SensorGroup) Add(sensor *Sensor) {
 		return
 	}
 	g.Sensors = append(g.Sensors, sensor.ID)
+}
+
+func (g *SensorGroup) Remove(id int64) {
+	ix := lo.IndexOf(g.Sensors, id)
+	if ix == -1 {
+		return
+	}
+	g.Sensors[ix] = g.Sensors[len(g.Sensors)-1]
+	g.Sensors = g.Sensors[:len(g.Sensors)-1]
 }
 
 func (g *SensorGroup) Contains(id int64) bool {

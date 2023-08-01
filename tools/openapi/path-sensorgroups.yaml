@@ -31,7 +31,7 @@ get:
                   data:
                     type: array
                     items:
-                      $ref: 'schemas.yaml#/sensorintGroup'
+                      $ref: 'schemas.yaml#/sensorGroup'
     '401':
       $ref: './responses.yaml#/401'
     '403':

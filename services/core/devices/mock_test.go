@@ -25,6 +25,9 @@ var _ devices.DeviceStore = &DeviceStoreMock{}
 //			FindFunc: func(id int64) (*devices.Device, error) {
 //				panic("mock out the Find method")
 //			},
+//			GetSensorFunc: func(id int64) (*devices.Sensor, error) {
+//				panic("mock out the GetSensor method")
+//			},
 //			ListFunc: func(deviceFilter devices.DeviceFilter, request pagination.Request) (*pagination.Page[devices.Device], error) {
 //				panic("mock out the List method")
 //			},
@@ -53,6 +56,9 @@ type DeviceStoreMock struct {
 	// FindFunc mocks the Find method.
 	FindFunc func(id int64) (*devices.Device, error)
 
+	// GetSensorFunc mocks the GetSensor method.
+	GetSensorFunc func(id int64) (*devices.Sensor, error)
+
 	// ListFunc mocks the List method.
 	ListFunc func(deviceFilter devices.DeviceFilter, request pagination.Request) (*pagination.Page[devices.Device], error)
 
@@ -77,6 +83,11 @@ type DeviceStoreMock struct {
 		}
 		// Find holds details about calls to the Find method.
 		Find []struct {
+			// ID is the id argument value.
+			ID int64
+		}
+		// GetSensor holds details about calls to the GetSensor method.
+		GetSensor []struct {
 			// ID is the id argument value.
 			ID int64
 		}
@@ -114,6 +125,7 @@ type DeviceStoreMock struct {
 	}
 	lockDelete            sync.RWMutex
 	lockFind              sync.RWMutex
+	lockGetSensor         sync.RWMutex
 	lockList              sync.RWMutex
 	lockListInBoundingBox sync.RWMutex
 	lockListInRange       sync.RWMutex
@@ -182,6 +194,38 @@ func (mock *DeviceStoreMock) FindCalls() []struct {
 	mock.lockFind.RLock()
 	calls = mock.calls.Find
 	mock.lockFind.RUnlock()
+	return calls
+}
+
+// GetSensor calls GetSensorFunc.
+func (mock *DeviceStoreMock) GetSensor(id int64) (*devices.Sensor, error) {
+	if mock.GetSensorFunc == nil {
+		panic("DeviceStoreMock.GetSensorFunc: method is nil but DeviceStore.GetSensor was just called")
+	}
+	callInfo := struct {
+		ID int64
+	}{
+		ID: id,
+	}
+	mock.lockGetSensor.Lock()
+	mock.calls.GetSensor = append(mock.calls.GetSensor, callInfo)
+	mock.lockGetSensor.Unlock()
+	return mock.GetSensorFunc(id)
+}
+
+// GetSensorCalls gets all the calls that were made to GetSensor.
+// Check the length with:
+//
+//	len(mockedDeviceStore.GetSensorCalls())
+func (mock *DeviceStoreMock) GetSensorCalls() []struct {
+	ID int64
+} {
+	var calls []struct {
+		ID int64
+	}
+	mock.lockGetSensor.RLock()
+	calls = mock.calls.GetSensor
+	mock.lockGetSensor.RUnlock()
 	return calls
 }
 
