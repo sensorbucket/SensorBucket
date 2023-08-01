@@ -23,6 +23,7 @@ type DeviceStore interface {
 
 type SensorGroupStore interface {
 	Save(group *SensorGroup) error
+	Delete(id int64) error
 	List(p pagination.Request) (*pagination.Page[SensorGroup], error)
 	Get(id int64) (*SensorGroup, error)
 }
@@ -239,4 +240,8 @@ func (s *Service) DeleteSensorFromSensorGroup(ctx context.Context, groupID, sens
 		return err
 	}
 	return nil
+}
+
+func (s *Service) DeleteSensorGroup(ctx context.Context, group *SensorGroup) error {
+	return s.sensorGroupStore.Delete(group.ID)
 }

@@ -70,6 +70,7 @@ func (t *HTTPTransport) SetupRoutes(r chi.Router) {
 		r.Get("/", t.httpListSensorGroups())
 		r.Route("/{id}", func(r chi.Router) {
 			r.Get("/", t.httpGetSensorGroup())
+			r.Delete("/", t.httpDeleteSensorGroup())
 			r.Post("/sensors", t.httpAddSensorToSensorGroup())
 			r.Delete("/sensors/{sid}", t.httpDeleteSensorFromSensorGroup())
 		})
@@ -349,6 +350,29 @@ func (t *HTTPTransport) httpDeleteSensorFromSensorGroup() http.HandlerFunc {
 		web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
 			Message: "Added sensor to group",
 		})
+	}
+}
+
+func (t *HTTPTransport) httpDeleteSensorGroup() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sensorGroupID, err := urlParamInt64(r, "id")
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		group, err := t.svc.GetSensorGroup(r.Context(), sensorGroupID)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		err = t.svc.DeleteSensorGroup(r.Context(), group)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{Message: "Deleted sensor group"})
 	}
 }
 

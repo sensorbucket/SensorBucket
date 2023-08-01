@@ -30,3 +30,33 @@ get:
       $ref: './responses.yaml#/403'
     '404':
       $ref: './responses.yaml#/404'
+delete:
+  operationId: DeleteSensorGroup
+  summary: Delete sensor group
+  description: |
+    Delete a sensor group
+  tags: ['Devices']
+  parameters:
+    - name: id
+      description: The id of the sensor group
+      in: path
+      required: true
+      schema:
+        type: number
+  responses:
+    '200':
+      description: Sensor group deleted
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: sensor group deleted
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+    '404':
+      $ref: './responses.yaml#/404'

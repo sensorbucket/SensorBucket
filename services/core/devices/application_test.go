@@ -216,3 +216,38 @@ func TestServiceShouldDeleteSensorFromSensorGroup(t *testing.T) {
 		assert.Equal(t, []int64{}, sensorGroupStore.SaveCalls()[0].Group.Sensors, "Should have removed sensor to group")
 	}
 }
+
+func TestServiceShouldDeleteSensorGroup(t *testing.T) {
+	ctx := context.Background()
+	sensorGroup := &devices.SensorGroup{
+		ID: 5,
+	}
+	deviceStore := &DeviceStoreMock{}
+	sensorGroupStore := &SensorGroupStoreMock{
+		DeleteFunc: func(id int64) error {
+			if id != sensorGroup.ID {
+				return devices.ErrSensorGroupNotFound
+			}
+			return nil
+		},
+		GetFunc: func(id int64) (*devices.SensorGroup, error) {
+			if id != sensorGroup.ID {
+				return nil, devices.ErrSensorGroupNotFound
+			}
+			return sensorGroup, nil
+		},
+		SaveFunc: func(group *devices.SensorGroup) error {
+			return nil
+		},
+	}
+	svc := devices.New(deviceStore, sensorGroupStore)
+
+	// Act
+	err := svc.DeleteSensorGroup(ctx, sensorGroup)
+
+	// Assert
+	assert.NoError(t, err)
+	if assert.Len(t, sensorGroupStore.DeleteCalls(), 1, "Should delete group") {
+		assert.Equal(t, sensorGroup.ID, sensorGroupStore.DeleteCalls()[0].ID, "Should have removed the correct group")
+	}
+}

@@ -2,6 +2,7 @@ package deviceinfra
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -202,4 +203,29 @@ func (s *PSQLSensorGroupStore) Get(id int64) (*devices.SensorGroup, error) {
 		return nil, devices.ErrSensorGroupNotFound
 	}
 	return group, nil
+}
+
+func (s *PSQLSensorGroupStore) Delete(id int64) error {
+	tx, err := s.db.BeginTxx(context.TODO(), &sql.TxOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("DELETE FROM sensor_groups_sensors WHERE sensor_group_id = $1", id)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("could not delete sensor_group_sensors: %w", err)
+	}
+	_, err = tx.Exec("DELETE FROM sensor_groups WHERE id = $1", id)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("could not delete sensor_group: %w", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("error committing: %w", err)
+	}
+
+	return nil
 }

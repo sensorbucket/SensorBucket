@@ -199,6 +199,41 @@ func (s *IntegrationTestSuite) TestShouldAddRemoveSensorsFromSensorGroup() {
 	s.Equal([]int64{}, group.Sensors)
 }
 
+func (s *IntegrationTestSuite) TestSensorGroupShouldDelete() {
+	groupName := "Test group"
+	groupDesc := "test description"
+	body := bytes.NewBufferString(fmt.Sprintf(`
+        {
+            "name": "%s",
+            "description": "%s"
+        }
+    `, groupName, groupDesc))
+	request := httptest.NewRequest("POST", "/sensor-groups", body)
+	request.Header.Set("content-type", "application/json")
+	recorder := httptest.NewRecorder()
+	s.transport.ServeHTTP(recorder, request)
+	s.Equal(http.StatusCreated, recorder.Result().StatusCode)
+	var responseBody web.APIResponse[devices.SensorGroup]
+	s.Require().NoError(json.NewDecoder(recorder.Result().Body).Decode(&responseBody))
+	group := responseBody.Data
+
+	// Delete sensor group
+	delReq := httptest.NewRequest(
+		"DELETE",
+		fmt.Sprintf("/sensor-groups/%d", group.ID),
+		nil,
+	)
+	delRec := httptest.NewRecorder()
+	s.transport.ServeHTTP(delRec, delReq)
+	s.Require().Equal(http.StatusOK, delRec.Result().StatusCode)
+
+	// Validate that the sensor group was removed
+	getReq := httptest.NewRequest("GET", fmt.Sprintf("/sensor-groups/%d", group.ID), nil)
+	getRec := httptest.NewRecorder()
+	s.transport.ServeHTTP(getRec, getReq)
+	s.Equal(http.StatusNotFound, getRec.Result().StatusCode)
+}
+
 func TestIntegrationSuite(t *testing.T) {
 	suite.Run(t, new(IntegrationTestSuite))
 }

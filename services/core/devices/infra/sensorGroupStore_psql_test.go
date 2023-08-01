@@ -100,3 +100,15 @@ func (s *SensorGroupStoreSuite) TestSensorGroupAddDeleteSensor() {
 	require.NoError(s.T(), err, "store get error")
 	assert.Equal(s.T(), sg1, sg1db)
 }
+
+func (s *SensorGroupStoreSuite) TestSensorGroupDelete() {
+	sg1, err := devices.NewSensorGroup("sg1", "")
+	require.NoError(s.T(), err)
+	require.NoError(s.T(), s.store.Save(sg1))
+
+	err = s.store.Delete(sg1.ID)
+	require.NoError(s.T(), err, "store delete error")
+
+	_, err = s.store.Get(sg1.ID)
+	assert.ErrorIs(s.T(), err, devices.ErrSensorGroupNotFound, "Should not find sensor group")
+}
