@@ -15,9 +15,12 @@ post:
     content:
       application/json:
         schema:
-          type: number
-          example: 5
-          description: The ID of the sensor to add
+          type: object
+          properties:
+            sensor_id:
+              type: number
+              example: 5
+              description: id of the sensor to add
   responses:
     '201':
       description: Added sensor to sensor group
