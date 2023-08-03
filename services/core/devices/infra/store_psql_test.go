@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -17,6 +18,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
+	seed "sensorbucket.nl/sensorbucket/services/core/devices/infra/test_seed"
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
 )
 
@@ -202,4 +204,20 @@ func TestShouldAddSensor(t *testing.T) {
 
 		assert.Len(t, dbDev.Sensors, 0)
 	})
+}
+
+func TestDeviceStoreShouldFilterOnSensorIDs(t *testing.T) {
+	db := createPostgresServer(t)
+	devs := seed.Devices(t, db)
+	require.Greater(t, len(devs), 2, "test must have atleast 3 seeded devices in db")
+	store := deviceinfra.NewPSQLStore(db)
+	filter := devices.DeviceFilter{
+		Sensor: []int64{devs[0].Sensors[0].ID, devs[1].Sensors[0].ID},
+	}
+
+	// Act
+	page, err := store.List(filter, pagination.Request{})
+	require.NoError(t, err)
+	responseDeviceIDS := lo.Map(page.Data, func(d devices.Device, ix int) int64 { return d.ID })
+	assert.ElementsMatch(t, []int64{devs[0].ID, devs[1].ID}, responseDeviceIDS)
 }

@@ -1,8 +1,11 @@
 package deviceinfra
 
 import (
+	"fmt"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
@@ -13,24 +16,25 @@ var (
 )
 
 type deviceQueryBuilder struct {
-	query  sq.SelectBuilder
-	cursor pagination.Cursor[DevicePaginationQuery]
-	err    error
+	query   sq.SelectBuilder
+	filters devices.DeviceFilter
+	cursor  pagination.Cursor[DevicePaginationQuery]
+	err     error
 }
 
 func newDeviceQueryBuilder() deviceQueryBuilder {
-	q := pq.Select(
-		"id",
-		"code",
-		"description",
-		"organisation",
-		"properties",
-		"location_description",
-		"ST_X(location::geometry) AS longitude",
-		"ST_Y(location::geometry) AS latitude",
-		"altitude",
-		"state",
-		"created_at",
+	q := sq.Select(
+		"devices.id",
+		"devices.code",
+		"devices.description",
+		"devices.organisation",
+		"devices.properties",
+		"devices.location_description",
+		"ST_X(devices.location::geometry) AS longitude",
+		"ST_Y(devices.location::geometry) AS latitude",
+		"devices.altitude",
+		"devices.state",
+		"devices.created_at",
 	).From("devices")
 
 	return deviceQueryBuilder{query: q}
@@ -45,9 +49,7 @@ func (b deviceQueryBuilder) WithPagination(p pagination.Request) deviceQueryBuil
 }
 
 func (b deviceQueryBuilder) WithFilters(f devices.DeviceFilter) deviceQueryBuilder {
-	if f.Properties != nil {
-		b.query = b.query.Where("properties::jsonb @> ?::jsonb", f.Properties)
-	}
+	b.filters = f
 	return b
 }
 
@@ -79,8 +81,21 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[devices.Device]
 		return nil, err
 	}
 
+	// Apply filters
+	if b.filters.Properties != nil {
+		q = q.Where("properties::jsonb @> ?::jsonb", b.filters.Properties)
+	}
+	if len(b.filters.Sensor) > 0 {
+		// Update query here
+		subQ, subArgs, err := sq.Select("DISTINCT sensors.device_id").From("sensors").Where(sq.Eq{"sensors.id": b.filters.Sensor}).ToSql()
+		if err != nil {
+			return nil, err
+		}
+		q = q.Where(fmt.Sprintf("devices.id in (%s)", subQ), subArgs...)
+	}
+
 	// Fetch devices
-	rows, err := q.RunWith(db).Query()
+	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(db).Query()
 	if err != nil {
 		return nil, err
 	}

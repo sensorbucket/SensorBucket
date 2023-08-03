@@ -284,6 +284,24 @@ func (s *IntegrationTestSuite) TestSensorGroupUpdate() {
 	s.Equal(updatedDesc, responseBody.Data.Description)
 }
 
+func (s *IntegrationTestSuite) TestShouldFilterDevicesBySensors() {
+	// Arrange
+	// seeded data has 3 devices, dev id 1 has sensor 1,2 dev id 2 has 3,4 etc...
+	// so we filter on sensor 1 and 3, and expect device 1 and 2 to return
+
+	// Act
+	request := httptest.NewRequest("GET", "/devices?sensor=1&sensor=3", nil)
+	recorder := httptest.NewRecorder()
+	s.transport.ServeHTTP(recorder, request)
+
+	// Assert
+	assert.Equal(s.T(), http.StatusOK, recorder.Result().StatusCode)
+	var response web.APIResponse[[]devices.Device]
+	require.NoError(s.T(), json.NewDecoder(recorder.Result().Body).Decode(&response))
+	responseDeviceIDs := lo.Map(response.Data, func(item devices.Device, ix int) int64 { return item.ID })
+	assert.Equal(s.T(), []int64{1, 2}, responseDeviceIDs)
+}
+
 func TestIntegrationSuite(t *testing.T) {
 	suite.Run(t, new(IntegrationTestSuite))
 }
