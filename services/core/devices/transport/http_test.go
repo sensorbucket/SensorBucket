@@ -42,7 +42,7 @@ func createPostgresServer(t *testing.T) *sqlx.DB {
 		ExposedPorts: []string{"5432/tcp"},
 		WaitingFor: wait.ForLog("database system is ready to accept connections").
 			WithOccurrence(2).
-			WithStartupTimeout(5 * time.Second),
+			WithStartupTimeout(2 * time.Second),
 	}
 	pgc, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -235,6 +235,53 @@ func (s *IntegrationTestSuite) TestSensorGroupShouldDelete() {
 	getRec := httptest.NewRecorder()
 	s.transport.ServeHTTP(getRec, getReq)
 	s.Equal(http.StatusNotFound, getRec.Result().StatusCode)
+}
+
+func (s *IntegrationTestSuite) TestSensorGroupUpdate() {
+	groupName := "Test group"
+	groupDesc := "test description"
+	body := bytes.NewBufferString(fmt.Sprintf(`
+        {
+            "name": "%s",
+            "description": "%s"
+        }
+    `, groupName, groupDesc))
+	request := httptest.NewRequest("POST", "/sensor-groups", body)
+	request.Header.Set("content-type", "application/json")
+	recorder := httptest.NewRecorder()
+	s.transport.ServeHTTP(recorder, request)
+	s.Equal(http.StatusCreated, recorder.Result().StatusCode)
+	var responseBody web.APIResponse[devices.SensorGroup]
+	s.Require().NoError(json.NewDecoder(recorder.Result().Body).Decode(&responseBody))
+	group := responseBody.Data
+
+	// Update sensor group
+	updatedName := "newname"
+	updatedDesc := "newdesc"
+	updReq := httptest.NewRequest(
+		"PATCH",
+		fmt.Sprintf("/sensor-groups/%d", group.ID),
+		bytes.NewBufferString(fmt.Sprintf(
+			`{"name": "%s", "description": "%s"}`,
+			updatedName, updatedDesc,
+		)),
+	)
+	updReq.Header.Set("content-type", "application/json")
+	updRec := httptest.NewRecorder()
+	s.transport.ServeHTTP(updRec, updReq)
+	resBody, _ := io.ReadAll(updRec.Body)
+	fmt.Printf("Response body: %v\n", string(resBody))
+	s.Require().Equal(http.StatusOK, updRec.Result().StatusCode)
+
+	// Validate that the sensor group was removed
+	getReq := httptest.NewRequest("GET", fmt.Sprintf("/sensor-groups/%d", group.ID), nil)
+	getRec := httptest.NewRecorder()
+	s.transport.ServeHTTP(getRec, getReq)
+	s.Equal(http.StatusOK, getRec.Result().StatusCode)
+	// Decode new get
+	s.Require().NoError(json.NewDecoder(getRec.Result().Body).Decode(&responseBody))
+	s.Equal(updatedName, responseBody.Data.Name)
+	s.Equal(updatedDesc, responseBody.Data.Description)
 }
 
 func TestIntegrationSuite(t *testing.T) {

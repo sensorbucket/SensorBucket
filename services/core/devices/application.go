@@ -251,3 +251,28 @@ func (s *Service) DeleteSensorFromSensorGroup(ctx context.Context, groupID, sens
 func (s *Service) DeleteSensorGroup(ctx context.Context, group *SensorGroup) error {
 	return s.sensorGroupStore.Delete(group.ID)
 }
+
+type UpdateSensorGroupOpts struct {
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+}
+
+func (s *Service) UpdateSensorGroup(ctx context.Context, group *SensorGroup, opts UpdateSensorGroupOpts) error {
+	if opts.Name != nil {
+		err := group.SetName(*opts.Name)
+		if err != nil {
+			return err
+		}
+	}
+
+	if opts.Description != nil {
+		group.Description = *opts.Description
+	}
+
+	err := s.sensorGroupStore.Save(group)
+	if err != nil {
+		return fmt.Errorf("update sensor group, could not save: %w", err)
+	}
+
+	return nil
+}

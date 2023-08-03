@@ -251,3 +251,41 @@ func TestServiceShouldDeleteSensorGroup(t *testing.T) {
 		assert.Equal(t, sensorGroup.ID, sensorGroupStore.DeleteCalls()[0].ID, "Should have removed the correct group")
 	}
 }
+
+func TestServiceShouldUpdateSensorGroup(t *testing.T) {
+	ctx := context.Background()
+	updatedName := "updated_sensorgroup"
+	sensorGroup := &devices.SensorGroup{
+		ID:   5,
+		Name: "sensorgroup",
+	}
+	deviceStore := &DeviceStoreMock{}
+	sensorGroupStore := &SensorGroupStoreMock{
+		GetFunc: func(id int64) (*devices.SensorGroup, error) {
+			if id != sensorGroup.ID {
+				return nil, devices.ErrSensorGroupNotFound
+			}
+			return sensorGroup, nil
+		},
+		SaveFunc: func(group *devices.SensorGroup) error {
+			return nil
+		},
+	}
+	svc := devices.New(deviceStore, sensorGroupStore)
+	dto := devices.UpdateSensorGroupOpts{
+		Name: &updatedName,
+	}
+	invalidName := "a"
+	dtoInvalid := devices.UpdateSensorGroupOpts{
+		Name: &invalidName,
+	}
+
+	// Act
+	err := svc.UpdateSensorGroup(ctx, sensorGroup, dto)
+	assert.Error(t, svc.UpdateSensorGroup(ctx, sensorGroup, dtoInvalid))
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, updatedName, sensorGroup.Name)
+	assert.NotZero(t, len(sensorGroupStore.SaveCalls()))
+}

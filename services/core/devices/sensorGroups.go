@@ -1,6 +1,7 @@
 package devices
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/samber/lo"
@@ -12,6 +13,7 @@ var (
 	ErrSensorGroupDuplicateSensor = web.NewError(http.StatusBadRequest, "sensor group already has this sensor", "SENSOR_GROUP_DUPLICATE_SENSOR")
 	ErrSensorGroupNotFound        = web.NewError(http.StatusNotFound, "sensor group not found", "SENSOR_GROUP_NOT_FOUND")
 	ErrSensorGroupSensorNotFound  = web.NewError(http.StatusBadRequest, "sensor not found in sensor group", "SENSOR_GROUP_SENSOR_NOT_FOUND")
+	ErrSensorGroupNameInvalid     = web.NewError(http.StatusBadRequest, "sensor group name invalid", "SENSOR_GROUP_INVALID_NAME")
 )
 
 type SensorGroup struct {
@@ -54,4 +56,12 @@ func (g *SensorGroup) Contains(id int64) bool {
 		}
 	}
 	return false
+}
+
+func (g *SensorGroup) SetName(name string) error {
+	if len(name) < 3 {
+		return fmt.Errorf("%w: name too short", ErrSensorGroupNameInvalid)
+	}
+	g.Name = name
+	return nil
 }
