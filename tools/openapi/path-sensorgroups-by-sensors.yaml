@@ -1,0 +1,40 @@
+post:
+  operationId: AddSensorToSensorGroup
+  summary: Add sensor to a sensor group
+  description: |
+    Add a sensor by its ID to a sensor group by its ID
+  tags: ["Devices"]
+  parameters: 
+    - name: id
+      description: The identifier of the Sensor Group
+      in: path
+      required: true
+      schema:
+        type: number
+  requestBody: 
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            sensor_id:
+              type: number
+              example: 5
+              description: id of the sensor to add
+  responses:
+    '201':
+      description: Added sensor to sensor group
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Added sensor to sensor group
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+    '404':
+      $ref: './responses.yaml#/404'

@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -17,6 +18,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
+	seed "sensorbucket.nl/sensorbucket/services/core/devices/infra/test_seed"
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
 )
 
@@ -24,7 +26,7 @@ func ptr[T any](v T) *T {
 	return &v
 }
 
-func createPostgresServer(t *testing.T) (*sqlx.DB, error) {
+func createPostgresServer(t *testing.T) *sqlx.DB {
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
 		Image: "docker.io/timescale/timescaledb-postgis:latest-pg12",
@@ -43,37 +45,29 @@ func createPostgresServer(t *testing.T) (*sqlx.DB, error) {
 		ContainerRequest: req,
 		Started:          true,
 	})
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 	t.Cleanup(func() {
 		pgc.Terminate(ctx)
 	})
 
 	containerPort, err := pgc.MappedPort(ctx, "5432")
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 	host, err := pgc.Host(ctx)
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 	db := sqlx.MustOpen("pgx", fmt.Sprintf(
 		"host=%s port=%s user=sensorbucket password=password dbname=sensorbucket sslmode=disable",
 		host, containerPort.Port(),
 	))
 	db.MustExec("CREATE EXTENSION postgis;")
 	err = migrations.MigratePostgres(db.DB)
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 
-	return db, nil
+	return db
 }
 
 func TestShouldCreateAndFetchDevice(t *testing.T) {
-	db, err := createPostgresServer(t)
-	require.NoError(t, err)
+	var err error
+	db := createPostgresServer(t)
 	store := deviceinfra.NewPSQLStore(db)
 	dev := &devices.Device{
 		Code:                "test",
@@ -149,6 +143,7 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 }
 
 func TestShouldAddSensor(t *testing.T) {
+	var err error
 	s1 := devices.NewSensorOpts{
 		Code:        "s1",
 		ExternalID:  "0",
@@ -167,8 +162,7 @@ func TestShouldAddSensor(t *testing.T) {
 		LocationDescription: "location_description",
 		CreatedAt:           time.Now(),
 	}
-	db, err := createPostgresServer(t)
-	require.NoError(t, err)
+	db := createPostgresServer(t)
 	store := deviceinfra.NewPSQLStore(db)
 
 	// Save initial device state
@@ -210,4 +204,20 @@ func TestShouldAddSensor(t *testing.T) {
 
 		assert.Len(t, dbDev.Sensors, 0)
 	})
+}
+
+func TestDeviceStoreShouldFilterOnSensorIDs(t *testing.T) {
+	db := createPostgresServer(t)
+	devs := seed.Devices(t, db)
+	require.Greater(t, len(devs), 2, "test must have atleast 3 seeded devices in db")
+	store := deviceinfra.NewPSQLStore(db)
+	filter := devices.DeviceFilter{
+		Sensor: []int64{devs[0].Sensors[0].ID, devs[1].Sensors[0].ID},
+	}
+
+	// Act
+	page, err := store.List(filter, pagination.Request{})
+	require.NoError(t, err)
+	responseDeviceIDS := lo.Map(page.Data, func(d devices.Device, ix int) int64 { return d.ID })
+	assert.ElementsMatch(t, []int64{devs[0].ID, devs[1].ID}, responseDeviceIDS)
 }

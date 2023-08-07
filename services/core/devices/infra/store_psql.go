@@ -8,6 +8,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
@@ -15,7 +16,7 @@ import (
 var (
 	pq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	_ devices.Store = (*PSQLStore)(nil)
+	_ devices.DeviceStore = (*PSQLStore)(nil)
 )
 
 type DB interface {
@@ -45,7 +46,7 @@ type SensorModel struct {
 }
 
 func sensorModelsToSensors(models []SensorModel) []devices.Sensor {
-	var sensors = make([]devices.Sensor, len(models))
+	sensors := make([]devices.Sensor, len(models))
 	for ix := range models {
 		sensors[ix] = *models[ix].Sensor
 	}
@@ -143,6 +144,10 @@ func (s *PSQLStore) ListSensors(p pagination.Request) (*pagination.Page[devices.
 
 	page := pagination.CreatePageT(sensors, cursor)
 	return &page, nil
+}
+
+func (s *PSQLStore) GetSensor(id int64) (*devices.Sensor, error) {
+	return getSensor(s.db, id)
 }
 
 func (s *PSQLStore) createDevice(dev *devices.Device) error {
@@ -299,7 +304,7 @@ func listSensors(db DB, mods ...SelectQueryMod) ([]SensorModel, error) {
 
 	sensors := []SensorModel{}
 	for rows.Next() {
-		var s = SensorModel{
+		s := SensorModel{
 			Sensor: &devices.Sensor{},
 		}
 		if err := rows.Scan(
@@ -340,6 +345,22 @@ func createSensors(tx DB, sensors []SensorModel) error {
 	}
 	return nil
 }
+
+func getSensor(tx DB, id int64) (*devices.Sensor, error) {
+	var model SensorModel
+	err := tx.Get(
+		&model,
+		`SELECT 
+        id, code, description, brand, archive_time, external_id,
+        properties, created_at, device_id FROM sensors WHERE id = $1`,
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return model.Sensor, nil
+}
+
 func updateSensors(tx DB, sensors []SensorModel) error {
 	if len(sensors) == 0 {
 		return nil
@@ -361,6 +382,7 @@ func updateSensors(tx DB, sensors []SensorModel) error {
 	}
 	return nil
 }
+
 func deleteSensors(tx DB, sensors []int64) error {
 	if len(sensors) == 0 {
 		return nil

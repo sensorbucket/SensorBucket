@@ -14,7 +14,7 @@ handle_path /dev/mq/* {
 
 redir /dev/db /dev/db/
 handle_path /dev/db/* {
-    reverse_proxy dbweb:8080
+    reverse_proxy dbweb:80
 }
 
 redir /dev/api /dev/api/

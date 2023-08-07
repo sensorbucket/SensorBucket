@@ -1,0 +1,36 @@
+delete:
+  operationId: DeleteSensorFromSensorGroup
+  summary: Delete sensor from sensor group
+  description: |
+    Delete a sensor from a sensor group
+  tags: ["Devices"]
+  parameters: 
+    - name: id
+      description: The identifier of the sensor group
+      in: path
+      required: true
+      schema:
+        type: number
+    - name: sensor_id
+      description: The id of the sensor
+      in: path
+      required: true
+      schema:
+        type: number
+  responses:
+    '200':
+      description: Deleted sensor from sensor group
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Deleted sensor from sensor group
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+    '404':
+      $ref: './responses.yaml#/404'
