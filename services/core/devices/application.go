@@ -191,7 +191,7 @@ func (s *Service) GetSensor(ctx context.Context, id int64) (*Sensor, error) {
 func (s *Service) CreateSensorGroup(ctx context.Context, name, description string) (*SensorGroup, error) {
 	group, err := NewSensorGroup(name, description)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create sensor group failed: %w", err)
 	}
 	if err := s.sensorGroupStore.Save(group); err != nil {
 		return nil, fmt.Errorf("could not store sensor group: %w", err)

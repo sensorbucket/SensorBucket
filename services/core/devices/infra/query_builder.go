@@ -83,7 +83,7 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[devices.Device]
 
 	// Apply filters
 	if b.filters.Properties != nil {
-		q = q.Where("properties::jsonb @> ?::jsonb", b.filters.Properties)
+		q = q.Where("devices.properties::jsonb @> ?::jsonb", b.filters.Properties)
 	}
 	if len(b.filters.Sensor) > 0 {
 		// Update query here

@@ -30,6 +30,43 @@ get:
       $ref: './responses.yaml#/403'
     '404':
       $ref: './responses.yaml#/404'
+patch:
+  operationId: UpdateSensorGroup
+  summary: Update sensor group
+  description: |
+    Update a some properties of the sensor group with the given identifier.
+
+    The request body should contain one or more modifiable properties of the sensor group.
+  tags: ["Devices"]
+  parameters: 
+    - name: id
+      description: The numeric ID of the sensor group
+      in: path
+      required: true
+      schema:
+        type: number
+  requestBody: 
+    content:
+      application/json:
+        schema:
+          $ref: 'schemas.yaml#/updateSensorGroupRequest'
+  responses:
+    '200':
+      description: Updated Sensor Group properties
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Updated Sensor Group properties
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+    '404':
+      $ref: './responses.yaml#/404'
 delete:
   operationId: DeleteSensorGroup
   summary: Delete sensor group

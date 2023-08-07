@@ -373,3 +373,10 @@ createSensorGroupRequest:
       type: string
     description:
       type: string
+updateSensorGroupRequest:
+  type: object
+  properties:
+    name:
+      type: string
+    description:
+      type: string
