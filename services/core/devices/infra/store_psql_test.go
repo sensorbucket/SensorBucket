@@ -150,6 +150,7 @@ func TestShouldAddSensor(t *testing.T) {
 		Description: "description",
 		Properties:  json.RawMessage("{}"),
 		ArchiveTime: ptr(1500),
+		IsFallback:  true,
 	}
 	dev := &devices.Device{
 		Code:                "test",
@@ -190,6 +191,7 @@ func TestShouldAddSensor(t *testing.T) {
 		assert.Equal(t, s1.ExternalID, dbSensor.ExternalID)
 		assert.Equal(t, s1.Properties, dbSensor.Properties)
 		assert.Equal(t, s1.ArchiveTime, dbSensor.ArchiveTime)
+		assert.Equal(t, s1.IsFallback, dbSensor.IsFallback)
 	})
 	t.Run("should delete sensor", func(t *testing.T) {
 		require.Len(t, dev.Sensors, 1)

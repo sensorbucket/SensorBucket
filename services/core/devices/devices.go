@@ -38,6 +38,11 @@ var (
 		"sensor with that code already exists on the device",
 		"DEVICE_DUPLICATE_SENSOR_CODE",
 	)
+	ErrDuplicateFallbackSensor = web.NewError(
+		http.StatusConflict,
+		"this device already has a sensor with 'is_fallback' set, can only have one",
+		"DEVICE_DUPLICATE_FALLBACK_SENSOR",
+	)
 	ErrInvalidCoordinates = web.NewError(
 		http.StatusBadRequest,
 		"Invalid coordinates supplied",
@@ -75,6 +80,7 @@ type Sensor struct {
 	Brand       string          `json:"brand"`
 	ArchiveTime *int            `json:"archive_time" db:"archive_time"`
 	ExternalID  string          `json:"external_id" db:"external_id"`
+	IsFallback  bool            `json:"is_fallback" db:"is_fallback"`
 	Properties  json.RawMessage `json:"properties"`
 	CreatedAt   time.Time       `json:"created_at" db:"created_at"`
 }
@@ -131,6 +137,7 @@ type NewSensorOpts struct {
 	ExternalID  string          `json:"external_id"`
 	ArchiveTime *int            `json:"archive_time"`
 	Properties  json.RawMessage `json:"properties"`
+	IsFallback  bool            `json:"is_fallback"`
 }
 
 func NewSensor(opts NewSensorOpts) (*Sensor, error) {
@@ -141,6 +148,7 @@ func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 		Properties:  []byte("{}"),
 		ArchiveTime: opts.ArchiveTime,
 		CreatedAt:   time.Now(),
+		IsFallback:  opts.IsFallback,
 	}
 
 	if !R_CODE.MatchString(opts.Code) {
@@ -163,6 +171,9 @@ func (d *Device) AddSensor(opts NewSensorOpts) error {
 		}
 		if existing.Code == opts.Code {
 			return ErrDuplicateSensorCode
+		}
+		if opts.IsFallback && existing.IsFallback {
+			return ErrDuplicateFallbackSensor
 		}
 	}
 
@@ -193,6 +204,16 @@ func (d *Device) GetSensorByCode(code string) (*Sensor, error) {
 func (d *Device) GetSensorByExternalID(eid string) (*Sensor, error) {
 	for _, sensor := range d.Sensors {
 		if sensor.ExternalID == eid {
+			return &sensor, nil
+		}
+	}
+
+	return nil, ErrSensorNotFound
+}
+
+func (d *Device) GetFallbackSensor() (*Sensor, error) {
+	for _, sensor := range d.Sensors {
+		if sensor.IsFallback {
 			return &sensor, nil
 		}
 	}
