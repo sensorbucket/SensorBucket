@@ -1,6 +1,5 @@
 package measurements_test
 
-
 import (
 	"context"
 	"encoding/json"
@@ -11,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
@@ -21,51 +21,81 @@ func ptr[T any](v T) *T {
 }
 
 func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
-	device := &pipeline.Device{
-		ID:                  1,
-		Code:                "",
-		Description:         "",
-		Organisation:        "",
-		Sensors:             []devices.Sensor{},
-		Latitude:            ptr(float64(10)),
-		Longitude:           ptr(float64(20)),
-		Altitude:            ptr(float64(30)),
-		LocationDescription: "",
-		State:               devices.DeviceEnabled,
-		Properties:          json.RawMessage([]byte(`{"hello":"world"}`)),
-	}
-	sensor := &devices.Sensor{
-		ID:          1,
-		Code:        "",
-		Description: "",
-		Brand:       "",
-		ArchiveTime: nil,
-		ExternalID:  "",
-		Properties:  json.RawMessage("{}"),
+	createDevice := func() *pipeline.Device {
+		return &pipeline.Device{
+			ID:                  1,
+			Code:                "",
+			Description:         "",
+			Organisation:        "",
+			Sensors:             []devices.Sensor{},
+			Latitude:            ptr(float64(10)),
+			Longitude:           ptr(float64(20)),
+			Altitude:            ptr(float64(30)),
+			LocationDescription: "",
+			State:               devices.DeviceEnabled,
+			Properties:          json.RawMessage([]byte(`{"hello":"world"}`)),
+		}
 	}
 	testCases := []struct {
-		desc   string
-		device *pipeline.Device
-		sensor *devices.Sensor
-		err    error
+		desc                        string
+		device                      *pipeline.Device
+		sensor                      []devices.Sensor
+		sensorExternalID            string
+		observationProperty         string
+		expectedObservationProperty string
+		err                         error
 	}{
 		{
-			desc:   "Both set, no error",
-			device: device,
-			sensor: sensor,
-			err:    nil,
+			desc:   "message has both a device set and a sensor match for externalID",
+			device: createDevice(),
+			sensor: []devices.Sensor{
+				{
+					ID:          1,
+					Code:        "",
+					Description: "",
+					Brand:       "",
+					ArchiveTime: nil,
+					ExternalID:  "matching_eid",
+					Properties:  json.RawMessage("{}"),
+				},
+			},
+			sensorExternalID: "matching_eid",
+			err:              nil,
 		},
 		{
-			desc:   "Device set, no sensor",
-			device: device,
-			sensor: nil,
-			err:    measurements.ErrInvalidSensorID,
+			desc:             "message has a device set but no sensor match and no fallback",
+			device:           createDevice(),
+			sensor:           []devices.Sensor{},
+			sensorExternalID: "not_existing_eid",
+			err:              measurements.ErrInvalidSensorID,
 		},
 		{
-			desc:   "Device not set",
-			device: nil,
-			sensor: nil,
-			err:    measurements.ErrMissingDeviceInMeasurement,
+			desc:             "message has no device set",
+			device:           nil,
+			sensor:           []devices.Sensor{},
+			sensorExternalID: "",
+			err:              measurements.ErrMissingDeviceInMeasurement,
+		},
+		{
+			desc:   "message has device set, no sensor match but has a fallback sensor",
+			device: createDevice(),
+			sensor: []devices.Sensor{
+				{
+					ID:          1,
+					Code:        "",
+					Description: "",
+					Brand:       "",
+					ArchiveTime: nil,
+					ExternalID:  "matching_eid",
+					Properties:  json.RawMessage("{}"),
+					IsFallback:  true,
+				},
+			},
+			sensorExternalID:    "eid",
+			observationProperty: "obs",
+			// Because a fallback is used, the observation property should be prefixed with the eid
+			expectedObservationProperty: "eid_obs",
+			err:                         nil,
 		},
 	}
 	for _, tC := range testCases {
@@ -74,13 +104,19 @@ func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 			if tC.device != nil {
 				msg.Device = tC.device
 				if tC.sensor != nil {
-					msg.Device.Sensors = append(msg.Device.Sensors, *tC.sensor)
+					msg.Device.Sensors = tC.sensor
 				}
 			}
-			err := msg.NewMeasurement().SetValue(5, "test_obs", "1").SetSensor("").Add()
+			if tC.observationProperty == "" {
+				tC.observationProperty = "default_obs"
+				tC.expectedObservationProperty = "default_obs"
+			}
+
+			err := msg.NewMeasurement().SetValue(5, tC.observationProperty, "1").SetSensor(tC.sensorExternalID).Add()
 			require.NoError(t, err)
 			store := &StoreMock{
 				FindDatastreamFunc: func(sensorID int64, obs string) (*measurements.Datastream, error) {
+					assert.Equal(t, tC.expectedObservationProperty, obs, "expected observation property to match in query")
 					return &measurements.Datastream{}, nil
 				},
 				InsertFunc: func(measurement measurements.Measurement) error {
@@ -154,12 +190,12 @@ func TestShouldCopyOverDefaultFields(t *testing.T) {
 	require.Len(t, store.calls.Insert, 1, "SQL Insert should've been called")
 	measurement := store.calls.Insert[0].Measurement
 	assert.Equal(t, msg.ID, measurement.UplinkMessageID)
-	//assert.Equal(t, OrganisationName, measurement.OrganisationName)
-	//assert.Equal(t, OrganisationAddress, measurement.OrganisationAddress)
-	//assert.Equal(t, OrganisationZipcode, measurement.OrganisationZipcode)
-	//assert.Equal(t, OrganisationCity, measurement.OrganisationCity)
-	//assert.Equal(t, OrganisationChamberOfCommerceID, measurement.OrganisationChamberOfCommerceID)
-	//assert.Equal(t, OrganisationHeadquarterID, measurement.OrganisationHeadquarterID)
+	// assert.Equal(t, OrganisationName, measurement.OrganisationName)
+	// assert.Equal(t, OrganisationAddress, measurement.OrganisationAddress)
+	// assert.Equal(t, OrganisationZipcode, measurement.OrganisationZipcode)
+	// assert.Equal(t, OrganisationCity, measurement.OrganisationCity)
+	// assert.Equal(t, OrganisationChamberOfCommerceID, measurement.OrganisationChamberOfCommerceID)
+	// assert.Equal(t, OrganisationHeadquarterID, measurement.OrganisationHeadquarterID)
 	assert.Equal(t, msg.Device.ID, measurement.DeviceID)
 	assert.Equal(t, msg.Device.Code, measurement.DeviceCode)
 	assert.Equal(t, msg.Device.Description, measurement.DeviceDescription)
@@ -176,6 +212,7 @@ func TestShouldCopyOverDefaultFields(t *testing.T) {
 	assert.Equal(t, msg.Device.Sensors[0].Properties, measurement.SensorProperties)
 	assert.Equal(t, msg.Device.Sensors[0].Brand, measurement.SensorBrand)
 	assert.Equal(t, msg.Device.Sensors[0].ArchiveTime, measurement.SensorArchiveTime)
+	assert.Equal(t, msg.Device.Sensors[0].IsFallback, measurement.SensorIsFallback)
 	assert.Equal(t, ds.ID, measurement.DatastreamID)
 	assert.Equal(t, ds.Description, measurement.DatastreamDescription)
 	assert.Equal(t, ds.ObservedProperty, measurement.DatastreamObservedProperty)

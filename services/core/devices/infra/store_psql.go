@@ -107,7 +107,7 @@ func (s *PSQLStore) ListSensors(p pagination.Request) (*pagination.Page[devices.
 
 	q := pq.Select(
 		"id", "code", "description", "external_id", "properties", "archive_time",
-		"brand", "created_at",
+		"brand", "created_at", "is_fallback",
 	).From("sensors")
 
 	cursor := pagination.GetCursor[SensorPaginationQuery](p)
@@ -133,6 +133,7 @@ func (s *PSQLStore) ListSensors(p pagination.Request) (*pagination.Page[devices.
 			&sensor.ArchiveTime,
 			&sensor.Brand,
 			&sensor.CreatedAt,
+			&sensor.IsFallback,
 			&cursor.Columns.CreatedAt,
 			&cursor.Columns.ID,
 		)
@@ -289,7 +290,7 @@ type SelectQueryMod func(q sq.SelectBuilder) sq.SelectBuilder
 func listSensors(db DB, mods ...SelectQueryMod) ([]SensorModel, error) {
 	q := pq.Select(
 		"s.id", "s.brand", "s.code", "s.description", "s.external_id", "s.properties", "s.archive_time",
-		"s.device_id", "s.created_at",
+		"s.device_id", "s.created_at", "s.is_fallback",
 	).From("sensors s")
 
 	// Apply mods
@@ -309,7 +310,7 @@ func listSensors(db DB, mods ...SelectQueryMod) ([]SensorModel, error) {
 		}
 		if err := rows.Scan(
 			&s.ID, &s.Brand, &s.Code, &s.Description, &s.ExternalID, &s.Properties, &s.ArchiveTime,
-			&s.DeviceID, &s.CreatedAt,
+			&s.DeviceID, &s.CreatedAt, &s.IsFallback,
 		); err != nil {
 			return nil, err
 		}
@@ -324,12 +325,12 @@ func createSensors(tx DB, sensors []SensorModel) error {
 	}
 	q := pq.Insert("sensors").Columns(
 		"code", "brand", "description", "archive_time", "properties", "external_id",
-		"device_id", "created_at",
+		"device_id", "created_at", "is_fallback",
 	).Suffix("RETURNING id")
 	for _, s := range sensors {
 		q = q.Values(
 			s.Code, s.Brand, s.Description, s.ArchiveTime, s.Properties, s.ExternalID,
-			s.DeviceID, s.CreatedAt,
+			s.DeviceID, s.CreatedAt, s.IsFallback,
 		)
 	}
 	query, params, err := q.ToSql()
@@ -352,7 +353,7 @@ func getSensor(tx DB, id int64) (*devices.Sensor, error) {
 		&model,
 		`SELECT 
         id, code, description, brand, archive_time, external_id,
-        properties, created_at, device_id FROM sensors WHERE id = $1`,
+        properties, created_at, device_id, is_fallback FROM sensors WHERE id = $1`,
 		id,
 	)
 	if err != nil {
@@ -375,6 +376,7 @@ func updateSensors(tx DB, sensors []SensorModel) error {
 				"properties":   s.Properties,
 				"external_id":  s.ExternalID,
 				"device_id":    s.DeviceID,
+				"is_fallback":  s.IsFallback,
 			}).RunWith(tx).Exec()
 		if err != nil {
 			return err

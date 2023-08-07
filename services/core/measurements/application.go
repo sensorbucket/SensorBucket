@@ -2,6 +2,7 @@ package measurements
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -77,15 +78,24 @@ func (s *Service) StorePipelineMessage(ctx context.Context, msg pipeline.Message
 }
 
 func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Measurement) error {
-	// Get sensor that produced this measurement
+	observedPropertyPrefix := ""
+
+	// Get sensor that produced this measurement by matching external_ids
+	// If no sensor is found, check if there is a fallback sensor
+	// If a fallback sensor exists, any observation will be prefixed with the original external_id
+	// to avoid observation property collisions
 	dev := (*devices.Device)(msg.Device)
 	sensor, err := dev.GetSensorByExternalID(m.SensorExternalID)
+	if errors.Is(err, devices.ErrSensorNotFound) {
+		observedPropertyPrefix = m.SensorExternalID + "_"
+		sensor, err = dev.GetFallbackSensor()
+	}
 	if err != nil {
 		return fmt.Errorf("GetSensorByExternalID error for device: %d, sensor eID: %s, error: %w", dev.ID, m.SensorExternalID, err)
 	}
 
 	// Find or create datastream
-	ds, err := FindOrCreateDatastream(sensor.ID, m.ObservedProperty, m.UnitOfMeasurement, s.store)
+	ds, err := FindOrCreateDatastream(sensor.ID, observedPropertyPrefix+m.ObservedProperty, m.UnitOfMeasurement, s.store)
 	if err != nil {
 		return err
 	}
@@ -114,6 +124,7 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 		SensorProperties:  sensor.Properties,
 		SensorBrand:       sensor.Brand,
 		SensorArchiveTime: sensor.ArchiveTime,
+		SensorIsFallback:  sensor.IsFallback,
 
 		DatastreamID:                ds.ID,
 		DatastreamDescription:       ds.Description,

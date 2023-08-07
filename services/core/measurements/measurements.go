@@ -44,6 +44,7 @@ type Measurement struct {
 	SensorExternalID                string              `json:"sensor_external_id"`
 	SensorProperties                json.RawMessage     `json:"sensor_properties"`
 	SensorBrand                     string              `json:"sensor_brand"`
+	SensorIsFallback                bool                `json:"sensor_is_fallback"`
 	SensorArchiveTime               *int                `json:"sensor_archive_time"`
 	DatastreamID                    uuid.UUID           `json:"datastream_id"`
 	DatastreamDescription           string              `json:"datastream_description"`

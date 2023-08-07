@@ -104,6 +104,7 @@ type NewSensorDTO struct {
 	ExternalID  string          `json:"external_id"`
 	Properties  json.RawMessage `json:"properties"`
 	ArchiveTime *int            `json:"archive_time"`
+	IsFallback  bool            `json:"is_fallback"`
 }
 
 func (s *Service) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error {
@@ -114,6 +115,7 @@ func (s *Service) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) 
 		ExternalID:  dto.ExternalID,
 		Properties:  dto.Properties,
 		ArchiveTime: dto.ArchiveTime,
+		IsFallback:  dto.IsFallback,
 	}
 	if err := dev.AddSensor(opts); err != nil {
 		return err
