@@ -82,7 +82,7 @@ func TestAddSensorToDevice(t *testing.T) {
 				Properties:  json.RawMessage("{}"),
 				IsFallback:  true,
 			},
-			expectedErr: devices.ErrDuplicateDefaultSensor,
+			expectedErr: devices.ErrDuplicateFallbackSensor,
 		},
 	}
 	for _, tC := range testCases {
