@@ -38,10 +38,10 @@ var (
 		"sensor with that code already exists on the device",
 		"DEVICE_DUPLICATE_SENSOR_CODE",
 	)
-	ErrDuplicateDefaultSensor = web.NewError(
+	ErrDuplicateFallbackSensor = web.NewError(
 		http.StatusConflict,
-		"a sensor on this device already has `default` set, can only have one default sensor",
-		"DEVICE_DUPLICATE_SENSOR_DEFAULT",
+		"this device already has a sensor with 'is_fallback' set, can only have one",
+		"DEVICE_DUPLICATE_FALLBACK_SENSOR",
 	)
 	ErrInvalidCoordinates = web.NewError(
 		http.StatusBadRequest,
@@ -173,7 +173,7 @@ func (d *Device) AddSensor(opts NewSensorOpts) error {
 			return ErrDuplicateSensorCode
 		}
 		if opts.IsFallback && existing.IsFallback {
-			return ErrDuplicateDefaultSensor
+			return ErrDuplicateFallbackSensor
 		}
 	}
 
