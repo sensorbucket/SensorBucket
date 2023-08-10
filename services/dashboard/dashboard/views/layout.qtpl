@@ -1,0 +1,157 @@
+{% code
+type NavItem struct {
+Label string
+URL string
+Icon string
+}
+
+var navItems = []NavItem{
+{Label: "Overview", URL: "/", Icon: "material-symbols:home-outline-rounded" },
+}
+%}
+
+{%
+interface Page {
+Title()
+Header()
+Body()
+Footer()
+}
+%}
+
+{% code
+type BasePage struct {
+}
+%}
+{% func (p *BasePage) Title() %}This is a base title{% endfunc %}
+{% func (p *BasePage) Header() %}{% endfunc %}
+{% func (p *BasePage) Body() %}Page has no body{% endfunc %}
+{% func (p *BasePage) Footer() %}{% endfunc %}
+
+{% func Index(page Page) %}
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+
+<head>
+    <title>SensorBucket</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {%= debugHeaders() %}
+    <!-- TODO: only load these on the required pages -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.25/dist/uPlot.min.css" />
+    <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
+    <script type="text/javascript">
+        htmx.defineExtension('uplot', {
+            onEvent: function (name, evt) {
+                if (name == "htmx:afterProcessNode") {
+                    const opts = {
+                        width: evt.target.clientWidth,
+                        height: evt.target.clientHeight
+                    }
+                    const data = []
+                    const plot = new uPlot(opts, data, evt.target)
+                }
+            }
+        })
+    </script>
+    <script type="text/javascript">
+        htmx.defineExtension('leaflet', {
+            onEvent: function (name, evt) {
+                if (name == "htmx:afterProcessNode") {
+                    var map = L.map(evt.target).setView([51.55, 3.89], 9)
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                        maxZoom: 19,
+                    }).addTo(map);
+                }
+            }
+        })
+    </script>
+    {%= page.Header() %}
+</head>
+
+<body class="h-full">
+    <sidebar class="fixed left-0 top-0 w-sidebar h-screen bg-secondary-600 flex flex-col">
+        <header class="h-header flex justify-center items-center">
+            <img src="/static/logo-white.png" alt="SensorBucket" class="w-1/2" />
+        </header>
+        <nav class="mt-4 px-8">
+            <ul>
+                <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
+                {% for _, item := range navItems %}
+                <li>
+                    <a href="{%s item.URL %}"
+                        class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">
+                        <iconify-icon icon="{%s item.Icon %}" width="24" class="pr-4"></iconify-icon>
+                        <span>
+                            {%s item.Label %}
+                        </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </nav>
+    </sidebar>
+
+    <section class="flex flex-col ml-sidebar h-full">
+        <header class="h-header bg-white border-b"></header>
+        <main class="p-4 flex-1">
+            {%= page.Body() %}
+        </main>
+    </section>
+
+    {%= page.Footer() %}
+</body>
+
+</html>
+{% endfunc %}
+
+
+// These are for debugging only. In production the tailwind and icons should be bundled with the dashboard
+{% func debugHeaders() %}
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                spacing: {
+                    sidebar: '16rem',
+                    header: '4rem'
+                },
+                colors: {
+                    primary: {
+                        50: '#E9FBF8',
+                        100: '#CFF7F1',
+                        200: '#A3F0E3',
+                        300: '#72E9D5',
+                        400: '#46E2C8',
+                        500: '#21CFB3',
+                        600: '#1BA790',
+                        700: '#147B6A',
+                        800: '#0D5448',
+                        900: '#062822'
+                    },
+                    secondary: {
+                        50: '#eaecef',
+                        100: '#d5dade',
+                        200: '#acb5be',
+                        300: '#828f9d',
+                        400: '#596a7d',
+                        500: '#2f455c',
+                        600: '#26374a',
+                        700: '#1c2937',
+                        800: '#131c25',
+                        900: '#090e12'
+                    }
+                }
+            }
+        },
+    }
+</script>
+<script src="https://unpkg.com/htmx.org@1.9.4"></script>
+<script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+<script type="text/javascript" src="https://livejs.com/live.js"></script>
+{% endfunc %}

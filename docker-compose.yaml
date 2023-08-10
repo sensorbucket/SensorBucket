@@ -9,19 +9,16 @@ services:
       - ./tools/caddy:/etc/caddy
 
   dashboard:
-    build: 
-      context: ./services/dashboard
+    build:
+      context: .
       dockerfile: Dockerfile
-      target: builder
-    command: yarn dev --host=0.0.0.0 --port=3000
-    environment:
-      - PUBLIC_EP_DATASTREAMS=http://caddy/api/datastreams
-      - PUBLIC_EP_SENSORS=http://caddy/api/sensors
-      - PUBLIC_EP_DEVICES=http://caddy/api/devices
-      - PUBLIC_EP_PIPELINES=http://caddy/api/pipelines
-      - PUBLIC_EP_MEASUREMENTS=http://caddy/api/measurements
+      target: dev
     volumes:
-      - ./services/dashboard:/app:cached
+      - .:/workspace:cached
+    environment:
+    - APP_NAME=dashboard
+    - APP_TYPE=service
+    - STATIC_PATH=services/dashboard/dashboard/static
 
   core:
     build:
@@ -38,7 +35,6 @@ services:
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_XCHG=pipeline.messages
     - SVC_PIPELINE=http://pipeline:3000
-
 
   httpimporter:
     build: 

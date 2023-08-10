@@ -1,0 +1,68 @@
+{% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
+
+{% func (p *DatastreamPage) Body() %}
+<div class="grid grid-cols-3 gap-4">
+    <div class="border p-2 bg-white aspect-[1.4]" id="map" hx-ext="leaflet">
+    </div>
+    <div class="border bg-white" id="device">
+        <header class="flex justify-between border-b items-center">
+            <h2 class="p-1">Device</h2>
+            <a href="/overview" class="grid place-center mx-2"><iconify-icon icon="mdi:remove-outline" class="text-rose-700 transition duration-300 hover:rotate-180" width="24"></iconify-icon>
+            </a>
+        </header>
+        <div class="p-2 text-sm grid gap-x-3" style="grid-template-columns: 1fr 2fr;">
+            <span>Identifier</span>
+            <span>{%dl p.Device.ID %}</span>
+            <span>Code</span>
+            <span>{%s p.Device.Code %}</span>
+            <span>Description</span>
+            <span>{%s p.Device.Description %}</span>
+            <span>Orgnaisation (Owner)</span>
+            <span>{%s p.Device.Organisation %}</span>
+            <span>Sensor count</span>
+            <span>{%d len(p.Device.Sensors) %}</span>
+            <span>Location</span>
+            <span>
+                {% if p.Device.Latitude != nil && p.Device.Longitude != nil %}
+                {%f.3 *p.Device.Latitude %},
+                {%f.3 *p.Device.Longitude %},
+                {% if p.Device.Altitude != nil %}
+                {%f.3 *p.Device.Altitude %}<br />
+                {% endif %}
+                {% else %}
+                Coordinates not set
+                {% endif %}
+                {%s p.Device.LocationDescription %}
+            </span>
+            <span>State</span>
+            <span>
+                {% switch p.Device.State %}
+                {% case devices.DeviceEnabled %}
+                Enabled
+                {% case devices.DeviceDisabled %}
+                Disabled
+                {% endswitch %}
+            </span>
+            <span>Created at</span>
+            <span>{%s p.Device.CreatedAt.Format("Mon 2006-01-02 15:04:05") %}</span>
+        </div>
+    </div>
+    <div class="border bg-white" id="sensor">
+        <header class="flex justify-between border-b items-center">
+            <h2 class="p-1">Sensor</h2>
+            <a href="/overview/devices/{%dl p.Device.ID %}" class="grid place-center mx-2"><iconify-icon icon="mdi:remove-outline" class="text-rose-700 transition duration-300 hover:rotate-180" width="24"></iconify-icon>
+            </a>
+        </header>
+    </div>
+    <div class="col-span-full border p-2 bg-white" id="graph" hx-ext="uplot">
+        Diagram here
+    </div>
+</div>
+{% endfunc %}
+
+{% code
+type DatastreamPage struct {
+BasePage
+Device devices.Device
+}
+%}
