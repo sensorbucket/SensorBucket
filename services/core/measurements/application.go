@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
@@ -20,6 +21,7 @@ type iService interface {
 	StorePipelineMessage(context.Context, pipeline.Message) error
 	QueryMeasurements(Filter, pagination.Request) (*pagination.Page[Measurement], error)
 	ListDatastreams(ctx context.Context, filter DatastreamFilter, r pagination.Request) (*pagination.Page[Datastream], error)
+	GetDatastream(ctx context.Context, id uuid.UUID) (*Datastream, error)
 }
 
 // Ensure Service implements iService
@@ -32,6 +34,7 @@ type Store interface {
 	Insert(Measurement) error
 	Query(Filter, pagination.Request) (*pagination.Page[Measurement], error)
 	ListDatastreams(DatastreamFilter, pagination.Request) (*pagination.Page[Datastream], error)
+	GetDatastream(id uuid.UUID) (*Datastream, error)
 }
 
 // Service is the measurement service which stores measurement data.
@@ -177,4 +180,8 @@ type DatastreamFilter struct {
 
 func (s *Service) ListDatastreams(ctx context.Context, filter DatastreamFilter, r pagination.Request) (*pagination.Page[Datastream], error) {
 	return s.store.ListDatastreams(filter, r)
+}
+
+func (s *Service) GetDatastream(ctx context.Context, id uuid.UUID) (*Datastream, error) {
+	return s.store.GetDatastream(id)
 }
