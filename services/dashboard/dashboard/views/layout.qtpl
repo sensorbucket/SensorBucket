@@ -44,32 +44,8 @@ type BasePage struct {
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.25/dist/uPlot.min.css" />
     <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
-    <script type="text/javascript">
-        htmx.defineExtension('uplot', {
-            onEvent: function (name, evt) {
-                if (name == "htmx:afterProcessNode") {
-                    const opts = {
-                        width: evt.target.clientWidth,
-                        height: evt.target.clientHeight
-                    }
-                    const data = []
-                    const plot = new uPlot(opts, data, evt.target)
-                }
-            }
-        })
-    </script>
-    <script type="text/javascript">
-        htmx.defineExtension('leaflet', {
-            onEvent: function (name, evt) {
-                if (name == "htmx:afterProcessNode") {
-                    var map = L.map(evt.target).setView([51.55, 3.89], 9)
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                        maxZoom: 19,
-                    }).addTo(map);
-                }
-            }
-        })
-    </script>
+    <script type="text/javascript" src="/static/uplot.htmx.js"></script>
+    <script type="text/javascript" src="/static/leaflet.htmx.js"></script>
     {%= page.Header() %}
 </head>
 

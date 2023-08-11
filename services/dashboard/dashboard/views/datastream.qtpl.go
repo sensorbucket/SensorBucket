@@ -7,25 +7,36 @@ package views
 //line services/dashboard/dashboard/views/datastream.qtpl:1
 import "sensorbucket.nl/sensorbucket/services/core/devices"
 
-//line services/dashboard/dashboard/views/datastream.qtpl:3
+//line services/dashboard/dashboard/views/datastream.qtpl:2
+import "sensorbucket.nl/sensorbucket/services/core/measurements"
+
+//line services/dashboard/dashboard/views/datastream.qtpl:4
 import (
 	qtio422016 "io"
 
 	qt422016 "github.com/valyala/quicktemplate"
 )
 
-//line services/dashboard/dashboard/views/datastream.qtpl:3
+//line services/dashboard/dashboard/views/datastream.qtpl:4
 var (
 	_ = qtio422016.Copy
 	_ = qt422016.AcquireByteBuffer
 )
 
-//line services/dashboard/dashboard/views/datastream.qtpl:3
+//line services/dashboard/dashboard/views/datastream.qtpl:4
 func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
-//line services/dashboard/dashboard/views/datastream.qtpl:3
+//line services/dashboard/dashboard/views/datastream.qtpl:4
 	qw422016.N().S(`
 <div class="grid grid-cols-3 gap-4">
-    <div class="border p-2 bg-white aspect-[1.4]" id="map" hx-ext="leaflet">
+    <div class="border p-2 bg-white aspect-[1.4]" id="map">
+        <div
+            class="w-full h-full"
+            hx-ext="leaflet"
+            data-latitude="3.943"
+            data-longitude="51.573"
+            data-zoom="11"
+            data-markers='[{"lng": 51.573282, "lat": 3.943204}]'
+        ></div>
     </div>
     <div class="border bg-white" id="device">
         <header class="flex justify-between border-b items-center">
@@ -36,110 +47,116 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
         <div class="p-2 text-sm grid gap-x-3" style="grid-template-columns: 1fr 2fr;">
             <span>Identifier</span>
             <span>`)
-//line services/dashboard/dashboard/views/datastream.qtpl:15
+//line services/dashboard/dashboard/views/datastream.qtpl:24
 	qw422016.N().DL(p.Device.ID)
-//line services/dashboard/dashboard/views/datastream.qtpl:15
+//line services/dashboard/dashboard/views/datastream.qtpl:24
 	qw422016.N().S(`</span>
             <span>Code</span>
             <span>`)
-//line services/dashboard/dashboard/views/datastream.qtpl:17
+//line services/dashboard/dashboard/views/datastream.qtpl:26
 	qw422016.E().S(p.Device.Code)
-//line services/dashboard/dashboard/views/datastream.qtpl:17
+//line services/dashboard/dashboard/views/datastream.qtpl:26
 	qw422016.N().S(`</span>
             <span>Description</span>
             <span>`)
-//line services/dashboard/dashboard/views/datastream.qtpl:19
+//line services/dashboard/dashboard/views/datastream.qtpl:28
 	qw422016.E().S(p.Device.Description)
-//line services/dashboard/dashboard/views/datastream.qtpl:19
+//line services/dashboard/dashboard/views/datastream.qtpl:28
 	qw422016.N().S(`</span>
             <span>Orgnaisation (Owner)</span>
             <span>`)
-//line services/dashboard/dashboard/views/datastream.qtpl:21
+//line services/dashboard/dashboard/views/datastream.qtpl:30
 	qw422016.E().S(p.Device.Organisation)
-//line services/dashboard/dashboard/views/datastream.qtpl:21
+//line services/dashboard/dashboard/views/datastream.qtpl:30
 	qw422016.N().S(`</span>
             <span>Sensor count</span>
             <span>`)
-//line services/dashboard/dashboard/views/datastream.qtpl:23
+//line services/dashboard/dashboard/views/datastream.qtpl:32
 	qw422016.N().D(len(p.Device.Sensors))
-//line services/dashboard/dashboard/views/datastream.qtpl:23
+//line services/dashboard/dashboard/views/datastream.qtpl:32
 	qw422016.N().S(`</span>
             <span>Location</span>
             <span>
                 `)
-//line services/dashboard/dashboard/views/datastream.qtpl:26
+//line services/dashboard/dashboard/views/datastream.qtpl:35
 	if p.Device.Latitude != nil && p.Device.Longitude != nil {
-//line services/dashboard/dashboard/views/datastream.qtpl:26
+//line services/dashboard/dashboard/views/datastream.qtpl:35
 		qw422016.N().S(`
                 `)
-//line services/dashboard/dashboard/views/datastream.qtpl:27
+//line services/dashboard/dashboard/views/datastream.qtpl:36
 		qw422016.N().FPrec(*p.Device.Latitude, 3)
-//line services/dashboard/dashboard/views/datastream.qtpl:27
+//line services/dashboard/dashboard/views/datastream.qtpl:36
 		qw422016.N().S(`,
                 `)
-//line services/dashboard/dashboard/views/datastream.qtpl:28
+//line services/dashboard/dashboard/views/datastream.qtpl:37
 		qw422016.N().FPrec(*p.Device.Longitude, 3)
-//line services/dashboard/dashboard/views/datastream.qtpl:28
+//line services/dashboard/dashboard/views/datastream.qtpl:37
 		qw422016.N().S(`,
                 `)
-//line services/dashboard/dashboard/views/datastream.qtpl:29
+//line services/dashboard/dashboard/views/datastream.qtpl:38
 		if p.Device.Altitude != nil {
-//line services/dashboard/dashboard/views/datastream.qtpl:29
+//line services/dashboard/dashboard/views/datastream.qtpl:38
 			qw422016.N().S(`
                 `)
-//line services/dashboard/dashboard/views/datastream.qtpl:30
+//line services/dashboard/dashboard/views/datastream.qtpl:39
 			qw422016.N().FPrec(*p.Device.Altitude, 3)
-//line services/dashboard/dashboard/views/datastream.qtpl:30
+//line services/dashboard/dashboard/views/datastream.qtpl:39
 			qw422016.N().S(`<br />
                 `)
-//line services/dashboard/dashboard/views/datastream.qtpl:31
+//line services/dashboard/dashboard/views/datastream.qtpl:40
 		}
-//line services/dashboard/dashboard/views/datastream.qtpl:31
+//line services/dashboard/dashboard/views/datastream.qtpl:40
 		qw422016.N().S(`
                 `)
-//line services/dashboard/dashboard/views/datastream.qtpl:32
+//line services/dashboard/dashboard/views/datastream.qtpl:41
 	} else {
-//line services/dashboard/dashboard/views/datastream.qtpl:32
+//line services/dashboard/dashboard/views/datastream.qtpl:41
 		qw422016.N().S(`
                 Coordinates not set
                 `)
-//line services/dashboard/dashboard/views/datastream.qtpl:34
+//line services/dashboard/dashboard/views/datastream.qtpl:43
 	}
-//line services/dashboard/dashboard/views/datastream.qtpl:34
+//line services/dashboard/dashboard/views/datastream.qtpl:43
 	qw422016.N().S(`
                 `)
-//line services/dashboard/dashboard/views/datastream.qtpl:35
+//line services/dashboard/dashboard/views/datastream.qtpl:44
 	qw422016.E().S(p.Device.LocationDescription)
-//line services/dashboard/dashboard/views/datastream.qtpl:35
+//line services/dashboard/dashboard/views/datastream.qtpl:44
 	qw422016.N().S(`
             </span>
             <span>State</span>
             <span>
                 `)
-//line services/dashboard/dashboard/views/datastream.qtpl:39
+//line services/dashboard/dashboard/views/datastream.qtpl:48
 	switch p.Device.State {
-//line services/dashboard/dashboard/views/datastream.qtpl:40
+//line services/dashboard/dashboard/views/datastream.qtpl:49
 	case devices.DeviceEnabled:
-//line services/dashboard/dashboard/views/datastream.qtpl:40
+//line services/dashboard/dashboard/views/datastream.qtpl:49
 		qw422016.N().S(`
                 Enabled
                 `)
-//line services/dashboard/dashboard/views/datastream.qtpl:42
+//line services/dashboard/dashboard/views/datastream.qtpl:51
 	case devices.DeviceDisabled:
-//line services/dashboard/dashboard/views/datastream.qtpl:42
+//line services/dashboard/dashboard/views/datastream.qtpl:51
 		qw422016.N().S(`
                 Disabled
                 `)
-//line services/dashboard/dashboard/views/datastream.qtpl:44
+//line services/dashboard/dashboard/views/datastream.qtpl:53
+	default:
+//line services/dashboard/dashboard/views/datastream.qtpl:53
+		qw422016.N().S(`
+                Unknown
+                `)
+//line services/dashboard/dashboard/views/datastream.qtpl:55
 	}
-//line services/dashboard/dashboard/views/datastream.qtpl:44
+//line services/dashboard/dashboard/views/datastream.qtpl:55
 	qw422016.N().S(`
             </span>
             <span>Created at</span>
             <span>`)
-//line services/dashboard/dashboard/views/datastream.qtpl:47
+//line services/dashboard/dashboard/views/datastream.qtpl:58
 	qw422016.E().S(p.Device.CreatedAt.Format("Mon 2006-01-02 15:04:05"))
-//line services/dashboard/dashboard/views/datastream.qtpl:47
+//line services/dashboard/dashboard/views/datastream.qtpl:58
 	qw422016.N().S(`</span>
         </div>
     </div>
@@ -147,49 +164,112 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
         <header class="flex justify-between border-b items-center">
             <h2 class="p-1">Sensor</h2>
             <a href="/overview/devices/`)
-//line services/dashboard/dashboard/views/datastream.qtpl:53
+//line services/dashboard/dashboard/views/datastream.qtpl:64
 	qw422016.N().DL(p.Device.ID)
-//line services/dashboard/dashboard/views/datastream.qtpl:53
-	qw422016.N().S(`" class="grid place-center mx-2"><iconify-icon icon="mdi:remove-outline" class="text-rose-700 transition duration-300 hover:rotate-180" width="24"></iconify-icon>
+//line services/dashboard/dashboard/views/datastream.qtpl:64
+	qw422016.N().S(`" class="grid place-center mx-2">
+                <iconify-icon icon="mdi:remove-outline" class="text-rose-700 transition duration-300 hover:rotate-180" width="24"></iconify-icon>
             </a>
         </header>
+        <div class="p-2 text-sm grid gap-x-3" style="grid-template-columns: 1fr 2fr;">
+            <span>Identifier</span>
+            <span>`)
+//line services/dashboard/dashboard/views/datastream.qtpl:70
+	qw422016.N().DL(p.Sensor.ID)
+//line services/dashboard/dashboard/views/datastream.qtpl:70
+	qw422016.N().S(`</span>
+            <span>Code</span>
+            <span>`)
+//line services/dashboard/dashboard/views/datastream.qtpl:72
+	qw422016.E().S(p.Sensor.Code)
+//line services/dashboard/dashboard/views/datastream.qtpl:72
+	qw422016.N().S(`</span>
+            <span>Brand</span>
+            <span>`)
+//line services/dashboard/dashboard/views/datastream.qtpl:74
+	qw422016.E().S(p.Sensor.Brand)
+//line services/dashboard/dashboard/views/datastream.qtpl:74
+	qw422016.N().S(`</span>
+            <span>Description</span>
+            <span>`)
+//line services/dashboard/dashboard/views/datastream.qtpl:76
+	qw422016.E().S(p.Sensor.Description)
+//line services/dashboard/dashboard/views/datastream.qtpl:76
+	qw422016.N().S(`</span>
+            <span>External ID</span>
+            <span>`)
+//line services/dashboard/dashboard/views/datastream.qtpl:78
+	qw422016.E().S(p.Sensor.ExternalID)
+//line services/dashboard/dashboard/views/datastream.qtpl:78
+	qw422016.N().S(`</span>
+            <span>Archive Time</span>
+            <span>`)
+//line services/dashboard/dashboard/views/datastream.qtpl:80
+	if p.Sensor.ArchiveTime != nil {
+//line services/dashboard/dashboard/views/datastream.qtpl:80
+		qw422016.N().D(*p.Sensor.ArchiveTime)
+//line services/dashboard/dashboard/views/datastream.qtpl:80
+		qw422016.N().S(` days`)
+//line services/dashboard/dashboard/views/datastream.qtpl:80
+	} else {
+//line services/dashboard/dashboard/views/datastream.qtpl:80
+		qw422016.N().S(`Not set`)
+//line services/dashboard/dashboard/views/datastream.qtpl:80
+	}
+//line services/dashboard/dashboard/views/datastream.qtpl:80
+	qw422016.N().S(`</span>
+            <span>Is fallback?</span>
+            <span>`)
+//line services/dashboard/dashboard/views/datastream.qtpl:82
+	qw422016.E().V(p.Sensor.IsFallback)
+//line services/dashboard/dashboard/views/datastream.qtpl:82
+	qw422016.N().S(`</span>
+            <span>Created at</span>
+            <span>`)
+//line services/dashboard/dashboard/views/datastream.qtpl:84
+	qw422016.E().S(p.Sensor.CreatedAt.Format("Mon 2006-01-02 15:04:05"))
+//line services/dashboard/dashboard/views/datastream.qtpl:84
+	qw422016.N().S(`</span>
+        </div>
     </div>
     <div class="col-span-full border p-2 bg-white" id="graph" hx-ext="uplot">
         Diagram here
     </div>
 </div>
 `)
-//line services/dashboard/dashboard/views/datastream.qtpl:61
+//line services/dashboard/dashboard/views/datastream.qtpl:91
 }
 
-//line services/dashboard/dashboard/views/datastream.qtpl:61
+//line services/dashboard/dashboard/views/datastream.qtpl:91
 func (p *DatastreamPage) WriteBody(qq422016 qtio422016.Writer) {
-//line services/dashboard/dashboard/views/datastream.qtpl:61
+//line services/dashboard/dashboard/views/datastream.qtpl:91
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/dashboard/views/datastream.qtpl:61
+//line services/dashboard/dashboard/views/datastream.qtpl:91
 	p.StreamBody(qw422016)
-//line services/dashboard/dashboard/views/datastream.qtpl:61
+//line services/dashboard/dashboard/views/datastream.qtpl:91
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/dashboard/views/datastream.qtpl:61
+//line services/dashboard/dashboard/views/datastream.qtpl:91
 }
 
-//line services/dashboard/dashboard/views/datastream.qtpl:61
+//line services/dashboard/dashboard/views/datastream.qtpl:91
 func (p *DatastreamPage) Body() string {
-//line services/dashboard/dashboard/views/datastream.qtpl:61
+//line services/dashboard/dashboard/views/datastream.qtpl:91
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/dashboard/views/datastream.qtpl:61
+//line services/dashboard/dashboard/views/datastream.qtpl:91
 	p.WriteBody(qb422016)
-//line services/dashboard/dashboard/views/datastream.qtpl:61
+//line services/dashboard/dashboard/views/datastream.qtpl:91
 	qs422016 := string(qb422016.B)
-//line services/dashboard/dashboard/views/datastream.qtpl:61
+//line services/dashboard/dashboard/views/datastream.qtpl:91
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/dashboard/views/datastream.qtpl:61
+//line services/dashboard/dashboard/views/datastream.qtpl:91
 	return qs422016
-//line services/dashboard/dashboard/views/datastream.qtpl:61
+//line services/dashboard/dashboard/views/datastream.qtpl:91
 }
 
-//line services/dashboard/dashboard/views/datastream.qtpl:64
+//line services/dashboard/dashboard/views/datastream.qtpl:94
 type DatastreamPage struct {
 	BasePage
-	Device devices.Device
+	Device     devices.Device
+	Sensor     devices.Sensor
+	Datastream measurements.Datastream
 }

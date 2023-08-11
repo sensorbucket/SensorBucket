@@ -212,36 +212,12 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.25/dist/uPlot.min.css" />
     <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
-    <script type="text/javascript">
-        htmx.defineExtension('uplot', {
-            onEvent: function (name, evt) {
-                if (name == "htmx:afterProcessNode") {
-                    const opts = {
-                        width: evt.target.clientWidth,
-                        height: evt.target.clientHeight
-                    }
-                    const data = []
-                    const plot = new uPlot(opts, data, evt.target)
-                }
-            }
-        })
-    </script>
-    <script type="text/javascript">
-        htmx.defineExtension('leaflet', {
-            onEvent: function (name, evt) {
-                if (name == "htmx:afterProcessNode") {
-                    var map = L.map(evt.target).setView([51.55, 3.89], 9)
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                        maxZoom: 19,
-                    }).addTo(map);
-                }
-            }
-        })
-    </script>
+    <script type="text/javascript" src="/static/uplot.htmx.js"></script>
+    <script type="text/javascript" src="/static/leaflet.htmx.js"></script>
     `)
-//line services/dashboard/dashboard/views/layout.qtpl:73
+//line services/dashboard/dashboard/views/layout.qtpl:49
 	page.StreamHeader(qw422016)
-//line services/dashboard/dashboard/views/layout.qtpl:73
+//line services/dashboard/dashboard/views/layout.qtpl:49
 	qw422016.N().S(`
 </head>
 
@@ -254,35 +230,35 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
             <ul>
                 <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
                 `)
-//line services/dashboard/dashboard/views/layout.qtpl:84
+//line services/dashboard/dashboard/views/layout.qtpl:60
 	for _, item := range navItems {
-//line services/dashboard/dashboard/views/layout.qtpl:84
+//line services/dashboard/dashboard/views/layout.qtpl:60
 		qw422016.N().S(`
                 <li>
                     <a href="`)
-//line services/dashboard/dashboard/views/layout.qtpl:86
+//line services/dashboard/dashboard/views/layout.qtpl:62
 		qw422016.E().S(item.URL)
-//line services/dashboard/dashboard/views/layout.qtpl:86
+//line services/dashboard/dashboard/views/layout.qtpl:62
 		qw422016.N().S(`"
                         class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">
                         <iconify-icon icon="`)
-//line services/dashboard/dashboard/views/layout.qtpl:88
+//line services/dashboard/dashboard/views/layout.qtpl:64
 		qw422016.E().S(item.Icon)
-//line services/dashboard/dashboard/views/layout.qtpl:88
+//line services/dashboard/dashboard/views/layout.qtpl:64
 		qw422016.N().S(`" width="24" class="pr-4"></iconify-icon>
                         <span>
                             `)
-//line services/dashboard/dashboard/views/layout.qtpl:90
+//line services/dashboard/dashboard/views/layout.qtpl:66
 		qw422016.E().S(item.Label)
-//line services/dashboard/dashboard/views/layout.qtpl:90
+//line services/dashboard/dashboard/views/layout.qtpl:66
 		qw422016.N().S(`
                         </span>
                     </a>
                 </li>
                 `)
-//line services/dashboard/dashboard/views/layout.qtpl:94
+//line services/dashboard/dashboard/views/layout.qtpl:70
 	}
-//line services/dashboard/dashboard/views/layout.qtpl:94
+//line services/dashboard/dashboard/views/layout.qtpl:70
 	qw422016.N().S(`
             </ul>
         </nav>
@@ -292,56 +268,56 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
         <header class="h-header bg-white border-b"></header>
         <main class="p-4 flex-1">
             `)
-//line services/dashboard/dashboard/views/layout.qtpl:102
+//line services/dashboard/dashboard/views/layout.qtpl:78
 	page.StreamBody(qw422016)
-//line services/dashboard/dashboard/views/layout.qtpl:102
+//line services/dashboard/dashboard/views/layout.qtpl:78
 	qw422016.N().S(`
         </main>
     </section>
 
     `)
-//line services/dashboard/dashboard/views/layout.qtpl:106
+//line services/dashboard/dashboard/views/layout.qtpl:82
 	page.StreamFooter(qw422016)
-//line services/dashboard/dashboard/views/layout.qtpl:106
+//line services/dashboard/dashboard/views/layout.qtpl:82
 	qw422016.N().S(`
 </body>
 
 </html>
 `)
-//line services/dashboard/dashboard/views/layout.qtpl:110
+//line services/dashboard/dashboard/views/layout.qtpl:86
 }
 
-//line services/dashboard/dashboard/views/layout.qtpl:110
+//line services/dashboard/dashboard/views/layout.qtpl:86
 func WriteIndex(qq422016 qtio422016.Writer, page Page) {
-//line services/dashboard/dashboard/views/layout.qtpl:110
+//line services/dashboard/dashboard/views/layout.qtpl:86
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/dashboard/views/layout.qtpl:110
+//line services/dashboard/dashboard/views/layout.qtpl:86
 	StreamIndex(qw422016, page)
-//line services/dashboard/dashboard/views/layout.qtpl:110
+//line services/dashboard/dashboard/views/layout.qtpl:86
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/dashboard/views/layout.qtpl:110
+//line services/dashboard/dashboard/views/layout.qtpl:86
 }
 
-//line services/dashboard/dashboard/views/layout.qtpl:110
+//line services/dashboard/dashboard/views/layout.qtpl:86
 func Index(page Page) string {
-//line services/dashboard/dashboard/views/layout.qtpl:110
+//line services/dashboard/dashboard/views/layout.qtpl:86
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/dashboard/views/layout.qtpl:110
+//line services/dashboard/dashboard/views/layout.qtpl:86
 	WriteIndex(qb422016, page)
-//line services/dashboard/dashboard/views/layout.qtpl:110
+//line services/dashboard/dashboard/views/layout.qtpl:86
 	qs422016 := string(qb422016.B)
-//line services/dashboard/dashboard/views/layout.qtpl:110
+//line services/dashboard/dashboard/views/layout.qtpl:86
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/dashboard/views/layout.qtpl:110
+//line services/dashboard/dashboard/views/layout.qtpl:86
 	return qs422016
-//line services/dashboard/dashboard/views/layout.qtpl:110
+//line services/dashboard/dashboard/views/layout.qtpl:86
 }
 
 // These are for debugging only. In production the tailwind and icons should be bundled with the dashboard
 
-//line services/dashboard/dashboard/views/layout.qtpl:114
+//line services/dashboard/dashboard/views/layout.qtpl:90
 func streamdebugHeaders(qw422016 *qt422016.Writer) {
-//line services/dashboard/dashboard/views/layout.qtpl:114
+//line services/dashboard/dashboard/views/layout.qtpl:90
 	qw422016.N().S(`
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -386,31 +362,31 @@ func streamdebugHeaders(qw422016 *qt422016.Writer) {
 <script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
 <script type="text/javascript" src="https://livejs.com/live.js"></script>
 `)
-//line services/dashboard/dashboard/views/layout.qtpl:157
+//line services/dashboard/dashboard/views/layout.qtpl:133
 }
 
-//line services/dashboard/dashboard/views/layout.qtpl:157
+//line services/dashboard/dashboard/views/layout.qtpl:133
 func writedebugHeaders(qq422016 qtio422016.Writer) {
-//line services/dashboard/dashboard/views/layout.qtpl:157
+//line services/dashboard/dashboard/views/layout.qtpl:133
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/dashboard/views/layout.qtpl:157
+//line services/dashboard/dashboard/views/layout.qtpl:133
 	streamdebugHeaders(qw422016)
-//line services/dashboard/dashboard/views/layout.qtpl:157
+//line services/dashboard/dashboard/views/layout.qtpl:133
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/dashboard/views/layout.qtpl:157
+//line services/dashboard/dashboard/views/layout.qtpl:133
 }
 
-//line services/dashboard/dashboard/views/layout.qtpl:157
+//line services/dashboard/dashboard/views/layout.qtpl:133
 func debugHeaders() string {
-//line services/dashboard/dashboard/views/layout.qtpl:157
+//line services/dashboard/dashboard/views/layout.qtpl:133
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/dashboard/views/layout.qtpl:157
+//line services/dashboard/dashboard/views/layout.qtpl:133
 	writedebugHeaders(qb422016)
-//line services/dashboard/dashboard/views/layout.qtpl:157
+//line services/dashboard/dashboard/views/layout.qtpl:133
 	qs422016 := string(qb422016.B)
-//line services/dashboard/dashboard/views/layout.qtpl:157
+//line services/dashboard/dashboard/views/layout.qtpl:133
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/dashboard/views/layout.qtpl:157
+//line services/dashboard/dashboard/views/layout.qtpl:133
 	return qs422016
-//line services/dashboard/dashboard/views/layout.qtpl:157
+//line services/dashboard/dashboard/views/layout.qtpl:133
 }

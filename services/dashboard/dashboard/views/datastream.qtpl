@@ -1,8 +1,17 @@
 {% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
+{% import "sensorbucket.nl/sensorbucket/services/core/measurements" %}
 
 {% func (p *DatastreamPage) Body() %}
 <div class="grid grid-cols-3 gap-4">
-    <div class="border p-2 bg-white aspect-[1.4]" id="map" hx-ext="leaflet">
+    <div class="border p-2 bg-white aspect-[1.4]" id="map">
+        <div
+            class="w-full h-full"
+            hx-ext="leaflet"
+            data-latitude="3.943"
+            data-longitude="51.573"
+            data-zoom="11"
+            data-markers='[{"lng": 51.573282, "lat": 3.943204}]'
+        ></div>
     </div>
     <div class="border bg-white" id="device">
         <header class="flex justify-between border-b items-center">
@@ -41,6 +50,8 @@
                 Enabled
                 {% case devices.DeviceDisabled %}
                 Disabled
+                {% default %}
+                Unknown
                 {% endswitch %}
             </span>
             <span>Created at</span>
@@ -50,9 +61,28 @@
     <div class="border bg-white" id="sensor">
         <header class="flex justify-between border-b items-center">
             <h2 class="p-1">Sensor</h2>
-            <a href="/overview/devices/{%dl p.Device.ID %}" class="grid place-center mx-2"><iconify-icon icon="mdi:remove-outline" class="text-rose-700 transition duration-300 hover:rotate-180" width="24"></iconify-icon>
+            <a href="/overview/devices/{%dl p.Device.ID %}" class="grid place-center mx-2">
+                <iconify-icon icon="mdi:remove-outline" class="text-rose-700 transition duration-300 hover:rotate-180" width="24"></iconify-icon>
             </a>
         </header>
+        <div class="p-2 text-sm grid gap-x-3" style="grid-template-columns: 1fr 2fr;">
+            <span>Identifier</span>
+            <span>{%dl p.Sensor.ID %}</span>
+            <span>Code</span>
+            <span>{%s p.Sensor.Code %}</span>
+            <span>Brand</span>
+            <span>{%s p.Sensor.Brand %}</span>
+            <span>Description</span>
+            <span>{%s p.Sensor.Description %}</span>
+            <span>External ID</span>
+            <span>{%s p.Sensor.ExternalID %}</span>
+            <span>Archive Time</span>
+            <span>{% if p.Sensor.ArchiveTime != nil %}{%d *p.Sensor.ArchiveTime %} days{% else %}Not set{% endif %}</span>
+            <span>Is fallback?</span>
+            <span>{%v p.Sensor.IsFallback %}</span>
+            <span>Created at</span>
+            <span>{%s p.Sensor.CreatedAt.Format("Mon 2006-01-02 15:04:05") %}</span>
+        </div>
     </div>
     <div class="col-span-full border p-2 bg-white" id="graph" hx-ext="uplot">
         Diagram here
@@ -64,5 +94,7 @@
 type DatastreamPage struct {
 BasePage
 Device devices.Device
+Sensor devices.Sensor
+Datastream measurements.Datastream
 }
 %}

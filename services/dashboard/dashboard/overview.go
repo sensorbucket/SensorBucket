@@ -5,18 +5,17 @@ package dashboard
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
-	"sensorbucket.nl/sensorbucket/services/core/devices"
-	"sensorbucket.nl/sensorbucket/services/core/measurements"
+	coretransport "sensorbucket.nl/sensorbucket/services/core/transport"
 	"sensorbucket.nl/sensorbucket/services/dashboard/dashboard/views"
 )
 
@@ -36,13 +35,18 @@ func URLParamInt(r *http.Request, name string) (int64, error) {
 }
 
 func overviewDatastream() http.HandlerFunc {
-	getDatastream := func(r *http.Request) (*measurements.Datastream, error) {
+	getDatastream := func(r *http.Request) (*coretransport.GetDatastreamResponse, error) {
 		datastreamUUID := chi.URLParam(r, "id")
-		res, err := http.Get("http://core/datastreams/" + datastreamUUID)
+		res, err := http.Get("http://core:3000/datastreams/" + datastreamUUID)
 		if err != nil {
 			return nil, err
 		}
-		var resBody web.APIResponse[measurements.Datastream]
+		if res.StatusCode != 200 {
+			body, _ := io.ReadAll(res.Body)
+			fmt.Printf("Error fetching datastream (%s): %s\n", datastreamUUID, string(body))
+			return nil, errors.New("could not fetch datastream")
+		}
+		var resBody web.APIResponse[coretransport.GetDatastreamResponse]
 		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
 			return nil, err
 		}
@@ -54,22 +58,10 @@ func overviewDatastream() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		fmt.Printf("ds: %v\n", ds)
 		page := &views.DatastreamPage{
-			Device: devices.Device{
-				ID:                  5,
-				Code:                "Test device",
-				Description:         "For testing purposes",
-				Organisation:        "PZLD",
-				State:               devices.DeviceEnabled,
-				Sensors:             []devices.Sensor{},
-				Properties:          json.RawMessage("{}"),
-				Latitude:            lo.ToPtr(53.5),
-				Longitude:           lo.ToPtr(3.5),
-				Altitude:            lo.ToPtr(2.0),
-				LocationDescription: "Ocean",
-				CreatedAt:           time.Now(),
-			},
+			Device:     *ds.Device,
+			Sensor:     *ds.Sensor,
+			Datastream: *ds.Datastream,
 		}
 		views.WriteIndex(w, page)
 	}
