@@ -64,6 +64,7 @@ func (t *HTTPTransport) SetupRoutes(r chi.Router) {
 		})
 	})
 	r.Get("/sensors", t.httpListSensors())
+	r.Get("/sensors/{id}", t.httpGetSensor())
 	// TODO: Should we be able to fetch sensor by global unique ID?
 	r.Route("/sensor-groups", func(r chi.Router) {
 		r.Post("/", t.httpCreateSensorGroup())
@@ -234,6 +235,28 @@ func (t *HTTPTransport) httpListSensors() http.HandlerFunc {
 			return
 		}
 		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
+	}
+}
+
+func (t *HTTPTransport) httpGetSensor() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sensorIDQ := chi.URLParam(r, "id")
+		sensorID, err := strconv.ParseInt(sensorIDQ, 10, 64)
+		if err != nil {
+			web.HTTPError(w, web.NewError(http.StatusBadRequest, "invalid sensor id", ""))
+			return
+		}
+
+		sensor, err := t.svc.GetSensor(r.Context(), sensorID)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+			Message: "Fetched sensor",
+			Data:    sensor,
+		})
 	}
 }
 

@@ -46,6 +46,7 @@ type BasePage struct {
     <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
     <script type="text/javascript" src="/static/uplot.htmx.js"></script>
     <script type="text/javascript" src="/static/leaflet.htmx.js"></script>
+    <script type="text/javascript" src="/static/ws.htmx.js"></script>
     {%= page.Header() %}
 </head>
 
@@ -72,9 +73,9 @@ type BasePage struct {
         </nav>
     </sidebar>
 
-    <section class="flex flex-col ml-sidebar h-full">
+    <section class="ml-sidebar h-full">
         <header class="h-header bg-white border-b"></header>
-        <main class="p-4 flex-1">
+        <main class="p-4">
             {%= page.Body() %}
         </main>
     </section>
@@ -127,7 +128,8 @@ type BasePage struct {
         },
     }
 </script>
-<script src="https://unpkg.com/htmx.org@1.9.4"></script>
-<script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4"></script>
+<script type="text/javascript" src="https://unpkg.com/hyperscript.org@0.9.11"></script>
+<script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
 <script type="text/javascript" src="https://livejs.com/live.js"></script>
 {% endfunc %}

@@ -7,10 +7,18 @@
         <div
             class="w-full h-full"
             hx-ext="leaflet"
-            data-latitude="3.943"
-            data-longitude="51.573"
-            data-zoom="11"
-            data-markers='[{"lng": 51.573282, "lat": 3.943204}]'
+            {% if p.Device.Latitude != nil && p.Device.Longitude != nil %}
+                data-latitude="{%f *p.Device.Latitude %}"
+                data-longitude="{%f *p.Device.Longitude %}"
+                data-zoom="11"
+            {% else %}
+                data-latitude="3.943"
+                data-longitude="51.573"
+                data-zoom="9"
+            {% endif %}
+            {% if p.Device.Latitude != nil && p.Device.Longitude != nil %}
+                data-markers='[{"lng": {%f *p.Device.Longitude %}, "lat": {%f *p.Device.Latitude %}}]'
+            {% endif %}
         ></div>
     </div>
     <div class="border bg-white" id="device">
@@ -84,17 +92,17 @@
             <span>{%s p.Sensor.CreatedAt.Format("Mon 2006-01-02 15:04:05") %}</span>
         </div>
     </div>
-    <div class="col-span-full border p-2 bg-white" id="graph" hx-ext="uplot">
-        Diagram here
+    <div class="w-full h-full" hx-ext="ws" ws-connect="/overview/datastreams/{%s p.Datastream.ID.String() %}/stream?start=asd">
+    hey
     </div>
 </div>
 {% endfunc %}
 
 {% code
 type DatastreamPage struct {
-BasePage
-Device devices.Device
-Sensor devices.Sensor
-Datastream measurements.Datastream
+    BasePage
+    Device devices.Device
+    Sensor devices.Sensor
+    Datastream measurements.Datastream
 }
 %}
