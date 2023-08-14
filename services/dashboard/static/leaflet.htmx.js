@@ -7,6 +7,7 @@
          */
         onEvent: function(name, evt) {
             const t = evt.target;
+            console.log("leaflet ev: ", name, " with details: ", evt)
             if (name === "htmx:afterProcessNode") {
                 let view = [
                     parseFloat(t.getAttribute("data-latitude")) || 51.55,

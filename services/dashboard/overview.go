@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,13 +20,19 @@ import (
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
 )
 
+type middlewareFunc = func(next http.Handler) http.Handler
+
 func createOverviewPageHandler() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.GetHead)
 	r.Get("/", overview())
-	r.Get("/sensors/{id}", overviewSensors())
-	r.Get("/datastreams/{id}", overviewDatastream())
-	r.Get("/datastreams/{id}/stream", overviewDatastreamStream())
+	r.With(resolveDevice).Get("/devices/{device_id}", overviewSelectDevice())
+	r.With(resolveDevice, resolveSensor).
+		Get("/devices/{device_id}/sensors/{sensor_code}", overviewSelectSensor())
+	// r.Get("/devices/{device_id}/sensors/{sensor_id}/datastreams/{datastream_id}", overviewSensors())
+
+	// r.Get("/datastreams/{id}", overviewDatastream())
+	// r.Get("/datastreams/{id}/stream", overviewDatastreamStream())
 	return r
 }
 
@@ -47,54 +54,52 @@ func overview() http.HandlerFunc {
 
 		page := &views.OverviewPage{}
 		page.Devices = resBody.Data
+
+		device, ok := r.Context().Value("device").(*devices.Device)
+		if ok {
+			page.SelectedDevice = device
+			page.Sensors = device.Sensors
+		}
+		sensor, ok := r.Context().Value("sensor").(*devices.Sensor)
+		if ok {
+			page.SelectedSensor = sensor
+			datastreams, err := getDatastreamsBySensor(sensor.ID)
+			if err != nil {
+				web.HTTPError(w, err)
+				return
+			}
+			page.Datastreams = datastreams
+		}
 		views.WriteIndex(w, page)
 	}
 }
 
-func overviewSensors() http.HandlerFunc {
-	getSensor := func(id int64) (*devices.Sensor, error) {
-		res, _ := http.Get(fmt.Sprintf("http://core:3000/sensors/%d", id))
-		if res.StatusCode != 200 {
-			body, _ := io.ReadAll(res.Body)
-			return nil, fmt.Errorf("error getting sensor: %s", string(body))
-		}
-		var resBody web.APIResponse[devices.Sensor]
-		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
-			return nil, err
-		}
-		return &resBody.Data, nil
-	}
-	getDatastreamsForSensor := func(id int64) ([]measurements.Datastream, error) {
-		res, _ := http.Get(fmt.Sprintf("http://core:3000/datastreams?sensor=%d", id))
-		if res.StatusCode != 200 {
-			body, _ := io.ReadAll(res.Body)
-			return nil, fmt.Errorf("error getting datastreams for sensor: %s", string(body))
-		}
-		var resBody web.APIResponse[[]measurements.Datastream]
-		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
-			return nil, err
-		}
-		return resBody.Data, nil
-	}
+func overviewSelectDevice() http.HandlerFunc {
+	fallback := overview()
 	return func(w http.ResponseWriter, r *http.Request) {
-		sensorIDQ := chi.URLParam(r, "id")
-		sensorID, err := strconv.ParseInt(sensorIDQ, 10, 64)
-		if err != nil {
-			web.HTTPError(w, err)
+		if !isHX(r) {
+			fallback(w, r)
 			return
 		}
-		sensor, err := getSensor(sensorID)
-		if err != nil {
-			web.HTTPError(w, err)
-			return
-		}
-		datastreams, err := getDatastreamsForSensor(sensorID)
-		if err != nil {
-			web.HTTPError(w, err)
-			return
-		}
+		device := r.Context().Value("device").(*devices.Device)
+		views.WriteRenderSensorTable(w, device.Sensors, 0)
+	}
+}
 
-		views.WriteSensorRow(w, *sensor, datastreams, true)
+func overviewSelectSensor() http.HandlerFunc {
+	fallback := overview()
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !isHX(r) {
+			fallback(w, r)
+			return
+		}
+		sensor := r.Context().Value("sensor").(*devices.Sensor)
+		datastreams, err := getDatastreamsBySensor(sensor.ID)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		views.WriteRenderDatastreamTable(w, datastreams)
 	}
 }
 
@@ -147,4 +152,85 @@ func overviewDatastreamStream() http.HandlerFunc {
 			ws.Close()
 		}()
 	}
+}
+
+// =============
+// Helpers and middleware
+// =============
+
+func resolveDevice(next http.Handler) http.Handler {
+	getDevice := func(id int64) (*devices.Device, error) {
+		res, _ := http.Get(fmt.Sprintf("http://core:3000/devices/%d", id))
+		if res.StatusCode != 200 {
+			body, _ := io.ReadAll(res.Body)
+			return nil, fmt.Errorf("error getting device: %s", string(body))
+		}
+		var resBody web.APIResponse[devices.Device]
+		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+			return nil, err
+		}
+		return &resBody.Data, nil
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		deviceID, err := URLParamInt(r, "device_id")
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		device, err := getDevice(deviceID)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		r = r.WithContext(
+			context.WithValue(
+				r.Context(),
+				"device",
+				device,
+			),
+		)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func resolveSensor(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sensorCode := chi.URLParam(r, "sensor_code")
+
+		device, ok := r.Context().Value("device").(*devices.Device)
+		if !ok {
+			panic("NODEVICE")
+		}
+
+		sensor, err := device.GetSensorByCode(sensorCode)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		r = r.WithContext(
+			context.WithValue(
+				r.Context(),
+				"sensor",
+				sensor,
+			),
+		)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func getDatastreamsBySensor(id int64) ([]measurements.Datastream, error) {
+	res, err := http.Get(fmt.Sprintf("http://core:3000/datastreams?sensor=%d", id))
+	if err != nil {
+		return nil, err
+	}
+	if res.StatusCode != 200 {
+		body, _ := io.ReadAll(res.Body)
+		return nil, fmt.Errorf("could not fetch datastreams from remote: %s", string(body))
+	}
+	var resBody web.APIResponse[[]measurements.Datastream]
+	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+		return nil, err
+	}
+
+	return resBody.Data, nil
 }

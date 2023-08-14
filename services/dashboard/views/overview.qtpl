@@ -2,67 +2,198 @@
 {% import "sensorbucket.nl/sensorbucket/services/core/measurements" %}
 
 {% func (p *OverviewPage) Body() %}
-<div class="w-[1024px] bg-white border mx-auto">
-    <h1 class="px-2">Device tree</h1>
-    <hr/>
-    <ul class="p-2 text-sm">
-        {% for _, device := range p.Devices %}
-        {%= deviceRow(device) %}
+    {% code
+        var selectedDeviceID int64
+        if p.SelectedDevice != nil {
+            selectedDeviceID = p.SelectedDevice.ID
+        }
+        var selectedSensorID int64
+        if p.SelectedSensor != nil {
+            selectedSensorID = p.SelectedSensor.ID
+        }
+    %}
+
+    <div class="grid grid-cols-2 gap-12 px-12">
+        <div class="rounded-md border overflow-auto bg-white">
+            <div class="w-full h-96" hx-ext="leaflet"></div>
+        </div>
+        <div class="rounded-md border overflow-auto bg-white">
+            {%= renderDeviceTable(p.Devices, selectedDeviceID) %}
+        </div>
+        <div class="contents" id="device-related">
+            <div id="sensor-table" class="rounded-md border overflow-auto bg-white col-span-2">
+            {%= RenderSensorTable(p.Sensors, selectedSensorID) %}
+            </div>
+            <div id="datastream-table" class="rounded-md border overflow-auto bg-white col-span-2 max-h-96 overflow-y-auto">
+            {%= RenderDatastreamTable(p.Datastreams) %}
+            </div>
+        </div>
+    </div>
+{% endfunc %}
+
+{% func renderDeviceTable(devs []devices.Device, selectedDeviceID int64) %}
+    <table class="w-full text-sm" id="device-table">
+    <thead>
+        <tr>
+            <th class="text-slate-500 font-normal h-12 text-left px-4 align-middle border-b">
+            Device ID
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Device Code
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Description
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            location description
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for _, device := range devs %}
+        {%= deviceRow(device, device.ID == selectedDeviceID) %}
         {% endfor %}
-    </ul>
-</div>
+    </tbody>
+    </table>
 {% endfunc %}
 
-{% func deviceRow(device devices.Device) %}
-    <li>
-        <div 
-            _="on click toggle .hidden on next <ul/>"
-            class="flex justify-between p-2 my-1 border">
-            <h3>{%s device.Code %}</h3>
-            <span class="text-sm text-slate-400">{%s device.Description %}</span>
-            <span class="text-sm text-slate-400">{%s device.LocationDescription %}</span>
-        </div>
-        <ul class="pl-6 border-l">
-            {% for _, sensor := range device.Sensors %}
-                {%= SensorRow(sensor, nil, false) %}
-            {% endfor %}
-        </ul>
-    </li>
-{% endfunc %}
-
-{% func SensorRow(sensor devices.Sensor, datastreams []measurements.Datastream, isLoaded bool) %}
-    <li 
-        {% if !isLoaded %}
-            hx-get="/overview/sensors/{%dl sensor.ID %}"
-            hx-swap="outerHTML"
-        {% endif %}
+{% func deviceRow(device devices.Device, selected bool) %}
+    <tr
+        class="border-b hover:bg-slate-50 {% if selected %} bg-primary-50 {% endif %}"
+        hx-push-url="true"
+        hx-get="/overview/devices/{%dl device.ID %}"
+        hx-target="#sensor-table"
+        _="on click take .bg-primary-50 from <tr/> in closest parent <table/> then add .bg-primary-50 to me"
     >
-        <div
-            {% if isLoaded %}
-                _="on click toggle .hidden on next <ul/>"
-            {% endif %}
-            class="flex gap-4 p-2 border my-1">
-            <h3>{%s sensor.Code %}</h3>
-            <span class="text-sm text-slate-400">{%s sensor.Description %}</span>
-        </div>
-        <ul class="pl-6 border-l">
-            {% for _, ds := range datastreams %}
-                {%= datastreamRow(ds) %}
-            {% endfor %}
-        </ul>
-    </li>
+        <td class="h-12 px-4">
+            {%dl device.ID %}
+        </td>
+        <td class="h-12 px-4">
+            {%s device.Code %}
+        </td>
+        <td class="h-12 px-4">
+            {%s device.Description %}
+        </td>
+        <td class="h-12 px-4">
+            {%s device.LocationDescription %}
+        </td>
+        <td class="h-12 px-2 align-middle">
+            <button class="">
+                <iconify-icon icon="clarity:info-solid" class="text-blue-500 hover:text-blue-700 -mb-1" width="24"></iconify-icon>
+            </button>
+        </td>
+    </tr>
 {% endfunc %}
 
-{% func datastreamRow(ds measurements.Datastream) %}
-    <li>
-        <a href="/overview/datastreams/{%s ds.ID.String() %}" class="block p-2 border my-1">{%s ds.ObservedProperty %}</a>
-    </li>
+{% func RenderSensorTable(sensors []devices.Sensor, selectedDeviceID int64) %}
+    <table class="w-full text-sm">
+    <thead>
+        <tr>
+            <th class="text-slate-500 font-normal h-12 text-left px-4 align-middle border-b">
+            Sensor ID
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Sensor Code
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Sensor Brand
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Sensor Description
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Sensor External ID
+            </th>
+        </tr>
+    </thead>
+    <tbody class="[&_tr:last-child]:border-0">
+        {% for _, sensor := range sensors %}
+        {%= sensorRow(sensor, sensor.ID == selectedDeviceID) %}
+        {% endfor %}
+    </tbody>
+    </table>
 {% endfunc %}
 
+{% func sensorRow(sensor devices.Sensor, selected bool) %}
+    <tr
+        class="border-b hover:bg-slate-50 {%if selected %} bg-primary-50 {% endif %}"
+        hx-push-url="true"
+        hx-get="/overview/devices/{%dl sensor.DeviceID %}/sensors/{%s sensor.Code %}"
+        hx-target="#datastream-table"
+    >
+        <td class="h-12 px-4">
+            {%dl sensor.ID %}
+        </td>
+        <td class="h-12 px-4">
+            {%s sensor.Code %}
+        </td>
+        <td class="h-12 px-4">
+            {%s sensor.Brand %}
+        </td>
+        <td class="h-12 px-4">
+            {%s sensor.Description %}
+        </td>
+        <td class="h-12 px-4">
+            {%s sensor.ExternalID %}
+        </td>
+    </tr>
+{% endfunc %}
+
+{% func RenderDatastreamTable(datastreams []measurements.Datastream) %}
+    <table class="w-full text-sm">
+    <thead>
+        <tr>
+            <th class="text-slate-500 font-normal h-12 text-left px-4 align-middle border-b">
+            Datastream ID
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Observed Property
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Unit of Measurement
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Description
+            </th>
+        </tr>
+    </thead>
+    <tbody class="[&_tr:last-child]:border-0">
+        {% for _, datastream := range datastreams %}
+        {%= datastreamRow(datastream) %}
+        {% endfor %}
+    </tbody>
+    </table>
+{% endfunc %}
+
+{% func datastreamRow(datastream measurements.Datastream) %}
+    <tr
+        class="border-b hover:bg-slate-50"
+    >
+        <td class="h-12 px-4">
+            {%s datastream.ID.String() %}
+        </td>
+        <td class="h-12 px-4">
+            {%s datastream.ObservedProperty %}
+        </td>
+        <td class="h-12 px-4">
+            {%s datastream.UnitOfMeasurement %}
+        </td>
+        <td class="h-12 px-4">
+            {%s datastream.Description %}
+        </td>
+    </tr>
+{% endfunc %}
 
 {% code
 type OverviewPage struct {
-BasePage
-Devices []devices.Device
+    BasePage
+    Devices []devices.Device
+    Sensors []devices.Sensor
+    Datastreams []measurements.Datastream
+
+    SelectedDevice *devices.Device
+    SelectedSensor *devices.Sensor
 }
 %}

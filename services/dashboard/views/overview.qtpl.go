@@ -27,259 +27,140 @@ var (
 func (p *OverviewPage) StreamBody(qw422016 *qt422016.Writer) {
 //line services/dashboard/views/overview.qtpl:4
 	qw422016.N().S(`
-<div class="w-[1024px] bg-white border mx-auto">
-    <h1 class="px-2">Device tree</h1>
-    <hr/>
-    <ul class="p-2 text-sm">
-        `)
-//line services/dashboard/views/overview.qtpl:9
-	for _, device := range p.Devices {
-//line services/dashboard/views/overview.qtpl:9
-		qw422016.N().S(`
-        `)
-//line services/dashboard/views/overview.qtpl:10
-		streamdeviceRow(qw422016, device)
-//line services/dashboard/views/overview.qtpl:10
-		qw422016.N().S(`
-        `)
-//line services/dashboard/views/overview.qtpl:11
+    `)
+//line services/dashboard/views/overview.qtpl:6
+	var selectedDeviceID int64
+	if p.SelectedDevice != nil {
+		selectedDeviceID = p.SelectedDevice.ID
 	}
-//line services/dashboard/views/overview.qtpl:11
-	qw422016.N().S(`
-    </ul>
-</div>
-`)
-//line services/dashboard/views/overview.qtpl:14
-}
+	var selectedSensorID int64
+	if p.SelectedSensor != nil {
+		selectedSensorID = p.SelectedSensor.ID
+	}
 
 //line services/dashboard/views/overview.qtpl:14
+	qw422016.N().S(`
+
+    <div class="grid grid-cols-2 gap-12 px-12">
+        <div class="rounded-md border overflow-auto bg-white">
+            <div class="w-full h-96" hx-ext="leaflet"></div>
+        </div>
+        <div class="rounded-md border overflow-auto bg-white">
+            `)
+//line services/dashboard/views/overview.qtpl:21
+	streamrenderDeviceTable(qw422016, p.Devices, selectedDeviceID)
+//line services/dashboard/views/overview.qtpl:21
+	qw422016.N().S(`
+        </div>
+        <div class="contents" id="device-related">
+            <div id="sensor-table" class="rounded-md border overflow-auto bg-white col-span-2">
+            `)
+//line services/dashboard/views/overview.qtpl:25
+	StreamRenderSensorTable(qw422016, p.Sensors, selectedSensorID)
+//line services/dashboard/views/overview.qtpl:25
+	qw422016.N().S(`
+            </div>
+            <div id="datastream-table" class="rounded-md border overflow-auto bg-white col-span-2 max-h-96 overflow-y-auto">
+            `)
+//line services/dashboard/views/overview.qtpl:28
+	StreamRenderDatastreamTable(qw422016, p.Datastreams)
+//line services/dashboard/views/overview.qtpl:28
+	qw422016.N().S(`
+            </div>
+        </div>
+    </div>
+`)
+//line services/dashboard/views/overview.qtpl:32
+}
+
+//line services/dashboard/views/overview.qtpl:32
 func (p *OverviewPage) WriteBody(qq422016 qtio422016.Writer) {
-//line services/dashboard/views/overview.qtpl:14
+//line services/dashboard/views/overview.qtpl:32
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/overview.qtpl:14
+//line services/dashboard/views/overview.qtpl:32
 	p.StreamBody(qw422016)
-//line services/dashboard/views/overview.qtpl:14
+//line services/dashboard/views/overview.qtpl:32
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/overview.qtpl:14
+//line services/dashboard/views/overview.qtpl:32
 }
 
-//line services/dashboard/views/overview.qtpl:14
+//line services/dashboard/views/overview.qtpl:32
 func (p *OverviewPage) Body() string {
-//line services/dashboard/views/overview.qtpl:14
+//line services/dashboard/views/overview.qtpl:32
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/overview.qtpl:14
+//line services/dashboard/views/overview.qtpl:32
 	p.WriteBody(qb422016)
-//line services/dashboard/views/overview.qtpl:14
+//line services/dashboard/views/overview.qtpl:32
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/overview.qtpl:14
+//line services/dashboard/views/overview.qtpl:32
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/overview.qtpl:14
+//line services/dashboard/views/overview.qtpl:32
 	return qs422016
-//line services/dashboard/views/overview.qtpl:14
+//line services/dashboard/views/overview.qtpl:32
 }
 
-//line services/dashboard/views/overview.qtpl:16
-func streamdeviceRow(qw422016 *qt422016.Writer, device devices.Device) {
-//line services/dashboard/views/overview.qtpl:16
+//line services/dashboard/views/overview.qtpl:34
+func streamrenderDeviceTable(qw422016 *qt422016.Writer, devs []devices.Device, selectedDeviceID int64) {
+//line services/dashboard/views/overview.qtpl:34
 	qw422016.N().S(`
-    <li>
-        <div 
-            _="on click toggle .hidden on next <ul/>"
-            class="flex justify-between p-2 my-1 border">
-            <h3>`)
-//line services/dashboard/views/overview.qtpl:21
-	qw422016.E().S(device.Code)
-//line services/dashboard/views/overview.qtpl:21
-	qw422016.N().S(`</h3>
-            <span class="text-sm text-slate-400">`)
-//line services/dashboard/views/overview.qtpl:22
-	qw422016.E().S(device.Description)
-//line services/dashboard/views/overview.qtpl:22
-	qw422016.N().S(`</span>
-            <span class="text-sm text-slate-400">`)
-//line services/dashboard/views/overview.qtpl:23
-	qw422016.E().S(device.LocationDescription)
-//line services/dashboard/views/overview.qtpl:23
-	qw422016.N().S(`</span>
-        </div>
-        <ul class="pl-6 border-l">
-            `)
-//line services/dashboard/views/overview.qtpl:26
-	for _, sensor := range device.Sensors {
-//line services/dashboard/views/overview.qtpl:26
-		qw422016.N().S(`
-                `)
-//line services/dashboard/views/overview.qtpl:27
-		StreamSensorRow(qw422016, sensor, nil, false)
-//line services/dashboard/views/overview.qtpl:27
-		qw422016.N().S(`
-            `)
-//line services/dashboard/views/overview.qtpl:28
-	}
-//line services/dashboard/views/overview.qtpl:28
-	qw422016.N().S(`
-        </ul>
-    </li>
-`)
-//line services/dashboard/views/overview.qtpl:31
-}
-
-//line services/dashboard/views/overview.qtpl:31
-func writedeviceRow(qq422016 qtio422016.Writer, device devices.Device) {
-//line services/dashboard/views/overview.qtpl:31
-	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/overview.qtpl:31
-	streamdeviceRow(qw422016, device)
-//line services/dashboard/views/overview.qtpl:31
-	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/overview.qtpl:31
-}
-
-//line services/dashboard/views/overview.qtpl:31
-func deviceRow(device devices.Device) string {
-//line services/dashboard/views/overview.qtpl:31
-	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/overview.qtpl:31
-	writedeviceRow(qb422016, device)
-//line services/dashboard/views/overview.qtpl:31
-	qs422016 := string(qb422016.B)
-//line services/dashboard/views/overview.qtpl:31
-	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/overview.qtpl:31
-	return qs422016
-//line services/dashboard/views/overview.qtpl:31
-}
-
-//line services/dashboard/views/overview.qtpl:33
-func StreamSensorRow(qw422016 *qt422016.Writer, sensor devices.Sensor, datastreams []measurements.Datastream, isLoaded bool) {
-//line services/dashboard/views/overview.qtpl:33
-	qw422016.N().S(`
-    <li 
+    <table class="w-full text-sm" id="device-table">
+    <thead>
+        <tr>
+            <th class="text-slate-500 font-normal h-12 text-left px-4 align-middle border-b">
+            Device ID
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Device Code
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Description
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            location description
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            </th>
+        </tr>
+    </thead>
+    <tbody>
         `)
-//line services/dashboard/views/overview.qtpl:35
-	if !isLoaded {
-//line services/dashboard/views/overview.qtpl:35
+//line services/dashboard/views/overview.qtpl:55
+	for _, device := range devs {
+//line services/dashboard/views/overview.qtpl:55
 		qw422016.N().S(`
-            hx-get="/overview/sensors/`)
-//line services/dashboard/views/overview.qtpl:36
-		qw422016.N().DL(sensor.ID)
-//line services/dashboard/views/overview.qtpl:36
-		qw422016.N().S(`"
-            hx-swap="outerHTML"
         `)
-//line services/dashboard/views/overview.qtpl:38
-	}
-//line services/dashboard/views/overview.qtpl:38
-	qw422016.N().S(`
-    >
-        <div
-            `)
-//line services/dashboard/views/overview.qtpl:41
-	if isLoaded {
-//line services/dashboard/views/overview.qtpl:41
-		qw422016.N().S(`
-                _="on click toggle .hidden on next <ul/>"
-            `)
-//line services/dashboard/views/overview.qtpl:43
-	}
-//line services/dashboard/views/overview.qtpl:43
-	qw422016.N().S(`
-            class="flex gap-4 p-2 border my-1">
-            <h3>`)
-//line services/dashboard/views/overview.qtpl:45
-	qw422016.E().S(sensor.Code)
-//line services/dashboard/views/overview.qtpl:45
-	qw422016.N().S(`</h3>
-            <span class="text-sm text-slate-400">`)
-//line services/dashboard/views/overview.qtpl:46
-	qw422016.E().S(sensor.Description)
-//line services/dashboard/views/overview.qtpl:46
-	qw422016.N().S(`</span>
-        </div>
-        <ul class="pl-6 border-l">
-            `)
-//line services/dashboard/views/overview.qtpl:49
-	for _, ds := range datastreams {
-//line services/dashboard/views/overview.qtpl:49
-		qw422016.N().S(`
-                `)
-//line services/dashboard/views/overview.qtpl:50
-		streamdatastreamRow(qw422016, ds)
-//line services/dashboard/views/overview.qtpl:50
-		qw422016.N().S(`
-            `)
-//line services/dashboard/views/overview.qtpl:51
-	}
-//line services/dashboard/views/overview.qtpl:51
-	qw422016.N().S(`
-        </ul>
-    </li>
-`)
-//line services/dashboard/views/overview.qtpl:54
-}
-
-//line services/dashboard/views/overview.qtpl:54
-func WriteSensorRow(qq422016 qtio422016.Writer, sensor devices.Sensor, datastreams []measurements.Datastream, isLoaded bool) {
-//line services/dashboard/views/overview.qtpl:54
-	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/overview.qtpl:54
-	StreamSensorRow(qw422016, sensor, datastreams, isLoaded)
-//line services/dashboard/views/overview.qtpl:54
-	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/overview.qtpl:54
-}
-
-//line services/dashboard/views/overview.qtpl:54
-func SensorRow(sensor devices.Sensor, datastreams []measurements.Datastream, isLoaded bool) string {
-//line services/dashboard/views/overview.qtpl:54
-	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/overview.qtpl:54
-	WriteSensorRow(qb422016, sensor, datastreams, isLoaded)
-//line services/dashboard/views/overview.qtpl:54
-	qs422016 := string(qb422016.B)
-//line services/dashboard/views/overview.qtpl:54
-	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/overview.qtpl:54
-	return qs422016
-//line services/dashboard/views/overview.qtpl:54
-}
-
 //line services/dashboard/views/overview.qtpl:56
-func streamdatastreamRow(qw422016 *qt422016.Writer, ds measurements.Datastream) {
+		streamdeviceRow(qw422016, device, device.ID == selectedDeviceID)
 //line services/dashboard/views/overview.qtpl:56
+		qw422016.N().S(`
+        `)
+//line services/dashboard/views/overview.qtpl:57
+	}
+//line services/dashboard/views/overview.qtpl:57
 	qw422016.N().S(`
-    <li>
-        <a href="/overview/datastreams/`)
-//line services/dashboard/views/overview.qtpl:58
-	qw422016.E().S(ds.ID.String())
-//line services/dashboard/views/overview.qtpl:58
-	qw422016.N().S(`" class="block p-2 border my-1">`)
-//line services/dashboard/views/overview.qtpl:58
-	qw422016.E().S(ds.ObservedProperty)
-//line services/dashboard/views/overview.qtpl:58
-	qw422016.N().S(`</a>
-    </li>
+    </tbody>
+    </table>
 `)
 //line services/dashboard/views/overview.qtpl:60
 }
 
 //line services/dashboard/views/overview.qtpl:60
-func writedatastreamRow(qq422016 qtio422016.Writer, ds measurements.Datastream) {
+func writerenderDeviceTable(qq422016 qtio422016.Writer, devs []devices.Device, selectedDeviceID int64) {
 //line services/dashboard/views/overview.qtpl:60
 	qw422016 := qt422016.AcquireWriter(qq422016)
 //line services/dashboard/views/overview.qtpl:60
-	streamdatastreamRow(qw422016, ds)
+	streamrenderDeviceTable(qw422016, devs, selectedDeviceID)
 //line services/dashboard/views/overview.qtpl:60
 	qt422016.ReleaseWriter(qw422016)
 //line services/dashboard/views/overview.qtpl:60
 }
 
 //line services/dashboard/views/overview.qtpl:60
-func datastreamRow(ds measurements.Datastream) string {
+func renderDeviceTable(devs []devices.Device, selectedDeviceID int64) string {
 //line services/dashboard/views/overview.qtpl:60
 	qb422016 := qt422016.AcquireByteBuffer()
 //line services/dashboard/views/overview.qtpl:60
-	writedatastreamRow(qb422016, ds)
+	writerenderDeviceTable(qb422016, devs, selectedDeviceID)
 //line services/dashboard/views/overview.qtpl:60
 	qs422016 := string(qb422016.B)
 //line services/dashboard/views/overview.qtpl:60
@@ -289,8 +170,399 @@ func datastreamRow(ds measurements.Datastream) string {
 //line services/dashboard/views/overview.qtpl:60
 }
 
+//line services/dashboard/views/overview.qtpl:62
+func streamdeviceRow(qw422016 *qt422016.Writer, device devices.Device, selected bool) {
+//line services/dashboard/views/overview.qtpl:62
+	qw422016.N().S(`
+    <tr
+        class="border-b hover:bg-slate-50 `)
 //line services/dashboard/views/overview.qtpl:64
+	if selected {
+//line services/dashboard/views/overview.qtpl:64
+		qw422016.N().S(` bg-primary-50 `)
+//line services/dashboard/views/overview.qtpl:64
+	}
+//line services/dashboard/views/overview.qtpl:64
+	qw422016.N().S(`"
+        hx-push-url="true"
+        hx-get="/overview/devices/`)
+//line services/dashboard/views/overview.qtpl:66
+	qw422016.N().DL(device.ID)
+//line services/dashboard/views/overview.qtpl:66
+	qw422016.N().S(`"
+        hx-target="#sensor-table"
+        _="on click take .bg-primary-50 from <tr/> in closest parent <table/> then add .bg-primary-50 to me"
+    >
+        <td class="h-12 px-4">
+            `)
+//line services/dashboard/views/overview.qtpl:71
+	qw422016.N().DL(device.ID)
+//line services/dashboard/views/overview.qtpl:71
+	qw422016.N().S(`
+        </td>
+        <td class="h-12 px-4">
+            `)
+//line services/dashboard/views/overview.qtpl:74
+	qw422016.E().S(device.Code)
+//line services/dashboard/views/overview.qtpl:74
+	qw422016.N().S(`
+        </td>
+        <td class="h-12 px-4">
+            `)
+//line services/dashboard/views/overview.qtpl:77
+	qw422016.E().S(device.Description)
+//line services/dashboard/views/overview.qtpl:77
+	qw422016.N().S(`
+        </td>
+        <td class="h-12 px-4">
+            `)
+//line services/dashboard/views/overview.qtpl:80
+	qw422016.E().S(device.LocationDescription)
+//line services/dashboard/views/overview.qtpl:80
+	qw422016.N().S(`
+        </td>
+        <td class="h-12 px-2 align-middle">
+            <button class="">
+                <iconify-icon icon="clarity:info-solid" class="text-blue-500 hover:text-blue-700 -mb-1" width="24"></iconify-icon>
+            </button>
+        </td>
+    </tr>
+`)
+//line services/dashboard/views/overview.qtpl:88
+}
+
+//line services/dashboard/views/overview.qtpl:88
+func writedeviceRow(qq422016 qtio422016.Writer, device devices.Device, selected bool) {
+//line services/dashboard/views/overview.qtpl:88
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line services/dashboard/views/overview.qtpl:88
+	streamdeviceRow(qw422016, device, selected)
+//line services/dashboard/views/overview.qtpl:88
+	qt422016.ReleaseWriter(qw422016)
+//line services/dashboard/views/overview.qtpl:88
+}
+
+//line services/dashboard/views/overview.qtpl:88
+func deviceRow(device devices.Device, selected bool) string {
+//line services/dashboard/views/overview.qtpl:88
+	qb422016 := qt422016.AcquireByteBuffer()
+//line services/dashboard/views/overview.qtpl:88
+	writedeviceRow(qb422016, device, selected)
+//line services/dashboard/views/overview.qtpl:88
+	qs422016 := string(qb422016.B)
+//line services/dashboard/views/overview.qtpl:88
+	qt422016.ReleaseByteBuffer(qb422016)
+//line services/dashboard/views/overview.qtpl:88
+	return qs422016
+//line services/dashboard/views/overview.qtpl:88
+}
+
+//line services/dashboard/views/overview.qtpl:90
+func StreamRenderSensorTable(qw422016 *qt422016.Writer, sensors []devices.Sensor, selectedDeviceID int64) {
+//line services/dashboard/views/overview.qtpl:90
+	qw422016.N().S(`
+    <table class="w-full text-sm">
+    <thead>
+        <tr>
+            <th class="text-slate-500 font-normal h-12 text-left px-4 align-middle border-b">
+            Sensor ID
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Sensor Code
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Sensor Brand
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Sensor Description
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Sensor External ID
+            </th>
+        </tr>
+    </thead>
+    <tbody class="[&_tr:last-child]:border-0">
+        `)
+//line services/dashboard/views/overview.qtpl:112
+	for _, sensor := range sensors {
+//line services/dashboard/views/overview.qtpl:112
+		qw422016.N().S(`
+        `)
+//line services/dashboard/views/overview.qtpl:113
+		streamsensorRow(qw422016, sensor, sensor.ID == selectedDeviceID)
+//line services/dashboard/views/overview.qtpl:113
+		qw422016.N().S(`
+        `)
+//line services/dashboard/views/overview.qtpl:114
+	}
+//line services/dashboard/views/overview.qtpl:114
+	qw422016.N().S(`
+    </tbody>
+    </table>
+`)
+//line services/dashboard/views/overview.qtpl:117
+}
+
+//line services/dashboard/views/overview.qtpl:117
+func WriteRenderSensorTable(qq422016 qtio422016.Writer, sensors []devices.Sensor, selectedDeviceID int64) {
+//line services/dashboard/views/overview.qtpl:117
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line services/dashboard/views/overview.qtpl:117
+	StreamRenderSensorTable(qw422016, sensors, selectedDeviceID)
+//line services/dashboard/views/overview.qtpl:117
+	qt422016.ReleaseWriter(qw422016)
+//line services/dashboard/views/overview.qtpl:117
+}
+
+//line services/dashboard/views/overview.qtpl:117
+func RenderSensorTable(sensors []devices.Sensor, selectedDeviceID int64) string {
+//line services/dashboard/views/overview.qtpl:117
+	qb422016 := qt422016.AcquireByteBuffer()
+//line services/dashboard/views/overview.qtpl:117
+	WriteRenderSensorTable(qb422016, sensors, selectedDeviceID)
+//line services/dashboard/views/overview.qtpl:117
+	qs422016 := string(qb422016.B)
+//line services/dashboard/views/overview.qtpl:117
+	qt422016.ReleaseByteBuffer(qb422016)
+//line services/dashboard/views/overview.qtpl:117
+	return qs422016
+//line services/dashboard/views/overview.qtpl:117
+}
+
+//line services/dashboard/views/overview.qtpl:119
+func streamsensorRow(qw422016 *qt422016.Writer, sensor devices.Sensor, selected bool) {
+//line services/dashboard/views/overview.qtpl:119
+	qw422016.N().S(`
+    <tr
+        class="border-b hover:bg-slate-50 `)
+//line services/dashboard/views/overview.qtpl:121
+	if selected {
+//line services/dashboard/views/overview.qtpl:121
+		qw422016.N().S(` bg-primary-50 `)
+//line services/dashboard/views/overview.qtpl:121
+	}
+//line services/dashboard/views/overview.qtpl:121
+	qw422016.N().S(`"
+        hx-push-url="true"
+        hx-get="/overview/devices/`)
+//line services/dashboard/views/overview.qtpl:123
+	qw422016.N().DL(sensor.DeviceID)
+//line services/dashboard/views/overview.qtpl:123
+	qw422016.N().S(`/sensors/`)
+//line services/dashboard/views/overview.qtpl:123
+	qw422016.E().S(sensor.Code)
+//line services/dashboard/views/overview.qtpl:123
+	qw422016.N().S(`"
+        hx-target="#datastream-table"
+    >
+        <td class="h-12 px-4">
+            `)
+//line services/dashboard/views/overview.qtpl:127
+	qw422016.N().DL(sensor.ID)
+//line services/dashboard/views/overview.qtpl:127
+	qw422016.N().S(`
+        </td>
+        <td class="h-12 px-4">
+            `)
+//line services/dashboard/views/overview.qtpl:130
+	qw422016.E().S(sensor.Code)
+//line services/dashboard/views/overview.qtpl:130
+	qw422016.N().S(`
+        </td>
+        <td class="h-12 px-4">
+            `)
+//line services/dashboard/views/overview.qtpl:133
+	qw422016.E().S(sensor.Brand)
+//line services/dashboard/views/overview.qtpl:133
+	qw422016.N().S(`
+        </td>
+        <td class="h-12 px-4">
+            `)
+//line services/dashboard/views/overview.qtpl:136
+	qw422016.E().S(sensor.Description)
+//line services/dashboard/views/overview.qtpl:136
+	qw422016.N().S(`
+        </td>
+        <td class="h-12 px-4">
+            `)
+//line services/dashboard/views/overview.qtpl:139
+	qw422016.E().S(sensor.ExternalID)
+//line services/dashboard/views/overview.qtpl:139
+	qw422016.N().S(`
+        </td>
+    </tr>
+`)
+//line services/dashboard/views/overview.qtpl:142
+}
+
+//line services/dashboard/views/overview.qtpl:142
+func writesensorRow(qq422016 qtio422016.Writer, sensor devices.Sensor, selected bool) {
+//line services/dashboard/views/overview.qtpl:142
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line services/dashboard/views/overview.qtpl:142
+	streamsensorRow(qw422016, sensor, selected)
+//line services/dashboard/views/overview.qtpl:142
+	qt422016.ReleaseWriter(qw422016)
+//line services/dashboard/views/overview.qtpl:142
+}
+
+//line services/dashboard/views/overview.qtpl:142
+func sensorRow(sensor devices.Sensor, selected bool) string {
+//line services/dashboard/views/overview.qtpl:142
+	qb422016 := qt422016.AcquireByteBuffer()
+//line services/dashboard/views/overview.qtpl:142
+	writesensorRow(qb422016, sensor, selected)
+//line services/dashboard/views/overview.qtpl:142
+	qs422016 := string(qb422016.B)
+//line services/dashboard/views/overview.qtpl:142
+	qt422016.ReleaseByteBuffer(qb422016)
+//line services/dashboard/views/overview.qtpl:142
+	return qs422016
+//line services/dashboard/views/overview.qtpl:142
+}
+
+//line services/dashboard/views/overview.qtpl:144
+func StreamRenderDatastreamTable(qw422016 *qt422016.Writer, datastreams []measurements.Datastream) {
+//line services/dashboard/views/overview.qtpl:144
+	qw422016.N().S(`
+    <table class="w-full text-sm">
+    <thead>
+        <tr>
+            <th class="text-slate-500 font-normal h-12 text-left px-4 align-middle border-b">
+            Datastream ID
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Observed Property
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Unit of Measurement
+            </th>
+            <th class="text-slate-500 font-normal  h-12 text-left px-4 align-middle border-b">
+            Description
+            </th>
+        </tr>
+    </thead>
+    <tbody class="[&_tr:last-child]:border-0">
+        `)
+//line services/dashboard/views/overview.qtpl:163
+	for _, datastream := range datastreams {
+//line services/dashboard/views/overview.qtpl:163
+		qw422016.N().S(`
+        `)
+//line services/dashboard/views/overview.qtpl:164
+		streamdatastreamRow(qw422016, datastream)
+//line services/dashboard/views/overview.qtpl:164
+		qw422016.N().S(`
+        `)
+//line services/dashboard/views/overview.qtpl:165
+	}
+//line services/dashboard/views/overview.qtpl:165
+	qw422016.N().S(`
+    </tbody>
+    </table>
+`)
+//line services/dashboard/views/overview.qtpl:168
+}
+
+//line services/dashboard/views/overview.qtpl:168
+func WriteRenderDatastreamTable(qq422016 qtio422016.Writer, datastreams []measurements.Datastream) {
+//line services/dashboard/views/overview.qtpl:168
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line services/dashboard/views/overview.qtpl:168
+	StreamRenderDatastreamTable(qw422016, datastreams)
+//line services/dashboard/views/overview.qtpl:168
+	qt422016.ReleaseWriter(qw422016)
+//line services/dashboard/views/overview.qtpl:168
+}
+
+//line services/dashboard/views/overview.qtpl:168
+func RenderDatastreamTable(datastreams []measurements.Datastream) string {
+//line services/dashboard/views/overview.qtpl:168
+	qb422016 := qt422016.AcquireByteBuffer()
+//line services/dashboard/views/overview.qtpl:168
+	WriteRenderDatastreamTable(qb422016, datastreams)
+//line services/dashboard/views/overview.qtpl:168
+	qs422016 := string(qb422016.B)
+//line services/dashboard/views/overview.qtpl:168
+	qt422016.ReleaseByteBuffer(qb422016)
+//line services/dashboard/views/overview.qtpl:168
+	return qs422016
+//line services/dashboard/views/overview.qtpl:168
+}
+
+//line services/dashboard/views/overview.qtpl:170
+func streamdatastreamRow(qw422016 *qt422016.Writer, datastream measurements.Datastream) {
+//line services/dashboard/views/overview.qtpl:170
+	qw422016.N().S(`
+    <tr
+        class="border-b hover:bg-slate-50"
+    >
+        <td class="h-12 px-4">
+            `)
+//line services/dashboard/views/overview.qtpl:175
+	qw422016.E().S(datastream.ID.String())
+//line services/dashboard/views/overview.qtpl:175
+	qw422016.N().S(`
+        </td>
+        <td class="h-12 px-4">
+            `)
+//line services/dashboard/views/overview.qtpl:178
+	qw422016.E().S(datastream.ObservedProperty)
+//line services/dashboard/views/overview.qtpl:178
+	qw422016.N().S(`
+        </td>
+        <td class="h-12 px-4">
+            `)
+//line services/dashboard/views/overview.qtpl:181
+	qw422016.E().S(datastream.UnitOfMeasurement)
+//line services/dashboard/views/overview.qtpl:181
+	qw422016.N().S(`
+        </td>
+        <td class="h-12 px-4">
+            `)
+//line services/dashboard/views/overview.qtpl:184
+	qw422016.E().S(datastream.Description)
+//line services/dashboard/views/overview.qtpl:184
+	qw422016.N().S(`
+        </td>
+    </tr>
+`)
+//line services/dashboard/views/overview.qtpl:187
+}
+
+//line services/dashboard/views/overview.qtpl:187
+func writedatastreamRow(qq422016 qtio422016.Writer, datastream measurements.Datastream) {
+//line services/dashboard/views/overview.qtpl:187
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line services/dashboard/views/overview.qtpl:187
+	streamdatastreamRow(qw422016, datastream)
+//line services/dashboard/views/overview.qtpl:187
+	qt422016.ReleaseWriter(qw422016)
+//line services/dashboard/views/overview.qtpl:187
+}
+
+//line services/dashboard/views/overview.qtpl:187
+func datastreamRow(datastream measurements.Datastream) string {
+//line services/dashboard/views/overview.qtpl:187
+	qb422016 := qt422016.AcquireByteBuffer()
+//line services/dashboard/views/overview.qtpl:187
+	writedatastreamRow(qb422016, datastream)
+//line services/dashboard/views/overview.qtpl:187
+	qs422016 := string(qb422016.B)
+//line services/dashboard/views/overview.qtpl:187
+	qt422016.ReleaseByteBuffer(qb422016)
+//line services/dashboard/views/overview.qtpl:187
+	return qs422016
+//line services/dashboard/views/overview.qtpl:187
+}
+
+//line services/dashboard/views/overview.qtpl:190
 type OverviewPage struct {
 	BasePage
-	Devices []devices.Device
+	Devices     []devices.Device
+	Sensors     []devices.Sensor
+	Datastreams []measurements.Datastream
+
+	SelectedDevice *devices.Device
+	SelectedSensor *devices.Sensor
 }
