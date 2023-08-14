@@ -1,0 +1,105 @@
+{% code
+type NavItem struct {
+    Label string
+    URL string
+    Icon string
+}
+
+var navItems = []NavItem{
+{
+    Label: "Overview", URL: "/", Icon: "material-symbols:home-outline-rounded" },
+}
+%}
+
+{%
+interface Page {
+    Title()
+    Header()
+    Body()
+    Footer()
+}
+%}
+
+{% code
+type BasePage struct {
+}
+%}
+{% func (p *BasePage) Title() %}This is a base title{% endfunc %}
+{% func (p *BasePage) Header() %}{% endfunc %}
+{% func (p *BasePage) Body() %}Page has no body{% endfunc %}
+{% func (p *BasePage) Footer() %}{% endfunc %}
+
+{% func Index(page Page) %}
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+
+<head>
+    <title>SensorBucket</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/style.css" />
+    {%= debugHeaders() %}
+    <!-- TODO: only load these on the required pages -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.25/dist/uPlot.min.css" />
+    <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
+    <script type="text/javascript" src="/static/uplot.htmx.js"></script>
+    <script type="text/javascript" src="/static/leaflet.htmx.js"></script>
+    <script type="text/javascript" src="/static/ws.htmx.js"></script>
+    {%= page.Header() %}
+</head>
+
+<body class="h-full flex">
+    <sidebar class="flex bg-secondary-600 visible">
+        <section class="flex flex-col w-sidebar overflow-clip">
+            <header class="h-header grid place-items-center">
+                <img src="/static/logo-white.png" alt="SensorBucket" class="w-1/2" />
+            </header>
+            <nav class="mt-4 px-8">
+                <ul>
+                    <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
+                    {% for _, item := range navItems %}
+                    <li>
+                        <a href="{%s item.URL %}"
+                            class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">
+                            <iconify-icon icon="{%s item.Icon %}" width="24" class="pr-4"></iconify-icon>
+                            <span>
+                                {%s item.Label %}
+                            </span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        </section>
+    </sidebar>
+    <button
+        class="h-full bg-secondary-500 flex items-center"
+        _="on click toggle .visible on previous <sidebar/> then toggle .rotate-180 on the first in me"
+    >
+        <iconify-icon icon="ep:arrow-left" width="12" class="p-1 text-white transition duration-100"></iconify-icon>
+    </button>
+    <section class="flex-1">
+        <header class="h-header bg-white border-b"></header>
+        <main class="p-4">
+            {%= page.Body() %}
+        </main>
+    </section>
+
+    {%= page.Footer() %}
+</body>
+
+</html>
+{% endfunc %}
+
+
+// These are for debugging only. In production the tailwind and icons should be bundled with the dashboard
+{% func debugHeaders() %}
+<script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4"></script>
+<script type="text/javascript" src="https://unpkg.com/hyperscript.org@0.9.11"></script>
+<script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+<script type="text/javascript" src="https://livejs.com/live.js"></script>
+{% endfunc %}

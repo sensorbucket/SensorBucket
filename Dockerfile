@@ -10,7 +10,7 @@ RUN go install github.com/cespare/reflex@latest
 COPY go.mod go.sum ./
 RUN go mod download
 
-CMD ["sh", "-c", "reflex -r '.(go|html)$' -s go run ${APP_TYPE}s/${APP_NAME}/main.go"]
+CMD ["sh", "-c", "reflex -r '.(go|html)$' -s go run ./${APP_TYPE}s/${APP_NAME}"]
 
 FROM dev AS build
 ARG APP_NAME

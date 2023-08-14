@@ -11,14 +11,12 @@ services:
   dashboard:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: services/dashboard/Dockerfile
       target: dev
     volumes:
       - .:/workspace:cached
     environment:
-    - APP_NAME=dashboard
-    - APP_TYPE=service
-    - STATIC_PATH=services/dashboard/dashboard/static
+    - STATIC_PATH=services/dashboard/static
 
   core:
     build:

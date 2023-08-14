@@ -34,7 +34,7 @@
             <span>{%s p.Device.Code %}</span>
             <span>Description</span>
             <span>{%s p.Device.Description %}</span>
-            <span>Orgnaisation (Owner)</span>
+            <span>Organisation (Owner)</span>
             <span>{%s p.Device.Organisation %}</span>
             <span>Sensor count</span>
             <span>{%d len(p.Device.Sensors) %}</span>

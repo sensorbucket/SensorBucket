@@ -1,7 +1,4 @@
-package dashboard
-
-//go:generate go get -u github.com/valyala/quicktemplate/qtc
-//go:generate qtc -dir=views
+package main
 
 import (
 	"encoding/json"
@@ -19,7 +16,7 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	coretransport "sensorbucket.nl/sensorbucket/services/core/transport"
-	"sensorbucket.nl/sensorbucket/services/dashboard/dashboard/views"
+	"sensorbucket.nl/sensorbucket/services/dashboard/views"
 )
 
 func createOverviewPageHandler() http.Handler {
