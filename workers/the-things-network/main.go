@@ -49,13 +49,14 @@ type TTNMessage struct {
 func process(msg pipeline.Message) (pipeline.Message, error) {
 	var ttn TTNMessage
 	if err := json.Unmarshal(msg.Payload, &ttn); err != nil {
-		return msg, err
+		return pipeline.Message{}, err
 	}
 
 	// Match EUI to device
 	device, err := fetchDeviceByEUI(ttn.EndDeviceId.EUI)
 	if err != nil {
 		log.Printf("Could not fetch device for EUI: %v\n", err)
+		// TODO: check, can a device be null in the msg? could this cause any errors further down the line?
 	}
 	msg.Device = device
 	msg.Payload = ttn.Uplink.FrmPayload
@@ -63,6 +64,7 @@ func process(msg pipeline.Message) (pipeline.Message, error) {
 	ts, err := time.Parse(time.RFC3339, ttn.Timestamp)
 	if err != nil {
 		log.Printf("Error while parsing timestamp from uplink metadata: %v\n", err)
+		return pipeline.Message{}, err
 	}
 	msg.Timestamp = ts.UnixMilli()
 
