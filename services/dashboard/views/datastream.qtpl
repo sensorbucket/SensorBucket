@@ -3,9 +3,9 @@
 
 {% func (p *DatastreamPage) Body() %}
 <div class="grid grid-cols-3 gap-4">
-    <div class="border p-2 bg-white aspect-[1.4]" id="map">
+    <div class="bg-white rounded-md border" id="map">
         <div
-            class="w-full h-full"
+            class="w-full h-96"
             hx-ext="leaflet"
             {% if p.Device.Latitude != nil && p.Device.Longitude != nil %}
                 data-latitude="{%f *p.Device.Latitude %}"
@@ -21,79 +21,29 @@
             {% endif %}
         ></div>
     </div>
-    <div class="border bg-white" id="device">
-        <header class="flex justify-between border-b items-center">
-            <h2 class="p-1">Device</h2>
-            <a href="/overview" class="grid place-center mx-2"><iconify-icon icon="mdi:remove-outline" class="text-rose-700 transition duration-300 hover:rotate-180" width="24"></iconify-icon>
-            </a>
+    <div class="bg-white rounded-md border" id="device">
+        <header class="border-b py-2 px-4 text-sm text-slate-700">
+            Device details
         </header>
-        <div class="p-2 text-sm grid gap-x-3" style="grid-template-columns: 1fr 2fr;">
-            <span>Identifier</span>
-            <span>{%dl p.Device.ID %}</span>
-            <span>Code</span>
-            <span>{%s p.Device.Code %}</span>
-            <span>Description</span>
-            <span>{%s p.Device.Description %}</span>
-            <span>Organisation (Owner)</span>
-            <span>{%s p.Device.Organisation %}</span>
-            <span>Sensor count</span>
-            <span>{%d len(p.Device.Sensors) %}</span>
-            <span>Location</span>
-            <span>
-                {% if p.Device.Latitude != nil && p.Device.Longitude != nil %}
-                {%f.3 *p.Device.Latitude %},
-                {%f.3 *p.Device.Longitude %},
-                {% if p.Device.Altitude != nil %}
-                {%f.3 *p.Device.Altitude %}<br />
-                {% endif %}
-                {% else %}
-                Coordinates not set
-                {% endif %}
-                {%s p.Device.LocationDescription %}
-            </span>
-            <span>State</span>
-            <span>
-                {% switch p.Device.State %}
-                {% case devices.DeviceEnabled %}
-                Enabled
-                {% case devices.DeviceDisabled %}
-                Disabled
-                {% default %}
-                Unknown
-                {% endswitch %}
-            </span>
-            <span>Created at</span>
-            <span>{%s p.Device.CreatedAt.Format("Mon 2006-01-02 15:04:05") %}</span>
+        <div class="p-4">
+            {%= DeviceDetailBlock(p.Device) %}
         </div>
     </div>
-    <div class="border bg-white" id="sensor">
-        <header class="flex justify-between border-b items-center">
-            <h2 class="p-1">Sensor</h2>
-            <a href="/overview/devices/{%dl p.Device.ID %}" class="grid place-center mx-2">
-                <iconify-icon icon="mdi:remove-outline" class="text-rose-700 transition duration-300 hover:rotate-180" width="24"></iconify-icon>
-            </a>
+    <div class="bg-white rounded-md border" id="sensor">
+        <header class="border-b py-2 px-4 text-sm text-slate-700">
+            Sensor details
         </header>
-        <div class="p-2 text-sm grid gap-x-3" style="grid-template-columns: 1fr 2fr;">
-            <span>Identifier</span>
-            <span>{%dl p.Sensor.ID %}</span>
-            <span>Code</span>
-            <span>{%s p.Sensor.Code %}</span>
-            <span>Brand</span>
-            <span>{%s p.Sensor.Brand %}</span>
-            <span>Description</span>
-            <span>{%s p.Sensor.Description %}</span>
-            <span>External ID</span>
-            <span>{%s p.Sensor.ExternalID %}</span>
-            <span>Archive Time</span>
-            <span>{% if p.Sensor.ArchiveTime != nil %}{%d *p.Sensor.ArchiveTime %} days{% else %}Not set{% endif %}</span>
-            <span>Is fallback?</span>
-            <span>{%v p.Sensor.IsFallback %}</span>
-            <span>Created at</span>
-            <span>{%s p.Sensor.CreatedAt.Format("Mon 2006-01-02 15:04:05") %}</span>
+        <div class="p-4">
+            {%= DeviceDetailBlock(p.Device) %}
         </div>
     </div>
-    <div class="w-full h-full" hx-ext="ws" ws-connect="/overview/datastreams/{%s p.Datastream.ID.String() %}/stream?start=asd">
-    hey
+    <div class="bg-white rounded-md border col-span-full" hx-ext="ws" ws-connect="/overview/datastreams/{%s p.Datastream.ID.String() %}/stream?start=asd">
+        <header class="border-b py-2 px-4 text-sm text-slate-700">
+            Datastream
+        </header>
+        <div class="px-4 pt-4 pb-10">
+            <div hx-ext="uplot" class="w-full h-80"></div>
+        </div>
     </div>
 </div>
 {% endfunc %}

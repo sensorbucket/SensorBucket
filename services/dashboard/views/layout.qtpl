@@ -48,42 +48,38 @@ type BasePage struct {
     <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
     <script type="text/javascript" src="/static/uplot.htmx.js"></script>
     <script type="text/javascript" src="/static/leaflet.htmx.js"></script>
-    <script type="text/javascript" src="/static/ws.htmx.js"></script>
     {%= page.Header() %}
 </head>
 
-<body class="h-full flex">
-    <sidebar class="flex bg-secondary-600 visible">
-        <section class="flex flex-col w-sidebar overflow-clip">
-            <header class="h-header grid place-items-center">
-                <img src="/static/logo-white.png" alt="SensorBucket" class="w-1/2" />
-            </header>
-            <nav class="mt-4 px-8">
-                <ul>
-                    <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
-                    {% for _, item := range navItems %}
-                    <li>
-                        <a href="{%s item.URL %}"
-                            class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">
-                            <iconify-icon icon="{%s item.Icon %}" width="24" class="pr-4"></iconify-icon>
-                            <span>
-                                {%s item.Label %}
-                            </span>
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </nav>
-        </section>
+<body class="min-h-full sidebar-visible flex" hx-boost="true">
+    <sidebar class="w-sidebar fixed top-0 left-0 flex flex-col overflow-clip">
+        <header class="h-header grid place-items-center">
+            <img src="/static/logo-white.png" alt="SensorBucket" class="w-1/2" />
+        </header>
+        <nav class="mt-4 px-8">
+            <ul>
+                <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
+                {% for _, item := range navItems %}
+                <li>
+                    <a href="{%s item.URL %}"
+                        class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">
+                        <iconify-icon icon="{%s item.Icon %}" width="24" class="pr-4"></iconify-icon>
+                        <span>
+                            {%s item.Label %}
+                        </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </nav>
     </sidebar>
-    <button
-        class="h-full bg-secondary-500 flex items-center"
-        _="on click toggle .visible on previous <sidebar/> then toggle .rotate-180 on the first in me"
-    >
-        <iconify-icon icon="ep:arrow-left" width="12" class="p-1 text-white transition duration-100"></iconify-icon>
-    </button>
-    <section class="flex-1">
-        <header class="h-header bg-white border-b"></header>
+    <!-- only used for background -->
+    <div class="bg-secondary-600 w-sidebar">
+    </div>
+    <section class="flex-1" id="main-wrapper">
+        <header class="h-8 bg-white border-b">
+            
+        </header>
         <main class="p-4">
             {%= page.Body() %}
         </main>

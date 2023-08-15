@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -25,14 +24,12 @@ type middlewareFunc = func(next http.Handler) http.Handler
 func createOverviewPageHandler() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.GetHead)
-	r.Get("/", overview())
-	r.With(resolveDevice).Get("/devices/{device_id}", overviewSelectDevice())
-	r.With(resolveDevice, resolveSensor).
-		Get("/devices/{device_id}/sensors/{sensor_code}", overviewSelectSensor())
-	// r.Get("/devices/{device_id}/sensors/{sensor_id}/datastreams/{datastream_id}", overviewSensors())
+	r.Get("/", deviceListPage())
+	r.With(resolveDevice).Get("/devices/{device_id}", deviceDetailPage())
+	r.With(resolveDevice).With(resolveSensor).Get("/devices/{device_id}/sensors/{sensor_code}", sensorDetailPage())
 
-	// r.Get("/datastreams/{id}", overviewDatastream())
-	// r.Get("/datastreams/{id}/stream", overviewDatastreamStream())
+	r.Get("/datastreams/{id}", overviewDatastream())
+	r.Get("/datastreams/{id}/stream", overviewDatastreamStream())
 	return r
 }
 
@@ -44,95 +41,86 @@ func URLParamInt(r *http.Request, name string) (int64, error) {
 	return strconv.ParseInt(chi.URLParam(r, name), 10, 64)
 }
 
-func overview() http.HandlerFunc {
+func deviceListPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		res, _ := http.Get("http://core:3000/devices")
-		var resBody web.APIResponse[[]devices.Device]
-		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
-			return
-		}
-
-		page := &views.OverviewPage{}
-		page.Devices = resBody.Data
-
-		device, ok := r.Context().Value("device").(*devices.Device)
-		if ok {
-			page.SelectedDevice = device
-			page.Sensors = device.Sensors
-		}
-		sensor, ok := r.Context().Value("sensor").(*devices.Sensor)
-		if ok {
-			page.SelectedSensor = sensor
-			datastreams, err := getDatastreamsBySensor(sensor.ID)
-			if err != nil {
-				web.HTTPError(w, err)
-				return
-			}
-			page.Datastreams = datastreams
-		}
-		views.WriteIndex(w, page)
-	}
-}
-
-func overviewSelectDevice() http.HandlerFunc {
-	fallback := overview()
-	return func(w http.ResponseWriter, r *http.Request) {
-		if !isHX(r) {
-			fallback(w, r)
-			return
-		}
-		device := r.Context().Value("device").(*devices.Device)
-		views.WriteRenderSensorTable(w, device.Sensors, 0)
-	}
-}
-
-func overviewSelectSensor() http.HandlerFunc {
-	fallback := overview()
-	return func(w http.ResponseWriter, r *http.Request) {
-		if !isHX(r) {
-			fallback(w, r)
-			return
-		}
-		sensor := r.Context().Value("sensor").(*devices.Sensor)
-		datastreams, err := getDatastreamsBySensor(sensor.ID)
+		res, err := http.Get("http://core:3000/devices")
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
-		views.WriteRenderDatastreamTable(w, datastreams)
+		var resBody web.APIResponse[[]devices.Device]
+		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		page := &views.DeviceListPage{
+			Devices: resBody.Data,
+		}
+		views.WriteIndex(w, page)
+	}
+}
+
+func deviceDetailPage() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		device := r.Context().Value("device").(*devices.Device)
+		page := &views.DeviceDetailPage{
+			Device: *device,
+		}
+		if isHX(r) {
+			page.WriteBody(w)
+			return
+		}
+		views.WriteIndex(w, page)
+	}
+}
+
+func sensorDetailPage() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		device := r.Context().Value("device").(*devices.Device)
+		sensor := r.Context().Value("sensor").(*devices.Sensor)
+
+		res, err := http.Get(fmt.Sprintf("http://core:3000/datastreams?sensor=%d", sensor.ID))
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		var resBody web.APIResponse[[]measurements.Datastream]
+		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		page := &views.SensorDetailPage{
+			Device:      *device,
+			Sensor:      *sensor,
+			Datastreams: resBody.Data,
+		}
+		if isHX(r) {
+			page.WriteBody(w)
+			return
+		}
+		views.WriteIndex(w, page)
 	}
 }
 
 func overviewDatastream() http.HandlerFunc {
-	getDatastream := func(r *http.Request) (*coretransport.GetDatastreamResponse, error) {
-		datastreamUUID := chi.URLParam(r, "id")
-		res, err := http.Get("http://core:3000/datastreams/" + datastreamUUID)
+	return func(w http.ResponseWriter, r *http.Request) {
+		res, err := http.Get(fmt.Sprintf("http://core:3000/datastreams/%s", chi.URLParam(r, "id")))
 		if err != nil {
-			return nil, err
-		}
-		if res.StatusCode != 200 {
-			body, _ := io.ReadAll(res.Body)
-			fmt.Printf("Error fetching datastream (%s): %s\n", datastreamUUID, string(body))
-			return nil, errors.New("could not fetch datastream")
+			web.HTTPError(w, err)
+			return
 		}
 		var resBody web.APIResponse[coretransport.GetDatastreamResponse]
 		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
-			return nil, err
-		}
-		return &resBody.Data, nil
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		ds, err := getDatastream(r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			web.HTTPError(w, err)
 			return
 		}
-		page := &views.DatastreamPage{
-			Device:     *ds.Device,
-			Sensor:     *ds.Sensor,
-			Datastream: *ds.Datastream,
-		}
-		views.WriteIndex(w, page)
+
+		views.WriteIndex(w, &views.DatastreamPage{
+			Datastream: *resBody.Data.Datastream,
+			Device:     *resBody.Data.Device,
+			Sensor:     *resBody.Data.Sensor,
+		})
 	}
 }
 

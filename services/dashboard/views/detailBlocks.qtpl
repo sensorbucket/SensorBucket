@@ -1,0 +1,68 @@
+{% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
+{% import "fmt" %}
+
+{% func DeviceDetailBlock(device devices.Device) %}
+    <div class="grid grid-cols-3 gap-x-8 gap-y-3 [&>*]:min-h-[2rem] text-sm">
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Device Code</small>
+            <span>{%s device.Code %}</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Device ID</small>
+            <span>{%dl device.ID %}</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Organisation</small>
+            <span>{%s device.Organisation %}</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Sensor Count</small>
+            <span>{%s fmt.Sprintf("Has %d sensors", len(device.Sensors)) %}</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Sensor Count</small>
+            <span>{%s fmt.Sprintf("Has %d sensors", len(device.Sensors)) %}</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">State</small>
+            <span>
+            {% switch device.State %}
+            {% case devices.DeviceStateUnknown %}
+            Unknown
+            {% case devices.DeviceEnabled %}
+            Enabled
+            {% case devices.DeviceDisabled %}
+            Disabled
+            {% endswitch %}
+            </span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Created at</small>
+            <span>{%s device.CreatedAt.Format("Mon, 02 Jan 2006") %}</span>
+        </div>
+        <div class="flex flex-col col-span-full">
+            <small class="text-xs font-semibold text-slate-500">Description</small>
+            <span>{%s device.Description %}</span>
+        </div>
+        <div class="flex flex-col col-span-full">
+            <small class="text-xs font-semibold text-slate-500">Location (Latitude, Longitude, Altitude)</small>
+            <div class="grid grid-cols-3 items-center">
+                {% if device.Latitude != nil && device.Longitude != nil %}
+                <span>{%f.3 *device.Latitude %}</span>
+                <span>{%f.3 *device.Longitude %}</span>
+                {% else %}
+                <span>No latitude</span>
+                <span>No longitude</span>
+                {% endif %}
+                {% if device.Altitude != nil %}
+                <span>{%f.3 *device.Altitude %}</span>
+                {% endif %}
+                <span class="col-span-full">{%s device.LocationDescription %}</span>
+            </div>
+        </div>
+    </div>
+{% endfunc %}
+
+{% func SensorDetailBlock(sensor devices.Sensor) %}
+
+{% endfunc %}
