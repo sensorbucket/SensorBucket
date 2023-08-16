@@ -201,33 +201,108 @@ func DeviceDetailBlock(device devices.Device) string {
 func StreamSensorDetailBlock(qw422016 *qt422016.Writer, sensor devices.Sensor) {
 //line services/dashboard/views/detailBlocks.qtpl:66
 	qw422016.N().S(`
-
+    <div class="grid grid-cols-3 gap-x-8 gap-y-3 [&>*]:min-h-[2rem] text-sm">
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Sensor ID</small>
+            <span>`)
+//line services/dashboard/views/detailBlocks.qtpl:70
+	qw422016.N().DL(sensor.ID)
+//line services/dashboard/views/detailBlocks.qtpl:70
+	qw422016.N().S(`</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Sensor Code</small>
+            <span>`)
+//line services/dashboard/views/detailBlocks.qtpl:74
+	qw422016.E().S(sensor.Code)
+//line services/dashboard/views/detailBlocks.qtpl:74
+	qw422016.N().S(`</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Sensor Brand</small>
+            <span>`)
+//line services/dashboard/views/detailBlocks.qtpl:78
+	qw422016.E().S(sensor.Brand)
+//line services/dashboard/views/detailBlocks.qtpl:78
+	qw422016.N().S(`</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Archive Time</small>
+            <span>
+            `)
+//line services/dashboard/views/detailBlocks.qtpl:83
+	if sensor.ArchiveTime != nil {
+//line services/dashboard/views/detailBlocks.qtpl:83
+		qw422016.N().S(`
+                `)
+//line services/dashboard/views/detailBlocks.qtpl:84
+		qw422016.N().D(*sensor.ArchiveTime)
+//line services/dashboard/views/detailBlocks.qtpl:84
+		qw422016.N().S(` days
+            `)
+//line services/dashboard/views/detailBlocks.qtpl:85
+	} else {
+//line services/dashboard/views/detailBlocks.qtpl:85
+		qw422016.N().S(`
+                Not set
+            `)
+//line services/dashboard/views/detailBlocks.qtpl:87
+	}
+//line services/dashboard/views/detailBlocks.qtpl:87
+	qw422016.N().S(`
+            </span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Parent Device ID</small>
+            <span>`)
+//line services/dashboard/views/detailBlocks.qtpl:92
+	qw422016.N().DL(sensor.DeviceID)
+//line services/dashboard/views/detailBlocks.qtpl:92
+	qw422016.N().S(`</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">External ID</small>
+            <span>`)
+//line services/dashboard/views/detailBlocks.qtpl:96
+	qw422016.E().S(sensor.ExternalID)
+//line services/dashboard/views/detailBlocks.qtpl:96
+	qw422016.N().S(`</span>
+        </div>
+        <div class="flex flex-col col-span-full">
+            <small class="text-xs font-semibold text-slate-500">Properties</small>
+            <span>`)
+//line services/dashboard/views/detailBlocks.qtpl:100
+	qw422016.E().S(string(sensor.Properties))
+//line services/dashboard/views/detailBlocks.qtpl:100
+	qw422016.N().S(`</span>
+        </div>
+    </div>
 `)
-//line services/dashboard/views/detailBlocks.qtpl:68
+//line services/dashboard/views/detailBlocks.qtpl:103
 }
 
-//line services/dashboard/views/detailBlocks.qtpl:68
+//line services/dashboard/views/detailBlocks.qtpl:103
 func WriteSensorDetailBlock(qq422016 qtio422016.Writer, sensor devices.Sensor) {
-//line services/dashboard/views/detailBlocks.qtpl:68
+//line services/dashboard/views/detailBlocks.qtpl:103
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/detailBlocks.qtpl:68
+//line services/dashboard/views/detailBlocks.qtpl:103
 	StreamSensorDetailBlock(qw422016, sensor)
-//line services/dashboard/views/detailBlocks.qtpl:68
+//line services/dashboard/views/detailBlocks.qtpl:103
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/detailBlocks.qtpl:68
+//line services/dashboard/views/detailBlocks.qtpl:103
 }
 
-//line services/dashboard/views/detailBlocks.qtpl:68
+//line services/dashboard/views/detailBlocks.qtpl:103
 func SensorDetailBlock(sensor devices.Sensor) string {
-//line services/dashboard/views/detailBlocks.qtpl:68
+//line services/dashboard/views/detailBlocks.qtpl:103
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/detailBlocks.qtpl:68
+//line services/dashboard/views/detailBlocks.qtpl:103
 	WriteSensorDetailBlock(qb422016, sensor)
-//line services/dashboard/views/detailBlocks.qtpl:68
+//line services/dashboard/views/detailBlocks.qtpl:103
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/detailBlocks.qtpl:68
+//line services/dashboard/views/detailBlocks.qtpl:103
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/detailBlocks.qtpl:68
+//line services/dashboard/views/detailBlocks.qtpl:103
 	return qs422016
-//line services/dashboard/views/detailBlocks.qtpl:68
+//line services/dashboard/views/detailBlocks.qtpl:103
 }

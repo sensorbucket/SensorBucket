@@ -1,12 +1,17 @@
 {% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
 
 {% func (p *DeviceDetailPage) Body() %}
-    <div class="mx-auto w-[1024px] grid grid-cols-2 gap-6">
+    <div class="mx-auto w-[1024px] grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white border rounded-md">
             <div class="w-full h-96" hx-ext="leaflet" id="device-map"></div>
         </div>
-        <div class="bg-white border rounded-md p-4">
-            {%= DeviceDetailBlock(p.Device) %}
+        <div class="bg-white border rounded-md">
+            <header class="border-b py-2 px-4 text-sm text-slate-700">
+                Device details
+            </header>
+            <div class="p-4">
+                {%= DeviceDetailBlock(p.Device) %}
+            </div>
         </div>
         <div class="bg-white border rounded-md max-h-96 overflow-y-auto col-span-2">
             <table class="w-full text-sm border-separate border-spacing-0">

@@ -116,11 +116,17 @@ func overviewDatastream() http.HandlerFunc {
 			return
 		}
 
-		views.WriteIndex(w, &views.DatastreamPage{
+		page := &views.DatastreamPage{
 			Datastream: *resBody.Data.Datastream,
 			Device:     *resBody.Data.Device,
 			Sensor:     *resBody.Data.Sensor,
-		})
+		}
+		if isHX(r) {
+			page.WriteBody(w)
+			return
+		}
+
+		views.WriteIndex(w, page)
 	}
 }
 

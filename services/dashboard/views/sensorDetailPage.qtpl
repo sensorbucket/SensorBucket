@@ -2,15 +2,25 @@
 {% import "sensorbucket.nl/sensorbucket/services/core/measurements" %}
 
 {% func (p *SensorDetailPage) Body() %}
-    <div class="mx-auto grid grid-cols-3 gap-6">
+    <div class="mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-6">
         <div class="bg-white border rounded-md">
             <div class="w-full h-96" hx-ext="leaflet"></div>
         </div>
         <div class="bg-white border rounded-md">
-            <div class="w-full h-24"></div>
+            <header class="border-b py-2 px-4 text-sm text-slate-700">
+                Device details
+            </header>
+            <div class="p-4">
+                {%= DeviceDetailBlock(p.Device) %}
+            </div>
         </div>
         <div class="bg-white border rounded-md">
-            <div class="w-full h-24"></div>
+            <header class="border-b py-2 px-4 text-sm text-slate-700">
+                Sensor details
+            </header>
+            <div class="p-4">
+                {%= SensorDetailBlock(p.Sensor) %}
+            </div>
         </div>
         <div class="bg-white border rounded-md max-h-96 overflow-y-auto col-span-3">
             <table class="w-full text-sm border-separate border-spacing-0">

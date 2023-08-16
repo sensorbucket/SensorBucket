@@ -27,15 +27,33 @@ var (
 func (p *SensorDetailPage) StreamBody(qw422016 *qt422016.Writer) {
 //line services/dashboard/views/sensorDetailPage.qtpl:4
 	qw422016.N().S(`
-    <div class="mx-auto grid grid-cols-3 gap-6">
+    <div class="mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-6">
         <div class="bg-white border rounded-md">
             <div class="w-full h-96" hx-ext="leaflet"></div>
         </div>
         <div class="bg-white border rounded-md">
-            <div class="w-full h-24"></div>
+            <header class="border-b py-2 px-4 text-sm text-slate-700">
+                Device details
+            </header>
+            <div class="p-4">
+                `)
+//line services/dashboard/views/sensorDetailPage.qtpl:14
+	StreamDeviceDetailBlock(qw422016, p.Device)
+//line services/dashboard/views/sensorDetailPage.qtpl:14
+	qw422016.N().S(`
+            </div>
         </div>
         <div class="bg-white border rounded-md">
-            <div class="w-full h-24"></div>
+            <header class="border-b py-2 px-4 text-sm text-slate-700">
+                Sensor details
+            </header>
+            <div class="p-4">
+                `)
+//line services/dashboard/views/sensorDetailPage.qtpl:22
+	StreamSensorDetailBlock(qw422016, p.Sensor)
+//line services/dashboard/views/sensorDetailPage.qtpl:22
+	qw422016.N().S(`
+            </div>
         </div>
         <div class="bg-white border rounded-md max-h-96 overflow-y-auto col-span-3">
             <table class="w-full text-sm border-separate border-spacing-0">
@@ -57,80 +75,80 @@ func (p *SensorDetailPage) StreamBody(qw422016 *qt422016.Writer) {
                 </thead>
                 <tbody>
                     `)
-//line services/dashboard/views/sensorDetailPage.qtpl:34
+//line services/dashboard/views/sensorDetailPage.qtpl:44
 	for _, datastream := range p.Datastreams {
-//line services/dashboard/views/sensorDetailPage.qtpl:34
+//line services/dashboard/views/sensorDetailPage.qtpl:44
 		qw422016.N().S(`
                     <tr class="hover:bg-slate-50 group">
                         <td class="border-b"><a
                             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
                             href="/overview/datastreams/`)
-//line services/dashboard/views/sensorDetailPage.qtpl:38
+//line services/dashboard/views/sensorDetailPage.qtpl:48
 		qw422016.E().S(datastream.ID.String())
-//line services/dashboard/views/sensorDetailPage.qtpl:38
+//line services/dashboard/views/sensorDetailPage.qtpl:48
 		qw422016.N().S(`"
                             hx-target="main"
                         >`)
-//line services/dashboard/views/sensorDetailPage.qtpl:40
+//line services/dashboard/views/sensorDetailPage.qtpl:50
 		qw422016.E().S(datastream.ID.String())
-//line services/dashboard/views/sensorDetailPage.qtpl:40
+//line services/dashboard/views/sensorDetailPage.qtpl:50
 		qw422016.N().S(`</a></td>
                         <td class="px-4 h-10 border-b">`)
-//line services/dashboard/views/sensorDetailPage.qtpl:41
+//line services/dashboard/views/sensorDetailPage.qtpl:51
 		qw422016.E().S(datastream.ObservedProperty)
-//line services/dashboard/views/sensorDetailPage.qtpl:41
+//line services/dashboard/views/sensorDetailPage.qtpl:51
 		qw422016.N().S(`</td>
                         <td class="px-4 h-10 border-b">`)
-//line services/dashboard/views/sensorDetailPage.qtpl:42
+//line services/dashboard/views/sensorDetailPage.qtpl:52
 		qw422016.E().S(datastream.UnitOfMeasurement)
-//line services/dashboard/views/sensorDetailPage.qtpl:42
+//line services/dashboard/views/sensorDetailPage.qtpl:52
 		qw422016.N().S(`</td>
                         <td class="px-4 h-10 border-b">`)
-//line services/dashboard/views/sensorDetailPage.qtpl:43
+//line services/dashboard/views/sensorDetailPage.qtpl:53
 		qw422016.E().S(datastream.Description)
-//line services/dashboard/views/sensorDetailPage.qtpl:43
+//line services/dashboard/views/sensorDetailPage.qtpl:53
 		qw422016.N().S(`</td>
                     </tr>
                     `)
-//line services/dashboard/views/sensorDetailPage.qtpl:45
+//line services/dashboard/views/sensorDetailPage.qtpl:55
 	}
-//line services/dashboard/views/sensorDetailPage.qtpl:45
+//line services/dashboard/views/sensorDetailPage.qtpl:55
 	qw422016.N().S(`
                 </tbody>
             </table>
         </div>
     </div>
 `)
-//line services/dashboard/views/sensorDetailPage.qtpl:50
+//line services/dashboard/views/sensorDetailPage.qtpl:60
 }
 
-//line services/dashboard/views/sensorDetailPage.qtpl:50
+//line services/dashboard/views/sensorDetailPage.qtpl:60
 func (p *SensorDetailPage) WriteBody(qq422016 qtio422016.Writer) {
-//line services/dashboard/views/sensorDetailPage.qtpl:50
+//line services/dashboard/views/sensorDetailPage.qtpl:60
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/sensorDetailPage.qtpl:50
+//line services/dashboard/views/sensorDetailPage.qtpl:60
 	p.StreamBody(qw422016)
-//line services/dashboard/views/sensorDetailPage.qtpl:50
+//line services/dashboard/views/sensorDetailPage.qtpl:60
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/sensorDetailPage.qtpl:50
+//line services/dashboard/views/sensorDetailPage.qtpl:60
 }
 
-//line services/dashboard/views/sensorDetailPage.qtpl:50
+//line services/dashboard/views/sensorDetailPage.qtpl:60
 func (p *SensorDetailPage) Body() string {
-//line services/dashboard/views/sensorDetailPage.qtpl:50
+//line services/dashboard/views/sensorDetailPage.qtpl:60
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/sensorDetailPage.qtpl:50
+//line services/dashboard/views/sensorDetailPage.qtpl:60
 	p.WriteBody(qb422016)
-//line services/dashboard/views/sensorDetailPage.qtpl:50
+//line services/dashboard/views/sensorDetailPage.qtpl:60
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/sensorDetailPage.qtpl:50
+//line services/dashboard/views/sensorDetailPage.qtpl:60
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/sensorDetailPage.qtpl:50
+//line services/dashboard/views/sensorDetailPage.qtpl:60
 	return qs422016
-//line services/dashboard/views/sensorDetailPage.qtpl:50
+//line services/dashboard/views/sensorDetailPage.qtpl:60
 }
 
-//line services/dashboard/views/sensorDetailPage.qtpl:53
+//line services/dashboard/views/sensorDetailPage.qtpl:63
 type SensorDetailPage struct {
 	BasePage
 	Device      devices.Device

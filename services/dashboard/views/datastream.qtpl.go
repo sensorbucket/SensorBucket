@@ -27,7 +27,7 @@ var (
 func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
 //line services/dashboard/views/datastream.qtpl:4
 	qw422016.N().S(`
-<div class="grid grid-cols-3 gap-4">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="bg-white rounded-md border" id="map">
         <div
             class="w-full h-96"

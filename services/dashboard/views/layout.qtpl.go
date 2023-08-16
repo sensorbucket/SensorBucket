@@ -269,7 +269,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     <div class="bg-secondary-600 w-sidebar">
     </div>
     <section class="flex-1" id="main-wrapper">
-        <header class="h-8 bg-white border-b">
+        <header class="h-8 bg-white border-b" id="mustache">
             
         </header>
         <main class="p-4">

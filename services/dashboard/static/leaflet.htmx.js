@@ -9,6 +9,7 @@
                         return true;
                     }
                     if (target.leafet == undefined) {
+                        target.innerHTML = "";
                         const m = L.map(target).setView([51.55, 3.9], 9)
                         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                             maxZoom: 19,
@@ -18,6 +19,10 @@
                     }
                     break;
                 case "htmx:beforeCleanupElement":
+                    if (target.getAttribute("hx-ext") != "leaflet") {
+                        return true;
+                    }
+                    target.leaflet.remove()
                     break;
             }
         }
