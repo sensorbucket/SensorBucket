@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,6 +29,8 @@ func createOverviewPageHandler() http.Handler {
 	r.With(resolveDevice).Get("/devices/{device_id}", deviceDetailPage())
 	r.With(resolveDevice).With(resolveSensor).Get("/devices/{device_id}/sensors/{sensor_code}", sensorDetailPage())
 
+	r.Get("/sensorgroups", searchSensorGroups())
+
 	r.Get("/datastreams/{id}", overviewDatastream())
 	r.Get("/datastreams/{id}/stream", overviewDatastreamStream())
 	return r
@@ -41,8 +44,52 @@ func URLParamInt(r *http.Request, name string) (int64, error) {
 	return strconv.ParseInt(chi.URLParam(r, name), 10, 64)
 }
 
+func searchSensorGroups() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		res, err := http.Get("http://core:3000/sensor-groups")
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		var resBody web.APIResponse[[]devices.SensorGroup]
+		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		views.WriteSensorGroupSearch(w, resBody.Data)
+	}
+}
+
+func getSG(id string) (*devices.SensorGroup, error) {
+	res, err := http.Get("http://core:3000/sensor-groups/" + id)
+	if err != nil {
+		return nil, err
+	}
+	if res.StatusCode != 200 {
+		return nil, errors.New("Coldnt get sg")
+	}
+	var resBody web.APIResponse[devices.SensorGroup]
+	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+		return nil, err
+	}
+
+	return &resBody.Data, nil
+}
+
 func deviceListPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		page := &views.DeviceListPage{}
+
+		sensorGroupID := r.URL.Query().Get("sensorgroup")
+		if sensorGroupID != "" {
+			sg, err := getSG(sensorGroupID)
+			if err != nil {
+				web.HTTPError(w, err)
+				return
+			}
+			page.SensorGroup = sg
+		}
+
 		res, err := http.Get("http://core:3000/devices")
 		if err != nil {
 			web.HTTPError(w, err)
@@ -53,9 +100,8 @@ func deviceListPage() http.HandlerFunc {
 			web.HTTPError(w, err)
 			return
 		}
-		page := &views.DeviceListPage{
-			Devices: resBody.Data,
-		}
+		page.Devices = resBody.Data
+
 		views.WriteIndex(w, page)
 	}
 }

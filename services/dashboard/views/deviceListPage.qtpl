@@ -1,22 +1,30 @@
 {% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
 
 {% func (p *DeviceListPage) Body() %}
-    <div class="mx-auto w-[1024px] flex flex-col gap-6">
+    <div class="mx-auto w-full lg:w-2/3 flex flex-col gap-6">
 
-        <div class="flex gap-4">
-            <fieldset class="">
-                <label for="device-search" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Search device</small></label>
+        <div class="grid lg:grid-cols-4 gap-x-4 gap-y-1">
+            <fieldset class="relative col-span-2">
+                <label for="sensorgroup-search" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Sensor group</small></label>
                 <input
-                    type="text" name="device-search" id="device-search"
-                    class="block px-2 py-1 border rounded-md bg-white placeholder:text-slate-600"
+                    type="text" name="search" id="sensorgroup-search"
+                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600"
+
+                    {% if p.SensorGroup == nil %}
+                    hx-trigger="keyup changed delay:500ms"
+                    hx-get="/overview/sensorgroups"
+                    hx-target="next ul"
+                    {% else %}
+                    disabled
+                    class="bg-slate-50 cursor-pointer"
+                    hx-get="/overview"
+                    {% endif %}
+
                 />
-            </fieldset>
-            <fieldset class="">
-                <label for="sensor-group" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Sensor group</small></label>
-                <input
-                    type="text" name="device-search" id="device-search"
-                    class="block px-2 py-1 border rounded-md bg-white placeholder:text-slate-600"
-                />
+                <ul class="absolute top-full left-0 right-0 block border border-t-0 rounded-md rounded-t-none bg-white z-[4000]
+                            text-sm">
+                    
+                </ul>
             </fieldset>
         </div>
 
@@ -65,5 +73,6 @@
 type DeviceListPage struct {
     BasePage
     Devices []devices.Device
+    SensorGroup *devices.SensorGroup
 }
 %}

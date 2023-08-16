@@ -24,7 +24,7 @@ var (
 func (p *DeviceDetailPage) StreamBody(qw422016 *qt422016.Writer) {
 //line services/dashboard/views/deviceDetailPage.qtpl:3
 	qw422016.N().S(`
-    <div class="mx-auto w-[1024px] grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white border rounded-md">
             <div class="w-full h-96" hx-ext="leaflet" id="device-map"></div>
         </div>
