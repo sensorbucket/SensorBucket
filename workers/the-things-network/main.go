@@ -55,16 +55,14 @@ func process(msg pipeline.Message) (pipeline.Message, error) {
 	// Match EUI to device
 	device, err := fetchDeviceByEUI(ttn.EndDeviceId.EUI)
 	if err != nil {
-		log.Printf("Could not fetch device for EUI: %v\n", err)
-		// TODO: check, can a device be null in the msg? could this cause any errors further down the line?
+		return pipeline.Message{}, fmt.Errorf("could not fetch device for EUI: %w", err)
 	}
 	msg.Device = device
 	msg.Payload = ttn.Uplink.FrmPayload
 	msg.Metadata["fport"] = ttn.Uplink.FPort
 	ts, err := time.Parse(time.RFC3339, ttn.Timestamp)
 	if err != nil {
-		log.Printf("Error while parsing timestamp from uplink metadata: %v\n", err)
-		return pipeline.Message{}, err
+		return pipeline.Message{}, fmt.Errorf("can't parse timestamp from uplink metadata: %w", err)
 	}
 	msg.Timestamp = ts.UnixMilli()
 
@@ -75,7 +73,7 @@ func process(msg pipeline.Message) (pipeline.Message, error) {
 		if gw.Timestamp != "" {
 			tim, err := time.Parse(time.RFC3339, gw.Timestamp)
 			if err != nil {
-				log.Printf("Error while parsing timestamp from gateway RX Metadata: %v\n", err)
+				log.Printf("[Warning] can't parse timestamp from gateway RX Metadata: %v\n", err)
 				continue
 			}
 			ts = tim.UnixMilli()

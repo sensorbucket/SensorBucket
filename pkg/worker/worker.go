@@ -20,7 +20,6 @@ var (
 )
 
 func NewWorker(processsor processor) *worker {
-
 	// First ensure all the required env variables are present
 	w := worker{
 		appName:    env.Must("APP_NAME"),
@@ -87,14 +86,6 @@ func (w *worker) Run() {
 		// If the worker succesfully processed the result, publish it to the next message queue
 		topic, err := incoming.NextStep()
 		if err != nil {
-			if errors.Is(err, pipeline.ErrMessageNoSteps) {
-				// TODO: is this really an error?
-				w.publishError(fmt.Errorf("message has no steps remaining: %w", err))
-
-				// Requeuing the message has no value here
-				delivery.Ack(false)
-				continue
-			}
 			delivery.Nack(false, false)
 			w.publishError(err)
 			continue
