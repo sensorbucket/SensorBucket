@@ -22,14 +22,15 @@ func (s *workerSuite) TestWorkerProcessorReturnsAnError() {
 	consumer := make(chan amqp091.Delivery)
 	incomingMessage := pipeline.Message{}
 	expectedMessage := workerError{
-		Origin:     "some-worker",
-		OriginType: "worker",
-		Error:      "unexpected error occurred!!",
+		Worker:    "some-worker",
+		MessageID: "",
+		Topic:     "message came from this topic",
+		Error:     "unexpected error occurred!!",
 	}
 	w := worker{
-		appName:    "some-worker",
-		appType:    "worker",
+		id:         "some-worker",
 		mqErrTopic: "this is an error topic",
+		mqQueue:    "message came from this topic",
 		publisher:  publisher,
 		consumer:   consumer,
 		processor: func(m pipeline.Message) (pipeline.Message, error) {
@@ -66,13 +67,14 @@ func (s *workerSuite) TestIncomingMessageIsInvalidJson() {
 	publisher := make(chan mq.PublishMessage)
 	consumer := make(chan amqp091.Delivery)
 	expectedMessage := workerError{
-		Origin:     "some-worker",
-		OriginType: "worker",
-		Error:      "json: cannot unmarshal string into Go value of type pipeline.Message",
+		Worker:    "some-worker",
+		MessageID: "",
+		Topic:     "message came from this topic",
+		Error:     "json: cannot unmarshal string into Go value of type pipeline.Message",
 	}
 	w := worker{
-		appName:     "some-worker",
-		appType:     "worker",
+		id:          "some-worker",
+		mqQueue:     "message came from this topic",
 		mqErrTopic:  "this is an error topic",
 		publisher:   publisher,
 		consumer:    consumer,

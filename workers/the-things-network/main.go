@@ -23,7 +23,7 @@ var (
 )
 
 func main() {
-	worker.NewWorker(process).Run()
+	worker.NewWorker("the-things-network", "v1.0.0", process).Run()
 }
 
 type TTNMessage struct {

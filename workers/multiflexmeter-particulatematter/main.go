@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	worker.NewWorker(process).Run()
+	worker.NewWorker("multiflexmeter-particulatematter", "v1.0.0", process).Run()
 }
 
 func process(msg pipeline.Message) (pipeline.Message, error) {

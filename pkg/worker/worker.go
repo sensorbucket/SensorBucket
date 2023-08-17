@@ -19,11 +19,10 @@ var (
 	ErrNoDeviceMatch = errors.New("no device in device service matches EUI of uplink")
 )
 
-func NewWorker(processsor processor) *worker {
+func NewWorker(name string, version string, processsor processor) *worker {
 	// First ensure all the required env variables are present
 	w := worker{
-		appName:    env.Must("APP_NAME"),
-		appType:    env.Must("APP_TYPE"),
+		id:         fmt.Sprintf("%s@%s-(%s)", name, version, env.Must("HOSTNAME")),
 		mqQueue:    env.Must("AMQP_QUEUE"),
 		mqErrTopic: env.Must("AMQP_ERR_TOPIC"),
 		mqHost:     env.Must("AMQP_HOST"),
@@ -69,7 +68,7 @@ func (w *worker) Run() {
 		var incoming pipeline.Message
 		if err := json.Unmarshal(delivery.Body, &incoming); err != nil {
 			log.Printf("Error converting delivery: %v\n", err)
-			w.publishError(err)
+			w.publishError(incoming, err)
 			delivery.Nack(false, false)
 			continue
 		}
@@ -78,7 +77,7 @@ func (w *worker) Run() {
 		result, err := w.processor(incoming)
 		if err != nil {
 			log.Printf("Error processing delivery: %v\n", err)
-			w.publishError(err)
+			w.publishError(incoming, err)
 			delivery.Nack(false, false)
 			continue
 		}
@@ -87,13 +86,13 @@ func (w *worker) Run() {
 		topic, err := incoming.NextStep()
 		if err != nil {
 			delivery.Nack(false, false)
-			w.publishError(err)
+			w.publishError(incoming, err)
 			continue
 		}
 		msgJSON, err := json.Marshal(result)
 		if err != nil {
 			delivery.Nack(false, false)
-			w.publishError(fmt.Errorf("could not marshal pipelines message: %w", err))
+			w.publishError(incoming, fmt.Errorf("could not marshal pipelines message: %w", err))
 			continue
 		}
 		w.publisher <- mq.PublishMessage{Topic: topic, Publishing: amqp091.Publishing{
@@ -108,11 +107,12 @@ func (w *worker) Run() {
 	w.cancelToken <- true
 }
 
-func (w *worker) publishError(err error) error {
+func (w *worker) publishError(message pipeline.Message, err error) error {
 	errJSON, err := json.Marshal(workerError{
-		Origin:     w.appName,
-		OriginType: w.appType,
-		Error:      err.Error(),
+		Topic:     w.mqQueue,
+		MessageID: message.ID,
+		Worker:    w.id,
+		Error:     err.Error(),
 	})
 	if err != nil {
 		return fmt.Errorf("could not marshal json: %w", err)
@@ -124,15 +124,15 @@ func (w *worker) publishError(err error) error {
 }
 
 type workerError struct {
-	Origin     string `json:"origin"`
-	OriginType string `json:"originType"`
-	Error      string `json:"error"`
+	Worker    string `json:"worker"`
+	MessageID string `json:"messageId"`
+	Topic     string `json:"topic"`
+	Error     string `json:"error"`
 }
 
 type worker struct {
 	// Worker info
-	appName string
-	appType string
+	id string
 
 	// MQ settings
 	mqHost     string

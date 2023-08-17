@@ -53,7 +53,7 @@ var sensor = map[string]string{
 }
 
 func main() {
-	worker.NewWorker(process).Run()
+	worker.NewWorker("pzld-sensorbox", "v1.0.0", process).Run()
 }
 
 func process(msg pipeline.Message) (pipeline.Message, error) {
