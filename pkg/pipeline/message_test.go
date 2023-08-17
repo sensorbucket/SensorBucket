@@ -9,30 +9,33 @@ import (
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
 
-func TestMessageNextStepPopsItem(t *testing.T) {
+func TestMessageNextStepErrorOnEmptyPipelineSteps(t *testing.T) {
 	msg := pipeline.Message{
-		PipelineSteps: []string{"a", "b", "c"},
+		PipelineSteps: []string{""},
 	}
-
 	next, err := msg.NextStep()
-	assert.NoError(t, err)
-	assert.Equal(t, next, "a")
-	assert.Equal(t, msg.PipelineSteps, []string{"b", "c"})
-}
-
-func TestMessageNextStepErrorOnEmpty(t *testing.T) {
-	msg := pipeline.Message{
-		PipelineSteps: []string{"a"},
-	}
-
-	next, err := msg.NextStep()
-	assert.NoError(t, err)
-	assert.Equal(t, next, "a")
-	assert.Equal(t, msg.PipelineSteps, []string{})
-
-	next, err = msg.NextStep()
 	assert.Equal(t, next, "")
 	assert.Error(t, err)
+}
+
+func TestMessageNextStepErrorOnLastStep(t *testing.T) {
+	msg := pipeline.Message{
+		StepIndex:     2,
+		PipelineSteps: []string{"a", "b", "c"},
+	}
+	next, err := msg.NextStep()
+	assert.Equal(t, next, "")
+	assert.Error(t, err)
+}
+
+func TestMessageNextStepFewRemainingSteps(t *testing.T) {
+	msg := pipeline.Message{
+		StepIndex:     1,
+		PipelineSteps: []string{"a", "b", "c"},
+	}
+	next, err := msg.NextStep()
+	assert.Equal(t, next, "c")
+	assert.NoError(t, err)
 }
 
 func TestNewMessageRandomUUID(t *testing.T) {
