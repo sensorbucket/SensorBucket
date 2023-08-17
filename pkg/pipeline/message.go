@@ -2,7 +2,6 @@ package pipeline
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -54,11 +53,9 @@ func NewMessage(pipelineID string, steps []string) *Message {
 }
 
 func (m *Message) NextStep() (string, error) {
-	fmt.Println(m.PipelineSteps, m.StepIndex, len(m.PipelineSteps))
 	if int(m.StepIndex+1) >= len(m.PipelineSteps) {
 		return "", ErrMessageNoSteps
 	}
 	m.StepIndex++
-	fmt.Println("SENDING TO STEP", m.StepIndex)
 	return m.PipelineSteps[m.StepIndex], nil
 }
