@@ -985,10 +985,6 @@ video {
     height: 100vh;
   }
 
-  .lg\:w-2\/3 {
-    width: 66.666667%;
-  }
-
   .lg\:w-sidebar {
     width: 16rem;
   }
@@ -1023,6 +1019,12 @@ video {
 
   .lg\:pr-12 {
     padding-right: 3rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .xl\:w-2\/3 {
+    width: 66.666667%;
   }
 }
 

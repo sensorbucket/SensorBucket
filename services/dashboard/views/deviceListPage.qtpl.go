@@ -24,7 +24,7 @@ var (
 func (p *DeviceListPage) StreamBody(qw422016 *qt422016.Writer) {
 //line services/dashboard/views/deviceListPage.qtpl:3
 	qw422016.N().S(`
-    <div class="mx-auto w-full lg:w-2/3 flex flex-col gap-6">
+    <div class="mx-auto w-full xl:w-2/3 flex flex-col gap-6">
 
         <div class="grid lg:grid-cols-4 gap-x-4 gap-y-1">
             <fieldset class="relative col-span-2">
@@ -64,7 +64,16 @@ func (p *DeviceListPage) StreamBody(qw422016 *qt422016.Writer) {
         </div>
 
         <div class="bg-white border rounded-md">
-            <div hx-ext="leaflet" class="w-full h-96" id="device-map"></div>
+            <div 
+                hx-ext="leaflet,ws"
+                ws-connect="/overview/devices/stream-map"
+                class="w-full h-96"
+                id="device-map"
+            >
+                <div id="markers">
+                    <map-marker latitude="51.3" longitude="3.12"></map-marker>
+                </div>
+            </div>
         </div>
 
         <div class="bg-white border rounded-md max-h-96 overflow-y-auto">
@@ -87,80 +96,80 @@ func (p *DeviceListPage) StreamBody(qw422016 *qt422016.Writer) {
                 </thead>
                 <tbody>
                     `)
-//line services/dashboard/views/deviceListPage.qtpl:54
+//line services/dashboard/views/deviceListPage.qtpl:63
 	for _, dev := range p.Devices {
-//line services/dashboard/views/deviceListPage.qtpl:54
+//line services/dashboard/views/deviceListPage.qtpl:63
 		qw422016.N().S(`
                     <tr class="hover:bg-slate-50 group">
                         <td class="px-4 h-10 border-b">`)
-//line services/dashboard/views/deviceListPage.qtpl:56
+//line services/dashboard/views/deviceListPage.qtpl:65
 		qw422016.N().DL(dev.ID)
-//line services/dashboard/views/deviceListPage.qtpl:56
+//line services/dashboard/views/deviceListPage.qtpl:65
 		qw422016.N().S(`</td>
                         <td class="border-b"><a
                             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
                             href="/overview/devices/`)
-//line services/dashboard/views/deviceListPage.qtpl:59
+//line services/dashboard/views/deviceListPage.qtpl:68
 		qw422016.N().DL(dev.ID)
-//line services/dashboard/views/deviceListPage.qtpl:59
+//line services/dashboard/views/deviceListPage.qtpl:68
 		qw422016.N().S(`"
                             hx-target="main"
                         >`)
-//line services/dashboard/views/deviceListPage.qtpl:61
+//line services/dashboard/views/deviceListPage.qtpl:70
 		qw422016.E().S(dev.Code)
-//line services/dashboard/views/deviceListPage.qtpl:61
+//line services/dashboard/views/deviceListPage.qtpl:70
 		qw422016.N().S(`</a></td>
                         <td class="px-4 h-10 border-b">`)
-//line services/dashboard/views/deviceListPage.qtpl:62
+//line services/dashboard/views/deviceListPage.qtpl:71
 		qw422016.E().S(dev.Description)
-//line services/dashboard/views/deviceListPage.qtpl:62
+//line services/dashboard/views/deviceListPage.qtpl:71
 		qw422016.N().S(`</td>
                         <td class="px-4 h-10 border-b">`)
-//line services/dashboard/views/deviceListPage.qtpl:63
+//line services/dashboard/views/deviceListPage.qtpl:72
 		qw422016.E().S(dev.LocationDescription)
-//line services/dashboard/views/deviceListPage.qtpl:63
+//line services/dashboard/views/deviceListPage.qtpl:72
 		qw422016.N().S(`</td>
                     </tr>
                     `)
-//line services/dashboard/views/deviceListPage.qtpl:65
+//line services/dashboard/views/deviceListPage.qtpl:74
 	}
-//line services/dashboard/views/deviceListPage.qtpl:65
+//line services/dashboard/views/deviceListPage.qtpl:74
 	qw422016.N().S(`
                 </tbody>
             </table>
         </div>
     </div>
 `)
-//line services/dashboard/views/deviceListPage.qtpl:70
+//line services/dashboard/views/deviceListPage.qtpl:79
 }
 
-//line services/dashboard/views/deviceListPage.qtpl:70
+//line services/dashboard/views/deviceListPage.qtpl:79
 func (p *DeviceListPage) WriteBody(qq422016 qtio422016.Writer) {
-//line services/dashboard/views/deviceListPage.qtpl:70
+//line services/dashboard/views/deviceListPage.qtpl:79
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/deviceListPage.qtpl:70
+//line services/dashboard/views/deviceListPage.qtpl:79
 	p.StreamBody(qw422016)
-//line services/dashboard/views/deviceListPage.qtpl:70
+//line services/dashboard/views/deviceListPage.qtpl:79
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/deviceListPage.qtpl:70
+//line services/dashboard/views/deviceListPage.qtpl:79
 }
 
-//line services/dashboard/views/deviceListPage.qtpl:70
+//line services/dashboard/views/deviceListPage.qtpl:79
 func (p *DeviceListPage) Body() string {
-//line services/dashboard/views/deviceListPage.qtpl:70
+//line services/dashboard/views/deviceListPage.qtpl:79
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/deviceListPage.qtpl:70
+//line services/dashboard/views/deviceListPage.qtpl:79
 	p.WriteBody(qb422016)
-//line services/dashboard/views/deviceListPage.qtpl:70
+//line services/dashboard/views/deviceListPage.qtpl:79
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/deviceListPage.qtpl:70
+//line services/dashboard/views/deviceListPage.qtpl:79
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/deviceListPage.qtpl:70
+//line services/dashboard/views/deviceListPage.qtpl:79
 	return qs422016
-//line services/dashboard/views/deviceListPage.qtpl:70
+//line services/dashboard/views/deviceListPage.qtpl:79
 }
 
-//line services/dashboard/views/deviceListPage.qtpl:73
+//line services/dashboard/views/deviceListPage.qtpl:82
 type DeviceListPage struct {
 	BasePage
 	Devices     []devices.Device

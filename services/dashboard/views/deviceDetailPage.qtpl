@@ -3,7 +3,24 @@
 {% func (p *DeviceDetailPage) Body() %}
     <div class="mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white border rounded-md">
-            <div class="w-full h-96" hx-ext="leaflet" id="device-map"></div>
+            {% if p.Device.Latitude != nil && p.Device.Longitude != nil %}
+                <div
+                    class="w-full h-96" 
+                    id="device-map"
+                    hx-ext="leaflet" 
+                    data-latitude="{%f *p.Device.Latitude %}"
+                    data-longitude="{%f *p.Device.Longitude %}"
+                    data-zoom="11"
+                >
+                    <map-marker
+                        latitude="{%f *p.Device.Latitude %}"
+                        longitude="{%f *p.Device.Longitude %}"
+                        label="{%s p.Device.Code %}"
+                        ></map-marker>
+                </div>
+            {% else %}
+                <span> Device has no location set </span>
+            {% endif %}
         </div>
         <div class="bg-white border rounded-md">
             <header class="border-b py-2 px-4 text-sm text-slate-700">

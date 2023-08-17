@@ -28,7 +28,7 @@ build-dashboard-deps:
 	@tailwind --config ./services/dashboard/tailwind.config.cjs --input ./services/dashboard/style.css --output ./services/dashboard/static/style.css
 
 run-dashboard: build-dashboard-deps
-	@go run ./services/dashboard
+	@go run ./services/dashboard 
 
 watch-dashboard:
 	@reflex -r '\.(go|qtpl)$$' -R '\.qtpl\.go$$' -s -- make run-dashboard

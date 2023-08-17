@@ -1,7 +1,7 @@
 {% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
 
 {% func (p *DeviceListPage) Body() %}
-    <div class="mx-auto w-full lg:w-2/3 flex flex-col gap-6">
+    <div class="mx-auto w-full xl:w-2/3 flex flex-col gap-6">
 
         <div class="grid lg:grid-cols-4 gap-x-4 gap-y-1">
             <fieldset class="relative col-span-2">
@@ -29,7 +29,16 @@
         </div>
 
         <div class="bg-white border rounded-md">
-            <div hx-ext="leaflet" class="w-full h-96" id="device-map"></div>
+            <div 
+                hx-ext="leaflet,ws"
+                ws-connect="/overview/devices/stream-map"
+                class="w-full h-96"
+                id="device-map"
+            >
+                <div id="markers">
+                    <map-marker latitude="51.3" longitude="3.12"></map-marker>
+                </div>
+            </div>
         </div>
 
         <div class="bg-white border rounded-md max-h-96 overflow-y-auto">

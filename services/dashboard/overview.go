@@ -8,11 +8,13 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/gorilla/websocket"
 
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
@@ -26,6 +28,7 @@ func createOverviewPageHandler() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.GetHead)
 	r.Get("/", deviceListPage())
+	r.Get("/devices/stream-map", devicesStreamMap())
 	r.With(resolveDevice).Get("/devices/{device_id}", deviceDetailPage())
 	r.With(resolveDevice).With(resolveSensor).Get("/devices/{device_id}/sensors/{sensor_code}", sensorDetailPage())
 
@@ -146,6 +149,72 @@ func sensorDetailPage() http.HandlerFunc {
 			return
 		}
 		views.WriteIndex(w, page)
+	}
+}
+
+func devicesStreamMap() http.HandlerFunc {
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+
+	getDevicePage := func(cursor string) ([]devices.Device, string, error) {
+		res, err := http.Get("http://core:3000/devices")
+		if err != nil {
+			return nil, "", err
+		}
+		var resBody pagination.APIResponse[devices.Device]
+		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+			return nil, "", err
+		}
+		return resBody.Data, resBody.Links.Next, nil
+	}
+	type Marker struct {
+		DeviceID  int64   `json:"device_id"`
+		Label     string  `json:"label"`
+		Latitude  float64 `json:"latitude"`
+		Longitude float64 `json:"longitude"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		ws, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		go func() {
+			fmt.Printf("WS Connect\n")
+			var nextCursor string
+			for {
+				// Start fetching pages of devices and stream them to the client
+				devices, cursor, err := getDevicePage(nextCursor)
+				if err != nil {
+					ws.Close()
+					return
+				}
+
+				for _, dev := range devices {
+					if dev.Latitude == nil || dev.Longitude == nil {
+						continue
+					}
+					writer, err := ws.NextWriter(websocket.TextMessage)
+					defer writer.Close()
+					if err != nil {
+						continue
+					}
+					views.WriteMapMarker(writer, dev.ID, *dev.Latitude, *dev.Longitude, dev.Code)
+				}
+				nextCursor = cursor
+				if nextCursor == "" {
+					break
+				}
+			}
+			for {
+				time.Sleep(1 * time.Second)
+			}
+			// ws.Close()
+		}()
 	}
 }
 
