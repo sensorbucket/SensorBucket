@@ -5,10 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
-	"os/signal"
 	"strconv"
-	"syscall"
 
 	"github.com/rabbitmq/amqp091-go"
 
@@ -20,113 +17,145 @@ import (
 var (
 	// errors
 	ErrNoDeviceMatch = errors.New("no device in device service matches EUI of uplink")
-
-	// env variables
-	APP_NAME       = env.Must("APP_NAME")
-	APP_TYPE       = env.Must("APP_TYPE")
-	AMQP_QUEUE     = env.Must("AMQP_QUEUE")
-	AMQP_ERR_TOPIC = env.Must("AMQP_ERR_TOPIC")
-	AMQP_HOST      = env.Must("AMQP_HOST")
-	AMQP_XCHG      = env.Must("AMQP_XCHG")
-	AMQP_PREFETCH  = env.Could("AMQP_PREFETCH", "5")
 )
 
-type WorkerError struct {
-	Origin     string `json:"origin"`
-	OriginType string `json:"originType"`
-	Error      string `json:"error"`
-}
+func NewWorker(processsor processor) *worker {
 
-type Processor func(pipeline.Message) (pipeline.Message, error)
-
-// Will run the given processor. Any returned message will be sent to it's next defined step in the pipeline
-// if no steps remain, an error is returned.
-func Run(process Processor) error {
-	prefetch, err := strconv.Atoi(AMQP_PREFETCH)
-	if err != nil {
-		return err
+	// First ensure all the required env variables are present
+	w := worker{
+		appName:    env.Must("APP_NAME"),
+		appType:    env.Must("APP_TYPE"),
+		mqQueue:    env.Must("AMQP_QUEUE"),
+		mqErrTopic: env.Must("AMQP_ERR_TOPIC"),
+		mqHost:     env.Must("AMQP_HOST"),
+		mqXchg:     env.Must("AMQP_XCHG"),
+		mqPrefetch: env.Could("AMQP_PREFETCH", "5"),
 	}
-	mqConn := mq.NewConnection(AMQP_HOST)
-	publisher := mqConn.Publisher(AMQP_XCHG, func(c *amqp091.Channel) error {
-		return c.ExchangeDeclare(AMQP_XCHG, "topic", true, false, false, false, nil)
+
+	prefetch, err := strconv.Atoi(w.mqPrefetch)
+	if err != nil {
+		panic(err)
+	}
+	conn := mq.NewConnection(w.mqHost)
+	publisher := conn.Publisher(w.mqXchg, func(c *amqp091.Channel) error {
+		return c.ExchangeDeclare(w.mqXchg, "topic", true, false, false, false, nil)
 	})
-	consumer := mqConn.Consume(AMQP_QUEUE, func(c *amqp091.Channel) error {
-		_, err := c.QueueDeclare(AMQP_QUEUE, true, false, false, false, amqp091.Table{})
+	consumer := conn.Consume(w.mqQueue, func(c *amqp091.Channel) error {
+		_, err := c.QueueDeclare(w.mqQueue, true, false, false, false, amqp091.Table{})
 		c.Qos(prefetch, 0, true)
 		return err
 	})
-	go mqConn.Start()
+	cancelToken := make(chan any, 1)
 
-	// Process messages
-	go startConsuming(consumer, process, publisher)
+	go conn.Start()
+	go func(conn *mq.AMQPConnection) {
 
-	// wait for a signal to shutdown
-	sigC := make(chan os.Signal, 1)
-	signal.Notify(sigC, syscall.SIGINT, syscall.SIGTERM)
+		// Whenever a value is put in the cancelToken, shutdown the AMQP connnection
+		<-cancelToken
+		conn.Shutdown()
+	}(conn)
 
-	<-sigC
-	mqConn.Shutdown()
-	log.Println("shutting down")
-	return nil
+	w.processor = processsor
+	w.cancelToken = cancelToken
+	w.publisher = publisher
+	w.consumer = consumer
+
+	return &w
 }
 
-func startConsuming(c <-chan amqp091.Delivery, process Processor, p chan<- mq.PublishMessage) {
-	for delivery := range c {
-		if err := consume(delivery, process, p); err != nil {
-			log.Printf("Error processing delivery: %v\n", err)
+// Will run the given processor. Any returned message will be sent to it's next defined step in the pipeline
+func (w *worker) Run() {
+	// Await any messages that appear on the message queue
+	for delivery := range w.consumer {
+		var incoming pipeline.Message
+		if err := json.Unmarshal(delivery.Body, &incoming); err != nil {
+			log.Printf("Error converting delivery: %v\n", err)
+			w.publishError(err)
 			delivery.Nack(false, false)
-			if err = publishError(err, p); err != nil {
-				log.Printf("could not publish error: %v\n", err)
-			}
 			continue
 		}
+
+		// Once a message has been received, process it using the worker-unique processor
+		result, err := w.processor(incoming)
+		if err != nil {
+			log.Printf("Error processing delivery: %v\n", err)
+			w.publishError(err)
+			delivery.Nack(false, false)
+			continue
+		}
+
+		// If the worker succesfully processed the result, publish it to the next message queue
+		topic, err := incoming.NextStep()
+		if err != nil {
+			if errors.Is(err, pipeline.ErrMessageNoSteps) {
+				// TODO: is this really an error?
+				w.publishError(fmt.Errorf("message has no steps remaining: %w", err))
+
+				// Requeuing the message has no value here
+				delivery.Ack(false)
+				continue
+			}
+			delivery.Nack(false, false)
+			w.publishError(err)
+			continue
+		}
+		msgJSON, err := json.Marshal(result)
+		if err != nil {
+			delivery.Nack(false, false)
+			w.publishError(fmt.Errorf("could not marshal pipelines message: %w", err))
+			continue
+		}
+		w.publisher <- mq.PublishMessage{Topic: topic, Publishing: amqp091.Publishing{
+			Body: msgJSON,
+		}}
+
+		// The message was succesfully handled, ack the message.
 		delivery.Ack(false)
 	}
+
+	// Shutdown the MQ connection
+	w.cancelToken <- true
 }
 
-func consume(delivery amqp091.Delivery, process Processor, p chan<- mq.PublishMessage) error {
-	var err error
-	var msg pipeline.Message
-	if err := json.Unmarshal(delivery.Body, &msg); err != nil {
-		return fmt.Errorf("could not unmarshal delivery: %v", err)
-	}
-
-	// Do process
-	msg, err = process(msg)
-	if err != nil {
-		return fmt.Errorf("could not process message: %v", err)
-	}
-
-	// Publish result
-	topic, err := msg.NextStep()
-	if err != nil {
-		if errors.Is(err, pipeline.ErrMessageNoSteps) {
-			// TODO: is this really an error?
-			return fmt.Errorf("message has no steps remaining: %w", err)
-		}
-		return err
-	}
-	msgJSON, err := json.Marshal(msg)
-	if err != nil {
-		return fmt.Errorf("could not marshal pipelines message: %w", err)
-	}
-	p <- mq.PublishMessage{Topic: topic, Publishing: amqp091.Publishing{
-		Body: msgJSON,
-	}}
-	return nil
-}
-
-func publishError(err error, p chan<- mq.PublishMessage) error {
-	errJSON, err := json.Marshal(WorkerError{
-		Origin:     APP_NAME,
-		OriginType: APP_TYPE,
+func (w *worker) publishError(err error) error {
+	errJSON, err := json.Marshal(workerError{
+		Origin:     w.appName,
+		OriginType: w.appType,
 		Error:      err.Error(),
 	})
 	if err != nil {
 		return fmt.Errorf("could not marshal json: %w", err)
 	}
-	p <- mq.PublishMessage{Topic: AMQP_ERR_TOPIC, Publishing: amqp091.Publishing{
+	w.publisher <- mq.PublishMessage{Topic: w.mqErrTopic, Publishing: amqp091.Publishing{
 		Body: errJSON,
 	}}
 	return nil
 }
+
+type workerError struct {
+	Origin     string `json:"origin"`
+	OriginType string `json:"originType"`
+	Error      string `json:"error"`
+}
+
+type worker struct {
+	// Worker info
+	appName string
+	appType string
+
+	// MQ settings
+	mqHost     string
+	mqQueue    string
+	mqErrTopic string
+	mqXchg     string
+	mqPrefetch string
+
+	processor   processor
+	cancelToken chan any
+	publisher   publisher
+	consumer    consumer
+}
+
+type processor func(pipeline.Message) (pipeline.Message, error)
+type publisher chan<- mq.PublishMessage
+type consumer <-chan amqp091.Delivery

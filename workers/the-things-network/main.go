@@ -23,7 +23,7 @@ var (
 )
 
 func main() {
-	worker.Run(process)
+	worker.NewWorker(process).Run()
 }
 
 type TTNMessage struct {

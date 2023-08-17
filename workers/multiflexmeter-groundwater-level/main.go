@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	worker.Run(process)
+	worker.NewWorker(process).Run()
 }
 
 func process(msg pipeline.Message) (pipeline.Message, error) {
