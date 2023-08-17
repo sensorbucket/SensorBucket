@@ -49,6 +49,7 @@ services:
       - .:/workspace:cached
     environment:
     - APP_NAME=httpimporter
+    - APP_TYPE=service
     - HTTP_ADDR=:3000
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_XCHG=pipeline.messages
@@ -66,6 +67,7 @@ services:
     - APP_TYPE=worker
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_QUEUE=the-things-network
+    - AMQP_ERR_TOPIC=errors
     - AMQP_XCHG=pipeline.messages
     - SVC_DEVICE=http://core:3000
 
@@ -81,6 +83,7 @@ services:
     - APP_TYPE=worker
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_QUEUE=multiflexmeter-groundwater-level
+    - AMQP_ERR_TOPIC=errors
     - AMQP_XCHG=pipeline.messages
 
   worker_multiflexmeter_pm:
@@ -95,6 +98,7 @@ services:
     - APP_TYPE=worker
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_QUEUE=multiflexmeter-particulatematter
+    - AMQP_ERR_TOPIC=errors
     - AMQP_XCHG=pipeline.messages
 
   worker_pzld_sensorbox:
@@ -109,6 +113,7 @@ services:
     - APP_TYPE=worker
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_QUEUE=pzld-sensorbox
+    - AMQP_ERR_TOPIC=errors
     - AMQP_XCHG=pipeline.messages
 
   db:

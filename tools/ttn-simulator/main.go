@@ -5,17 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"math/rand"
 	"net/http"
 	"os"
-	"strconv"
-	"sync"
 	"time"
-)
-
-var (
-	WORKER_COUNT = 5
-	WORKER_DELAY = 10 * time.Millisecond
-	START_IX     = 0
 )
 
 func main() {
@@ -25,58 +20,49 @@ func main() {
 }
 
 func Run() error {
-	if len(os.Args) < 3 {
-		return errors.New("./test http://localhost:3000/process/abcdef ./data.json\ndata.json should be an array")
+	if len(os.Args) < 4 {
+		return errors.New("./ttn-simulator http-ingress pipeline-id data-set.json")
 	}
-	if len(os.Args) > 3 {
-		ix, _ := strconv.Atoi(os.Args[3])
-		START_IX = ix
-	}
+
 	url := os.Args[1]
-	jsonFile, err := os.Open(os.Args[2])
+	pipelineId := os.Args[2]
+	dataSet := os.Args[3]
+
+	jsonFile, err := os.Open(dataSet)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
+	log.Println("caching data")
 	var data []json.RawMessage
 	if err := json.NewDecoder(jsonFile).Decode(&data); err != nil {
-		return errors.New("Failed to read input file")
+		return errors.New("failed to read input file")
 	}
 	jsonFile.Close()
+	log.Println("done caching")
 
-	wg := sync.WaitGroup{}
-	fanout := make(chan json.RawMessage, WORKER_COUNT)
-
-	// Start workers
-	for i := 0; i < WORKER_COUNT; i++ {
-		id := i
-		wg.Add(1)
-		go func() {
-			fmt.Printf("Worker(%d): Online\n", id)
-			client := &http.Client{}
-			for msg := range fanout {
-				req, _ := http.NewRequest("POST", url, bytes.NewBuffer(msg))
-				req.Header.Add("Content-Type", "application/json")
-				req.Header.Add("Connection", "close")
-				r, err := client.Do(req)
-				if err != nil {
-					fmt.Printf("Worker(%d): error: %v\n", id, err)
-				} else if r.StatusCode < 200 || r.StatusCode > 299 {
-					fmt.Printf("Worker(%d): sus status: %v\n", id, r.StatusCode)
-				}
-				time.Sleep(WORKER_DELAY)
-			}
-			fmt.Printf("Worker(%d): Finished\n", id)
-			wg.Done()
-		}()
-	}
-
-	// Start producer
-	for i := START_IX; i < len(data); i++ {
-		fanout <- data[i]
-		if i%25 == 0 {
-			fmt.Printf("Producer: %d of %d\n", i, len(data))
+	for {
+		randomIndex := rand.Intn(len(data))
+		el := data[randomIndex]
+		fmt.Println("sending", string(el))
+		req, err := http.NewRequest("POST", fmt.Sprintf("%s/%s", url, pipelineId), bytes.NewBuffer(el))
+		if err != nil {
+			fmt.Println("Error creating request:", err)
+			continue
 		}
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println("Error sending request:", err)
+			continue
+		}
+		respBody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println("Error sending request:", err)
+			continue
+		}
+		fmt.Println("Response Status:", resp.Status)
+		fmt.Println("Response Body:", string(respBody))
+		time.Sleep(time.Second * 3)
 	}
-
-	return nil
 }

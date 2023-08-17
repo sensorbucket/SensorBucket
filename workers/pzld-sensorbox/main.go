@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	"sensorbucket.nl/sensorbucket/pkg/worker"
@@ -52,7 +53,7 @@ var sensor = map[string]string{
 }
 
 func main() {
-	worker.Run(process)
+	worker.NewWorker("pzld-sensorbox", "v1.0.0", process).Run()
 }
 
 func process(msg pipeline.Message) (pipeline.Message, error) {
@@ -61,7 +62,7 @@ func process(msg pipeline.Message) (pipeline.Message, error) {
 	}
 	measurements, err := decodeUplink(msg.Payload)
 	if err != nil {
-		return msg, err
+		return msg, fmt.Errorf("decode uplink: %w", err)
 	}
 	for k, v := range measurements {
 		err := msg.NewMeasurement().SetSensor(sensor[k]).SetValue(v, k, uom[k]).Add()
