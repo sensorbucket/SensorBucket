@@ -110,6 +110,7 @@ func (s *workerSuite) TestIncomingMessageWithNextStep() {
 	consumer := make(chan amqp091.Delivery)
 	incomingMessage := pipeline.Message{
 		ID:            "very-unique-id",
+		StepIndex:     0,
 		PipelineSteps: []string{"step2", "step3"},
 		Measurements: []pipeline.Measurement{
 			{
@@ -119,7 +120,8 @@ func (s *workerSuite) TestIncomingMessageWithNextStep() {
 	}
 	expectedMessage := pipeline.Message{
 		ID:            "very-unique-id",
-		PipelineSteps: []string{"step3"},
+		StepIndex:     1,
+		PipelineSteps: []string{"step2", "step3"},
 		Measurements: []pipeline.Measurement{
 			{
 				Value: 30.543,
@@ -130,7 +132,16 @@ func (s *workerSuite) TestIncomingMessageWithNextStep() {
 		publisher: publisher,
 		consumer:  consumer,
 		processor: func(m pipeline.Message) (pipeline.Message, error) {
-			return expectedMessage, nil
+			return pipeline.Message{
+				ID:            "very-unique-id",
+				StepIndex:     0,
+				PipelineSteps: []string{"step2", "step3"},
+				Measurements: []pipeline.Measurement{
+					{
+						Value: 30.543,
+					},
+				},
+			}, nil
 		},
 		cancelToken: make(chan any),
 	}
@@ -150,7 +161,7 @@ func (s *workerSuite) TestIncomingMessageWithNextStep() {
 	s.Equal(0, acker.nackCalled)
 	s.Equal(0, acker.rejectCalled)
 	s.Equal(mq.PublishMessage{
-		Topic: "step2",
+		Topic: "step3",
 		Publishing: amqp091.Publishing{
 			Body: toBytes(expectedMessage),
 		},
