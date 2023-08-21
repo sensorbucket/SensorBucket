@@ -32,14 +32,13 @@ func NewPipelineMessagePublisher(conn *mq.AMQPConnection, xchg string) processin
 				fmt.Printf("PipelineMessagePublisher could not marshal pipeline message: %v", err)
 				continue
 			}
-			publishing := mq.PublishMessage{
+			publisher <- mq.PublishMessage{
 				Topic: topic,
 				Publishing: amqp091.Publishing{
 					MessageId: msg.ID,
 					Body:      jsonData,
 				},
 			}
-			publisher <- publishing
 		}
 	}()
 
