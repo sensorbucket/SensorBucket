@@ -1,17 +1,14 @@
-package processingtransport
+package ingressarchiver
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/rabbitmq/amqp091-go"
 
 	"sensorbucket.nl/sensorbucket/pkg/mq"
-	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
 
-func StartIngressDTOConsumer(conn *mq.AMQPConnection, svc *processing.Service, queue, xchg, topic string) {
+func StartIngressDTOConsumer(conn *mq.AMQPConnection, svc *Application, queue, xchg, topic string) {
 	consume := conn.Consume(queue, func(c *amqp091.Channel) error {
 		_, err := c.QueueDeclare(queue, true, false, false, false, nil)
 		if err != nil {
@@ -31,14 +28,9 @@ func StartIngressDTOConsumer(conn *mq.AMQPConnection, svc *processing.Service, q
 	})
 
 	for delivery := range consume {
-		var dto processing.IngressDTO
-		if err := json.Unmarshal(delivery.Body, &dto); err != nil {
-			fmt.Printf("Error unmarshalling ingress DTO: %v\n", err)
-			delivery.Nack(false, false)
-			continue
-		}
-
-		if err := svc.ProcessIngressDTO(context.Background(), dto); err != nil {
+		tracingID := delivery.MessageId
+		rawMessage := delivery.Body
+		if err := svc.ArchiveIngressDTO(tracingID, rawMessage); err != nil {
 			fmt.Printf("Error processing ingress DTO: %v\n", err)
 			delivery.Nack(false, false)
 			continue

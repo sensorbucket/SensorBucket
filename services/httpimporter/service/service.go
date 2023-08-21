@@ -3,7 +3,6 @@ package service
 import (
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -53,15 +52,10 @@ func (h *HTTPImporter) httpPostUplink() http.HandlerFunc {
 			return
 		}
 
-		auth := r.Header.Get("Authorization")
-		if strings.HasPrefix(strings.ToLower(auth), "bearer ") {
-			auth = auth[7:]
-		} else {
-			http.Error(rw, "Missing bearer token in Authorization header", http.StatusUnauthorized)
-			return
-		}
+		// TODO: Implement authentication logic then add owner to ingress
+		var ownerID int64 = 1
 
-		dto := processing.CreateIngressDTO(pipelineID, auth, payload)
+		dto := processing.CreateIngressDTO(pipelineID, ownerID, payload)
 		h.publisher <- dto
 
 		web.HTTPResponse(rw, http.StatusAccepted, &web.APIResponseAny{
