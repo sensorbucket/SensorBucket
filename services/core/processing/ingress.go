@@ -34,6 +34,7 @@ func TransformIngressDTOToPipelineMessage(dto IngressDTO, pl *Pipeline) (*pipeli
 		Payload:       dto.Payload,
 		PipelineID:    pl.ID,
 		PipelineSteps: pl.Steps,
+		StepIndex:     0,
 		Measurements:  []pipeline.Measurement{},
 		Metadata:      make(map[string]any),
 	}

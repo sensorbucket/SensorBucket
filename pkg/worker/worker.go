@@ -82,12 +82,14 @@ func (w *worker) Run() {
 		// If the worker succesfully processed the result, publish it to the next message queue
 		topic, err := result.NextStep()
 		if err != nil {
+			log.Printf("Error getting next step: %v\n", err)
 			delivery.Nack(false, false)
 			w.publishError(incoming, err)
 			continue
 		}
 		msgJSON, err := json.Marshal(result)
 		if err != nil {
+			log.Printf("Error marshalling result: %v\n", err)
 			delivery.Nack(false, false)
 			w.publishError(incoming, fmt.Errorf("could not marshal pipelines message: %w", err))
 			continue

@@ -27,6 +27,7 @@ type Message struct {
 	ID            string         `json:"id"`
 	ReceivedAt    int64          `json:"received_at"`
 	PipelineID    string         `json:"pipeline_id"`
+	StepIndex     int64          `json:"stepIndex"`
 	PipelineSteps []string       `json:"pipeline_steps"`
 	Timestamp     int64          `json:"timestamp"`
 	Device        *Device        `json:"device"`
@@ -36,10 +37,9 @@ type Message struct {
 }
 
 func (m *Message) NextStep() (string, error) {
-	if len(m.PipelineSteps) == 0 {
+	if int(m.StepIndex+1) >= len(m.PipelineSteps) {
 		return "", ErrMessageNoSteps
 	}
-	step := m.PipelineSteps[0]
-	m.PipelineSteps = m.PipelineSteps[1:]
-	return step, nil
+	m.StepIndex++
+	return m.PipelineSteps[m.StepIndex], nil
 }
