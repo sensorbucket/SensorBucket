@@ -52,8 +52,8 @@ services:
     - APP_TYPE=service
     - HTTP_ADDR=:3000
     - AMQP_HOST=amqp://guest:guest@mq:5672/
-    - AMQP_XCHG=pipeline.messages
-    - SVC_PIPELINE=http://core:3000
+    - AMQP_XCHG=ingress
+    - AMQP_XCHG_TOPIC=ingress.httpimporter
 
   worker_thethingsnetwork:
     build: 

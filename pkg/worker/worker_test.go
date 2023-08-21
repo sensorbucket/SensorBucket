@@ -7,6 +7,7 @@ import (
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/stretchr/testify/suite"
+
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
@@ -163,7 +164,8 @@ func (s *workerSuite) TestIncomingMessageWithNextStep() {
 	s.Equal(mq.PublishMessage{
 		Topic: "step3",
 		Publishing: amqp091.Publishing{
-			Body: toBytes(expectedMessage),
+			MessageId: expectedMessage.ID,
+			Body:      toBytes(expectedMessage),
 		},
 	}, result)
 }
