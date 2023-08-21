@@ -146,6 +146,8 @@ services:
 
   mq:
     image: rabbitmq:3.8-management
+    ports:
+      - 5672:5672
 
   openapi:
     image: swaggerapi/swagger-editor
