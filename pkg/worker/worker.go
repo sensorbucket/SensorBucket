@@ -14,10 +14,8 @@ import (
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
 
-var (
-	// errors
-	ErrNoDeviceMatch = errors.New("no device in device service matches EUI of uplink")
-)
+// errors
+var ErrNoDeviceMatch = errors.New("no device in device service matches EUI of uplink")
 
 func NewWorker(name string, version string, processsor processor) *worker {
 	// First ensure all the required env variables are present
@@ -47,7 +45,6 @@ func NewWorker(name string, version string, processsor processor) *worker {
 
 	go conn.Start()
 	go func(conn *mq.AMQPConnection) {
-
 		// Whenever a value is put in the cancelToken, shutdown the AMQP connnection
 		<-cancelToken
 		conn.Shutdown()
@@ -83,7 +80,7 @@ func (w *worker) Run() {
 		}
 
 		// If the worker succesfully processed the result, publish it to the next message queue
-		topic, err := incoming.NextStep()
+		topic, err := result.NextStep()
 		if err != nil {
 			delivery.Nack(false, false)
 			w.publishError(incoming, err)
@@ -96,7 +93,8 @@ func (w *worker) Run() {
 			continue
 		}
 		w.publisher <- mq.PublishMessage{Topic: topic, Publishing: amqp091.Publishing{
-			Body: msgJSON,
+			MessageId: result.ID,
+			Body:      msgJSON,
 		}}
 
 		// The message was succesfully handled, ack the message.
@@ -147,6 +145,8 @@ type worker struct {
 	consumer    consumer
 }
 
-type processor func(pipeline.Message) (pipeline.Message, error)
-type publisher chan<- mq.PublishMessage
-type consumer <-chan amqp091.Delivery
+type (
+	processor func(pipeline.Message) (pipeline.Message, error)
+	publisher chan<- mq.PublishMessage
+	consumer  <-chan amqp091.Delivery
+)

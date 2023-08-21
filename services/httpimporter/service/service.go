@@ -8,36 +8,29 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+
 	"sensorbucket.nl/sensorbucket/internal/web"
-	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
 
-var (
-	ErrInvalidUUID = web.NewError(
-		http.StatusBadRequest,
-		"Invalid pipeline UUID provided",
-		"ERR_PIPELINE_UUID_INVALID",
-	)
+var ErrInvalidUUID = web.NewError(
+	http.StatusBadRequest,
+	"Invalid pipeline UUID provided",
+	"ERR_PIPELINE_UUID_INVALID",
 )
 
-type MessageQueue interface {
-	Publish(*pipeline.Message) error
-}
-type PipelineService interface {
-	Get(string) (*processing.Pipeline, error)
-}
-type HTTPImporter struct {
-	router   chi.Router
-	pipeline PipelineService
-	queue    MessageQueue
-}
+type (
+	IngressDTOPublisher chan<- processing.IngressDTO
+	HTTPImporter        struct {
+		router    chi.Router
+		publisher IngressDTOPublisher
+	}
+)
 
-func New(queue MessageQueue, pipeline PipelineService) *HTTPImporter {
+func New(publisher IngressDTOPublisher) *HTTPImporter {
 	svc := &HTTPImporter{
-		router:   chi.NewRouter(),
-		pipeline: pipeline,
-		queue:    queue,
+		router:    chi.NewRouter(),
+		publisher: publisher,
 	}
 	svc.router.Post("/{uuid}", svc.httpPostUplink())
 	return svc
@@ -61,24 +54,12 @@ func (h *HTTPImporter) httpPostUplink() http.HandlerFunc {
 			return
 		}
 
-		pipelineModel, err := h.pipeline.Get(pipelineID.String())
-		if err != nil {
-			web.HTTPError(rw, err)
-			return
-		}
-		steps := pipelineModel.Steps
-
-		msg := pipeline.NewMessage(pipelineID.String(), steps)
-		msg.Payload = payload
-
-		if err := h.queue.Publish(msg); err != nil {
-			web.HTTPError(rw, err)
-			return
-		}
+		dto := processing.CreateIngressDTO(pipelineID, "", payload)
+		h.publisher <- dto
 
 		web.HTTPResponse(rw, http.StatusAccepted, &web.APIResponseAny{
 			Message: "Received uplink message",
-			Data:    msg.ID,
+			Data:    dto.TracingID.String(),
 		})
 	}
 }

@@ -2,9 +2,6 @@ package pipeline
 
 import (
 	"errors"
-	"time"
-
-	"github.com/google/uuid"
 
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
@@ -36,18 +33,6 @@ type Message struct {
 	Measurements  []Measurement  `json:"measurements"`
 	Payload       []byte         `json:"payload"`
 	Metadata      map[string]any `json:"metadata"`
-}
-
-func NewMessage(pipelineID string, steps []string) *Message {
-	return &Message{
-		ID:            uuid.Must(uuid.NewRandom()).String(),
-		ReceivedAt:    time.Now().UnixMilli(),
-		PipelineID:    pipelineID,
-		PipelineSteps: steps,
-		Timestamp:     time.Now().UnixMilli(),
-		Measurements:  []Measurement{},
-		Metadata:      make(map[string]any),
-	}
 }
 
 func (m *Message) NextStep() (string, error) {
