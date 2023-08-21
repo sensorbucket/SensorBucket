@@ -69,5 +69,5 @@ func TestShouldPublishIngressDTO(t *testing.T) {
 	dto := <-publ
 	assert.Contains(t, string(body), dto.TracingID.String())
 	assert.Equal(t, plID, dto.PipelineID)
-	assert.Equal(t, authToken, dto.AuthToken)
+	assert.Equal(t, authToken, dto.OwnerID)
 }

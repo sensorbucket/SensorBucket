@@ -31,7 +31,7 @@ func TestShouldProcessIngressDTO(t *testing.T) {
 		TracingID:  uuid.New(),
 		PipelineID: plID,
 		CreatedAt:  time.Now(),
-		AuthToken:  "123123123",
+		OwnerID:  "123123123",
 		Payload:    []byte("Hello world"),
 	}
 
