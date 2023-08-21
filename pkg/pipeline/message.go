@@ -59,3 +59,12 @@ func (m *Message) NextStep() (string, error) {
 	m.StepIndex++
 	return m.PipelineSteps[m.StepIndex], nil
 }
+
+type PipelineError struct {
+	ReceivedByWorker  Message `json:"receivedByWorker"`
+	ProcessingAttempt Message `json:"processingAttempt"`
+	Worker            string  `json:"worker"`
+	Topic             string  `json:"topic"`
+	Timestamp         int64   `json:"timestamp"`
+	Error             string  `json:"error"`
+}
