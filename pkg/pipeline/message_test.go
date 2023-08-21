@@ -36,3 +36,49 @@ func TestMessageNextStepFewRemainingSteps(t *testing.T) {
 	assert.Equal(t, next, "c")
 	assert.NoError(t, err)
 }
+
+func TestExpectCurrentStep(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		ix       int
+		expected string
+		err      error
+	}{
+		{
+			desc:     "",
+			ix:       0,
+			expected: "a",
+		},
+		{
+			desc:     "",
+			ix:       1,
+			expected: "b",
+		},
+		{
+			desc:     "",
+			ix:       3,
+			expected: "d",
+		},
+		{
+			desc:     "",
+			ix:       55,
+			expected: "",
+			err:      pipeline.ErrMessageNoSteps,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			msg := pipeline.Message{
+				PipelineSteps: []string{"a", "b", "c", "d"},
+				StepIndex:     int64(tC.ix),
+			}
+			step, err := msg.CurrentStep()
+			if tC.err != nil {
+				assert.Error(t, tC.err, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tC.expected, step)
+			}
+		})
+	}
+}

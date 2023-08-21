@@ -31,7 +31,7 @@ func TestShouldProcessIngressDTO(t *testing.T) {
 		TracingID:  uuid.New(),
 		PipelineID: plID,
 		CreatedAt:  time.Now(),
-		AuthToken:  "123123123",
+		OwnerID:    123,
 		Payload:    []byte("Hello world"),
 	}
 
@@ -45,4 +45,5 @@ func TestShouldProcessIngressDTO(t *testing.T) {
 	assert.Equal(t, dto.TracingID.String(), result.ID)
 	assert.Equal(t, pl.Steps, result.PipelineSteps)
 	assert.Equal(t, dto.Payload, result.Payload)
+	assert.Equal(t, dto.OwnerID, result.OwnerID)
 }

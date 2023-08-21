@@ -25,6 +25,7 @@ type (
 
 type Message struct {
 	ID            string         `json:"id"`
+	OwnerID       int64          `json:"owner_id"`
 	ReceivedAt    int64          `json:"received_at"`
 	PipelineID    string         `json:"pipeline_id"`
 	StepIndex     int64          `json:"stepIndex"`
@@ -34,6 +35,13 @@ type Message struct {
 	Measurements  []Measurement  `json:"measurements"`
 	Payload       []byte         `json:"payload"`
 	Metadata      map[string]any `json:"metadata"`
+}
+
+func (m *Message) CurrentStep() (string, error) {
+	if len(m.PipelineSteps) <= int(m.StepIndex) {
+		return "", ErrMessageNoSteps
+	}
+	return m.PipelineSteps[m.StepIndex], nil
 }
 
 func (m *Message) NextStep() (string, error) {

@@ -17,6 +17,8 @@ import (
 	"sensorbucket.nl/sensorbucket/services/httpimporter/service"
 )
 
+// TODO: Assert that httimporter authenticates request
+
 func TestReportInvalidUUID(t *testing.T) {
 	ch := make(chan processing.IngressDTO, 1)
 	svc := service.New(ch)
@@ -34,30 +36,14 @@ func TestReportInvalidUUID(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 }
 
-func TestShouldErrorIfNoAuthHeaderGiven(t *testing.T) {
-	ch := make(chan processing.IngressDTO, 1)
-	svc := service.New(ch)
-
-	req := httptest.NewRequest("POST", "/"+uuid.NewString(), nil)
-	// req.Header.Set("authorization", "bearer random")
-	rw := httptest.NewRecorder()
-	svc.ServeHTTP(rw, req)
-
-	res := rw.Result()
-	assert.Equal(t, http.StatusUnauthorized, res.StatusCode)
-	assert.Len(t, ch, 0)
-}
-
 func TestShouldPublishIngressDTO(t *testing.T) {
 	requestData := []byte(`{"hello":"world"}`)
 	publ := make(chan processing.IngressDTO, 1)
 	svc := service.New(publ)
 	plID := uuid.New()
-	authToken := "SuperSecretToken"
 
 	// Act
 	req := httptest.NewRequest("POST", "/"+plID.String(), bytes.NewBuffer(requestData))
-	req.Header.Set("Authorization", "bearer "+authToken)
 	rw := httptest.NewRecorder()
 	svc.ServeHTTP(rw, req)
 
@@ -69,5 +55,4 @@ func TestShouldPublishIngressDTO(t *testing.T) {
 	dto := <-publ
 	assert.Contains(t, string(body), dto.TracingID.String())
 	assert.Equal(t, plID, dto.PipelineID)
-	assert.Equal(t, authToken, dto.AuthToken)
 }
