@@ -1,10 +1,9 @@
 package service
 
-//go:generate moq -pkg service_test -out mock_test.go . MessageQueue PipelineService
-
 import (
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -54,7 +53,15 @@ func (h *HTTPImporter) httpPostUplink() http.HandlerFunc {
 			return
 		}
 
-		dto := processing.CreateIngressDTO(pipelineID, "", payload)
+		auth := r.Header.Get("Authorization")
+		if strings.HasPrefix(strings.ToLower(auth), "bearer ") {
+			auth = auth[7:]
+		} else {
+			http.Error(rw, "Missing bearer token in Authorization header", http.StatusUnauthorized)
+			return
+		}
+
+		dto := processing.CreateIngressDTO(pipelineID, auth, payload)
 		h.publisher <- dto
 
 		web.HTTPResponse(rw, http.StatusAccepted, &web.APIResponseAny{

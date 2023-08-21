@@ -5,11 +5,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
 
 func TestMeasurementBuilderAddMeasurement(t *testing.T) {
-	msg := pipeline.NewMessage(uuid.NewString(), []string{"a", "b", "c"})
+	msg := &pipeline.Message{
+		ID: uuid.NewString(),
+	}
 	intermediateBuilder := msg.NewMeasurement().
 		SetSensor("testsensor").
 		SetValue(1234, "TEST_TYPE", "TEST_UNIT").
