@@ -3,6 +3,7 @@ package processinginfra
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/rabbitmq/amqp091-go"
 
@@ -20,11 +21,12 @@ func NewPipelineMessagePublisher(conn *mq.AMQPConnection, xchg string) processin
 	messageChan := make(chan *pipeline.Message, pipelineMessagePublisherBuffer)
 	go func() {
 		for msg := range messageChan {
-			topic, err := msg.NextStep()
+			topic, err := msg.CurrentStep()
 			if err != nil {
-				fmt.Printf("PipelineMessagePublisher could not get next step from pipeline message: %v\n", err)
+				fmt.Printf("PipelineMessagePublisher could not get step from pipeline message: %v\n", err)
 				continue
 			}
+			log.Printf("Publishing to topic %s\n", topic)
 			jsonData, err := json.Marshal(msg)
 			if err != nil {
 				fmt.Printf("PipelineMessagePublisher could not marshal pipeline message: %v", err)

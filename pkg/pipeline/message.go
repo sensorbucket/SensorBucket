@@ -37,6 +37,13 @@ type Message struct {
 	Metadata      map[string]any `json:"metadata"`
 }
 
+func (m *Message) CurrentStep() (string, error) {
+	if len(m.PipelineSteps) <= int(m.StepIndex) {
+		return "", ErrMessageNoSteps
+	}
+	return m.PipelineSteps[m.StepIndex], nil
+}
+
 func (m *Message) NextStep() (string, error) {
 	if int(m.StepIndex+1) >= len(m.PipelineSteps) {
 		return "", ErrMessageNoSteps
