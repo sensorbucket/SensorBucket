@@ -1,5 +1,7 @@
 package ingressarchiver
 
+//go:generate moq -pkg ingressarchiver_test -out mock_test.go . Store
+
 import (
 	"fmt"
 )
