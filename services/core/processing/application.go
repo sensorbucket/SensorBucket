@@ -1,9 +1,13 @@
 package processing
 
+//go:generate moq -pkg processing_test -out mock_test.go . Store
+
 import (
 	"context"
+	"fmt"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
 
 type Store interface {
@@ -14,11 +18,15 @@ type Store interface {
 }
 
 type Service struct {
-	store Store
+	store                    Store
+	pipelineMessagePublisher PipelineMessagePublisher
 }
 
-func New(store Store) *Service {
-	s := &Service{store}
+func New(store Store, publisher PipelineMessagePublisher) *Service {
+	s := &Service{
+		store:                    store,
+		pipelineMessagePublisher: publisher,
+	}
 	return s
 }
 
@@ -52,6 +60,7 @@ func (s *Service) ListPipelines(ctx context.Context, filter PipelinesFilter, p p
 	return pipelines, err
 }
 
+// TODO: id should be a UUID!
 func (s *Service) GetPipeline(ctx context.Context, id string, allowInactive bool) (*Pipeline, error) {
 	p, err := s.store.GetPipeline(id)
 	if err != nil {
@@ -122,5 +131,23 @@ func (s *Service) EnablePipeline(ctx context.Context, id string) error {
 	if err := s.store.UpdatePipeline(p); err != nil {
 		return err
 	}
+	return nil
+}
+
+type PipelineMessagePublisher chan<- *pipeline.Message
+
+func (s *Service) ProcessIngressDTO(ctx context.Context, dto IngressDTO) error {
+	pl, err := s.GetPipeline(ctx, dto.PipelineID.String(), false)
+	if err != nil {
+		return fmt.Errorf("cannot get pipeline for dto: %w", err)
+	}
+
+	pipelineMessage, err := TransformIngressDTOToPipelineMessage(dto, pl)
+	if err != nil {
+		return fmt.Errorf("cannot transform dto to pipeline Message: %w", err)
+	}
+
+	s.pipelineMessagePublisher <- pipelineMessage
+
 	return nil
 }

@@ -29,12 +29,16 @@ import (
 )
 
 var (
-	DB_DSN                  = env.Must("DB_DSN")
-	AMQP_HOST               = env.Must("AMQP_HOST")
-	AMQP_QUEUE_MEASUREMENTS = env.Could("AMQP_QUEUE_MEASUREMENTS", "measurements")
-	HTTP_ADDR               = env.Could("HTTP_ADDR", ":3000")
-	HTTP_BASE               = env.Could("HTTP_BASE", "http://localhost:3000/api")
-	SYS_ARCHIVE_TIME        = env.Could("SYS_ARCHIVE_TIME", "30")
+	DB_DSN                      = env.Must("DB_DSN")
+	AMQP_HOST                   = env.Must("AMQP_HOST")
+	AMQP_QUEUE_MEASUREMENTS     = env.Could("AMQP_QUEUE_MEASUREMENTS", "measurements")
+	AMQP_QUEUE_INGRESS          = env.Could("AMQP_QUEUE_INGRESS", "core-ingress")
+	AMQP_XCHG_INGRESS           = env.Could("AMQP_XCHG_INGRESS", "ingress")
+	AMQP_XCHG_INGRESS_TOPIC     = env.Could("AMQP_XCHG_INGRESS_TOPIC", "ingress.*")
+	AMQP_XCHG_PIPELINE_MESSAGES = env.Could("AMQP_XCHG_PIPELINE_MESSAGES", "pipeline.messages")
+	HTTP_ADDR                   = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE                   = env.Could("HTTP_BASE", "http://localhost:3000/api")
+	SYS_ARCHIVE_TIME            = env.Could("SYS_ARCHIVE_TIME", "30")
 )
 
 func main() {
@@ -53,6 +57,8 @@ func Run() error {
 		return fmt.Errorf("could not create database connection: %w", err)
 	}
 
+	amqpConn := mq.NewConnection(AMQP_HOST)
+
 	devicestore := deviceinfra.NewPSQLStore(db)
 	sensorGroupStore := deviceinfra.NewPSQLSensorGroupStore(db)
 	deviceservice := devices.New(devicestore, sensorGroupStore)
@@ -67,7 +73,8 @@ func Run() error {
 	measurementhttp := measurementtransport.NewHTTP(measurementservice, HTTP_BASE)
 
 	processingstore := processinginfra.NewPSQLStore(db)
-	processingservice := processing.New(processingstore)
+	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
+	processingservice := processing.New(processingstore, processingPipelinePublisher)
 	processinghttp := processingtransport.NewTransport(processingservice, HTTP_BASE)
 
 	// Setup HTTP Transport
@@ -80,8 +87,14 @@ func Run() error {
 	log.Printf("HTTP Listening: %s\n", httpsrv.Addr)
 
 	// Setup MQ Transports
-	amqpConn := mq.NewConnection(AMQP_HOST)
 	measurementtransport.StartMQ(measurementservice, amqpConn, AMQP_QUEUE_MEASUREMENTS)
+	go processingtransport.StartIngressDTOConsumer(
+		amqpConn,
+		processingservice,
+		AMQP_QUEUE_INGRESS,
+		AMQP_XCHG_INGRESS,
+		AMQP_XCHG_INGRESS_TOPIC,
+	)
 	go amqpConn.Start()
 
 	// Wait for shutdown signal
