@@ -3,15 +3,11 @@ package tracing
 import (
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
 
-func TestTracingSuite(t *testing.T) {
-	suite.Run(t, new(tracingSuite))
-}
-
-func (s *tracingSuite) TestPipelineErrorAppears() {
+func TestPipelineErrorAppears(t *testing.T) {
 	// Arrange
 	stepStore := stepStoreMock{}
 	tracingService := Service{
@@ -80,15 +76,15 @@ func (s *tracingSuite) TestPipelineErrorAppears() {
 	}
 
 	for scene, cfg := range scenarios {
-		s.Run(scene, func() {
+		t.Run(scene, func(t *testing.T) {
 			// Act and Assert
-			s.NoError(tracingService.HandlePipelineError(cfg.input))
-			s.Equal(cfg.expected, stepStore.inserted)
+			assert.NoError(t, tracingService.HandlePipelineError(cfg.input))
+			assert.Equal(t, cfg.expected, stepStore.inserted)
 		})
 	}
 }
 
-func (s *tracingSuite) TestPipelineMessageAppears() {
+func TestPipelineMessageAppears(t *testing.T) {
 	// Arrange
 	stepStore := stepStoreMock{}
 	tracingService := Service{
@@ -148,16 +144,12 @@ func (s *tracingSuite) TestPipelineMessageAppears() {
 	}
 
 	for scene, cfg := range scenarios {
-		s.Run(scene, func() {
+		t.Run(scene, func(t *testing.T) {
 			// Act and Assert
-			s.NoError(tracingService.HandlePipelineMessage(cfg.input))
-			s.Equal(cfg.expected, stepStore.inserted)
+			assert.NoError(t, tracingService.HandlePipelineMessage(cfg.input))
+			assert.Equal(t, cfg.expected, stepStore.inserted)
 		})
 	}
-}
-
-type tracingSuite struct {
-	suite.Suite
 }
 
 type stepStoreMock struct {

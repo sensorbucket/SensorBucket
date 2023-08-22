@@ -133,8 +133,6 @@ services:
 
   db:
     image: timescale/timescaledb-postgis:latest-pg12
-    ports:
-      - 5432:5432
     volumes:
       - ./tools/postgres.d:/docker-entrypoint-initdb.d
     environment:
@@ -146,8 +144,6 @@ services:
 
   mq:
     image: rabbitmq:3.8-management
-    ports:
-      - 5672:5672
 
   openapi:
     image: swaggerapi/swagger-editor

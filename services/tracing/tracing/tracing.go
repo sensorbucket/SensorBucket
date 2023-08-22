@@ -1,9 +1,9 @@
 package tracing
 
 type Step struct {
-	TracingID      string `pg:"tracing_id"`
-	StepIndex      int64  `pg:"step_index"`
-	StepsRemaining int64  `pg:"steps_remaining"`
-	StartTime      int64  `pg:"start_time"`
-	Error          string `pg:"error"`
+	TracingID      string `db:"tracing_id"`
+	StepIndex      int64  `db:"step_index"`
+	StepsRemaining int64  `db:"steps_remaining"`
+	StartTime      int64  `db:"start_time"`
+	Error          string `db:"error"`
 }

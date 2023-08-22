@@ -53,8 +53,8 @@ func (m *Message) NextStep() (string, error) {
 }
 
 type PipelineError struct {
-	ReceivedByWorker  Message `json:"receivedByWorker"`
-	ProcessingAttempt Message `json:"processingAttempt"`
+	ReceivedByWorker  Message `json:"received_by_worker"`
+	ProcessingAttempt Message `json:"processing_attempt"`
 	Worker            string  `json:"worker"`
 	Topic             string  `json:"topic"`
 	Timestamp         int64   `json:"timestamp"`
