@@ -1,9 +1,25 @@
 package tracing
 
-import "sensorbucket.nl/sensorbucket/pkg/pipeline"
+import (
+	"time"
+
+	"sensorbucket.nl/sensorbucket/pkg/pipeline"
+)
+
+type Status string
+
+const (
+	Unknown    Status = "unknown"
+	Pending    Status = "pending"
+	InProgress Status = "in progress"
+	Success    Status = "success"
+	Failed     Status = "failed"
+	Canceled   Status = "canceled"
+)
 
 type StepStore interface {
 	Insert(Step) error
+	//Query(Filter, pagination.Request) (*pagination.Page[Step], error)
 }
 
 func New(stepStore StepStore) *Service {
@@ -37,6 +53,21 @@ func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError) error
 		StartTime:      errorMessage.ReceivedByWorker.Timestamp,
 		Error:          errorMessage.Error,
 	})
+}
+
+//func (s *Service) QueryTraces()
+
+type TraceDTO struct {
+	TracingId string    `json:"tracingId"`
+	Status    Status    `json:"status"`
+	Steps     []StepDTO `json:"steps"`
+}
+
+type StepDTO struct {
+	Status    Status        `json:"status"`
+	StartTime int64         `json:"startTime"`
+	Duration  time.Duration `json:"duration"`
+	Error     string        `json:"error"`
 }
 
 func (s *Service) addStep(step Step) error {
