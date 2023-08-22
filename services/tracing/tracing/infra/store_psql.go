@@ -95,7 +95,7 @@ func (s *stepStore) Query(query tracing.Filter, r pagination.Request) (*paginati
 		}
 
 		if len(val) != (val[0].StepIndex + 1 + val[0].StepsRemaining) {
-			for i := 0; i < val[0].StepIndex+1+val[0].StepsRemaining-len(val); {
+			for i := 0; i < val[0].StepIndex+1+val[0].StepsRemaining-len(val); i++ {
 				last := val[len(val)-1]
 				if last.Status == 4 {
 					steps = append(steps, tracing.StepDTO{
