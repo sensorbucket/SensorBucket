@@ -84,7 +84,6 @@ func (w *worker) Run() {
 		if err != nil {
 			log.Printf("Error getting next step: %v\n", err)
 			delivery.Nack(false, false)
-			// TODO: should probably log result? but then need to subtract 1 from stepindex...
 			w.publishError(incoming, result, err)
 			continue
 		}
