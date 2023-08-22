@@ -80,7 +80,7 @@ func (s *StorePSQL) List(filters ArchiveFilters, pageRequest pagination.Request)
 	if err != nil {
 		return nil, fmt.Errorf("list archives, could not run query: %w", err)
 	}
-	var archives []ArchivedIngressDTO
+	archives := []ArchivedIngressDTO{}
 	for rows.Next() {
 		var ingress ArchivedIngressDTO
 		var dtoOwnerID *int64
