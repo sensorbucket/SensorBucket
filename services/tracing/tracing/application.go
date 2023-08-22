@@ -25,6 +25,7 @@ func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message) error 
 		StepsRemaining: int64(len(pipelineMessage.PipelineSteps) - (int(pipelineMessage.StepIndex + 1))),
 
 		// The timestamp is set by the mq when it is send to the queue. The next step's starttime can be used to deduce the processing time between the 2 steps
+		// this duration consists of: Time in Queue and the Processing Time in the worker
 		StartTime: pipelineMessage.Timestamp,
 	})
 }

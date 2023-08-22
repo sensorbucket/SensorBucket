@@ -11,7 +11,7 @@ Every pipeline message that appears on the message queue is evaluated by the Tra
 | TracingID      | ID used to match a data point to the step                                                      |
 | StepIndex      | Index of the current step to be executed from the pipeline steps array in the pipeline message |
 | StepsRemaining | Counts the remaining steps left for the data point                                             |
-| StartTime      | Time at which the pipeline message appears on the Message Queue                                |
+| StartTime      | Time at which the pipeline message appeared on the Message Queue                                |
 | Error          | If an error has occurred in the step it is stored here                                         |
 
 ### Configuration
