@@ -12,7 +12,7 @@ type IngressDTO struct {
 	TracingID  uuid.UUID `json:"tracing_id"`
 	PipelineID uuid.UUID `json:"pipeline_id"`
 	OwnerID    int64     `json:"owner_id"`
-	Payload    []byte    `json:"payload"`
+	Payload    []byte    `json:"payload,omitempty"`
 	CreatedAt  time.Time `json:"created_at"`
 }
 

@@ -14,7 +14,7 @@ import (
 )
 
 func TestArchiverShouldArchiveEvenIfRawMessageIsMalformed(t *testing.T) {
-	tracingID := uuid.NewString()
+	tracingID := uuid.New()
 	rawMessage := []byte("{malformed_json")
 
 	store := &StoreMock{
@@ -50,7 +50,7 @@ func TestArchiverShouldArchiveIngressDTOIfRawMessageIsValid(t *testing.T) {
 	}
 	svc := ingressarchiver.New(store)
 
-	err = svc.ArchiveIngressDTO(dto.TracingID.String(), rawMessage)
+	err = svc.ArchiveIngressDTO(dto.TracingID, rawMessage)
 	assert.NoError(t, err)
 
 	require.Len(t, store.SaveCalls(), 1)
