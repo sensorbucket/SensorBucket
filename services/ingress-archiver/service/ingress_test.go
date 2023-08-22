@@ -55,7 +55,7 @@ func TestArchiverShouldArchiveIngressDTOIfRawMessageIsValid(t *testing.T) {
 
 	require.Len(t, store.SaveCalls(), 1)
 	call := store.SaveCalls()[0]
-	assert.Equal(t, dto.TracingID.String(), call.ArchivedIngressDTO.TracingID)
+	assert.Equal(t, dto.TracingID, call.ArchivedIngressDTO.TracingID)
 	assert.Equal(t, rawMessage, call.ArchivedIngressDTO.RawMessage)
 	require.NotNil(t, call.ArchivedIngressDTO.IngressDTO)
 	assert.Equal(t, dto.PipelineID, call.ArchivedIngressDTO.IngressDTO.PipelineID)

@@ -4,6 +4,7 @@
 package ingressarchiver_test
 
 import (
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/ingress-archiver/service"
 	"sync"
 )
@@ -18,6 +19,9 @@ var _ ingressarchiver.Store = &StoreMock{}
 //
 //		// make and configure a mocked ingressarchiver.Store
 //		mockedStore := &StoreMock{
+//			ListFunc: func(archiveFilters ingressarchiver.ArchiveFilters, request pagination.Request) (*pagination.Page[ingressarchiver.ArchivedIngressDTO], error) {
+//				panic("mock out the List method")
+//			},
 //			SaveFunc: func(archivedIngressDTO ingressarchiver.ArchivedIngressDTO) error {
 //				panic("mock out the Save method")
 //			},
@@ -28,18 +32,65 @@ var _ ingressarchiver.Store = &StoreMock{}
 //
 //	}
 type StoreMock struct {
+	// ListFunc mocks the List method.
+	ListFunc func(archiveFilters ingressarchiver.ArchiveFilters, request pagination.Request) (*pagination.Page[ingressarchiver.ArchivedIngressDTO], error)
+
 	// SaveFunc mocks the Save method.
 	SaveFunc func(archivedIngressDTO ingressarchiver.ArchivedIngressDTO) error
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// List holds details about calls to the List method.
+		List []struct {
+			// ArchiveFilters is the archiveFilters argument value.
+			ArchiveFilters ingressarchiver.ArchiveFilters
+			// Request is the request argument value.
+			Request pagination.Request
+		}
 		// Save holds details about calls to the Save method.
 		Save []struct {
 			// ArchivedIngressDTO is the archivedIngressDTO argument value.
 			ArchivedIngressDTO ingressarchiver.ArchivedIngressDTO
 		}
 	}
+	lockList sync.RWMutex
 	lockSave sync.RWMutex
+}
+
+// List calls ListFunc.
+func (mock *StoreMock) List(archiveFilters ingressarchiver.ArchiveFilters, request pagination.Request) (*pagination.Page[ingressarchiver.ArchivedIngressDTO], error) {
+	if mock.ListFunc == nil {
+		panic("StoreMock.ListFunc: method is nil but Store.List was just called")
+	}
+	callInfo := struct {
+		ArchiveFilters ingressarchiver.ArchiveFilters
+		Request        pagination.Request
+	}{
+		ArchiveFilters: archiveFilters,
+		Request:        request,
+	}
+	mock.lockList.Lock()
+	mock.calls.List = append(mock.calls.List, callInfo)
+	mock.lockList.Unlock()
+	return mock.ListFunc(archiveFilters, request)
+}
+
+// ListCalls gets all the calls that were made to List.
+// Check the length with:
+//
+//	len(mockedStore.ListCalls())
+func (mock *StoreMock) ListCalls() []struct {
+	ArchiveFilters ingressarchiver.ArchiveFilters
+	Request        pagination.Request
+} {
+	var calls []struct {
+		ArchiveFilters ingressarchiver.ArchiveFilters
+		Request        pagination.Request
+	}
+	mock.lockList.RLock()
+	calls = mock.calls.List
+	mock.lockList.RUnlock()
+	return calls
 }
 
 // Save calls SaveFunc.
