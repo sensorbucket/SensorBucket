@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
@@ -57,7 +58,7 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 }
 
 type Filter struct {
-	TraceIds []uuid.UUID
+	TraceIds []uuid.UUID `schema:"trace_id"`
 	Status   Status
 	Duration time.Duration
 }

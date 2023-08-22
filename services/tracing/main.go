@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
-
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -11,12 +10,12 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
-
-	_ "github.com/jackc/pgx/v5/stdlib"
 	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
 	"sensorbucket.nl/sensorbucket/services/tracing/migrations"
 	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
@@ -49,6 +48,7 @@ func main() {
 	go mqConn.Start()
 
 	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 
 	// Setup the ingress-archiver service
 	{
