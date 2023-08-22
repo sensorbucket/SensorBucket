@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
+
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 
@@ -86,6 +87,7 @@ func main() {
 	defer cancelTO()
 
 	// Shutdown transports
+	mqConn.Shutdown()
 	mqConn.Shutdown()
 
 	log.Println("Shutdown complete")
