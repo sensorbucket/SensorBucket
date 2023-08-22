@@ -3,6 +3,7 @@ package tracing
 import (
 	"time"
 
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
 
@@ -19,7 +20,7 @@ const (
 
 type StepStore interface {
 	Insert(Step) error
-	//Query(Filter, pagination.Request) (*pagination.Page[Step], error)
+	Query(Filter, pagination.Request) (*pagination.Page[Step], error)
 }
 
 func New(stepStore StepStore) *Service {
@@ -55,7 +56,23 @@ func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError) error
 	})
 }
 
-//func (s *Service) QueryTraces()
+func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[TraceDTO], error) {
+	page, err := s.stepStore.Query(f, r)
+	if err != nil {
+		return nil, err
+	}
+
+	// All required steps have been retrieved, now each step needs to be ordered by it's corresponding trace ID and send back as a TraceDTO
+
+	return &pagination.Page[TraceDTO]{
+		Cursor: page.Cursor,
+		Data:   []TraceDTO{},
+	}, nil
+}
+
+type Filter struct {
+	// TODO: some cool stuff...
+}
 
 type TraceDTO struct {
 	TracingId string    `json:"tracingId"`
