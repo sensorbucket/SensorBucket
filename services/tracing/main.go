@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"time"
@@ -22,6 +23,7 @@ import (
 
 var (
 	DB_DSN                      = env.Must("DB_DSN")
+	HTTP_ADDR                   = env.Could("HTTP_ADDR", ":3000")
 	AMQP_HOST                   = env.Must("AMQP_HOST")
 	AMQP_QUEUE_PIPELINEMESSAGES = env.Must("AMQP_QUEUE_PIPELINEMESSAGES")
 	AMQP_QUEUE_ERRORS           = env.Must("AMQP_QUEUE_ERRORS")
@@ -45,14 +47,22 @@ func main() {
 	go mqConn.Start()
 
 	// Setup the ingress-archiver service
-	go func() {
+	{
 		store := ingressarchiver.NewStorePSQL(db)
 		svc := ingressarchiver.New(store)
-		ingressarchiver.StartIngressDTOConsumer(
+		go ingressarchiver.StartIngressDTOConsumer(
 			mqConn, svc,
 			AMQP_QUEUE_INGRESS, AMQP_XCHG_INGRESS, AMQP_XCHG_INGRESS_TOPIC,
 		)
-	}()
+		httpTransport := ingressarchiver.CreateHTTPTransport(svc)
+		srv := &http.Server{
+			Addr:         HTTP_ADDR,
+			WriteTimeout: 5 * time.Second,
+			ReadTimeout:  5 * time.Second,
+			Handler:      httpTransport,
+		}
+		go srv.ListenAndServe()
+	}
 
 	// Setup the tracing service
 	go func() {
