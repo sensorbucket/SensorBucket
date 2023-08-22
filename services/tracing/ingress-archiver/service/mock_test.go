@@ -4,7 +4,7 @@
 package ingressarchiver_test
 
 import (
-	"sensorbucket.nl/sensorbucket/services/ingress-archiver/service"
+	"sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
 	"sync"
 )
 

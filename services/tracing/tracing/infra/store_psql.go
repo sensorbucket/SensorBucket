@@ -6,7 +6,7 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
 )
 
-func NewPSQL(db *sqlx.DB) *stepStore {
+func NewStorePSQL(db *sqlx.DB) *stepStore {
 	return &stepStore{
 		db: db,
 	}
