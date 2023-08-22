@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"sensorbucket.nl/sensorbucket/services/core/processing"
-	ingressarchiver "sensorbucket.nl/sensorbucket/services/ingress-archiver/service"
+	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
 )
 
 func TestArchiverShouldArchiveEvenIfRawMessageIsMalformed(t *testing.T) {
-	tracingID := uuid.NewString()
+	tracingID := uuid.New()
 	rawMessage := []byte("{malformed_json")
 
 	store := &StoreMock{
@@ -50,12 +50,12 @@ func TestArchiverShouldArchiveIngressDTOIfRawMessageIsValid(t *testing.T) {
 	}
 	svc := ingressarchiver.New(store)
 
-	err = svc.ArchiveIngressDTO(dto.TracingID.String(), rawMessage)
+	err = svc.ArchiveIngressDTO(dto.TracingID, rawMessage)
 	assert.NoError(t, err)
 
 	require.Len(t, store.SaveCalls(), 1)
 	call := store.SaveCalls()[0]
-	assert.Equal(t, dto.TracingID.String(), call.ArchivedIngressDTO.TracingID)
+	assert.Equal(t, dto.TracingID, call.ArchivedIngressDTO.TracingID)
 	assert.Equal(t, rawMessage, call.ArchivedIngressDTO.RawMessage)
 	require.NotNil(t, call.ArchivedIngressDTO.IngressDTO)
 	assert.Equal(t, dto.PipelineID, call.ArchivedIngressDTO.IngressDTO.PipelineID)

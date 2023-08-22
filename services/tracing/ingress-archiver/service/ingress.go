@@ -4,19 +4,21 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/google/uuid"
+
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
 
 type ArchivedIngressDTO struct {
-	TracingID  string
-	RawMessage []byte
-	ArchivedAt time.Time
-	ExpiresAt  time.Time
+	TracingID  uuid.UUID `json:"tracing_id"`
+	RawMessage []byte    `json:"raw_message,omitempty"`
+	ArchivedAt time.Time `json:"archived_at"`
+	ExpiresAt  time.Time `json:"expires_at"`
 
-	IngressDTO *processing.IngressDTO
+	IngressDTO *processing.IngressDTO `json:"ingress_dto"`
 }
 
-func ArchiveIngressDTO(tracingID string, rawMessage []byte) ArchivedIngressDTO {
+func ArchiveIngressDTO(tracingID uuid.UUID, rawMessage []byte) ArchivedIngressDTO {
 	archived := ArchivedIngressDTO{
 		TracingID:  tracingID,
 		RawMessage: rawMessage,

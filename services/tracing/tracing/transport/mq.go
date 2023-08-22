@@ -9,21 +9,16 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
 )
 
-func StartMQ(svc *tracing.Service, conn *mq.AMQPConnection, errQueue string, queue string) func() {
-	done := make(chan struct{})
+func StartMQ(svc *tracing.Service, conn *mq.AMQPConnection, errQueue string, queue string) {
 	pipelineMessages := mq.Consume(conn, queue, setupFunc(queue))
 	pipelineErrors := mq.Consume(conn, errQueue, setupFunc(errQueue))
 
 	log.Println("Measurement MQ Transport running")
 	go process(queue, pipelineMessages, svc.HandlePipelineMessage)
 	go process(errQueue, pipelineErrors, svc.HandlePipelineError)
-
-	return func() {
-		close(done)
-	}
 }
 
-func process[T interface{}](queue string, deliveries <-chan amqp091.Delivery, handler func(T) error) {
+func process[T any](queue string, deliveries <-chan amqp091.Delivery, handler func(T) error) {
 	log.Println("Measurement MQ Transport running, tracing pipeline errors...")
 	for msg := range deliveries {
 		var res T

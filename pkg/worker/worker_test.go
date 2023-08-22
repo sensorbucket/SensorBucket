@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/stretchr/testify/suite"
 
@@ -29,7 +30,17 @@ func (s *workerSuite) TestWorkerProcessorReturnsAnError() {
 			ID: "blabla",
 		},
 		Worker: "some-worker",
-		Topic:  "message came from this topic",
+
+	id := uuid.NewString()
+	incomingMessage := pipeline.Message{
+		ID: id,
+	}
+	expectedMessage := pipeline.PipelineError{
+		ReceivedByWorker: pipeline.Message{
+			ID: id,
+		},
+		Worker: "some-worker",
+		Queue:  "message came from this topic",
 		Error:  "unexpected error occurred!!",
 	}
 	w := worker{
@@ -74,7 +85,7 @@ func (s *workerSuite) TestIncomingMessageIsInvalidJson() {
 	expectedMessage := pipeline.PipelineError{
 		Worker:           "some-worker",
 		ReceivedByWorker: pipeline.Message{},
-		Topic:            "message came from this topic",
+		Queue:            "message came from this topic",
 		Error:            "json: cannot unmarshal string into Go value of type pipeline.Message",
 	}
 	w := worker{

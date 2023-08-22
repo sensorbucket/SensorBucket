@@ -112,7 +112,7 @@ func (w *worker) publishError(message pipeline.Message, attempt pipeline.Message
 		ReceivedByWorker:  message,
 		ProcessingAttempt: attempt,
 		Timestamp:         message.Timestamp,
-		Topic:             w.mqQueue,
+		Queue:             w.mqQueue,
 		Worker:            w.id,
 		Error:             err.Error(),
 	})

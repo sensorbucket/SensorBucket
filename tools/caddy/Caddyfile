@@ -4,6 +4,7 @@ handle_path /api/* {
 	handle_path /uplinks* {
         reverse_proxy httpimporter:3000
     }
+    reverse_proxy /ingresses* ingressarchiver:3000
     reverse_proxy core:3000
 }
 
