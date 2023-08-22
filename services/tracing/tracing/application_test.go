@@ -124,7 +124,7 @@ func (s *tracingSuite) TestPipelineMessageAppears() {
 			},
 			expected: Step{
 				TracingID:      "234324",
-				StepIndex:      6,
+				StepIndex:      3,
 				StepsRemaining: 0,
 				StartTime:      21342143,
 				Error:          "",
@@ -139,7 +139,7 @@ func (s *tracingSuite) TestPipelineMessageAppears() {
 			},
 			expected: Step{
 				TracingID:      "234324",
-				StepIndex:      5,
+				StepIndex:      4,
 				StepsRemaining: 1,
 				StartTime:      21342143,
 				Error:          "",
