@@ -49,6 +49,7 @@ func Run() error {
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("Healthy!")) })
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/overview", http.StatusFound) })
 	router.Mount("/overview", createOverviewPageHandler())
+	router.Mount("/ingress", createIngressPageHandler())
 	srv := &http.Server{
 		Addr:         ":3000",
 		WriteTimeout: 5 * time.Second,
