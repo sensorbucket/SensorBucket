@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/stretchr/testify/suite"
 
@@ -21,12 +22,17 @@ func (s *workerSuite) TestWorkerProcessorReturnsAnError() {
 	acker := &ackMock{}
 	publisher := make(chan mq.PublishMessage)
 	consumer := make(chan amqp091.Delivery)
-	incomingMessage := pipeline.Message{}
-	expectedMessage := workerError{
-		Worker:    "some-worker",
-		MessageID: "",
-		Topic:     "message came from this topic",
-		Error:     "unexpected error occurred!!",
+	id := uuid.NewString()
+	incomingMessage := pipeline.Message{
+		ID: id,
+	}
+	expectedMessage := pipeline.PipelineError{
+		ReceivedByWorker: pipeline.Message{
+			ID: id,
+		},
+		Worker: "some-worker",
+		Queue:  "message came from this topic",
+		Error:  "unexpected error occurred!!",
 	}
 	w := worker{
 		id:         "some-worker",
@@ -67,11 +73,11 @@ func (s *workerSuite) TestIncomingMessageIsInvalidJson() {
 	acker := &ackMock{}
 	publisher := make(chan mq.PublishMessage)
 	consumer := make(chan amqp091.Delivery)
-	expectedMessage := workerError{
-		Worker:    "some-worker",
-		MessageID: "",
-		Topic:     "message came from this topic",
-		Error:     "json: cannot unmarshal string into Go value of type pipeline.Message",
+	expectedMessage := pipeline.PipelineError{
+		Worker:           "some-worker",
+		ReceivedByWorker: pipeline.Message{},
+		Queue:            "message came from this topic",
+		Error:            "json: cannot unmarshal string into Go value of type pipeline.Message",
 	}
 	w := worker{
 		id:          "some-worker",

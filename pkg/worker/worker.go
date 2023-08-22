@@ -65,7 +65,7 @@ func (w *worker) Run() {
 		var incoming pipeline.Message
 		if err := json.Unmarshal(delivery.Body, &incoming); err != nil {
 			log.Printf("Error converting delivery: %v\n", err)
-			w.publishError(incoming, err)
+			w.publishError(incoming, pipeline.Message{}, err)
 			delivery.Nack(false, false)
 			continue
 		}
@@ -74,7 +74,7 @@ func (w *worker) Run() {
 		result, err := w.processor(incoming)
 		if err != nil {
 			log.Printf("Error processing delivery: %v\n", err)
-			w.publishError(incoming, err)
+			w.publishError(incoming, result, err)
 			delivery.Nack(false, false)
 			continue
 		}
@@ -84,14 +84,14 @@ func (w *worker) Run() {
 		if err != nil {
 			log.Printf("Error getting next step: %v\n", err)
 			delivery.Nack(false, false)
-			w.publishError(incoming, err)
+			w.publishError(incoming, result, err)
 			continue
 		}
 		msgJSON, err := json.Marshal(result)
 		if err != nil {
 			log.Printf("Error marshalling result: %v\n", err)
 			delivery.Nack(false, false)
-			w.publishError(incoming, fmt.Errorf("could not marshal pipelines message: %w", err))
+			w.publishError(incoming, result, fmt.Errorf("could not marshal pipelines message: %w", err))
 			continue
 		}
 		w.publisher <- mq.PublishMessage{Topic: topic, Publishing: amqp091.Publishing{
@@ -107,12 +107,14 @@ func (w *worker) Run() {
 	w.cancelToken <- true
 }
 
-func (w *worker) publishError(message pipeline.Message, err error) error {
-	errJSON, err := json.Marshal(workerError{
-		Topic:     w.mqQueue,
-		MessageID: message.ID,
-		Worker:    w.id,
-		Error:     err.Error(),
+func (w *worker) publishError(message pipeline.Message, attempt pipeline.Message, err error) error {
+	errJSON, err := json.Marshal(pipeline.PipelineError{
+		ReceivedByWorker:  message,
+		ProcessingAttempt: attempt,
+		Timestamp:         message.Timestamp,
+		Queue:             w.mqQueue,
+		Worker:            w.id,
+		Error:             err.Error(),
 	})
 	if err != nil {
 		return fmt.Errorf("could not marshal json: %w", err)
@@ -121,13 +123,6 @@ func (w *worker) publishError(message pipeline.Message, err error) error {
 		Body: errJSON,
 	}}
 	return nil
-}
-
-type workerError struct {
-	Worker    string `json:"worker"`
-	MessageID string `json:"messageId"`
-	Topic     string `json:"topic"`
-	Error     string `json:"error"`
 }
 
 type worker struct {
