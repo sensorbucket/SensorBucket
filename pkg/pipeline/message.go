@@ -56,7 +56,7 @@ type PipelineError struct {
 	ReceivedByWorker  Message `json:"received_by_worker"`
 	ProcessingAttempt Message `json:"processing_attempt"`
 	Worker            string  `json:"worker"`
-	Topic             string  `json:"topic"`
+	Queue             string  `json:"queue"`
 	Timestamp         int64   `json:"timestamp"`
 	Error             string  `json:"error"`
 }
