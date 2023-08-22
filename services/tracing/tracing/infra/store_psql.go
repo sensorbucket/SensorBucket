@@ -143,15 +143,15 @@ func traceQuery(traceIds []uuid.UUID) string {
 	s1.steps_remaining,
     s1.tracing_id,
     CASE
-        WHEN s1.error <> '' THEN 4
-        WHEN s2.start_time = 0 THEN 3
-        ELSE 2
+        WHEN s1.error <> '' THEN 5
+        WHEN s2.start_time = 0 THEN 4
+        ELSE 3
     END AS status,
     (
         SELECT MAX(CASE
-                    WHEN s.error <> '' THEN 4
-                    WHEN s.start_time = 0 THEN 3
-                    ELSE 2
+                    WHEN s.error <> '' THEN 5
+                    WHEN s.start_time = 0 THEN 4
+                    ELSE 3
                 END)
         FROM steps s
         WHERE s.tracing_id = s1.tracing_id
