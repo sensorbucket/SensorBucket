@@ -53,6 +53,8 @@ func (s *stepStore) Query(query tracing.Filter, r pagination.Request) (*paginati
 	for rows.Next() {
 		var t traceStep
 		err = rows.Scan(
+			&t.StepIndex,
+			&t.StepsRemaining,
 			&t.TracingId,
 			&t.Status,
 			&t.TotalStatus,
@@ -91,6 +93,26 @@ func (s *stepStore) Query(query tracing.Filter, r pagination.Request) (*paginati
 				Error:    e,
 			})
 		}
+
+		if len(val) != (val[0].StepIndex + 1 + val[0].StepsRemaining) {
+			for i := 0; i < val[0].StepIndex+1+val[0].StepsRemaining-len(val); {
+				last := val[len(val)-1]
+				if last.Status == 4 {
+					steps = append(steps, tracing.StepDTO{
+						Status: tracing.Pending,
+					})
+				} else if last.Status == 5 {
+					steps = append(steps, tracing.StepDTO{
+						Status: tracing.Canceled,
+					})
+				} else {
+					steps = append(steps, tracing.StepDTO{
+						Status: tracing.Unknown,
+					})
+				}
+			}
+		}
+
 		total = append(total, tracing.TraceDTO{
 			TracingId: key,
 			Status:    tracing.Status(val[0].Status),
@@ -105,16 +127,20 @@ func (s *stepStore) Query(query tracing.Filter, r pagination.Request) (*paginati
 }
 
 type traceStep struct {
-	TracingId   string
-	Status      int
-	TotalStatus int
-	Duration    time.Duration
-	Error       *string
+	StepIndex      int
+	StepsRemaining int
+	TracingId      string
+	Status         int
+	TotalStatus    int
+	Duration       time.Duration
+	Error          *string
 }
 
 func traceQuery(traceIds []uuid.UUID) string {
 	return `
 	SELECT
+	s1.step_index,
+	s1.steps_remaining,
     s1.tracing_id,
     CASE
         WHEN s1.error <> '' THEN 4
