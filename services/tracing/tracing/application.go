@@ -34,7 +34,7 @@ func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError) error
 		TracingID:      errorMessage.ReceivedByWorker.ID,
 		StepIndex:      errorMessage.ReceivedByWorker.StepIndex,
 		StepsRemaining: int64(len(errorMessage.ReceivedByWorker.PipelineSteps) - (int(errorMessage.ReceivedByWorker.StepIndex + 1))),
-		StartTime:      errorMessage.Timestamp,
+		StartTime:      errorMessage.ReceivedByWorker.Timestamp,
 		Error:          errorMessage.Error,
 	})
 }
