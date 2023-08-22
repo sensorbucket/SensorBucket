@@ -4,21 +4,18 @@ import (
 	"fmt"
 
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/jmoiron/sqlx"
-	"sensorbucket.nl/sensorbucket/internal/env"
-	"sensorbucket.nl/sensorbucket/pkg/mq"
 	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
 	"sensorbucket.nl/sensorbucket/services/tracing/migrations"
 	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
@@ -29,6 +26,7 @@ import (
 var (
 	DB_DSN                      = env.Must("DB_DSN")
 	HTTP_ADDR                   = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE                   = env.Could("HTTP_BASE", "http://localhost:3000/api")
 	AMQP_HOST                   = env.Must("AMQP_HOST")
 	AMQP_QUEUE_PIPELINEMESSAGES = env.Must("AMQP_QUEUE_PIPELINEMESSAGES")
 	AMQP_QUEUE_ERRORS           = env.Must("AMQP_QUEUE_ERRORS")
@@ -49,6 +47,8 @@ func main() {
 	mqConn := mq.NewConnection(AMQP_HOST)
 	go mqConn.Start()
 
+	r := chi.NewRouter()
+
 	// Setup the ingress-archiver service
 	{
 		store := ingressarchiver.NewStorePSQL(db)
@@ -57,22 +57,25 @@ func main() {
 			mqConn, svc,
 			AMQP_QUEUE_INGRESS, AMQP_XCHG_INGRESS, AMQP_XCHG_INGRESS_TOPIC,
 		)
-		httpTransport := ingressarchiver.CreateHTTPTransport(svc)
-		srv := &http.Server{
-			Addr:         HTTP_ADDR,
-			WriteTimeout: 5 * time.Second,
-			ReadTimeout:  5 * time.Second,
-			Handler:      httpTransport,
-		}
-		go srv.ListenAndServe()
+		ingressarchiver.CreateHTTPTransport(r, svc)
 	}
 
 	// Setup the tracing service
 	go func() {
 		tracingStepStore := tracinginfra.NewStorePSQL(db)
 		tracingService := tracing.New(tracingStepStore)
-		tracingtransport.StartMQ(tracingService, mqConn, AMQP_QUEUE_ERRORS, AMQP_QUEUE_PIPELINEMESSAGES)
+		go tracingtransport.StartMQ(tracingService, mqConn, AMQP_QUEUE_ERRORS, AMQP_QUEUE_PIPELINEMESSAGES)
+		tracinghttp := tracingtransport.NewHTTP(tracingService, HTTP_BASE)
+		tracinghttp.SetupRoutes(r)
 	}()
+
+	srv := &http.Server{
+		Addr:         HTTP_ADDR,
+		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  5 * time.Second,
+		Handler:      r,
+	}
+	go srv.ListenAndServe()
 
 	log.Println("Server running, send interrupt (i.e. CTRL+C) to initiate shutdown")
 	<-ctx.Done()

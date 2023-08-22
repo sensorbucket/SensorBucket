@@ -103,10 +103,6 @@ func (s *stepStore) Query(query tracing.Filter, r pagination.Request) (*paginati
 	}, nil
 }
 
-type stepStore struct {
-	db *sqlx.DB
-}
-
 type traceStep struct {
 	TracingId   string
 	Status      int
@@ -146,6 +142,7 @@ WHERE
 ORDER BY
     s1.step_index;`
 }
+
 type stepStore struct {
 	db *sqlx.DB
 }

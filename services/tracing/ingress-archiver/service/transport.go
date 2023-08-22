@@ -55,8 +55,7 @@ type HTTPIngressesFilter struct {
 	pagination.Request
 }
 
-func CreateHTTPTransport(app *Application) http.Handler {
-	r := chi.NewRouter()
+func CreateHTTPTransport(r chi.Router, app *Application) {
 	r.Use(middleware.Logger)
 	r.Get("/ingresses", func(w http.ResponseWriter, r *http.Request) {
 		params, err := httpfilter.Parse[HTTPIngressesFilter](r)
@@ -78,5 +77,4 @@ func CreateHTTPTransport(app *Application) http.Handler {
 
 		web.HTTPResponse(w, http.StatusOK, pagination.CreateResponse(r, "", *page))
 	})
-	return r
 }
