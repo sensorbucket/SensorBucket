@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
+	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/tracing/migrations"
 	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
@@ -12,14 +13,10 @@ import (
 )
 
 var (
-	DB_DSN                      = "host=localhost dbname=tracing user=sensorbucket password=sensorbucket port=5432"
-	AMQP_HOST                   = "amqp://guest:guest@localhost:5672/"
-	AMQP_QUEUE_PIPELINEMESSAGES = "tracing"
-	AMQP_QUEUE_ERRORS           = "errors"
-	// DB_DSN                      = env.Must("DB_DSN")
-	// AMQP_HOST                   = env.Must("AMQP_HOST")
-	// AMQP_QUEUE_PIPELINEMESSAGES = env.Must("AMQP_QUEUE_PIPELINEMESSAGES")
-	// AMQP_QUEUE_ERRORS           = env.Must("AMQP_QUEUE_ERRORS")
+	DB_DSN                      = env.Must("DB_DSN")
+	AMQP_HOST                   = env.Must("AMQP_HOST")
+	AMQP_QUEUE_PIPELINEMESSAGES = env.Must("AMQP_QUEUE_PIPELINEMESSAGES")
+	AMQP_QUEUE_ERRORS           = env.Must("AMQP_QUEUE_ERRORS")
 )
 
 func main() {
