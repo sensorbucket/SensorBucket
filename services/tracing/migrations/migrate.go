@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
-
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source/iofs"

@@ -148,6 +148,7 @@ func TestPipelineMessageAppears(t *testing.T) {
 			// Act and Assert
 			assert.NoError(t, tracingService.HandlePipelineMessage(cfg.input))
 			assert.Equal(t, cfg.expected, stepStore.inserted)
+
 		})
 	}
 }

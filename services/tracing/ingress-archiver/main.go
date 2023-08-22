@@ -11,8 +11,8 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
-	"sensorbucket.nl/sensorbucket/services/ingress-archiver/migrations"
-	ingressarchiver "sensorbucket.nl/sensorbucket/services/ingress-archiver/service"
+	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
+	"sensorbucket.nl/sensorbucket/services/tracing/migrations"
 )
 
 var (

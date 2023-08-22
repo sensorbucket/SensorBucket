@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"sensorbucket.nl/sensorbucket/services/core/processing"
-	ingressarchiver "sensorbucket.nl/sensorbucket/services/ingress-archiver/service"
+	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
 )
 
 func TestArchiverShouldArchiveEvenIfRawMessageIsMalformed(t *testing.T) {
