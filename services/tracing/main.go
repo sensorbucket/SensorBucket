@@ -10,6 +10,7 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
@@ -39,18 +40,16 @@ func main() {
 		panic(fmt.Sprintf("could not create database connection: %v\n", err))
 	}
 
-	archiverConn := mq.NewConnection(AMQP_HOST)
-	tracingConn := mq.NewConnection(AMQP_HOST)
+	mqConn := mq.NewConnection(AMQP_HOST)
 
-	go archiverConn.Start()
-	go tracingConn.Start()
+	go mqConn.Start()
 
 	// Setup the ingress-archiver service
 	go func() {
 		store := ingressarchiver.NewStorePSQL(db)
 		svc := ingressarchiver.New(store)
 		ingressarchiver.StartIngressDTOConsumer(
-			archiverConn, svc,
+			mqConn, svc,
 			AMQP_QUEUE_INGRESS, AMQP_XCHG_INGRESS, AMQP_XCHG_INGRESS_TOPIC,
 		)
 	}()
@@ -59,7 +58,7 @@ func main() {
 	go func() {
 		tracingStepStore := tracinginfra.NewStorePSQL(db)
 		tracingService := tracing.New(tracingStepStore)
-		tracingtransport.StartMQ(tracingService, tracingConn, AMQP_QUEUE_ERRORS, AMQP_QUEUE_PIPELINEMESSAGES)
+		tracingtransport.StartMQ(tracingService, mqConn, AMQP_QUEUE_ERRORS, AMQP_QUEUE_PIPELINEMESSAGES)
 	}()
 
 	log.Println("Server running, send interrupt (i.e. CTRL+C) to initiate shutdown")
@@ -71,8 +70,7 @@ func main() {
 	defer cancelTO()
 
 	// Shutdown transports
-	archiverConn.Shutdown()
-	tracingConn.Shutdown()
+	mqConn.Shutdown()
 
 	log.Println("Shutdown complete")
 }

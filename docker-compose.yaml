@@ -34,7 +34,7 @@ services:
     - AMQP_XCHG=pipeline.messages
     - SVC_PIPELINE=http://pipeline:3000
 
-  ingressarchiver:
+  tracing:
     build:
       context: .
       dockerfile: Dockerfile
@@ -42,12 +42,15 @@ services:
     volumes:
       - .:/workspace:cached
     environment:
-    - APP_NAME=ingress-archiver
+    - APP_NAME=tracing
     - APP_TYPE=service
-    - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/ingressarchiver?sslmode=disable
+    - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/tracing?sslmode=disable
     - AMQP_HOST=amqp://guest:guest@mq:5672/
-    - AMQP_XCHG=pipeline.messages
-    - AMQP_XCHG_TOPIC=ingress.#
+    - AMQP_QUEUE_PIPELINEMESSAGES=pipeline.messages
+    - AMQP_QUEUE_ERRORS=errors
+    - AMQP_QUEUE_INGRESS=archive-ingress
+    - AMQP_XCHG_INGRESS=ingress
+    - AMQP_XCHG_INGRESS_TOPIC=ingress.#
 
 
   httpimporter:
