@@ -9,6 +9,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 )
@@ -268,7 +269,7 @@ type datastreamPageQuery struct {
 
 func (s *MeasurementStorePSQL) ListDatastreams(filter measurements.DatastreamFilter, r pagination.Request) (*pagination.Page[measurements.Datastream], error) {
 	var err error
-	var ds = []measurements.Datastream{}
+	ds := []measurements.Datastream{}
 	q := pq.Select(
 		"id", "description", "sensor_id", "observed_property", "unit_of_measurement", "created_at",
 	).From("datastreams")
@@ -308,4 +309,22 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter measurements.DatastreamFil
 
 	page := pagination.CreatePageT(ds, cursor)
 	return &page, nil
+}
+
+func (s *MeasurementStorePSQL) GetDatastream(id uuid.UUID) (*measurements.Datastream, error) {
+	var ds measurements.Datastream
+	idB, _ := id.MarshalBinary()
+	err := s.db.Get(&ds, `
+		SELECT 
+        id, description, sensor_id, observed_property, unit_of_measurement, created_at
+        FROM datastreams
+        WHERE id=$1 
+    `, idB)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, measurements.ErrDatastreamNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &ds, nil
 }

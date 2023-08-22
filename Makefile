@@ -23,6 +23,16 @@ restart:
 logs:
 	@docker-compose logs -fn 50 $(service)
 
+build-dashboard-deps:
+	@qtc ./services/dashboard/views
+	@tailwind --config ./services/dashboard/tailwind.config.cjs --input ./services/dashboard/style.css --output ./services/dashboard/static/style.css
+
+run-dashboard: build-dashboard-deps
+	@go run ./services/dashboard 
+
+watch-dashboard:
+	@reflex -r '\.(go|qtpl)$$' -R '\.qtpl\.go$$' -s -- make run-dashboard
+
 api:
 	@echo "Starting live openapi docs"
 	-@docker run --rm -p 8080:8080 --init -v $(CURDIR):/project redocly/cli -h 0.0.0.0 preview-docs /project/tools/openapi/api.yaml

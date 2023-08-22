@@ -1,0 +1,87 @@
+{% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
+
+{% func (p *DeviceListPage) Body() %}
+    <div class="mx-auto w-full xl:w-2/3 flex flex-col gap-6">
+
+        <div class="grid lg:grid-cols-4 gap-x-4 gap-y-1">
+            <fieldset class="relative col-span-2">
+                <label for="sensorgroup-search" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Sensor group</small></label>
+                <input
+                    type="text" name="search" id="sensorgroup-search"
+                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600"
+
+                    {% if p.SensorGroup == nil %}
+                    hx-trigger="keyup changed delay:500ms"
+                    hx-get="/overview/sensorgroups"
+                    hx-target="next ul"
+                    {% else %}
+                    disabled
+                    class="bg-slate-50 cursor-pointer"
+                    hx-get="/overview"
+                    {% endif %}
+
+                />
+                <ul class="absolute top-full left-0 right-0 block border border-t-0 rounded-md rounded-t-none bg-white z-[4000]
+                            text-sm">
+                    
+                </ul>
+            </fieldset>
+        </div>
+
+        <div class="bg-white border rounded-md">
+            <div 
+                hx-ext="leaflet,ws"
+                ws-connect="/overview/devices/stream-map"
+                class="w-full h-96"
+                id="device-map"
+            >
+                <div id="markers">
+                    <map-marker latitude="51.3" longitude="3.12"></map-marker>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border rounded-md max-h-96 overflow-y-auto">
+            <table class="w-full text-sm border-separate border-spacing-0">
+                <thead class="text-left text-slate-500 sticky top-0 bg-white">
+                    <tr class="h-10">
+                        <th class="font-normal border-b align-middle px-4">
+                            Device ID
+                        </th>
+                        <th class="font-normal border-b align-middle px-4">
+                            Device Code
+                        </th>
+                        <th class="font-normal border-b align-middle px-4">
+                            Device Description
+                        </th>
+                        <th class="font-normal border-b align-middle px-4">
+                            Device Location Description
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for _, dev := range p.Devices %}
+                    <tr class="hover:bg-slate-50 group">
+                        <td class="px-4 h-10 border-b">{%dl dev.ID %}</td>
+                        <td class="border-b"><a
+                            class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
+                            href="/overview/devices/{%dl dev.ID %}"
+                            hx-target="main"
+                        >{%s dev.Code %}</a></td>
+                        <td class="px-4 h-10 border-b">{%s dev.Description %}</td>
+                        <td class="px-4 h-10 border-b">{%s dev.LocationDescription %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endfunc %}
+
+{% code
+type DeviceListPage struct {
+    BasePage
+    Devices []devices.Device
+    SensorGroup *devices.SensorGroup
+}
+%}

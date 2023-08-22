@@ -1,0 +1,58 @@
+{% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
+{% import "sensorbucket.nl/sensorbucket/services/core/measurements" %}
+
+{% func (p *DatastreamPage) Body() %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="bg-white rounded-md border" id="map">
+        <div
+            class="w-full h-96"
+            hx-ext="leaflet"
+            {% if p.Device.Latitude != nil && p.Device.Longitude != nil %}
+                data-latitude="{%f *p.Device.Latitude %}"
+                data-longitude="{%f *p.Device.Longitude %}"
+                data-zoom="11"
+            {% else %}
+                data-latitude="3.943"
+                data-longitude="51.573"
+                data-zoom="9"
+            {% endif %}
+            {% if p.Device.Latitude != nil && p.Device.Longitude != nil %}
+                data-markers='[{"lng": {%f *p.Device.Longitude %}, "lat": {%f *p.Device.Latitude %}}]'
+            {% endif %}
+        ></div>
+    </div>
+    <div class="bg-white rounded-md border" id="device">
+        <header class="border-b py-2 px-4 text-sm text-slate-700">
+            Device details
+        </header>
+        <div class="p-4">
+            {%= DeviceDetailBlock(p.Device) %}
+        </div>
+    </div>
+    <div class="bg-white rounded-md border" id="sensor">
+        <header class="border-b py-2 px-4 text-sm text-slate-700">
+            Sensor details
+        </header>
+        <div class="p-4">
+            {%= DeviceDetailBlock(p.Device) %}
+        </div>
+    </div>
+    <div class="bg-white rounded-md border col-span-full" hx-ext="ws" ws-connect="/overview/datastreams/{%s p.Datastream.ID.String() %}/stream?start=asd">
+        <header class="border-b py-2 px-4 text-sm text-slate-700">
+            Datastream
+        </header>
+        <div class="px-4 pt-4 pb-10">
+            <div hx-ext="uplot" class="w-full h-80"></div>
+        </div>
+    </div>
+</div>
+{% endfunc %}
+
+{% code
+type DatastreamPage struct {
+    BasePage
+    Device devices.Device
+    Sensor devices.Sensor
+    Datastream measurements.Datastream
+}
+%}

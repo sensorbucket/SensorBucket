@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
@@ -34,6 +35,7 @@ func (t *HTTPTransport) SetupRoutes(r chi.Router) {
 	})
 	r.Get("/measurements", t.httpGetMeasurements())
 	r.Get("/datastreams", t.httpListDatastream())
+	r.Get("/datastreams/{id}", t.httpGetDatastream())
 }
 
 func (t *HTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -80,5 +82,24 @@ func (t *HTTPTransport) httpListDatastream() http.HandlerFunc {
 			return
 		}
 		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.url, *page))
+	}
+}
+
+func (t *HTTPTransport) httpGetDatastream() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idQ := chi.URLParam(r, "id")
+		id, err := uuid.Parse(idQ)
+		if err != nil {
+			web.HTTPError(w, web.NewError(http.StatusBadRequest, "Invalid datastream ID", ""))
+			return
+		}
+
+		ds, err := t.svc.GetDatastream(r.Context(), id)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{Data: ds})
 	}
 }

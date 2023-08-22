@@ -26,6 +26,7 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	processinginfra "sensorbucket.nl/sensorbucket/services/core/processing/infra"
 	processingtransport "sensorbucket.nl/sensorbucket/services/core/processing/transport"
+	coretransport "sensorbucket.nl/sensorbucket/services/core/transport"
 )
 
 var (
@@ -82,6 +83,7 @@ func Run() error {
 	deviceshttp.SetupRoutes(r)
 	measurementhttp.SetupRoutes(r)
 	processinghttp.SetupRoutes(r)
+	coretransport.Create(r, measurementservice, deviceservice)
 	httpsrv := createHTTPServer(r)
 	go httpsrv.ListenAndServe()
 	log.Printf("HTTP Listening: %s\n", httpsrv.Addr)

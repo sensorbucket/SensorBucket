@@ -9,19 +9,14 @@ services:
       - ./tools/caddy:/etc/caddy
 
   dashboard:
-    build: 
-      context: ./services/dashboard
-      dockerfile: Dockerfile
-      target: builder
-    command: yarn dev --host=0.0.0.0 --port=3000
-    environment:
-      - PUBLIC_EP_DATASTREAMS=http://caddy/api/datastreams
-      - PUBLIC_EP_SENSORS=http://caddy/api/sensors
-      - PUBLIC_EP_DEVICES=http://caddy/api/devices
-      - PUBLIC_EP_PIPELINES=http://caddy/api/pipelines
-      - PUBLIC_EP_MEASUREMENTS=http://caddy/api/measurements
+    build:
+      context: .
+      dockerfile: services/dashboard/Dockerfile
+      target: dev
     volumes:
-      - ./services/dashboard:/app:cached
+      - .:/workspace:cached
+    environment:
+    - STATIC_PATH=services/dashboard/static
 
   core:
     build:
