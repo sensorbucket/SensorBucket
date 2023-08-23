@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
@@ -11,7 +12,7 @@ import (
 
 type StepStore interface {
 	Insert(Step) error
-	Query(Filter, pagination.Request) (*pagination.Page[TraceDTO], error)
+	Query(Filter, pagination.Request) (*pagination.Page[EnrichedStep], error)
 }
 
 func New(stepStore StepStore) *Service {
@@ -54,23 +55,51 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 		return nil, err
 	}
 
-	return page, nil
+	// Group all the enriched steps to their corresponding trace id so we can build the correct TraceDTO
+	grouped := lo.GroupBy(page.Data, func(step EnrichedStep) string {
+		return step.TracingID
+	})
+
+	// Now change the map of trace ids with their steps to the required trace dto
+	traces := lo.MapToSlice(grouped, func(key string, value []EnrichedStep) TraceDTO {
+
+		asEnriched := EnrichedSteps(value)
+
+		return TraceDTO{
+			TracingId: key,
+			Status:    asEnriched.TotalStatus().String(),
+
+			// The EnrichedSteps also have to be updated to a DTO object
+			Steps: lo.Map(asEnriched.AllSteps(), func(val EnrichedStep, _ int) StepDTO {
+				return StepDTO{
+					Status:   val.Status.String(),
+					Duration: val.Duration,
+					Error:    val.Error,
+				}
+			}),
+		}
+	})
+
+	return &pagination.Page[TraceDTO]{
+		Cursor: page.Cursor,
+		Data:   traces,
+	}, nil
 }
 
 type Filter struct {
-	TraceIds []uuid.UUID `schema:"trace_id"`
-	Status   Status
-	Duration time.Duration
+	TraceIds *[]uuid.UUID `schema:"trace_id"`
+	Status   *Status
+	Duration *time.Duration
 }
 
 type TraceDTO struct {
 	TracingId string    `json:"tracing_id"`
-	Status    Status    `json:"status"`
+	Status    string    `json:"status"`
 	Steps     []StepDTO `json:"steps"`
 }
 
 type StepDTO struct {
-	Status   Status        `json:"status"`
+	Status   string        `json:"status"`
 	Duration time.Duration `json:"duration"`
 	Error    string        `json:"error"`
 }

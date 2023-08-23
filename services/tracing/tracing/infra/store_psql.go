@@ -39,11 +39,15 @@ func (s *stepStore) Insert(step tracing.Step) error {
 	return nil
 }
 
-func (s *stepStore) Query(query tracing.Filter, r pagination.Request) (*pagination.Page[tracing.TraceDTO], error) {
-	args := lo.Map(query.TraceIds, func(id uuid.UUID, _ int) any {
+func (s *stepStore) Query(tracing.Filter, pagination.Request) (*pagination.Page[tracing.EnrichedStep], error) {
+
+}
+
+func (s *stepStore) QueryUgly(query tracing.Filter, r pagination.Request) (*pagination.Page[tracing.TraceDTO], error) {
+	args := lo.Map(*query.TraceIds, func(id uuid.UUID, _ int) any {
 		return id.String()
 	})
-	rows, err := s.db.Query(traceQuery(query.TraceIds), args...)
+	rows, err := s.db.Query(traceQuery(*query.TraceIds), args...)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +92,7 @@ func (s *stepStore) Query(query tracing.Filter, r pagination.Request) (*paginati
 				e = *v.Error
 			}
 			steps = append(steps, tracing.StepDTO{
-				Status:   tracing.Status(v.Status),
+				Status:   tracing.Status(v.Status).String(),
 				Duration: v.Duration,
 				Error:    e,
 			})
@@ -99,15 +103,15 @@ func (s *stepStore) Query(query tracing.Filter, r pagination.Request) (*paginati
 				last := val[len(val)-1]
 				if last.Status == 4 {
 					steps = append(steps, tracing.StepDTO{
-						Status: tracing.Pending,
+						Status: tracing.Pending.String(),
 					})
 				} else if last.Status == 5 {
 					steps = append(steps, tracing.StepDTO{
-						Status: tracing.Canceled,
+						Status: tracing.Canceled.String(),
 					})
 				} else {
 					steps = append(steps, tracing.StepDTO{
-						Status: tracing.Unknown,
+						Status: tracing.Unknown.String(),
 					})
 				}
 			}
@@ -115,7 +119,7 @@ func (s *stepStore) Query(query tracing.Filter, r pagination.Request) (*paginati
 
 		total = append(total, tracing.TraceDTO{
 			TracingId: key,
-			Status:    tracing.Status(val[0].Status),
+			Status:    tracing.Status(val[0].Status).String(),
 			Steps:     steps,
 		})
 	}
@@ -163,7 +167,7 @@ FROM
 LEFT JOIN
     steps s2 ON s1.tracing_id = s2.tracing_id AND s1.step_index + 1 = s2.step_index
 WHERE
-    s1.tracing_id in ($1` + strings.Join(lo.RepeatBy(len(traceIds)-1, func(index int) string {
+    s1.tracing_id in ($1,` + strings.Join(lo.RepeatBy(len(traceIds)-1, func(index int) string {
 		return fmt.Sprintf("$%d", index+2)
 	}), ",") + `)
 ORDER BY

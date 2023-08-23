@@ -33,6 +33,10 @@ func (t *HTTPTransport) SetupRoutes(r chi.Router) {
 	r.Get("/tracing", t.httpGetTraces())
 }
 
+func (t *HTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	t.router.ServeHTTP(w, r)
+}
+
 func (t *HTTPTransport) httpGetTraces() http.HandlerFunc {
 	type Params struct {
 		tracing.Filter     `pagination:",squash"`
@@ -45,6 +49,11 @@ func (t *HTTPTransport) httpGetTraces() http.HandlerFunc {
 			return
 		}
 
+		if *params.Filter.TraceIds == nil || len(*params.Filter.TraceIds) == 0 {
+			http.Error(rw, "at least 1 trace_id must be included in the request", http.StatusBadRequest)
+			return
+		}
+
 		page, err := t.svc.QueryTraces(params.Filter, params.Request)
 		if err != nil {
 			http.Error(rw, err.Error(), http.StatusInternalServerError)
@@ -53,8 +62,4 @@ func (t *HTTPTransport) httpGetTraces() http.HandlerFunc {
 
 		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.url, *page))
 	}
-}
-
-func (t *HTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	t.router.ServeHTTP(w, r)
 }
