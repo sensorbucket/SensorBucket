@@ -6,11 +6,13 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/services/core/devices"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	"sensorbucket.nl/sensorbucket/services/dashboard/routes"
 	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
@@ -20,13 +22,15 @@ type SensorBucketAPI struct {
 	ingressEndpoint   string
 	pipelinesEndpoint string
 	tracesEndpoint    string
+	devicesEndpoint   string
 }
 
-func NewSensorBucketAPI(ingressEndpoint, pipelinesEndpoint, tracesEndpoint string) *SensorBucketAPI {
+func NewSensorBucketAPI(ingressEndpoint, pipelinesEndpoint, tracesEndpoint, devicesEndpoint string) *SensorBucketAPI {
 	return &SensorBucketAPI{
 		ingressEndpoint:   ingressEndpoint,
 		pipelinesEndpoint: pipelinesEndpoint,
 		tracesEndpoint:    tracesEndpoint,
+		devicesEndpoint:   devicesEndpoint,
 	}
 }
 
@@ -87,6 +91,28 @@ func (s *SensorBucketAPI) ListTraces(ids []uuid.UUID) ([]routes.TraceDTO, error)
 	var resBody web.APIResponse[[]routes.TraceDTO]
 	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
 		fmt.Printf("could not decode traceDTO response: %v", err)
+		return nil, err
+	}
+
+	return resBody.Data, nil
+}
+
+func (s *SensorBucketAPI) ListDevices(ids []int64) ([]devices.Device, error) {
+	q := url.Values{}
+	q["id"] = lo.Map(ids, func(id int64, _ int) string { return strconv.FormatInt(id, 10) })
+	url := s.devicesEndpoint + "?" + q.Encode()
+	res, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	if res.StatusCode != 200 {
+		body, _ := io.ReadAll(res.Body)
+		fmt.Printf("could not fetch traceDTO: %d, %s\n", res.StatusCode, string(body))
+		return nil, fmt.Errorf("could not fetch devices: %d", res.StatusCode)
+	}
+	var resBody web.APIResponse[[]devices.Device]
+	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+		fmt.Printf("could not decode devices response: %v", err)
 		return nil, err
 	}
 

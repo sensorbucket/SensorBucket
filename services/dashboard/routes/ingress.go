@@ -9,6 +9,7 @@ import (
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/services/core/devices"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
 	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
@@ -20,6 +21,7 @@ type IngressStore interface {
 
 type TraceDTO struct {
 	TracingId string    `json:"tracing_id"`
+	DeviceID  int64     `json:"device_id"`
 	Status    int       `json:"status"`
 	Steps     []StepDTO `json:"steps"`
 }
@@ -38,19 +40,25 @@ type PipelineStore interface {
 	ListPipelines(ids []uuid.UUID) ([]processing.Pipeline, error)
 }
 
+type DeviceStore interface {
+	ListDevices(ids []int64) ([]devices.Device, error)
+}
+
 type IngressPageHandler struct {
 	router    chi.Router
 	ingresses IngressStore
 	traces    TracesStore
 	pipelines PipelineStore
+	devices   DeviceStore
 }
 
-func CreateIngressPageHandler(ingresses IngressStore, traces TracesStore, pipelines PipelineStore) *IngressPageHandler {
+func CreateIngressPageHandler(ingresses IngressStore, traces TracesStore, pipelines PipelineStore, devices DeviceStore) *IngressPageHandler {
 	handler := &IngressPageHandler{
 		router:    chi.NewRouter(),
 		ingresses: ingresses,
 		traces:    traces,
 		pipelines: pipelines,
+		devices:   devices,
 	}
 	handler.SetupRoutes(handler.router)
 	return handler
@@ -82,12 +90,23 @@ func (h *IngressPageHandler) createViewIngresses() ([]views.Ingress, error) {
 		return nil, err
 	}
 
-	steplogs, err := h.traces.ListTraces(lo.Map(archivedIngresses, func(ing ingressarchiver.ArchivedIngressDTO, _ int) uuid.UUID { return ing.TracingID }))
+	traceLogs, err := h.traces.ListTraces(lo.Map(archivedIngresses, func(ing ingressarchiver.ArchivedIngressDTO, _ int) uuid.UUID { return ing.TracingID }))
 	if err != nil {
 		return nil, err
 	}
-	traceMap := lo.SliceToMap(steplogs, func(steplog TraceDTO) (string, TraceDTO) {
+	traceMap := lo.SliceToMap(traceLogs, func(steplog TraceDTO) (string, TraceDTO) {
 		return steplog.TracingId, steplog
+	})
+
+	deviceIDs := lo.FilterMap(traceLogs, func(traceLog TraceDTO, _ int) (int64, bool) {
+		return traceLog.DeviceID, traceLog.DeviceID > 0
+	})
+	deviceList, err := h.devices.ListDevices(deviceIDs)
+	if err != nil {
+		return nil, err
+	}
+	deviceMap := lo.SliceToMap(deviceList, func(device devices.Device) (int64, devices.Device) {
+		return device.ID, device
 	})
 
 	ingresses := make([]views.Ingress, 0, len(archivedIngresses))
@@ -101,14 +120,14 @@ func (h *IngressPageHandler) createViewIngresses() ([]views.Ingress, error) {
 		if !found {
 			continue
 		}
-		traceSteps := traceMap[ingress.TracingID.String()]
+		traceLog := traceMap[ingress.TracingID.String()]
 		ingress := views.Ingress{
 			TracingID: ingress.TracingID.String(),
 			CreatedAt: ingress.IngressDTO.CreatedAt,
 			Steps: lo.Map(pl.Steps, func(stepLabel string, ix int) views.IngressStep {
 				// TODO: This currently requires that there are an equal number of StepDTO's and Pipeline Steps
 				// In the future pipelines will have revisions and are not directly mutable, thus this should always be equal
-				step := traceSteps.Steps[ix]
+				step := traceLog.Steps[ix]
 				viewStep := views.IngressStep{
 					Label:  stepLabel,
 					Status: int(step.Status),
@@ -120,6 +139,9 @@ func (h *IngressPageHandler) createViewIngresses() ([]views.Ingress, error) {
 				}
 				return viewStep
 			}),
+		}
+		if traceLog.DeviceID != 0 {
+			ingress.Device = deviceMap[traceLog.DeviceID]
 		}
 		ingresses = append(ingresses, ingress)
 	}

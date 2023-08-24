@@ -1,4 +1,5 @@
 {% import "time" %}
+{% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
 {% func (p *IngressPage) Body() %}
     <div 
         class="w-full xl:w-2/3 mx-auto flex flex-col rounded py-4 bg-white"
@@ -14,7 +15,12 @@
     <article class="flex justify-between text-sm border-b border-slate-100 p-2 hover:bg-slate-50">
         <section class="flex flex-col">
             <a href="/ingress/{%s ingress.TracingID %}" class="text-sky-600 hover:underline">{%s ingress.TracingID %}</a>
-            <span class="text-slate-500 text-xs">{%s ingress.CreatedAt.Format("15:04:05 2006-01-02") %}</span>
+            <div class="text-slate-500 text-xs">
+                <span>{%s ingress.CreatedAt.Format("15:04:05 2006-01-02") %}</span>
+                {% if ingress.Device.ID != 0 %}
+                    <span class="ml-3">{%s ingress.Device.Code %}</span>
+                {% endif %}
+            </div>
         </section>
         <section class="relative flex items-center">
             <ul class="flex items-center gap-4 z-10">
@@ -74,5 +80,6 @@ type Ingress struct {
     TracingID string
     CreatedAt time.Time
     Steps []IngressStep
+    Device devices.Device
 }
 %}

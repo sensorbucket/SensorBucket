@@ -38,6 +38,7 @@ func (t *TracesMock) ListTraces(ids []uuid.UUID) ([]routes.TraceDTO, error) {
 			TracingId: id.String(),
 			Status:    rand.Intn(5),
 			Steps:     genSteps(),
+			DeviceID:  int64(rand.Intn(60)),
 		}
 	}
 	return traces, nil

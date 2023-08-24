@@ -8,21 +8,24 @@ package views
 import "time"
 
 //line services/dashboard/views/ingressPage.qtpl:2
+import "sensorbucket.nl/sensorbucket/services/core/devices"
+
+//line services/dashboard/views/ingressPage.qtpl:3
 import (
 	qtio422016 "io"
 
 	qt422016 "github.com/valyala/quicktemplate"
 )
 
-//line services/dashboard/views/ingressPage.qtpl:2
+//line services/dashboard/views/ingressPage.qtpl:3
 var (
 	_ = qtio422016.Copy
 	_ = qt422016.AcquireByteBuffer
 )
 
-//line services/dashboard/views/ingressPage.qtpl:2
+//line services/dashboard/views/ingressPage.qtpl:3
 func (p *IngressPage) StreamBody(qw422016 *qt422016.Writer) {
-//line services/dashboard/views/ingressPage.qtpl:2
+//line services/dashboard/views/ingressPage.qtpl:3
 	qw422016.N().S(`
     <div 
         class="w-full xl:w-2/3 mx-auto flex flex-col rounded py-4 bg-white"
@@ -30,200 +33,217 @@ func (p *IngressPage) StreamBody(qw422016 *qt422016.Writer) {
         hx-trigger="every 2s"
     >
         `)
-//line services/dashboard/views/ingressPage.qtpl:8
+//line services/dashboard/views/ingressPage.qtpl:9
 	StreamRenderIngressList(qw422016, p.Ingresses)
-//line services/dashboard/views/ingressPage.qtpl:8
+//line services/dashboard/views/ingressPage.qtpl:9
 	qw422016.N().S(`
     </div>
 `)
-//line services/dashboard/views/ingressPage.qtpl:10
+//line services/dashboard/views/ingressPage.qtpl:11
 }
 
-//line services/dashboard/views/ingressPage.qtpl:10
+//line services/dashboard/views/ingressPage.qtpl:11
 func (p *IngressPage) WriteBody(qq422016 qtio422016.Writer) {
-//line services/dashboard/views/ingressPage.qtpl:10
+//line services/dashboard/views/ingressPage.qtpl:11
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/ingressPage.qtpl:10
+//line services/dashboard/views/ingressPage.qtpl:11
 	p.StreamBody(qw422016)
-//line services/dashboard/views/ingressPage.qtpl:10
+//line services/dashboard/views/ingressPage.qtpl:11
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/ingressPage.qtpl:10
+//line services/dashboard/views/ingressPage.qtpl:11
 }
 
-//line services/dashboard/views/ingressPage.qtpl:10
+//line services/dashboard/views/ingressPage.qtpl:11
 func (p *IngressPage) Body() string {
-//line services/dashboard/views/ingressPage.qtpl:10
+//line services/dashboard/views/ingressPage.qtpl:11
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/ingressPage.qtpl:10
+//line services/dashboard/views/ingressPage.qtpl:11
 	p.WriteBody(qb422016)
-//line services/dashboard/views/ingressPage.qtpl:10
+//line services/dashboard/views/ingressPage.qtpl:11
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/ingressPage.qtpl:10
+//line services/dashboard/views/ingressPage.qtpl:11
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/ingressPage.qtpl:10
+//line services/dashboard/views/ingressPage.qtpl:11
 	return qs422016
-//line services/dashboard/views/ingressPage.qtpl:10
+//line services/dashboard/views/ingressPage.qtpl:11
 }
 
-//line services/dashboard/views/ingressPage.qtpl:12
+//line services/dashboard/views/ingressPage.qtpl:13
 func StreamRenderIngressList(qw422016 *qt422016.Writer, ingresses []Ingress) {
-//line services/dashboard/views/ingressPage.qtpl:12
+//line services/dashboard/views/ingressPage.qtpl:13
 	qw422016.N().S(`
 `)
-//line services/dashboard/views/ingressPage.qtpl:13
+//line services/dashboard/views/ingressPage.qtpl:14
 	for _, ingress := range ingresses {
-//line services/dashboard/views/ingressPage.qtpl:13
+//line services/dashboard/views/ingressPage.qtpl:14
 		qw422016.N().S(`
     <article class="flex justify-between text-sm border-b border-slate-100 p-2 hover:bg-slate-50">
         <section class="flex flex-col">
             <a href="/ingress/`)
-//line services/dashboard/views/ingressPage.qtpl:16
+//line services/dashboard/views/ingressPage.qtpl:17
 		qw422016.E().S(ingress.TracingID)
-//line services/dashboard/views/ingressPage.qtpl:16
+//line services/dashboard/views/ingressPage.qtpl:17
 		qw422016.N().S(`" class="text-sky-600 hover:underline">`)
-//line services/dashboard/views/ingressPage.qtpl:16
+//line services/dashboard/views/ingressPage.qtpl:17
 		qw422016.E().S(ingress.TracingID)
-//line services/dashboard/views/ingressPage.qtpl:16
+//line services/dashboard/views/ingressPage.qtpl:17
 		qw422016.N().S(`</a>
-            <span class="text-slate-500 text-xs">`)
-//line services/dashboard/views/ingressPage.qtpl:17
+            <div class="text-slate-500 text-xs">
+                <span>`)
+//line services/dashboard/views/ingressPage.qtpl:19
 		qw422016.E().S(ingress.CreatedAt.Format("15:04:05 2006-01-02"))
-//line services/dashboard/views/ingressPage.qtpl:17
+//line services/dashboard/views/ingressPage.qtpl:19
 		qw422016.N().S(`</span>
+                `)
+//line services/dashboard/views/ingressPage.qtpl:20
+		if ingress.Device.ID != 0 {
+//line services/dashboard/views/ingressPage.qtpl:20
+			qw422016.N().S(`
+                    <span class="ml-3">`)
+//line services/dashboard/views/ingressPage.qtpl:21
+			qw422016.E().S(ingress.Device.Code)
+//line services/dashboard/views/ingressPage.qtpl:21
+			qw422016.N().S(`</span>
+                `)
+//line services/dashboard/views/ingressPage.qtpl:22
+		}
+//line services/dashboard/views/ingressPage.qtpl:22
+		qw422016.N().S(`
+            </div>
         </section>
         <section class="relative flex items-center">
             <ul class="flex items-center gap-4 z-10">
                 `)
-//line services/dashboard/views/ingressPage.qtpl:21
+//line services/dashboard/views/ingressPage.qtpl:27
 		for _, step := range ingress.Steps {
-//line services/dashboard/views/ingressPage.qtpl:21
+//line services/dashboard/views/ingressPage.qtpl:27
 			qw422016.N().S(`
                     <li class="
                         flex relative items-center rounded-full py-1 px-2 text-xs border
                         bg-white group
                         `)
-//line services/dashboard/views/ingressPage.qtpl:25
+//line services/dashboard/views/ingressPage.qtpl:31
 			switch step.Status {
-//line services/dashboard/views/ingressPage.qtpl:26
+//line services/dashboard/views/ingressPage.qtpl:32
 			case 2:
-//line services/dashboard/views/ingressPage.qtpl:26
+//line services/dashboard/views/ingressPage.qtpl:32
 				qw422016.N().S(`
                          border-emerald-500
                         `)
-//line services/dashboard/views/ingressPage.qtpl:28
+//line services/dashboard/views/ingressPage.qtpl:34
 			case 3:
-//line services/dashboard/views/ingressPage.qtpl:28
+//line services/dashboard/views/ingressPage.qtpl:34
 				qw422016.N().S(`
                          border-orange-500
                         `)
-//line services/dashboard/views/ingressPage.qtpl:30
+//line services/dashboard/views/ingressPage.qtpl:36
 			case 4:
-//line services/dashboard/views/ingressPage.qtpl:30
+//line services/dashboard/views/ingressPage.qtpl:36
 				qw422016.N().S(`
                          border-rose-500
                         `)
-//line services/dashboard/views/ingressPage.qtpl:32
+//line services/dashboard/views/ingressPage.qtpl:38
 			default:
-//line services/dashboard/views/ingressPage.qtpl:32
+//line services/dashboard/views/ingressPage.qtpl:38
 				qw422016.N().S(`
                         `)
-//line services/dashboard/views/ingressPage.qtpl:33
+//line services/dashboard/views/ingressPage.qtpl:39
 			}
-//line services/dashboard/views/ingressPage.qtpl:33
+//line services/dashboard/views/ingressPage.qtpl:39
 			qw422016.N().S(`
                     ">
                         `)
-//line services/dashboard/views/ingressPage.qtpl:35
+//line services/dashboard/views/ingressPage.qtpl:41
 			qw422016.E().S(step.Label)
-//line services/dashboard/views/ingressPage.qtpl:35
+//line services/dashboard/views/ingressPage.qtpl:41
 			qw422016.N().S(`
                         `)
-//line services/dashboard/views/ingressPage.qtpl:36
+//line services/dashboard/views/ingressPage.qtpl:42
 			switch step.Status {
-//line services/dashboard/views/ingressPage.qtpl:37
+//line services/dashboard/views/ingressPage.qtpl:43
 			case 2:
-//line services/dashboard/views/ingressPage.qtpl:37
+//line services/dashboard/views/ingressPage.qtpl:43
 				qw422016.N().S(`
                         <iconify-icon class="w-3 pl-1 text-emerald-800" icon="fluent:checkmark-12-filled"></iconify-icon>
                         `)
-//line services/dashboard/views/ingressPage.qtpl:39
+//line services/dashboard/views/ingressPage.qtpl:45
 			case 3:
-//line services/dashboard/views/ingressPage.qtpl:39
+//line services/dashboard/views/ingressPage.qtpl:45
 				qw422016.N().S(`
                         <iconify-icon class="w-3 pl-1 text-orange-800" icon="carbon:in-progress"></iconify-icon>
                         `)
-//line services/dashboard/views/ingressPage.qtpl:41
+//line services/dashboard/views/ingressPage.qtpl:47
 			case 4:
-//line services/dashboard/views/ingressPage.qtpl:41
+//line services/dashboard/views/ingressPage.qtpl:47
 				qw422016.N().S(`
                         <iconify-icon class="w-3 pl-1 text-rose-800" icon="material-symbols:error"></iconify-icon>
                         `)
-//line services/dashboard/views/ingressPage.qtpl:43
+//line services/dashboard/views/ingressPage.qtpl:49
 			default:
-//line services/dashboard/views/ingressPage.qtpl:43
+//line services/dashboard/views/ingressPage.qtpl:49
 				qw422016.N().S(`
                         <iconify-icon class="w-3 pl-1 text-slate-800" icon="material-symbols:question-mark"></iconify-icon>
                         `)
-//line services/dashboard/views/ingressPage.qtpl:45
+//line services/dashboard/views/ingressPage.qtpl:51
 			}
-//line services/dashboard/views/ingressPage.qtpl:45
+//line services/dashboard/views/ingressPage.qtpl:51
 			qw422016.N().S(`
                         <div class="
                             hidden hover:block group-hover:block absolute text-white bg-gray-800 bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 rounded py-1
                             after:content-['_'] after:absolute after:top-full after:-translate-y-[0.25rem] after:left-1/2 after:-translate-x-1/2 after:bg-gray-800 after:w-2 after:h-2 after:rotate-45
                         ">
                             `)
-//line services/dashboard/views/ingressPage.qtpl:50
+//line services/dashboard/views/ingressPage.qtpl:56
 			qw422016.E().S(step.Tooltip)
-//line services/dashboard/views/ingressPage.qtpl:50
+//line services/dashboard/views/ingressPage.qtpl:56
 			qw422016.N().S(`
                         </div>
                     </li>
                 `)
-//line services/dashboard/views/ingressPage.qtpl:53
+//line services/dashboard/views/ingressPage.qtpl:59
 		}
-//line services/dashboard/views/ingressPage.qtpl:53
+//line services/dashboard/views/ingressPage.qtpl:59
 		qw422016.N().S(`
             </ul>
             <div class="absolute border-b-2 left-0 right-0 top-1/2 -translate-y-1/2"></div>
         </section>
     </article>
 `)
-//line services/dashboard/views/ingressPage.qtpl:58
+//line services/dashboard/views/ingressPage.qtpl:64
 	}
-//line services/dashboard/views/ingressPage.qtpl:58
+//line services/dashboard/views/ingressPage.qtpl:64
 	qw422016.N().S(`
 `)
-//line services/dashboard/views/ingressPage.qtpl:59
+//line services/dashboard/views/ingressPage.qtpl:65
 }
 
-//line services/dashboard/views/ingressPage.qtpl:59
+//line services/dashboard/views/ingressPage.qtpl:65
 func WriteRenderIngressList(qq422016 qtio422016.Writer, ingresses []Ingress) {
-//line services/dashboard/views/ingressPage.qtpl:59
+//line services/dashboard/views/ingressPage.qtpl:65
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/ingressPage.qtpl:59
+//line services/dashboard/views/ingressPage.qtpl:65
 	StreamRenderIngressList(qw422016, ingresses)
-//line services/dashboard/views/ingressPage.qtpl:59
+//line services/dashboard/views/ingressPage.qtpl:65
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/ingressPage.qtpl:59
+//line services/dashboard/views/ingressPage.qtpl:65
 }
 
-//line services/dashboard/views/ingressPage.qtpl:59
+//line services/dashboard/views/ingressPage.qtpl:65
 func RenderIngressList(ingresses []Ingress) string {
-//line services/dashboard/views/ingressPage.qtpl:59
+//line services/dashboard/views/ingressPage.qtpl:65
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/ingressPage.qtpl:59
+//line services/dashboard/views/ingressPage.qtpl:65
 	WriteRenderIngressList(qb422016, ingresses)
-//line services/dashboard/views/ingressPage.qtpl:59
+//line services/dashboard/views/ingressPage.qtpl:65
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/ingressPage.qtpl:59
+//line services/dashboard/views/ingressPage.qtpl:65
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/ingressPage.qtpl:59
+//line services/dashboard/views/ingressPage.qtpl:65
 	return qs422016
-//line services/dashboard/views/ingressPage.qtpl:59
+//line services/dashboard/views/ingressPage.qtpl:65
 }
 
-//line services/dashboard/views/ingressPage.qtpl:62
+//line services/dashboard/views/ingressPage.qtpl:68
 type IngressPage struct {
 	BasePage
 	Ingresses []Ingress
@@ -239,4 +259,5 @@ type Ingress struct {
 	TracingID string
 	CreatedAt time.Time
 	Steps     []IngressStep
+	Device    devices.Device
 }
