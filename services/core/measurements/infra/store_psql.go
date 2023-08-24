@@ -139,9 +139,14 @@ func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Req
 		"measurement_expiration",
 		"created_at",
 	).
-		From("measurements").
-		Where("measurement_timestamp >= ?", query.Start).
-		Where("measurement_timestamp <= ?", query.End)
+		From("measurements")
+
+	if !query.Start.IsZero() {
+		q = q.Where("measurement_timestamp >= ?", query.Start)
+	}
+	if !query.End.IsZero() {
+		q = q.Where("measurement_timestamp <= ?", query.End)
+	}
 
 	if len(query.DeviceIDs) > 0 {
 		q = q.Where(sq.Eq{"device_id": query.DeviceIDs})
