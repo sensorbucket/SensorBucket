@@ -9,6 +9,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
@@ -88,6 +89,9 @@ func (s *PSQLStore) ListPipelines(filter processing.PipelinesFilter, p paginatio
 	if len(filter.Step) > 0 {
 		pipelineIDsThatHaveSteps := pq.Select("pipeline_id").Prefix("id IN (").Suffix(")").Distinct().From("pipeline_steps").Where(sq.Eq{"image": filter.Step})
 		q = q.Where(pipelineIDsThatHaveSteps)
+	}
+	if len(filter.ID) > 0 {
+		q = q.Where(sq.Eq{"id": filter.ID})
 	}
 
 	// Pagination

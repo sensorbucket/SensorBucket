@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
@@ -47,6 +49,7 @@ func (s *Service) CreatePipeline(ctx context.Context, dto CreatePipelineDTO) (*P
 }
 
 type PipelinesFilter struct {
+	ID     []uuid.UUID
 	Status []PipelineStatus
 	Step   []string
 }
