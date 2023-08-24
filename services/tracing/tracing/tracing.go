@@ -9,12 +9,12 @@ import (
 type Status int
 
 const (
-	Unknown    Status = 0
-	Canceled   Status = 1
-	Pending    Status = 2
-	Success    Status = 3
-	InProgress Status = 4
-	Failed     Status = 5
+	Unknown Status = iota
+	Canceled
+	Pending
+	Success
+	InProgress
+	Failed
 )
 
 func (s Status) String() string {
@@ -36,19 +36,20 @@ func (s Status) String() string {
 }
 
 type Step struct {
-	TracingID      string  `pg:"tracing_id"`
-	StepIndex      int64   `pg:"step_index"`
-	StepsRemaining int64   `pg:"steps_remaining"`
-	StartTime      int64   `pg:"start_time"`
-	DeviceId       *int64  `pg:"device_id"`
-	Error          *string `pg:"error"`
+	TracingID      string
+	StepIndex      int64
+	StepsRemaining int64
+	StartTime      int64
+	DeviceId       *int64
+	Error          *string
 }
 
 // EnrichedStep contains extra properties derived from the data stored in the database using the Step model
 type EnrichedStep struct {
 	Step
-	Status   Status
-	Duration time.Duration
+	HighestCollectiveStatus Status
+	Status                  Status
+	Duration                time.Duration
 }
 
 type EnrichedSteps []EnrichedStep
@@ -61,10 +62,10 @@ func (es EnrichedSteps) TotalStartTime() int64 {
 }
 
 func (es EnrichedSteps) TotalStatus() Status {
-	// The total status is always the highest status in the step list
-	return lo.MaxBy(es, func(item, max EnrichedStep) bool {
-		return item.Status > max.Status
-	}).Status
+	if len(es) == 0 {
+		return Unknown
+	}
+	return es[0].HighestCollectiveStatus
 }
 
 func (es EnrichedSteps) DeviceId() *int64 {

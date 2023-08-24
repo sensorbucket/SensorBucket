@@ -111,9 +111,9 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 }
 
 type Filter struct {
-	TraceIds            []uuid.UUID `schema:"trace_id"`
+	TracingIds          []uuid.UUID `schema:"tracing_id"`
 	Status              []string
-	DeviceId            []int64
+	DeviceIds           []int64 `schema:"device_id"`
 	DurationGreaterThan *time.Duration
 	DurationSmallerThan *time.Duration
 }

@@ -1,6 +1,7 @@
 package tracingtransport
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -57,7 +58,8 @@ func (t *HTTPTransport) httpGetTraces() http.HandlerFunc {
 
 		page, err := t.svc.QueryTraces(params.Filter, params.Request)
 		if err != nil {
-			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			log.Printf("[Error] %v\n", err)
+			http.Error(rw, "internal server error", http.StatusInternalServerError)
 			return
 		}
 

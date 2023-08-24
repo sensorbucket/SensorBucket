@@ -22,15 +22,6 @@ func (s *workerSuite) TestWorkerProcessorReturnsAnError() {
 	acker := &ackMock{}
 	publisher := make(chan mq.PublishMessage)
 	consumer := make(chan amqp091.Delivery)
-	incomingMessage := pipeline.Message{
-		ID: "blabla",
-	}
-	expectedMessage := pipeline.PipelineError{
-		ReceivedByWorker: pipeline.Message{
-			ID: "blabla",
-		},
-		Worker: "some-worker",
-
 	id := uuid.NewString()
 	incomingMessage := pipeline.Message{
 		ID: id,
