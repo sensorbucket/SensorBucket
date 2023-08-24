@@ -659,6 +659,10 @@ video {
   max-height: 24rem;
 }
 
+.max-h-\[90vh\] {
+  max-height: 90vh;
+}
+
 .min-h-full {
   min-height: 100%;
 }
@@ -983,6 +987,10 @@ video {
 
   .lg\:h-screen {
     height: 100vh;
+  }
+
+  .lg\:max-h-\[50vh\] {
+    max-height: 50vh;
   }
 
   .lg\:w-sidebar {

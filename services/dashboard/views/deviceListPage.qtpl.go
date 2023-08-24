@@ -76,7 +76,7 @@ func (p *DeviceListPage) StreamBody(qw422016 *qt422016.Writer) {
             </div>
         </div>
 
-        <div class="bg-white border rounded-md max-h-96 overflow-y-auto">
+        <div class="bg-white border rounded-md min-h-96 max-h-[90vh] lg:max-h-[50vh] overflow-y-auto">
             <table class="w-full text-sm border-separate border-spacing-0">
                 <thead class="text-left text-slate-500 sticky top-0 bg-white">
                     <tr class="h-10">
