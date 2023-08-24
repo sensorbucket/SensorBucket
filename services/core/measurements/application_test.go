@@ -20,6 +20,20 @@ func ptr[T any](v T) *T {
 	return &v
 }
 
+func newPipelineMessage(plID string, steps []string) *pipeline.Message {
+	return &pipeline.Message{
+		ID:            uuid.NewString(),
+		ReceivedAt:    time.Now().UnixMilli(),
+		Timestamp:     time.Now().UnixMilli(),
+		Payload:       nil,
+		PipelineID:    plID,
+		PipelineSteps: steps,
+		StepIndex:     0,
+		Measurements:  []pipeline.Measurement{},
+		Metadata:      make(map[string]any),
+	}
+}
+
 func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 	createDevice := func() *pipeline.Device {
 		return &pipeline.Device{
@@ -100,7 +114,7 @@ func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			msg := pipeline.NewMessage(uuid.NewString(), []string{})
+			msg := newPipelineMessage(uuid.NewString(), []string{})
 			if tC.device != nil {
 				msg.Device = tC.device
 				if tC.sensor != nil {
@@ -139,7 +153,7 @@ func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 // This tests whether the related models are properly copied into the measurements
 // It does not test any logic
 func TestShouldCopyOverDefaultFields(t *testing.T) {
-	msg := pipeline.NewMessage(uuid.NewString(), []string{})
+	msg := newPipelineMessage(uuid.NewString(), []string{})
 	msg.Device = &pipeline.Device{
 		ID:           1,
 		Code:         "",
@@ -268,7 +282,7 @@ func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			msg := pipeline.NewMessage(uuid.NewString(), []string{})
+			msg := newPipelineMessage(uuid.NewString(), []string{})
 			msg.Device = &pipeline.Device{
 				ID:           1,
 				Code:         "",
@@ -350,7 +364,7 @@ func TestShouldSetExpirationDate(t *testing.T) {
 		},
 	}
 	for _, tC := range testCases {
-		msg := pipeline.NewMessage(uuid.NewString(), []string{})
+		msg := newPipelineMessage(uuid.NewString(), []string{})
 		msg.ReceivedAt = now.UnixMilli()
 		msg.Device = &pipeline.Device{
 			ID:           1,

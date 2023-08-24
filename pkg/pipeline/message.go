@@ -2,9 +2,6 @@ package pipeline
 
 import (
 	"errors"
-	"time"
-
-	"github.com/google/uuid"
 
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
@@ -28,8 +25,10 @@ type (
 
 type Message struct {
 	ID            string         `json:"id"`
+	OwnerID       int64          `json:"owner_id"`
 	ReceivedAt    int64          `json:"received_at"`
 	PipelineID    string         `json:"pipeline_id"`
+	StepIndex     int64          `json:"stepIndex"`
 	PipelineSteps []string       `json:"pipeline_steps"`
 	Timestamp     int64          `json:"timestamp"`
 	Device        *Device        `json:"device"`
@@ -38,23 +37,26 @@ type Message struct {
 	Metadata      map[string]any `json:"metadata"`
 }
 
-func NewMessage(pipelineID string, steps []string) *Message {
-	return &Message{
-		ID:            uuid.Must(uuid.NewRandom()).String(),
-		ReceivedAt:    time.Now().UnixMilli(),
-		PipelineID:    pipelineID,
-		PipelineSteps: steps,
-		Timestamp:     time.Now().UnixMilli(),
-		Measurements:  []Measurement{},
-		Metadata:      make(map[string]any),
+func (m *Message) CurrentStep() (string, error) {
+	if len(m.PipelineSteps) <= int(m.StepIndex) {
+		return "", ErrMessageNoSteps
 	}
+	return m.PipelineSteps[m.StepIndex], nil
 }
 
 func (m *Message) NextStep() (string, error) {
-	if len(m.PipelineSteps) == 0 {
+	if int(m.StepIndex+1) >= len(m.PipelineSteps) {
 		return "", ErrMessageNoSteps
 	}
-	step := m.PipelineSteps[0]
-	m.PipelineSteps = m.PipelineSteps[1:]
-	return step, nil
+	m.StepIndex++
+	return m.PipelineSteps[m.StepIndex], nil
+}
+
+type PipelineError struct {
+	ReceivedByWorker  Message `json:"received_by_worker"`
+	ProcessingAttempt Message `json:"processing_attempt"`
+	Worker            string  `json:"worker"`
+	Queue             string  `json:"queue"`
+	Timestamp         int64   `json:"timestamp"`
+	Error             string  `json:"error"`
 }

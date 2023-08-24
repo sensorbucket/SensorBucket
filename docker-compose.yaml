@@ -34,6 +34,21 @@ services:
     - AMQP_XCHG=pipeline.messages
     - SVC_PIPELINE=http://pipeline:3000
 
+  ingressarchiver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - .:/workspace:cached
+    environment:
+    - APP_NAME=ingress-archiver
+    - APP_TYPE=service
+    - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/ingressarchiver?sslmode=disable
+    - AMQP_HOST=amqp://guest:guest@mq:5672/
+    - AMQP_XCHG=pipeline.messages
+    - AMQP_XCHG_TOPIC=ingress.#
+
   httpimporter:
     build: 
       context: .
@@ -43,10 +58,11 @@ services:
       - .:/workspace:cached
     environment:
     - APP_NAME=httpimporter
+    - APP_TYPE=service
     - HTTP_ADDR=:3000
     - AMQP_HOST=amqp://guest:guest@mq:5672/
-    - AMQP_XCHG=pipeline.messages
-    - SVC_PIPELINE=http://core:3000
+    - AMQP_XCHG=ingress
+    - AMQP_XCHG_TOPIC=ingress.httpimporter
 
   worker_thethingsnetwork:
     build: 
@@ -60,6 +76,7 @@ services:
     - APP_TYPE=worker
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_QUEUE=the-things-network
+    - AMQP_ERR_TOPIC=errors
     - AMQP_XCHG=pipeline.messages
     - SVC_DEVICE=http://core:3000
 
@@ -75,6 +92,7 @@ services:
     - APP_TYPE=worker
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_QUEUE=multiflexmeter-groundwater-level
+    - AMQP_ERR_TOPIC=errors
     - AMQP_XCHG=pipeline.messages
 
   worker_multiflexmeter_pm:
@@ -89,6 +107,7 @@ services:
     - APP_TYPE=worker
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_QUEUE=multiflexmeter-particulatematter
+    - AMQP_ERR_TOPIC=errors
     - AMQP_XCHG=pipeline.messages
 
   worker_pzld_sensorbox:
@@ -103,12 +122,11 @@ services:
     - APP_TYPE=worker
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_QUEUE=pzld-sensorbox
+    - AMQP_ERR_TOPIC=errors
     - AMQP_XCHG=pipeline.messages
 
   db:
     image: timescale/timescaledb-postgis:latest-pg12
-    ports:
-      - 5432:5432
     volumes:
       - ./tools/postgres.d:/docker-entrypoint-initdb.d
     environment:
