@@ -17,7 +17,8 @@ func TestAllStepsAddsCorrectRemainingSteps(t *testing.T) {
 				StepsRemaining: 5,
 				StartTime:      5432,
 			},
-			Status: Success,
+			Status:                  Success,
+			HighestCollectiveStatus: Failed,
 		},
 		EnrichedStep{
 			Step: Step{

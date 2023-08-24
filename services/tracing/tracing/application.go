@@ -3,7 +3,6 @@ package tracing
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
@@ -111,11 +110,11 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 }
 
 type Filter struct {
-	TracingIds          []uuid.UUID `schema:"tracing_id"`
+	TracingIds          []string `schema:"tracing_id"`
 	Status              []string
-	DeviceIds           []int64 `schema:"device_id"`
-	DurationGreaterThan *time.Duration
-	DurationSmallerThan *time.Duration
+	DeviceIds           []int64        `schema:"device_id"`
+	DurationGreaterThan *time.Duration `schema:"duration_greater_than"`
+	DurationLowerThan   *time.Duration `schema:"duration_lower_than"`
 }
 
 type TraceDTO struct {

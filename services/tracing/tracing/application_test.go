@@ -19,6 +19,7 @@ func TestPipelineErrorAppears(t *testing.T) {
 		input    pipeline.PipelineError
 		expected Step
 	}
+	e := asPointer("some weird error occurred!!")
 	scenarios := map[string]scene{
 		"pipeline error with 3 steps remaining": {
 			input: pipeline.PipelineError{
@@ -35,7 +36,7 @@ func TestPipelineErrorAppears(t *testing.T) {
 				StepIndex:      3,
 				StepsRemaining: 3,
 				StartTime:      21342143,
-				// Error:          "some weird error occurred!!",
+				Error:          e,
 			},
 		},
 		"pipeline message with 0 steps remaining": {
@@ -53,7 +54,7 @@ func TestPipelineErrorAppears(t *testing.T) {
 				StepIndex:      6,
 				StepsRemaining: 0,
 				StartTime:      21342143,
-				// Error:          "some weird error occurred!!",
+				Error:          e,
 			},
 		},
 		"pipeline message with 1 step remaining": {
@@ -71,7 +72,7 @@ func TestPipelineErrorAppears(t *testing.T) {
 				StepIndex:      5,
 				StepsRemaining: 1,
 				StartTime:      21342143,
-				// Error:          "some weird error occurred!!",
+				Error:          e,
 			},
 		},
 	}

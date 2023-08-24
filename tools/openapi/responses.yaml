@@ -4,3 +4,5 @@
   description: The request failed because the provided credentials do not have the required permissions to perform this action
 '404':
   description: The request failed because the requested resource could not be found
+'400':
+  description: The request failed because of a malformed or invalid request

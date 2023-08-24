@@ -83,8 +83,8 @@ func (s *stepStore) Query(filter tracing.Filter, r pagination.Request) (*paginat
 		q = q.Where(sq.GtOrEq{"s3.duration": *filter.DurationGreaterThan})
 	}
 
-	if filter.DurationSmallerThan != nil {
-		q = q.Where(sq.LtOrEq{"s3.duration": *filter.DurationSmallerThan})
+	if filter.DurationLowerThan != nil {
+		q = q.Where(sq.LtOrEq{"s3.duration": *filter.DurationLowerThan})
 	}
 
 	// Pagination

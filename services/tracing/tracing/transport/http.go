@@ -50,8 +50,8 @@ func (t *HTTPTransport) httpGetTraces() http.HandlerFunc {
 			return
 		}
 
-		if params.DurationGreaterThan != nil && *params.DurationSmallerThan != 0 &&
-			*params.DurationGreaterThan <= *params.DurationSmallerThan {
+		if params.DurationGreaterThan != nil && *params.DurationLowerThan != 0 &&
+			*params.DurationGreaterThan <= *params.DurationLowerThan {
 			http.Error(rw, "duration_greater_than cannot be smaller than or equal to duration_smaller_than", http.StatusBadRequest)
 			return
 		}

@@ -1,0 +1,65 @@
+get:
+  x-is-paginated: true
+  operationId: ListTraces
+  summary: List traces
+  description: |
+    Lists traces that match the provided filter.
+  tags: [""]
+  parameters:
+    - in: query
+      name: cursor
+      description: The cursor for the current page
+      schema:
+        type: string
+    - in: query
+      name: limit
+      description: |
+        The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+      schema:
+        type: number
+    - in: query
+      name: tracing_id
+      schema:
+        type: string
+        example: "a59d28c8-2a0f-4e89-9f49-6942f1c04342"
+    - in: query
+      name: device_id
+      schema:
+        type: int
+        example: 5
+    - in: query
+      name: status
+      schema:
+        type: string
+        example: "in progress"
+    - in: query
+      name: duration_greater_than
+      schema:
+        type: string
+        example: "5s"
+    - in: query
+      name: duration_smaller_than
+      schema:
+        type: string
+        example: "250ms"
+
+  responses:
+    "200":
+      description: Fetched traces
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "./schemas.yaml#/paginatedResponse"
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "schemas.yaml#/trace"
+    "400":
+      $ref: "./responses.yaml#/400"
+    "401":
+      $ref: "./responses.yaml#/401"
+    "403":
+      $ref: "./responses.yaml#/403"
