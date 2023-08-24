@@ -26,7 +26,7 @@ type Service struct {
 }
 
 func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message) error {
-	return s.addStep(Step{
+	step := Step{
 		TracingID: pipelineMessage.ID,
 		StepIndex: pipelineMessage.StepIndex,
 
@@ -36,17 +36,33 @@ func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message) error 
 		// The timestamp is set by the mq when it is send to the queue. The next step's starttime can be used to deduce the processing time between the 2 steps
 		// this duration consists of: Time in Queue and the Processing Time in the worker
 		StartTime: pipelineMessage.Timestamp,
-	})
+	}
+
+	if pipelineMessage.Device != nil {
+		step.DeviceId = &pipelineMessage.Device.ID
+	}
+
+	return s.addStep(step)
 }
 
 func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError) error {
-	return s.addStep(Step{
+	step := Step{
 		TracingID:      errorMessage.ReceivedByWorker.ID,
 		StepIndex:      errorMessage.ReceivedByWorker.StepIndex,
 		StepsRemaining: int64(len(errorMessage.ReceivedByWorker.PipelineSteps) - (int(errorMessage.ReceivedByWorker.StepIndex + 1))),
 		StartTime:      errorMessage.ReceivedByWorker.Timestamp,
-		Error:          errorMessage.Error,
-	})
+		Error:          &errorMessage.Error,
+	}
+
+	if errorMessage.ReceivedByWorker.Device != nil {
+		step.DeviceId = &errorMessage.ReceivedByWorker.Device.ID
+	}
+
+	if errorMessage.ProcessingAttempt.Device != nil {
+		step.DeviceId = &errorMessage.ProcessingAttempt.Device.ID
+	}
+
+	return s.addStep(step)
 }
 
 func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[TraceDTO], error) {
@@ -68,13 +84,21 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 		return TraceDTO{
 			TracingId: key,
 			Status:    asEnriched.TotalStatus().String(),
+			StartTime: asEnriched.TotalStartTime(),
+			DeviceId:  asEnriched.DeviceId(),
 
 			// The EnrichedSteps also have to be updated to a DTO object
 			Steps: lo.Map(asEnriched.AllSteps(), func(val EnrichedStep, _ int) StepDTO {
+				stepDto := StepDTO{
+					Status:   val.Status.String(),
+					Duration: val.Duration,
+				}
+				if val.Error != nil {
+					stepDto.Error = *val.Error
+				}
 				return StepDTO{
 					Status:   val.Status.String(),
 					Duration: val.Duration,
-					Error:    val.Error,
 				}
 			}),
 		}
@@ -87,13 +111,17 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 }
 
 type Filter struct {
-	TraceIds *[]uuid.UUID `schema:"trace_id"`
-	Status   *Status
-	Duration *time.Duration
+	TraceIds            []uuid.UUID `schema:"trace_id"`
+	Status              []string
+	DeviceId            []int64
+	DurationGreaterThan *time.Duration
+	DurationSmallerThan *time.Duration
 }
 
 type TraceDTO struct {
 	TracingId string    `json:"tracing_id"`
+	DeviceId  *int64    `json:"device_id"`
+	StartTime int64     `json:"start_time"`
 	Status    string    `json:"status"`
 	Steps     []StepDTO `json:"steps"`
 }

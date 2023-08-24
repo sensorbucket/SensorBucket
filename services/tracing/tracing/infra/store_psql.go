@@ -2,14 +2,12 @@ package tracinginfra
 
 import (
 	"fmt"
-	"strings"
-	"time"
+	"strconv"
 
-	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-	"github.com/samber/lo"
 
+	sq "github.com/Masterminds/squirrel"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
 )
@@ -21,11 +19,11 @@ func NewStorePSQL(db *sqlx.DB) *stepStore {
 }
 
 type TraceQueryPage struct {
-	TraceId     string `pagination:"trace_id,DESC"`
-	SensorIndex int64  `pagination:"sensor_index,DESC"`
+	StartTime int64 `pagination:"s3.start_time,DESC"`
 }
 
 func (s *stepStore) Insert(step tracing.Step) error {
+	// TODO: to sq and add device id as well
 	if _, err := s.db.Exec(
 		`INSERT INTO "steps" ("tracing_id", "step_index", "steps_remaining", "start_time", "error") VALUES ($1, $2, $3, $4, $5)`,
 		step.TracingID,
@@ -39,139 +37,89 @@ func (s *stepStore) Insert(step tracing.Step) error {
 	return nil
 }
 
-func (s *stepStore) Query(tracing.Filter, pagination.Request) (*pagination.Page[tracing.EnrichedStep], error) {
+func (s *stepStore) Query(filter tracing.Filter, r pagination.Request) (*pagination.Page[tracing.EnrichedStep], error) {
+	var err error
 
-}
+	// Build the case statement we need to derive the state of a step
+	stepStatusCase := sq.Case().
+		When("s1.error <> ''", strconv.Itoa(int(tracing.Failed))).
+		When("s2 IS NULL AND s1.steps_remaining <> 0", strconv.Itoa(int(tracing.InProgress))).
+		Else(strconv.Itoa(int(tracing.Success)))
 
-func (s *stepStore) QueryUgly(query tracing.Filter, r pagination.Request) (*pagination.Page[tracing.TraceDTO], error) {
-	args := lo.Map(*query.TraceIds, func(id uuid.UUID, _ int) any {
-		return id.String()
-	})
-	rows, err := s.db.Query(traceQuery(*query.TraceIds), args...)
+	// Create the expression used to derivce a step's duration
+	durationExpres := sq.ConcatExpr("COALESCE(s2.start_time - s1.start_time, 0)")
+
+	// Finally build the query
+	subQ := sq.Select(
+		"s1.tracing_id",
+		"s1.device_id",
+		"s1.step_index",
+		"s1.steps_remaining",
+		"s1.start_time",
+		"s1.error",
+	).
+		Column(sq.Alias(stepStatusCase, "status")).
+		Column(sq.Alias(durationExpres, "duration")).
+		From("steps s1").
+
+		// To derive the state of the step we need to retrieve the next step in the database if it exists
+		LeftJoin("steps s2 ON s1.tracing_id = s2.tracing_id AND s1.step_index + 1 = s2.step_index")
+
+	q := sq.Select("*").FromSelect(subQ, "s3")
+
+	if len(filter.DeviceId) > 0 {
+		q = q.Where(sq.Eq{"s3.device_id": filter.DeviceId})
+	}
+
+	if len(filter.TraceIds) > 0 {
+		q = q.Where(sq.Eq{"s3.tracing_id": filter.TraceIds})
+	}
+
+	if len(filter.Status) > 0 {
+		q = q.Where(sq.Eq{"s3.status": tracing.StatusStringsToStatusCodes(filter.Status)})
+	}
+
+	if filter.DurationGreaterThan != nil {
+		q = q.Where(sq.GtOrEq{"s3.duration": *filter.DurationGreaterThan})
+	}
+
+	if filter.DurationSmallerThan != nil {
+		q = q.Where(sq.LtOrEq{"s3.duration": *filter.DurationSmallerThan})
+	}
+
+	// Pagination
+	cursor := pagination.GetCursor[TraceQueryPage](r)
+	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println(sq.DebugSqlizer(q))
+	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(s.db).Query()
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
-	list := []traceStep{}
+	list := make([]tracing.EnrichedStep, 0, cursor.Limit)
 	for rows.Next() {
-		var t traceStep
+		var t tracing.EnrichedStep
 		err = rows.Scan(
-			&t.StepIndex,
-			&t.StepsRemaining,
-			&t.TracingId,
+			&t.Step.TracingID,
+			&t.Step.DeviceId,
+			&t.Step.StepIndex,
+			&t.Step.StepsRemaining,
+			&t.Step.StartTime,
+			&t.Step.Error,
 			&t.Status,
-			&t.TotalStatus,
 			&t.Duration,
-			&t.Error,
+			&cursor.Columns.StartTime,
 		)
 		if err != nil {
 			return nil, err
 		}
 		list = append(list, t)
 	}
-
-	m := map[string][]traceStep{}
-
-	for _, res := range list {
-		if _, ok := m[res.TracingId]; !ok {
-			m[res.TracingId] = []traceStep{
-				res,
-			}
-			continue
-		}
-		m[res.TracingId] = append(m[res.TracingId], res)
-	}
-
-	total := []tracing.TraceDTO{}
-	for key, val := range m {
-		steps := []tracing.StepDTO{}
-		for _, v := range val {
-			var e string
-			if v.Error != nil {
-				e = *v.Error
-			}
-			steps = append(steps, tracing.StepDTO{
-				Status:   tracing.Status(v.Status).String(),
-				Duration: v.Duration,
-				Error:    e,
-			})
-		}
-
-		if len(val) != (val[0].StepIndex + 1 + val[0].StepsRemaining) {
-			for i := 0; i < val[0].StepIndex+1+val[0].StepsRemaining-len(val); i++ {
-				last := val[len(val)-1]
-				if last.Status == 4 {
-					steps = append(steps, tracing.StepDTO{
-						Status: tracing.Pending.String(),
-					})
-				} else if last.Status == 5 {
-					steps = append(steps, tracing.StepDTO{
-						Status: tracing.Canceled.String(),
-					})
-				} else {
-					steps = append(steps, tracing.StepDTO{
-						Status: tracing.Unknown.String(),
-					})
-				}
-			}
-		}
-
-		total = append(total, tracing.TraceDTO{
-			TracingId: key,
-			Status:    tracing.Status(val[0].Status).String(),
-			Steps:     steps,
-		})
-	}
-
-	return &pagination.Page[tracing.TraceDTO]{
-		Cursor: "TODO",
-		Data:   total,
-	}, nil
-}
-
-type traceStep struct {
-	StepIndex      int
-	StepsRemaining int
-	TracingId      string
-	Status         int
-	TotalStatus    int
-	Duration       time.Duration
-	Error          *string
-}
-
-func traceQuery(traceIds []uuid.UUID) string {
-	return `
-	SELECT
-	s1.step_index,
-	s1.steps_remaining,
-    s1.tracing_id,
-    CASE
-        WHEN s1.error <> '' THEN 5
-        WHEN s2.start_time = 0 THEN 4
-        ELSE 3
-    END AS status,
-    (
-        SELECT MAX(CASE
-                    WHEN s.error <> '' THEN 5
-                    WHEN s.start_time = 0 THEN 4
-                    ELSE 3
-                END)
-        FROM steps s
-        WHERE s.tracing_id = s1.tracing_id
-    ) AS total_status,
-	COALESCE(s2.start_time - s1.start_time, 0) AS duration,
-	s1.error
-FROM
-    steps s1
-LEFT JOIN
-    steps s2 ON s1.tracing_id = s2.tracing_id AND s1.step_index + 1 = s2.step_index
-WHERE
-    s1.tracing_id in ($1,` + strings.Join(lo.RepeatBy(len(traceIds)-1, func(index int) string {
-		return fmt.Sprintf("$%d", index+2)
-	}), ",") + `)
-ORDER BY
-    s1.step_index;`
+	page := pagination.CreatePageT(list, cursor)
+	return &page, nil
 }
 
 type stepStore struct {

@@ -49,8 +49,9 @@ func (t *HTTPTransport) httpGetTraces() http.HandlerFunc {
 			return
 		}
 
-		if *params.Filter.TraceIds == nil || len(*params.Filter.TraceIds) == 0 {
-			http.Error(rw, "at least 1 trace_id must be included in the request", http.StatusBadRequest)
+		if params.DurationGreaterThan != nil && *params.DurationSmallerThan != 0 &&
+			*params.DurationGreaterThan <= *params.DurationSmallerThan {
+			http.Error(rw, "duration_greater_than cannot be smaller than or equal to duration_smaller_than", http.StatusBadRequest)
 			return
 		}
 

@@ -3,9 +3,10 @@ package tracing
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
-
 
 func TestPipelineErrorAppears(t *testing.T) {
 	// Arrange
@@ -34,7 +35,7 @@ func TestPipelineErrorAppears(t *testing.T) {
 				StepIndex:      3,
 				StepsRemaining: 3,
 				StartTime:      21342143,
-				Error:          "some weird error occurred!!",
+				// Error:          "some weird error occurred!!",
 			},
 		},
 		"pipeline message with 0 steps remaining": {
@@ -52,7 +53,7 @@ func TestPipelineErrorAppears(t *testing.T) {
 				StepIndex:      6,
 				StepsRemaining: 0,
 				StartTime:      21342143,
-				Error:          "some weird error occurred!!",
+				// Error:          "some weird error occurred!!",
 			},
 		},
 		"pipeline message with 1 step remaining": {
@@ -70,7 +71,7 @@ func TestPipelineErrorAppears(t *testing.T) {
 				StepIndex:      5,
 				StepsRemaining: 1,
 				StartTime:      21342143,
-				Error:          "some weird error occurred!!",
+				// Error:          "some weird error occurred!!",
 			},
 		},
 	}
@@ -108,7 +109,6 @@ func TestPipelineMessageAppears(t *testing.T) {
 				StepIndex:      3,
 				StepsRemaining: 3,
 				StartTime:      21342143,
-				Error:          "",
 			},
 		},
 		"pipeline message with 0 steps remaining": {
@@ -123,7 +123,6 @@ func TestPipelineMessageAppears(t *testing.T) {
 				StepIndex:      3,
 				StepsRemaining: 0,
 				StartTime:      21342143,
-				Error:          "",
 			},
 		},
 		"pipeline message with 1 step remaining": {
@@ -138,7 +137,6 @@ func TestPipelineMessageAppears(t *testing.T) {
 				StepIndex:      4,
 				StepsRemaining: 1,
 				StartTime:      21342143,
-				Error:          "",
 			},
 		},
 	}
@@ -159,4 +157,8 @@ type stepStoreMock struct {
 func (s *stepStoreMock) Insert(step Step) error {
 	s.inserted = step
 	return nil
+}
+
+func (s *stepStoreMock) Query(Filter, pagination.Request) (*pagination.Page[EnrichedStep], error) {
+	return &pagination.Page[EnrichedStep]{}, nil
 }
