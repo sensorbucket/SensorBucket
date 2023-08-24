@@ -101,3 +101,24 @@
         </div>
     </div>
 {% endfunc %}
+
+{% func renderDeviceMap(device devices.Device) %}
+    {% if device.Latitude != nil && device.Longitude != nil %}
+        <div
+            class="w-full h-96" 
+            id="device-map"
+            hx-ext="leaflet" 
+            data-latitude="{%f *device.Latitude %}"
+            data-longitude="{%f *device.Longitude %}"
+            data-zoom="11"
+        >
+            <map-marker
+                latitude="{%f *device.Latitude %}"
+                longitude="{%f *device.Longitude %}"
+                label="{%s device.Code %}"
+                ></map-marker>
+        </div>
+    {% else %}
+        <span> Device has no location set </span>
+    {% endif %}
+{% endfunc %}

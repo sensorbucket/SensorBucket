@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -184,7 +184,6 @@ func devicesStreamMap() http.HandlerFunc {
 		}
 
 		go func() {
-			fmt.Printf("WS Connect\n")
 			var nextCursor string
 			for {
 				// Start fetching pages of devices and stream them to the client
@@ -203,17 +202,14 @@ func devicesStreamMap() http.HandlerFunc {
 					if err != nil {
 						continue
 					}
-					views.WriteMapMarker(writer, dev.ID, *dev.Latitude, *dev.Longitude, dev.Code)
+					writer.Write([]byte(fmt.Sprintf(`{"device_id": %d, "device_code": "%s", "coordinates": [%f,%f]}`, dev.ID, dev.Code, *dev.Latitude, *dev.Longitude)))
 				}
 				nextCursor = cursor
 				if nextCursor == "" {
 					break
 				}
 			}
-			for {
-				time.Sleep(1 * time.Second)
-			}
-			// ws.Close()
+			ws.Close()
 		}()
 	}
 }
@@ -250,7 +246,21 @@ func overviewDatastreamStream() http.HandlerFunc {
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
+	getMeasurementsPage := func(dsID, cursor string) ([]measurements.Measurement, string, error) {
+		q := url.Values{}
+		q.Set("datastream", dsID)
+		res, err := http.Get("http://core:3000/measurements?" + q.Encode())
+		if err != nil {
+			return nil, "", err
+		}
+		var resBody pagination.APIResponse[measurements.Measurement]
+		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+			return nil, "", err
+		}
+		return resBody.Data, resBody.Links.Next, nil
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		datastreamID := chi.URLParam(r, "id")
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			web.HTTPError(w, err)
@@ -258,6 +268,29 @@ func overviewDatastreamStream() http.HandlerFunc {
 		}
 
 		go func() {
+			var nextCursor string
+			for {
+				// Start fetching pages of measurements and stream them to the client
+				measurements, cursor, err := getMeasurementsPage(datastreamID, nextCursor)
+				if err != nil {
+					ws.Close()
+					return
+				}
+
+				for _, point := range measurements {
+					writer, err := ws.NextWriter(websocket.TextMessage)
+					defer writer.Close()
+					if err != nil {
+						continue
+					}
+					// Write to client
+					fmt.Printf("point: %v\n", point)
+				}
+				nextCursor = cursor
+				if nextCursor == "" {
+					break
+				}
+			}
 			ws.Close()
 		}()
 	}

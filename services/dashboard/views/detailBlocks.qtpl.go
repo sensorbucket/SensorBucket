@@ -306,3 +306,87 @@ func SensorDetailBlock(sensor devices.Sensor) string {
 	return qs422016
 //line services/dashboard/views/detailBlocks.qtpl:103
 }
+
+//line services/dashboard/views/detailBlocks.qtpl:105
+func streamrenderDeviceMap(qw422016 *qt422016.Writer, device devices.Device) {
+//line services/dashboard/views/detailBlocks.qtpl:105
+	qw422016.N().S(`
+    `)
+//line services/dashboard/views/detailBlocks.qtpl:106
+	if device.Latitude != nil && device.Longitude != nil {
+//line services/dashboard/views/detailBlocks.qtpl:106
+		qw422016.N().S(`
+        <div
+            class="w-full h-96" 
+            id="device-map"
+            hx-ext="leaflet" 
+            data-latitude="`)
+//line services/dashboard/views/detailBlocks.qtpl:111
+		qw422016.N().F(*device.Latitude)
+//line services/dashboard/views/detailBlocks.qtpl:111
+		qw422016.N().S(`"
+            data-longitude="`)
+//line services/dashboard/views/detailBlocks.qtpl:112
+		qw422016.N().F(*device.Longitude)
+//line services/dashboard/views/detailBlocks.qtpl:112
+		qw422016.N().S(`"
+            data-zoom="11"
+        >
+            <map-marker
+                latitude="`)
+//line services/dashboard/views/detailBlocks.qtpl:116
+		qw422016.N().F(*device.Latitude)
+//line services/dashboard/views/detailBlocks.qtpl:116
+		qw422016.N().S(`"
+                longitude="`)
+//line services/dashboard/views/detailBlocks.qtpl:117
+		qw422016.N().F(*device.Longitude)
+//line services/dashboard/views/detailBlocks.qtpl:117
+		qw422016.N().S(`"
+                label="`)
+//line services/dashboard/views/detailBlocks.qtpl:118
+		qw422016.E().S(device.Code)
+//line services/dashboard/views/detailBlocks.qtpl:118
+		qw422016.N().S(`"
+                ></map-marker>
+        </div>
+    `)
+//line services/dashboard/views/detailBlocks.qtpl:121
+	} else {
+//line services/dashboard/views/detailBlocks.qtpl:121
+		qw422016.N().S(`
+        <span> Device has no location set </span>
+    `)
+//line services/dashboard/views/detailBlocks.qtpl:123
+	}
+//line services/dashboard/views/detailBlocks.qtpl:123
+	qw422016.N().S(`
+`)
+//line services/dashboard/views/detailBlocks.qtpl:124
+}
+
+//line services/dashboard/views/detailBlocks.qtpl:124
+func writerenderDeviceMap(qq422016 qtio422016.Writer, device devices.Device) {
+//line services/dashboard/views/detailBlocks.qtpl:124
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line services/dashboard/views/detailBlocks.qtpl:124
+	streamrenderDeviceMap(qw422016, device)
+//line services/dashboard/views/detailBlocks.qtpl:124
+	qt422016.ReleaseWriter(qw422016)
+//line services/dashboard/views/detailBlocks.qtpl:124
+}
+
+//line services/dashboard/views/detailBlocks.qtpl:124
+func renderDeviceMap(device devices.Device) string {
+//line services/dashboard/views/detailBlocks.qtpl:124
+	qb422016 := qt422016.AcquireByteBuffer()
+//line services/dashboard/views/detailBlocks.qtpl:124
+	writerenderDeviceMap(qb422016, device)
+//line services/dashboard/views/detailBlocks.qtpl:124
+	qs422016 := string(qb422016.B)
+//line services/dashboard/views/detailBlocks.qtpl:124
+	qt422016.ReleaseByteBuffer(qb422016)
+//line services/dashboard/views/detailBlocks.qtpl:124
+	return qs422016
+//line services/dashboard/views/detailBlocks.qtpl:124
+}

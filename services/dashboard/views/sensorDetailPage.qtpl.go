@@ -27,9 +27,13 @@ var (
 func (p *SensorDetailPage) StreamBody(qw422016 *qt422016.Writer) {
 //line services/dashboard/views/sensorDetailPage.qtpl:4
 	qw422016.N().S(`
-    <div class="mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-6">
+    <div class="mx-auto flex flex-col lg:grid lg:grid-cols-1 xl:grid-cols-3 gap-6">
         <div class="bg-white border rounded-md">
-            <div class="w-full h-96" hx-ext="leaflet"></div>
+            `)
+//line services/dashboard/views/sensorDetailPage.qtpl:7
+	streamrenderDeviceMap(qw422016, p.Device)
+//line services/dashboard/views/sensorDetailPage.qtpl:7
+	qw422016.N().S(`
         </div>
         <div class="bg-white border rounded-md">
             <header class="border-b py-2 px-4 text-sm text-slate-700">
@@ -55,7 +59,7 @@ func (p *SensorDetailPage) StreamBody(qw422016 *qt422016.Writer) {
 	qw422016.N().S(`
             </div>
         </div>
-        <div class="bg-white border rounded-md max-h-96 overflow-y-auto col-span-3">
+        <div class="bg-white border rounded-md max-h-96 overflow-y-auto col-span-full">
             <table class="w-full text-sm border-separate border-spacing-0">
                 <thead class="text-left text-slate-500 sticky top-0 bg-white">
                     <tr class="h-10">

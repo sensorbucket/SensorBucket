@@ -1,25 +1,11 @@
 {% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
 {% import "sensorbucket.nl/sensorbucket/services/core/measurements" %}
+{% import "time" %}
 
 {% func (p *DatastreamPage) Body() %}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="mx-auto flex flex-col lg:grid lg:grid-cols-1 xl:grid-cols-3 gap-6">
     <div class="bg-white rounded-md border" id="map">
-        <div
-            class="w-full h-96"
-            hx-ext="leaflet"
-            {% if p.Device.Latitude != nil && p.Device.Longitude != nil %}
-                data-latitude="{%f *p.Device.Latitude %}"
-                data-longitude="{%f *p.Device.Longitude %}"
-                data-zoom="11"
-            {% else %}
-                data-latitude="3.943"
-                data-longitude="51.573"
-                data-zoom="9"
-            {% endif %}
-            {% if p.Device.Latitude != nil && p.Device.Longitude != nil %}
-                data-markers='[{"lng": {%f *p.Device.Longitude %}, "lat": {%f *p.Device.Latitude %}}]'
-            {% endif %}
-        ></div>
+        {%= renderDeviceMap(p.Device) %}
     </div>
     <div class="bg-white rounded-md border" id="device">
         <header class="border-b py-2 px-4 text-sm text-slate-700">
@@ -37,15 +23,72 @@
             {%= DeviceDetailBlock(p.Device) %}
         </div>
     </div>
-    <div class="bg-white rounded-md border col-span-full" hx-ext="ws" ws-connect="/overview/datastreams/{%s p.Datastream.ID.String() %}/stream?start=asd">
+    <div class="bg-white rounded-md border col-span-full">
         <header class="border-b py-2 px-4 text-sm text-slate-700">
             Datastream
         </header>
         <div class="px-4 pt-4 pb-10">
-            <div hx-ext="uplot" class="w-full h-80"></div>
+            {%= renderDataStream(p.Datastream) %}
         </div>
     </div>
 </div>
+{% endfunc %}
+
+{% func renderDataStream(ds measurements.Datastream) %}
+    <div id="chart" class="w-full h-80"></div>
+    <script type="text/javascript">
+    {
+        function getWebSocketURL(path) {
+            const loc = window.location;
+            let newUri;
+
+            if (loc.protocol === "https:") {
+                newUri = "wss:";
+            } else {
+                newUri = "ws:";
+            }
+            
+            newUri += "//" + loc.host + path;
+            
+            return newUri;
+        }
+        function init() {
+            const target = htmx.find("#chart")
+            const x = [1,2,3,4,5,6,7,8,9];
+            const y = x.map(() => Math.random()*10-5);
+
+            const opts = {
+                width: target.clientWidth,
+                height: target.clientHeight,
+                title: "",
+                scales: {
+                    x: {
+                        time: false,
+                    },
+                    y: {                    
+                    }
+                },
+                series: [
+                    {},
+                    {
+                        stroke: "red",
+                        label: "{%s ds.ObservedProperty %} ({%s ds.UnitOfMeasurement%})"
+                    }
+                ]
+            };
+
+            const plot = new uPlot(opts, [x,y], target)
+
+            const ws = new WebSocket(getWebSocketURL("/overview/datastreams/{%s ds.ID.String() %}/stream?start={%s time.Now().Format(time.RFC3339) %}"))
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data)
+                // Parse data message to uplot 
+                plot.setData(data)
+            }
+        }
+        (() => init())()
+    }
+    </script>
 {% endfunc %}
 
 {% code

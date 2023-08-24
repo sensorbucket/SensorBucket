@@ -29,16 +29,7 @@
         </div>
 
         <div class="bg-white border rounded-md">
-            <div 
-                hx-ext="leaflet,ws"
-                ws-connect="/overview/devices/stream-map"
-                class="w-full h-96"
-                id="device-map"
-            >
-                <div id="markers">
-                    <map-marker latitude="51.3" longitude="3.12"></map-marker>
-                </div>
-            </div>
+            {%= renderMap() %}
         </div>
 
         <div class="bg-white border rounded-md min-h-96 max-h-[90vh] lg:max-h-[50vh] overflow-y-auto">
@@ -75,6 +66,65 @@
                 </tbody>
             </table>
         </div>
+    </div>
+{% endfunc %}
+
+{% func renderMap() %}
+    <div 
+        hx-ext="leaflet"
+        class="w-full h-96"
+        id="device-map"
+    >
+        <!--ws-connect="/overview/devices/stream-map"-->
+        <script type="text/javascript">
+            function getWebSocketURL(path) {
+                const loc = window.location;
+                let newUri;
+
+                if (loc.protocol === "https:") {
+                    newUri = "wss:";
+                } else {
+                    newUri = "ws:";
+                }
+                
+                newUri += "//" + loc.host + path;
+                
+                return newUri;
+            }
+            (() => {
+                let devmap = htmx.find("#device-map")
+                const markers = new Map();
+                async function init() {
+                    const map = devmap.leaflet;
+                    const markerLayer = L.markerClusterGroup()
+                    map.addLayer(markerLayer);
+
+                    const ws = new WebSocket(getWebSocketURL("/overview/devices/stream-map"))
+                    ws.onmessage = (event) => {
+                        const data = JSON.parse(event.data)
+                        if (markers.has(data.device_id)) {
+                            markers.get(data.device_id).remove()
+                            markers.delete(data.device_id)
+                        }
+                        const marker = L.marker(data.coordinates).addTo(markerLayer)
+                        marker.on('click', evt => {
+                            const url = "/overview/devices/" + data.device_id;
+                            htmx.ajax("GET", url, "main").then(() => {
+                                window.history.pushState({}, null, url)
+                            })
+                        })
+                        marker.bindTooltip(data.device_code)
+                        markers.set(data.device_id, marker)
+                    }
+                }
+
+                if (devmap.leaflet !== undefined) {
+                    init()
+                } else {
+                    devmap.addEventListener('leaflet:init', () => init())
+                }
+            })()
+        </script>
     </div>
 {% endfunc %}
 

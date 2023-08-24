@@ -28,6 +28,8 @@
             maxZoom: 19,
         }).addTo(m);
         target.leaflet = m
+        // Fire initialize event
+        htmx.trigger(target, "leaflet:init")
     }
 
     htmx.defineExtension('leaflet', {
@@ -56,30 +58,31 @@
         }
 
         connectedCallback() {
-            this.innerHTML = ""
-            setTimeout(() => {
-                let parentEl = this.parentElement
-                while (parentEl) {
-                    if (parentEl.leaflet) break;
-                    parentEl = parentEl.parentElement;
-                }
-                if (parentEl == undefined) {
-                    throw 'No parent found with leaflet instance';
-                }
+            let parent = this.parentElement;
+            while (parent != document.body) {
+                parent.addEventListener('leaflet:init', this.leafletInit.bind(this))
+                parent = parent.parentElement;
+            }
+        }
 
-                this.parent = parentEl
-                this.map = this.parent.leaflet;
+        leafletInit(evt) {
+            if (evt.target.contains(this)) {
+                this.initMarker(evt.target)
+            }
+        }
 
-                this.marker = L.marker([this.latitude, this.longitude]).addTo(this.map)
+        initMarker(target) {
+            this.map = target.leaflet;
 
-                if (this.label) {
-                    this.marker.bindTooltip(this.label)
-                }
+            this.marker = L.marker([this.latitude, this.longitude]).addTo(this.map)
 
-                this.marker.on('click', (evt) => {
-                    this.dispatchEvent(new CustomEvent(evt.type, { detail: evt.detail }))
-                })
-            }, 10)
+            if (this.label) {
+                this.marker.bindTooltip(this.label)
+            }
+
+            this.marker.on('click', (evt) => {
+                this.dispatchEvent(new CustomEvent(evt.type, { detail: evt.detail }))
+            })
         }
 
         disconnectedCallback() {
