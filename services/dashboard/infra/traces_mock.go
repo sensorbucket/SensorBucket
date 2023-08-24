@@ -18,17 +18,21 @@ func NewTracesMock() *TracesMock {
 func genSteps() []routes.StepDTO {
 	steps := make([]routes.StepDTO, 3)
 	for ix := range steps {
-		steps[ix] = routes.StepDTO{
-			Status:   rand.Intn(5),
-			Duration: time.Duration(rand.Float32()) * time.Second,
-			Error:    "",
+		step := routes.StepDTO{
+			Status: rand.Intn(5),
 		}
+		if step.Status == 4 {
+			step.Error = "Random error"
+		} else {
+			step.Duration = time.Duration(rand.Float32() * float32(time.Second))
+		}
+		steps[ix] = step
 	}
 	return steps
 }
 
 func (t *TracesMock) ListTraces(ids []uuid.UUID) ([]routes.TraceDTO, error) {
-	traces := []routes.TraceDTO{}
+	traces := make([]routes.TraceDTO, len(ids))
 	for ix, id := range ids {
 		traces[ix] = routes.TraceDTO{
 			TracingId: id.String(),

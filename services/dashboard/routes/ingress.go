@@ -62,6 +62,7 @@ func (h IngressPageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *IngressPageHandler) SetupRoutes(r chi.Router) {
 	r.Get("/", h.ingressListPage())
+	r.Get("/list", h.ingressListPartial())
 }
 
 func (h *IngressPageHandler) createViewIngresses() ([]views.Ingress, error) {
@@ -85,9 +86,8 @@ func (h *IngressPageHandler) createViewIngresses() ([]views.Ingress, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO: Should mustparse be here?
-	traceMap := lo.SliceToMap(steplogs, func(steplog TraceDTO) (uuid.UUID, TraceDTO) {
-		return uuid.MustParse(steplog.TracingId), steplog
+	traceMap := lo.SliceToMap(steplogs, func(steplog TraceDTO) (string, TraceDTO) {
+		return steplog.TracingId, steplog
 	})
 
 	ingresses := make([]views.Ingress, 0, len(archivedIngresses))
@@ -101,7 +101,7 @@ func (h *IngressPageHandler) createViewIngresses() ([]views.Ingress, error) {
 		if !found {
 			continue
 		}
-		traceSteps := traceMap[ingress.TracingID]
+		traceSteps := traceMap[ingress.TracingID.String()]
 		ingress := views.Ingress{
 			TracingID: ingress.TracingID.String(),
 			CreatedAt: ingress.IngressDTO.CreatedAt,
@@ -109,11 +109,16 @@ func (h *IngressPageHandler) createViewIngresses() ([]views.Ingress, error) {
 				// TODO: This currently requires that there are an equal number of StepDTO's and Pipeline Steps
 				// In the future pipelines will have revisions and are not directly mutable, thus this should always be equal
 				step := traceSteps.Steps[ix]
-				return views.IngressStep{
-					Label:    stepLabel,
-					Status:   int(step.Status),
-					Duration: step.Duration.String(),
+				viewStep := views.IngressStep{
+					Label:  stepLabel,
+					Status: int(step.Status),
 				}
+				if step.Error != "" {
+					viewStep.Tooltip = step.Error
+				} else if step.Duration != 0 {
+					viewStep.Tooltip = step.Duration.Truncate(1 * time.Millisecond).String()
+				}
+				return viewStep
 			}),
 		}
 		ingresses = append(ingresses, ingress)

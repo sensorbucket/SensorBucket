@@ -1,6 +1,10 @@
 {% import "time" %}
 {% func (p *IngressPage) Body() %}
-    <div class="w-full xl:w-2/3 mx-auto flex flex-col rounded py-4 bg-white">
+    <div 
+        class="w-full xl:w-2/3 mx-auto flex flex-col rounded py-4 bg-white"
+        hx-get="/ingress/list"
+        hx-trigger="every 2s"
+    >
         {%= RenderIngressList(p.Ingresses) %}
     </div>
 {% endfunc %}
@@ -17,7 +21,7 @@
                 {% for _, step := range ingress.Steps %}
                     <li class="
                         flex relative items-center rounded-full py-1 px-2 text-xs border
-                        bg-white
+                        bg-white group
                         {% switch step.Status %}
                         {% case 2 %}
                          border-emerald-500
@@ -31,16 +35,19 @@
                         {%s step.Label %}
                         {% switch step.Status %}
                         {% case 2 %}
-                        <iconify-icon class="pl-1 text-emerald-800" icon="fluent:checkmark-12-filled"></iconify-icon>
+                        <iconify-icon class="w-3 pl-1 text-emerald-800" icon="fluent:checkmark-12-filled"></iconify-icon>
                         {% case 3 %}
-                        <iconify-icon class="pl-1 text-orange-800" icon="carbon:in-progress"></iconify-icon>
+                        <iconify-icon class="w-3 pl-1 text-orange-800" icon="carbon:in-progress"></iconify-icon>
                         {% case 4 %}
-                        <iconify-icon class="pl-1 text-rose-800" icon="material-symbols:error"></iconify-icon>
+                        <iconify-icon class="w-3 pl-1 text-rose-800" icon="material-symbols:error"></iconify-icon>
                         {% default %}
-                        <iconify-icon class="pl-1 text-slate-800" icon="material-symbols:question-mark"></iconify-icon>
+                        <iconify-icon class="w-3 pl-1 text-slate-800" icon="material-symbols:question-mark"></iconify-icon>
                         {% endswitch %}
-                        <div class="hidden group-hover:block absolute top-0 left-0 right-0 border text-center py-2">
-                            {%s step.Duration %}
+                        <div class="
+                            hidden hover:block group-hover:block absolute text-white bg-gray-800 bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 rounded py-1
+                            after:content-['_'] after:absolute after:top-full after:-translate-y-[0.25rem] after:left-1/2 after:-translate-x-1/2 after:bg-gray-800 after:w-2 after:h-2 after:rotate-45
+                        ">
+                            {%s step.Tooltip %}
                         </div>
                     </li>
                 {% endfor %}
@@ -60,7 +67,7 @@ type IngressPage struct {
 type IngressStep struct {
     Label string
     Status int
-    Duration string
+    Tooltip string
 }
 
 type Ingress struct {
