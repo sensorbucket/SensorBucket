@@ -1,4 +1,4 @@
-package main
+package routes
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 
 type middlewareFunc = func(next http.Handler) http.Handler
 
-func createOverviewPageHandler() http.Handler {
+func CreateOverviewPageHandler() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.GetHead)
 	r.Get("/", deviceListPage())

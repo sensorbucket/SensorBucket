@@ -1,50 +1,54 @@
 {% import "time" %}
 {% func (p *IngressPage) Body() %}
     <div class="w-full xl:w-2/3 mx-auto flex flex-col rounded py-4 bg-white">
-        {% for _, ingress := range p.Ingresses %}
-            <article class="flex justify-between text-sm border-b border-slate-100 p-2 hover:bg-slate-50">
-                <section class="flex flex-col">
-                    <a href="/ingress/{%s ingress.TracingID %}" class="text-sky-600 hover:underline">{%s ingress.TracingID %}</a>
-                    <span class="text-slate-500 text-xs">{%s ingress.CreatedAt.Format("15:04:05 2006-01-02") %}</span>
-                </section>
-                <section class="relative flex items-center">
-                    <ul class="flex items-center gap-4 z-10">
-                        {% for _, step := range ingress.Steps %}
-                            <li class="
-                                flex relative items-center rounded-full py-1 px-2 text-xs border
-                                bg-white
-                                {% switch step.Status %}
-                                {% case 2 %}
-                                 border-emerald-500
-                                {% case 3 %}
-                                 border-orange-500
-                                {% case 4 %}
-                                 border-rose-500
-                                {% default %}
-                                {% endswitch %}
-                            ">
-                            {%s step.Label %}
-                            {% switch step.Status %}
-                            {% case 2 %}
-                            <iconify-icon class="pl-1 text-emerald-800" icon="fluent:checkmark-12-filled"></iconify-icon>
-                            {% case 3 %}
-                            <iconify-icon class="pl-1 text-orange-800" icon="carbon:in-progress"></iconify-icon>
-                            {% case 4 %}
-                            <iconify-icon class="pl-1 text-rose-800" icon="material-symbols:error"></iconify-icon>
-                            {% default %}
-                            <iconify-icon class="pl-1 text-slate-800" icon="material-symbols:question-mark"></iconify-icon>
-                            {% endswitch %}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                    <div class="absolute border-b-2 left-0 right-0 top-1/2 -translate-y-1/2"></div>
-                    <div class="hidden group-hover:block absolute top-0 left-0 right-0 border text-center py-2">
-                        {%s step.Duration %}
-                    </div>
-                </section>
-            </article>
-        {% endfor %}
+        {%= RenderIngressList(p.Ingresses) %}
     </div>
+{% endfunc %}
+
+{% func RenderIngressList(ingresses []Ingress) %}
+{% for _, ingress := range ingresses %}
+    <article class="flex justify-between text-sm border-b border-slate-100 p-2 hover:bg-slate-50">
+        <section class="flex flex-col">
+            <a href="/ingress/{%s ingress.TracingID %}" class="text-sky-600 hover:underline">{%s ingress.TracingID %}</a>
+            <span class="text-slate-500 text-xs">{%s ingress.CreatedAt.Format("15:04:05 2006-01-02") %}</span>
+        </section>
+        <section class="relative flex items-center">
+            <ul class="flex items-center gap-4 z-10">
+                {% for _, step := range ingress.Steps %}
+                    <li class="
+                        flex relative items-center rounded-full py-1 px-2 text-xs border
+                        bg-white
+                        {% switch step.Status %}
+                        {% case 2 %}
+                         border-emerald-500
+                        {% case 3 %}
+                         border-orange-500
+                        {% case 4 %}
+                         border-rose-500
+                        {% default %}
+                        {% endswitch %}
+                    ">
+                        {%s step.Label %}
+                        {% switch step.Status %}
+                        {% case 2 %}
+                        <iconify-icon class="pl-1 text-emerald-800" icon="fluent:checkmark-12-filled"></iconify-icon>
+                        {% case 3 %}
+                        <iconify-icon class="pl-1 text-orange-800" icon="carbon:in-progress"></iconify-icon>
+                        {% case 4 %}
+                        <iconify-icon class="pl-1 text-rose-800" icon="material-symbols:error"></iconify-icon>
+                        {% default %}
+                        <iconify-icon class="pl-1 text-slate-800" icon="material-symbols:question-mark"></iconify-icon>
+                        {% endswitch %}
+                        <div class="hidden group-hover:block absolute top-0 left-0 right-0 border text-center py-2">
+                            {%s step.Duration %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+            <div class="absolute border-b-2 left-0 right-0 top-1/2 -translate-y-1/2"></div>
+        </section>
+    </article>
+{% endfor %}
 {% endfunc %}
 
 {% code
