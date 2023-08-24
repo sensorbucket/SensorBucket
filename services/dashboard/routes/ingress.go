@@ -85,6 +85,7 @@ func (h *IngressPageHandler) createViewIngresses() ([]views.Ingress, error) {
 	if err != nil {
 		return nil, err
 	}
+	// TODO: Should mustparse be here?
 	traceMap := lo.SliceToMap(steplogs, func(steplog TraceDTO) (uuid.UUID, TraceDTO) {
 		return uuid.MustParse(steplog.TracingId), steplog
 	})
@@ -100,12 +101,14 @@ func (h *IngressPageHandler) createViewIngresses() ([]views.Ingress, error) {
 		if !found {
 			continue
 		}
-		steps := traceMap[ingress.TracingID]
-		ingr := views.Ingress{
+		traceSteps := traceMap[ingress.TracingID]
+		ingress := views.Ingress{
 			TracingID: ingress.TracingID.String(),
 			CreatedAt: ingress.IngressDTO.CreatedAt,
 			Steps: lo.Map(pl.Steps, func(stepLabel string, ix int) views.IngressStep {
-				step := steps.Steps[ix]
+				// TODO: This currently requires that there are an equal number of StepDTO's and Pipeline Steps
+				// In the future pipelines will have revisions and are not directly mutable, thus this should always be equal
+				step := traceSteps.Steps[ix]
 				return views.IngressStep{
 					Label:    stepLabel,
 					Status:   int(step.Status),
@@ -113,7 +116,7 @@ func (h *IngressPageHandler) createViewIngresses() ([]views.Ingress, error) {
 				}
 			}),
 		}
-		ingresses = append(ingresses, ingr)
+		ingresses = append(ingresses, ingress)
 	}
 	return ingresses, nil
 }

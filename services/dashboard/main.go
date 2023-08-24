@@ -54,11 +54,12 @@ func Run() error {
 	}
 
 	sbAPI := dashboardinfra.NewSensorBucketAPI(EP_INGRESSES, EP_PIPELINES, EP_TRACES)
+	tracesMock := dashboardinfra.NewTracesMock()
 
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("Healthy!")) })
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/overview", http.StatusFound) })
 	router.Mount("/overview", routes.CreateOverviewPageHandler())
-	router.Mount("/ingress", routes.CreateIngressPageHandler(sbAPI, sbAPI, sbAPI))
+	router.Mount("/ingress", routes.CreateIngressPageHandler(sbAPI, tracesMock, sbAPI))
 	srv := &http.Server{
 		Addr:         ":3000",
 		WriteTimeout: 5 * time.Second,
