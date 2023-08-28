@@ -3,15 +3,15 @@
 {% import "time" %}
 
 {% func (p *DatastreamPage) Body() %}
-    <div class="flex gap-3 text-sm my-4 italic items-center">
-        <a href="/overview" class="hover:underline text-sky-600">Devices</a>
-        <span>/</span>
-        <a href="/overview/devices/{%dl p.Device.ID%}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
-        <span>/</span>
-        <a href="/overview/devices/{%dl p.Device.ID%}/sensors/{%s p.Sensor.Code %}" class="hover:underline text-sky-600">{%s p.Sensor.Code %}</a>
-        <span>/</span>
-        <span>{%s p.Datastream.ID.String() %}</span>
-    </div>
+<div class="flex gap-3 text-sm my-4 italic items-center">
+    <a href="/overview" class="hover:underline text-sky-600">Devices</a>
+    <span>/</span>
+    <a href="/overview/devices/{%dl p.Device.ID%}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
+    <span>/</span>
+    <a href="/overview/devices/{%dl p.Device.ID%}/sensors/{%s p.Sensor.Code %}" class="hover:underline text-sky-600">{%s p.Sensor.Code %}</a>
+    <span>/</span>
+    <span>{%s p.Datastream.ID.String() %}</span>
+</div>
 <div class="mx-auto flex flex-col lg:grid lg:grid-cols-1 xl:grid-cols-3 gap-6">
     <div class="bg-white rounded-md border" id="map">
         {%= renderDeviceMap(p.Device) %}
@@ -29,14 +29,19 @@
             Sensor details
         </header>
         <div class="p-4">
-            {%= DeviceDetailBlock(p.Device) %}
+            {%= SensorDetailBlock(p.Sensor) %}
         </div>
     </div>
     <div class="bg-white rounded-md border col-span-full">
         <header class="border-b py-2 px-4 text-sm text-slate-700">
             Datastream
         </header>
-        <div class="px-4 pt-4 pb-10">
+        <div class="h-96 p-4">
+            <header class="flex justify-between text-sm text-slate-600">
+                <small>{%s p.Device.Code %} - {%s p.Sensor.Code %} - {%s p.Datastream.ObservedProperty %}</small>
+                <small>{%s p.Datastream.Description %}</small>
+                <small>{%s p.Datastream.ID.String() %}</small>
+            </header>
             {%= renderDataStream(p.Datastream) %}
         </div>
     </div>
@@ -44,7 +49,8 @@
 {% endfunc %}
 
 {% func renderDataStream(ds measurements.Datastream) %}
-    <div id="chart" class="w-full h-80"></div>
+    <div id="chart" class="w-full h-full">
+    </div>
     <script type="text/javascript">
     {
         function getWebSocketURL(path) {
@@ -68,13 +74,12 @@
 
             const opts = {
                 width: target.clientWidth,
-                height: target.clientHeight,
-                title: "",
+                height: target.clientHeight - 60,
                 scales: {
                     x: {
                         time: true,
                     },
-                    y: {                    
+                    y: {
                     }
                 },
                 series: [

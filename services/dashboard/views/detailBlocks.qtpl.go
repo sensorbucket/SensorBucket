@@ -61,110 +61,110 @@ func StreamDeviceDetailBlock(qw422016 *qt422016.Writer, device devices.Device) {
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col">
-            <small class="text-xs font-semibold text-slate-500">Sensor Count</small>
-            <span>`)
-//line services/dashboard/views/detailBlocks.qtpl:24
-	qw422016.E().S(fmt.Sprintf("Has %d sensors", len(device.Sensors)))
-//line services/dashboard/views/detailBlocks.qtpl:24
-	qw422016.N().S(`</span>
-        </div>
-        <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">State</small>
             <span>
             `)
-//line services/dashboard/views/detailBlocks.qtpl:29
+//line services/dashboard/views/detailBlocks.qtpl:25
 	switch device.State {
-//line services/dashboard/views/detailBlocks.qtpl:30
+//line services/dashboard/views/detailBlocks.qtpl:26
 	case devices.DeviceStateUnknown:
-//line services/dashboard/views/detailBlocks.qtpl:30
+//line services/dashboard/views/detailBlocks.qtpl:26
 		qw422016.N().S(`
             Unknown
             `)
-//line services/dashboard/views/detailBlocks.qtpl:32
+//line services/dashboard/views/detailBlocks.qtpl:28
 	case devices.DeviceEnabled:
-//line services/dashboard/views/detailBlocks.qtpl:32
+//line services/dashboard/views/detailBlocks.qtpl:28
 		qw422016.N().S(`
             Enabled
             `)
-//line services/dashboard/views/detailBlocks.qtpl:34
+//line services/dashboard/views/detailBlocks.qtpl:30
 	case devices.DeviceDisabled:
-//line services/dashboard/views/detailBlocks.qtpl:34
+//line services/dashboard/views/detailBlocks.qtpl:30
 		qw422016.N().S(`
             Disabled
             `)
-//line services/dashboard/views/detailBlocks.qtpl:36
+//line services/dashboard/views/detailBlocks.qtpl:32
 	}
-//line services/dashboard/views/detailBlocks.qtpl:36
+//line services/dashboard/views/detailBlocks.qtpl:32
 	qw422016.N().S(`
             </span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Created at</small>
             <span>`)
-//line services/dashboard/views/detailBlocks.qtpl:41
+//line services/dashboard/views/detailBlocks.qtpl:37
 	qw422016.E().S(device.CreatedAt.Format("Mon, 02 Jan 2006"))
-//line services/dashboard/views/detailBlocks.qtpl:41
+//line services/dashboard/views/detailBlocks.qtpl:37
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col col-span-full">
             <small class="text-xs font-semibold text-slate-500">Description</small>
             <span>`)
-//line services/dashboard/views/detailBlocks.qtpl:45
+//line services/dashboard/views/detailBlocks.qtpl:41
 	qw422016.E().S(device.Description)
-//line services/dashboard/views/detailBlocks.qtpl:45
+//line services/dashboard/views/detailBlocks.qtpl:41
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col col-span-full">
             <small class="text-xs font-semibold text-slate-500">Location (Latitude, Longitude, Altitude)</small>
             <div class="grid grid-cols-3 items-center">
                 `)
-//line services/dashboard/views/detailBlocks.qtpl:50
+//line services/dashboard/views/detailBlocks.qtpl:46
 	if device.Latitude != nil && device.Longitude != nil {
-//line services/dashboard/views/detailBlocks.qtpl:50
+//line services/dashboard/views/detailBlocks.qtpl:46
 		qw422016.N().S(`
                 <span>`)
-//line services/dashboard/views/detailBlocks.qtpl:51
+//line services/dashboard/views/detailBlocks.qtpl:47
 		qw422016.N().FPrec(*device.Latitude, 3)
-//line services/dashboard/views/detailBlocks.qtpl:51
+//line services/dashboard/views/detailBlocks.qtpl:47
 		qw422016.N().S(`</span>
                 <span>`)
-//line services/dashboard/views/detailBlocks.qtpl:52
+//line services/dashboard/views/detailBlocks.qtpl:48
 		qw422016.N().FPrec(*device.Longitude, 3)
-//line services/dashboard/views/detailBlocks.qtpl:52
+//line services/dashboard/views/detailBlocks.qtpl:48
 		qw422016.N().S(`</span>
                 `)
-//line services/dashboard/views/detailBlocks.qtpl:53
+//line services/dashboard/views/detailBlocks.qtpl:49
 	} else {
-//line services/dashboard/views/detailBlocks.qtpl:53
+//line services/dashboard/views/detailBlocks.qtpl:49
 		qw422016.N().S(`
                 <span>No latitude</span>
                 <span>No longitude</span>
                 `)
-//line services/dashboard/views/detailBlocks.qtpl:56
+//line services/dashboard/views/detailBlocks.qtpl:52
 	}
-//line services/dashboard/views/detailBlocks.qtpl:56
+//line services/dashboard/views/detailBlocks.qtpl:52
 	qw422016.N().S(`
                 `)
-//line services/dashboard/views/detailBlocks.qtpl:57
+//line services/dashboard/views/detailBlocks.qtpl:53
 	if device.Altitude != nil {
-//line services/dashboard/views/detailBlocks.qtpl:57
+//line services/dashboard/views/detailBlocks.qtpl:53
 		qw422016.N().S(`
                 <span>`)
-//line services/dashboard/views/detailBlocks.qtpl:58
+//line services/dashboard/views/detailBlocks.qtpl:54
 		qw422016.N().FPrec(*device.Altitude, 3)
-//line services/dashboard/views/detailBlocks.qtpl:58
+//line services/dashboard/views/detailBlocks.qtpl:54
 		qw422016.N().S(`</span>
                 `)
-//line services/dashboard/views/detailBlocks.qtpl:59
+//line services/dashboard/views/detailBlocks.qtpl:55
 	}
-//line services/dashboard/views/detailBlocks.qtpl:59
+//line services/dashboard/views/detailBlocks.qtpl:55
 	qw422016.N().S(`
                 <span class="col-span-full">`)
-//line services/dashboard/views/detailBlocks.qtpl:60
+//line services/dashboard/views/detailBlocks.qtpl:56
 	qw422016.E().S(device.LocationDescription)
-//line services/dashboard/views/detailBlocks.qtpl:60
+//line services/dashboard/views/detailBlocks.qtpl:56
 	qw422016.N().S(`</span>
             </div>
+        </div>
+        <div class="flex flex-col col-span-full">
+            <small class="text-xs font-semibold text-slate-500">Properties</small>
+            <span>`)
+//line services/dashboard/views/detailBlocks.qtpl:61
+	qw422016.E().S(string(device.Properties))
+//line services/dashboard/views/detailBlocks.qtpl:61
+	qw422016.N().S(`</span>
         </div>
     </div>
 `)
@@ -348,7 +348,7 @@ func streamrenderDeviceMap(qw422016 *qt422016.Writer, device devices.Device) {
 		qw422016.E().S(device.Code)
 //line services/dashboard/views/detailBlocks.qtpl:118
 		qw422016.N().S(`"
-                ></map-marker>
+            ></map-marker>
         </div>
     `)
 //line services/dashboard/views/detailBlocks.qtpl:121
