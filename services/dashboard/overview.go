@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -249,6 +250,7 @@ func overviewDatastreamStream() http.HandlerFunc {
 	getMeasurementsPage := func(dsID, cursor string) ([]measurements.Measurement, string, error) {
 		q := url.Values{}
 		q.Set("datastream", dsID)
+		q.Set("cursor", cursor)
 		res, err := http.Get("http://core:3000/measurements?" + q.Encode())
 		if err != nil {
 			return nil, "", err
@@ -278,13 +280,14 @@ func overviewDatastreamStream() http.HandlerFunc {
 				}
 
 				for _, point := range measurements {
-					writer, err := ws.NextWriter(websocket.TextMessage)
-					defer writer.Close()
+					writer, err := ws.NextWriter(websocket.BinaryMessage)
 					if err != nil {
 						continue
 					}
+					defer writer.Close()
 					// Write to client
-					fmt.Printf("point: %v\n", point)
+					binary.Write(writer, binary.BigEndian, point.MeasurementTimestamp.UnixMilli())
+					binary.Write(writer, binary.BigEndian, point.MeasurementValue)
 				}
 				nextCursor = cursor
 				if nextCursor == "" {
@@ -341,7 +344,8 @@ func resolveSensor(next http.Handler) http.Handler {
 
 		device, ok := r.Context().Value("device").(*devices.Device)
 		if !ok {
-			panic("NODEVICE")
+			web.HTTPError(w, errors.New("resolveSensor middleware is missing device in context, did you use resolveDevice?\n"))
+			return
 		}
 
 		sensor, err := device.GetSensorByCode(sensorCode)

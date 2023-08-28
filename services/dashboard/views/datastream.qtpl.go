@@ -128,8 +128,8 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
         }
         function init() {
             const target = htmx.find("#chart")
-            const x = [1,2,3,4,5,6,7,8,9];
-            const y = x.map(() => Math.random()*10-5);
+            const x = [];
+            const y = [];
 
             const opts = {
                 width: target.clientWidth,
@@ -137,7 +137,7 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
                 title: "",
                 scales: {
                     x: {
-                        time: false,
+                        time: true,
                     },
                     y: {                    
                     }
@@ -171,45 +171,58 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
 //line services/dashboard/views/datastream.qtpl:82
 	qw422016.N().S(`"))
             ws.onmessage = (event) => {
-                const data = JSON.parse(event.data)
-                // Parse data message to uplot 
-                plot.setData(data)
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const buffer = this.result;
+                    const view = new DataView(buffer);
+
+                    // Get the timestamp and value
+                    const ts = Number(view.getBigUint64(0, false))/1000; // get timestamp from the first 8 bytes
+                    const val = view.getFloat64(8, false);  // get float64 value from the next 8 bytes
+
+                    // Prepend to the existing arrays
+                    x.unshift(ts);
+                    y.unshift(val);
+
+                    plot.setData([x, y]);
+                };
+                reader.readAsArrayBuffer(event.data);
             }
         }
         (() => init())()
     }
     </script>
 `)
-//line services/dashboard/views/datastream.qtpl:92
+//line services/dashboard/views/datastream.qtpl:105
 }
 
-//line services/dashboard/views/datastream.qtpl:92
+//line services/dashboard/views/datastream.qtpl:105
 func writerenderDataStream(qq422016 qtio422016.Writer, ds measurements.Datastream) {
-//line services/dashboard/views/datastream.qtpl:92
+//line services/dashboard/views/datastream.qtpl:105
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/datastream.qtpl:92
+//line services/dashboard/views/datastream.qtpl:105
 	streamrenderDataStream(qw422016, ds)
-//line services/dashboard/views/datastream.qtpl:92
+//line services/dashboard/views/datastream.qtpl:105
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/datastream.qtpl:92
+//line services/dashboard/views/datastream.qtpl:105
 }
 
-//line services/dashboard/views/datastream.qtpl:92
+//line services/dashboard/views/datastream.qtpl:105
 func renderDataStream(ds measurements.Datastream) string {
-//line services/dashboard/views/datastream.qtpl:92
+//line services/dashboard/views/datastream.qtpl:105
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/datastream.qtpl:92
+//line services/dashboard/views/datastream.qtpl:105
 	writerenderDataStream(qb422016, ds)
-//line services/dashboard/views/datastream.qtpl:92
+//line services/dashboard/views/datastream.qtpl:105
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/datastream.qtpl:92
+//line services/dashboard/views/datastream.qtpl:105
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/datastream.qtpl:92
+//line services/dashboard/views/datastream.qtpl:105
 	return qs422016
-//line services/dashboard/views/datastream.qtpl:92
+//line services/dashboard/views/datastream.qtpl:105
 }
 
-//line services/dashboard/views/datastream.qtpl:95
+//line services/dashboard/views/datastream.qtpl:108
 type DatastreamPage struct {
 	BasePage
 	Device     devices.Device
