@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strconv"
 
+	sq "github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
-	sq "github.com/Masterminds/squirrel"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
 )
@@ -16,10 +17,6 @@ func NewStorePSQL(db *sqlx.DB) *stepStore {
 	return &stepStore{
 		db: db,
 	}
-}
-
-type TraceQueryPage struct {
-	StartTime int64 `pagination:"s3.start_time,DESC"`
 }
 
 func (s *stepStore) Insert(step tracing.Step) error {
@@ -34,17 +31,38 @@ func (s *stepStore) Insert(step tracing.Step) error {
 	return nil
 }
 
+type TraceQueryPage struct {
+	StartTime int64     `pagination:"start_time,DESC"`
+	TracingID uuid.UUID `pagination:"tracing_id,DESC"`
+}
+
 func (s *stepStore) Query(filter tracing.Filter, r pagination.Request) (*pagination.Page[tracing.EnrichedStep], error) {
 	var err error
 
+	// Pagination
+	cursor := pagination.GetCursor[TraceQueryPage](r)
+
+	// TODO:  MIN OR MAX?
+	paginationQ := sq.Select("tracing_id", "MIN(start_time)").From("steps").GroupBy("tracing_id")
+	paginationQ, err = pagination.Apply(paginationQ, cursor)
+	if err != nil {
+		return nil, err
+	}
+
 	// Build the case statement we need to derive the state of a step
-	stepStatusCase := sq.Case().
+	statusExpression := sq.Case().
 		When("s1.error <> ''", strconv.Itoa(int(tracing.Failed))).
 		When("s2 IS NULL AND s1.steps_remaining <> 0", strconv.Itoa(int(tracing.InProgress))).
 		Else(strconv.Itoa(int(tracing.Success)))
 
 	// Create the expression used to derivce a step's duration
 	durationExpression := sq.ConcatExpr("COALESCE(s2.start_time - s1.start_time, 0)")
+
+	enrichmentQ := sq.Select("*").
+		Column(sq.Alias(statusExpression, "status")).
+		Column(sq.Alias(durationExpression, "duration")).
+		FromSelect(paginationQ, "traces")
+
 	highestStatusExpression := sq.ConcatExpr("MAX(s3.status) OVER (PARTITION BY s3.tracing_id)")
 
 	// Finally build the query
