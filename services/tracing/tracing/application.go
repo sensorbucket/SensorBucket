@@ -95,10 +95,7 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 				if val.Error != nil {
 					stepDto.Error = *val.Error
 				}
-				return StepDTO{
-					Status:   val.Status.String(),
-					Duration: val.Duration,
-				}
+				return stepDto
 			}),
 		}
 	})
@@ -111,10 +108,10 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 
 type Filter struct {
 	TracingIds          []string `schema:"tracing_id"`
-	Status              []string
-	DeviceIds           []int64        `schema:"device_id"`
-	DurationGreaterThan *time.Duration `schema:"duration_greater_than"`
-	DurationLowerThan   *time.Duration `schema:"duration_lower_than"`
+	Status              []string `schema:"status"`
+	DeviceIds           []int64  `schema:"device_id"`
+	DurationGreaterThan *int64   `schema:"duration_greater_than"`
+	DurationLowerThan   *int64   `schema:"duration_lower_than"`
 }
 
 type TraceDTO struct {

@@ -1,6 +1,7 @@
 package tracingtransport
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -46,20 +47,22 @@ func (t *HTTPTransport) httpGetTraces() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		params, err := httpfilter.Parse[Params](r)
 		if err != nil {
-			web.HTTPError(rw, err)
+			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "invalid params", ""))
 			return
 		}
 
-		if params.DurationGreaterThan != nil && *params.DurationLowerThan != 0 &&
-			*params.DurationGreaterThan <= *params.DurationLowerThan {
-			http.Error(rw, "duration_greater_than cannot be smaller than or equal to duration_smaller_than", http.StatusBadRequest)
+		if params.DurationGreaterThan != nil &&
+			params.DurationLowerThan != nil &&
+			*params.DurationGreaterThan != 0 &&
+			*params.DurationLowerThan <= *params.DurationLowerThan {
+			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "duration_greater_than cannot be smaller than or equal to duration_smaller_than", ""))
 			return
 		}
 
 		page, err := t.svc.QueryTraces(params.Filter, params.Request)
 		if err != nil {
 			log.Printf("[Error] %v\n", err)
-			http.Error(rw, "internal server error", http.StatusInternalServerError)
+			web.HTTPError(rw, fmt.Errorf("internal server error"))
 			return
 		}
 

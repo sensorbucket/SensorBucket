@@ -31,8 +31,12 @@ func (s *stepStore) Insert(step tracing.Step) error {
 }
 
 type TraceQueryPage struct {
-	StartTime int64     `pagination:"start_time,DESC"`
+	StartTime int64     `pagination:"traces.trace_start,DESC"`
 	TracingID uuid.UUID `pagination:"tracing_id,DESC"`
+}
+
+func (s *stepStore) QueryEnrichedSteps() (*pagination.Page[tracing.EnrichedStep], error) {
+
 }
 
 func (s *stepStore) Query(filter tracing.Filter, r pagination.Request) (*pagination.Page[tracing.EnrichedStep], error) {
@@ -42,13 +46,7 @@ func (s *stepStore) Query(filter tracing.Filter, r pagination.Request) (*paginat
 	cursor := pagination.GetCursor[TraceQueryPage](r)
 
 	// First retrieve all the traces with pagination applied
-	paginationQ := sq.Select().From("enriched_steps_view")
-	paginationQ, err = pagination.Apply(paginationQ, cursor)
-	if err != nil {
-		return nil, err
-	}
-
-	paginationQ = sq.Select("traces.tracing_id").FromSelect(paginationQ, "traces")
+	paginationQ := sq.Select("MIN(start_time) AS trace_start", "tracing_id").From("enriched_steps_view").GroupBy("tracing_id")
 
 	if len(filter.DeviceIds) > 0 {
 		paginationQ = paginationQ.Where(sq.Eq{"device_id": filter.DeviceIds})
@@ -63,11 +61,17 @@ func (s *stepStore) Query(filter tracing.Filter, r pagination.Request) (*paginat
 	}
 
 	if filter.DurationGreaterThan != nil {
-		paginationQ = paginationQ.Where(sq.GtOrEq{"duration": *filter.DurationGreaterThan})
+		paginationQ = paginationQ.Where(sq.Gt{"duration": *filter.DurationGreaterThan})
 	}
 
 	if filter.DurationLowerThan != nil {
-		paginationQ = paginationQ.Where(sq.LtOrEq{"duration": *filter.DurationLowerThan})
+		paginationQ = paginationQ.Where(sq.Lt{"duration": *filter.DurationLowerThan})
+	}
+
+	paginationQ = sq.Select("traces.tracing_id").FromSelect(paginationQ, "traces")
+	paginationQ, err = pagination.Apply(paginationQ, cursor)
+	if err != nil {
+		return nil, err
 	}
 
 	// Now get the more detailed information of a trace from the enriched_steps_view
@@ -83,10 +87,11 @@ func (s *stepStore) Query(filter tracing.Filter, r pagination.Request) (*paginat
 		"trace_status",
 	).
 		From("enriched_steps_view").
-		Where(sq.Expr("tracing_id IN (?)", paginationQ)).
+		//Where(sq.Expr("tracing_id IN (?)", paginationQ)).
 		OrderBy("start_time, tracing_id ASC").
 		OrderBy("step_index ASC")
 
+	q = q.JoinClause(paginationQ.Prefix("JOIN (").Suffix(") enriched ON (traces.tracing_id = enriched.tracing_id)"))
 	fmt.Println(sq.DebugSqlizer(q))
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(s.db).Query()
 	if err != nil {

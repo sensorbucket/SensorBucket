@@ -70,7 +70,9 @@ type Cursor[T any] struct {
 
 func CreatePageT[T1 any, T2 any](data []T1, cursor Cursor[T2]) Page[T1] {
 	var cursorString string
-	if len(data) == int(cursor.Limit) {
+
+	// TODO: comment
+	if len(data) >= int(cursor.Limit) {
 		cursorString = EncodeCursor(cursor)
 	}
 	page := Page[T1]{
