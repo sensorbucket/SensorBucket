@@ -3,6 +3,15 @@
 {% import "time" %}
 
 {% func (p *DatastreamPage) Body() %}
+    <div class="flex gap-3 text-sm my-4 italic items-center">
+        <a href="/overview" class="hover:underline text-sky-600">Devices</a>
+        <span>/</span>
+        <a href="/overview/devices/{%dl p.Device.ID%}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
+        <span>/</span>
+        <a href="/overview/devices/{%dl p.Device.ID%}/sensors/{%s p.Sensor.Code %}" class="hover:underline text-sky-600">{%s p.Sensor.Code %}</a>
+        <span>/</span>
+        <span>{%s p.Datastream.ID.String() %}</span>
+    </div>
 <div class="mx-auto flex flex-col lg:grid lg:grid-cols-1 xl:grid-cols-3 gap-6">
     <div class="bg-white rounded-md border" id="map">
         {%= renderDeviceMap(p.Device) %}

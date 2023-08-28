@@ -63,6 +63,6 @@ func Run() error {
 		}
 		fmt.Println("Response Status:", resp.Status)
 		fmt.Println("Response Body:", string(respBody))
-		time.Sleep(time.Second * 3)
+		time.Sleep(time.Millisecond * 33)
 	}
 }

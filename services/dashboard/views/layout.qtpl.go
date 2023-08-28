@@ -226,10 +226,10 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
 	qw422016.N().S(`
 </head>
 
-<body class="min-h-full" hx-boost="true">
+<body class="min-h-full" hx-boost="true" hx-target="main">
     <sidebar class="w-screen lg:w-sidebar fixed lg:h-screen top-0 left-0 flex flex-col bg-secondary-600 z-[5000]">
         <header class="h-12 lg:h-header flex justify-between lg:flex-col lg:justify-end">
-            <a class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto " href="/overview"><img src="/static/logo-white.png" alt="SensorBucket" class="h-full" /></a>
+            <a class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="/overview"><img src="/static/logo-white.png" alt="SensorBucket" class="h-full" /></a>
             <button 
                 class="h-8 w-8 self-center lg:hidden"
                 _="on click toggle .h-auto on <nav/>
@@ -280,7 +280,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
         <header class="h-8 bg-white border-b" id="mustache">
             
         </header>
-        <main class="p-4">
+        <main class="p-4 pt-0 mt-4">
             `)
 //line services/dashboard/views/layout.qtpl:92
 	page.StreamBody(qw422016)

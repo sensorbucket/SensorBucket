@@ -2,6 +2,13 @@
 {% import "sensorbucket.nl/sensorbucket/services/core/measurements" %}
 
 {% func (p *SensorDetailPage) Body() %}
+    <div class="flex gap-3 text-sm my-4 italic items-center">
+        <a href="/overview" class="hover:underline text-sky-600">Devices</a>
+        <span>/</span>
+        <a href="/overview/devices/{%dl p.Device.ID%}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
+        <span>/</span>
+        <span>{%s p.Sensor.Code %}</span>
+    </div>
     <div class="mx-auto flex flex-col lg:grid lg:grid-cols-1 xl:grid-cols-3 gap-6">
         <div class="bg-white border rounded-md">
             {%= renderDeviceMap(p.Device) %}
@@ -46,7 +53,6 @@
                         <td class="border-b"><a
                             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
                             href="/overview/datastreams/{%s datastream.ID.String() %}"
-                            hx-target="main"
                         >{%s datastream.ID.String() %}</a></td>
                         <td class="px-4 h-10 border-b">{%s datastream.ObservedProperty %}</td>
                         <td class="px-4 h-10 border-b">{%s datastream.UnitOfMeasurement %}</td>

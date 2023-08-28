@@ -106,6 +106,10 @@ func deviceListPage() http.HandlerFunc {
 		}
 		page.Devices = resBody.Data
 
+		if isHX(r) {
+			page.WriteBody(w)
+			return
+		}
 		views.WriteIndex(w, page)
 	}
 }

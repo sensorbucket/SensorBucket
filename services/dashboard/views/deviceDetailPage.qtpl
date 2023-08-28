@@ -1,6 +1,11 @@
 {% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
 
 {% func (p *DeviceDetailPage) Body() %}
+    <div class="flex gap-3 text-sm my-4 italic items-center">
+        <a href="/overview" class="hover:underline text-sky-600">Devices</a>
+        <span>/</span>
+        <span>{%s p.Device.Code %}</span>
+    </div>
     <div class="mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white border rounded-md">
             {%= renderDeviceMap(p.Device) %}
@@ -38,7 +43,6 @@
                         <td class="border-b"><a
                             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
                             href="/overview/devices/{%dl p.Device.ID %}/sensors/{%s sensor.Code %}"
-                            hx-target="main"
                         >{%s sensor.Code %}</a></td>
                         <td class="px-4 h-10 border-b">{%s sensor.Brand %}</td>
                         <td class="px-4 h-10 border-b">{%s sensor.Description %}</td>
