@@ -2,7 +2,6 @@ package tracinginfra
 
 import (
 	"fmt"
-	"strconv"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -42,75 +41,52 @@ func (s *stepStore) Query(filter tracing.Filter, r pagination.Request) (*paginat
 	// Pagination
 	cursor := pagination.GetCursor[TraceQueryPage](r)
 
-	// TODO:  MIN OR MAX?
-	paginationQ := sq.Select("tracing_id", "MIN(start_time)").From("steps").GroupBy("tracing_id")
+	// First retrieve all the traces with pagination applied
+	paginationQ := sq.Select().From("enriched_steps_view")
 	paginationQ, err = pagination.Apply(paginationQ, cursor)
 	if err != nil {
 		return nil, err
 	}
 
-	// Build the case statement we need to derive the state of a step
-	statusExpression := sq.Case().
-		When("s1.error <> ''", strconv.Itoa(int(tracing.Failed))).
-		When("s2 IS NULL AND s1.steps_remaining <> 0", strconv.Itoa(int(tracing.InProgress))).
-		Else(strconv.Itoa(int(tracing.Success)))
+	paginationQ = sq.Select("traces.tracing_id").FromSelect(paginationQ, "traces")
 
-	// Create the expression used to derivce a step's duration
-	durationExpression := sq.ConcatExpr("COALESCE(s2.start_time - s1.start_time, 0)")
-
-	enrichmentQ := sq.Select("*").
-		Column(sq.Alias(statusExpression, "status")).
-		Column(sq.Alias(durationExpression, "duration")).
-		FromSelect(paginationQ, "traces")
-
-	highestStatusExpression := sq.ConcatExpr("MAX(s3.status) OVER (PARTITION BY s3.tracing_id)")
-
-	// Finally build the query
-	subQ := sq.Select(
-		"s1.tracing_id",
-		"s1.device_id",
-		"s1.step_index",
-		"s1.steps_remaining",
-		"s1.start_time",
-		"s1.error",
-	).
-		Column(sq.Alias(stepStatusCase, "status")).
-		Column(sq.Alias(durationExpression, "duration")).
-		From("steps s1").
-
-		// To derive the state of the step we need to retrieve the next step in the database if it exists
-		LeftJoin("steps s2 ON s1.tracing_id = s2.tracing_id AND s1.step_index + 1 = s2.step_index")
-
-	q := sq.Select("*").Column(sq.Alias(highestStatusExpression, "highest_status")).FromSelect(subQ, "s3")
 	if len(filter.DeviceIds) > 0 {
-		q = q.Where(sq.Eq{"s3.device_id": filter.DeviceIds})
+		paginationQ = paginationQ.Where(sq.Eq{"device_id": filter.DeviceIds})
 	}
 
 	if len(filter.TracingIds) > 0 {
-		q = q.Where(sq.Eq{"s3.tracing_id": filter.TracingIds})
+		paginationQ = paginationQ.Where(sq.Eq{"tracing_id": filter.TracingIds})
 	}
 
 	if len(filter.Status) > 0 {
-		q = sq.Select("*").FromSelect(q, "s3")
-
-		// highest status is not yet evaluated in the main query which is why we have to put it into another sub query in order to do a where clause
-		q = q.Where(sq.Eq{"s3.highest_status": tracing.StatusStringsToStatusCodes(filter.Status)})
+		paginationQ = paginationQ.Where(sq.Eq{"trace_status": tracing.StatusStringsToStatusCodes(filter.Status)})
 	}
 
 	if filter.DurationGreaterThan != nil {
-		q = q.Where(sq.GtOrEq{"s3.duration": *filter.DurationGreaterThan})
+		paginationQ = paginationQ.Where(sq.GtOrEq{"duration": *filter.DurationGreaterThan})
 	}
 
 	if filter.DurationLowerThan != nil {
-		q = q.Where(sq.LtOrEq{"s3.duration": *filter.DurationLowerThan})
+		paginationQ = paginationQ.Where(sq.LtOrEq{"duration": *filter.DurationLowerThan})
 	}
 
-	// Pagination
-	cursor := pagination.GetCursor[TraceQueryPage](r)
-	q, err = pagination.Apply(q, cursor)
-	if err != nil {
-		return nil, err
-	}
+	// Now get the more detailed information of a trace from the enriched_steps_view
+	q := sq.Select(
+		"tracing_id",
+		"device_id",
+		"step_index",
+		"steps_remaining",
+		"start_time",
+		"error",
+		"status",
+		"duration",
+		"trace_status",
+	).
+		From("enriched_steps_view").
+		Where(sq.Expr("tracing_id IN (?)", paginationQ)).
+		OrderBy("start_time, tracing_id ASC").
+		OrderBy("step_index ASC")
+
 	fmt.Println(sq.DebugSqlizer(q))
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(s.db).Query()
 	if err != nil {
@@ -130,11 +106,17 @@ func (s *stepStore) Query(filter tracing.Filter, r pagination.Request) (*paginat
 			&t.Status,
 			&t.Duration,
 			&t.HighestCollectiveStatus,
-			&cursor.Columns.StartTime,
 		)
 		if err != nil {
 			return nil, err
 		}
+
+		cursor.Columns.StartTime = t.StartTime
+		cursor.Columns.TracingID, err = uuid.Parse(t.TracingID)
+		if err != nil {
+			return nil, err
+		}
+
 		list = append(list, t)
 	}
 	page := pagination.CreatePageT(list, cursor)
