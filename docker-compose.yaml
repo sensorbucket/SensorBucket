@@ -142,6 +142,11 @@ services:
   dbweb:
     image: dockette/adminer:pgsql
 
+  mail-server:
+    image: mailhog/mailhog
+    ports:
+      - 1025:1025
+
   mq:
     image: rabbitmq:3.8-management
 

@@ -23,6 +23,11 @@ handle_path /dev/api/* {
     reverse_proxy openapi:8080
 }
 
+redir /dev/mail /dev/mail/
+handle_path /dev/mail/* {
+    reverse_proxy mail-server:8025
+}
+
 handle {
     reverse_proxy /* dashboard:3000
 }
