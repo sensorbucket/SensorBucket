@@ -1,6 +1,7 @@
 package tracing
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/samber/lo"
@@ -11,7 +12,8 @@ import (
 
 type StepStore interface {
 	Insert(Step) error
-	Query(Filter, pagination.Request) (*pagination.Page[EnrichedStep], error)
+	GetStepsByTracingIds([]string) ([]EnrichedStep, error)
+	QueryTraces(filter Filter, r pagination.Request) (*pagination.Page[string], error)
 }
 
 func New(stepStore StepStore) *Service {
@@ -65,14 +67,31 @@ func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError) error
 }
 
 func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[TraceDTO], error) {
-	page, err := s.stepStore.Query(f, r)
+
+	// Retrieve all the traces according to it's pagination first
+	filteredTraces, err := s.stepStore.QueryTraces(f, r)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(filteredTraces, err)
+
+	// Prepare the correctly ordered result map
+	// TODO: does this function keep the order of the list?
+	grouped := lo.SliceToMap(filteredTraces.Data, func(tracingId string) (string, []EnrichedStep) {
+		return tracingId, []EnrichedStep{}
+	})
+
+	// Now enrich the trace data with the step data
+	steps, err := s.stepStore.GetStepsByTracingIds(filteredTraces.Data)
 	if err != nil {
 		return nil, err
 	}
 
-	// Group all the enriched steps to their corresponding trace id so we can build the correct TraceDTO
-	grouped := lo.GroupBy(page.Data, func(step EnrichedStep) string {
-		return step.TracingID
+	lo.ForEach(steps, func(item EnrichedStep, index int) {
+		if val, ok := grouped[item.TracingID]; ok {
+			grouped[item.TracingID] = append(val, item)
+			return
+		}
 	})
 
 	// Now change the map of trace ids with their steps to the required trace dto
@@ -101,7 +120,7 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 	})
 
 	return &pagination.Page[TraceDTO]{
-		Cursor: page.Cursor,
+		Cursor: filteredTraces.Cursor,
 		Data:   traces,
 	}, nil
 }
