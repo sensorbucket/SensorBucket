@@ -3,6 +3,7 @@ package deviceinfra
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -40,8 +41,8 @@ func saveGroupSensors(db DB, group *devices.SensorGroup) error {
 	err := db.Select(&dbSensorGroupSensors, `
         SELECT sensor_id FROM sensor_groups_sensors WHERE sensor_group_id = $1
         `, group.ID)
-	if err != nil {
-		return err
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("error fetching existing sensor from sensor group: %w", err)
 	}
 
 	added, removed := lo.Difference(group.Sensors, dbSensorGroupSensors)
@@ -49,7 +50,7 @@ func saveGroupSensors(db DB, group *devices.SensorGroup) error {
 	if len(removed) > 0 {
 		_, err = pq.Delete("sensor_groups_sensors").Where(sq.Eq{"sensor_group_id": group.ID, "sensor_id": removed}).RunWith(db).Exec()
 		if err != nil {
-			return err
+			return fmt.Errorf("error deleting sensors from sensor group: %w", err)
 		}
 	}
 	if len(added) > 0 {
@@ -59,7 +60,7 @@ func saveGroupSensors(db DB, group *devices.SensorGroup) error {
 		}
 		_, err = q.RunWith(db).Exec()
 		if err != nil {
-			return err
+			return fmt.Errorf("error adding sensors to group: %w", err)
 		}
 	}
 
@@ -166,6 +167,9 @@ func (s *PSQLSensorGroupStore) Get(id int64) (*devices.SensorGroup, error) {
 		LeftJoin("sensor_groups_sensors sgs on sgs.sensor_group_id = sg.id").Where(sq.Eq{"sg.id": id})
 
 	rows, err := q.RunWith(s.db).Query()
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, devices.ErrSensorGroupNotFound
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -197,10 +201,6 @@ func (s *PSQLSensorGroupStore) Get(id int64) (*devices.SensorGroup, error) {
 		if sensorID != nil {
 			group.Sensors = append(group.Sensors, *sensorID)
 		}
-	}
-	// If group still nil, then no rows found
-	if group == nil {
-		return nil, devices.ErrSensorGroupNotFound
 	}
 	return group, nil
 }

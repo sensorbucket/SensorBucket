@@ -30,7 +30,7 @@ func Run() error {
 	defer cancel()
 
 	router := chi.NewRouter()
-	router.Use(middleware.Logger)
+	// router.Use(middleware.Logger)
 
 	// Serve static files
 	if os.Getenv("GO_ENV") != "production" {

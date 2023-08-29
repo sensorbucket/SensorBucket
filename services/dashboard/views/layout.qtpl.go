@@ -280,7 +280,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
         <header class="h-8 bg-white border-b" id="mustache">
             
         </header>
-        <main class="p-4 pt-0 mt-4">
+        <main class="p-4 pt-0 mt-4" id="main">
             `)
 //line services/dashboard/views/layout.qtpl:92
 	page.StreamBody(qw422016)

@@ -3,16 +3,46 @@
 {% import "time" %}
 
 {% func (p *DatastreamPage) Body() %}
-<div class="flex gap-3 text-sm my-4 italic items-center">
-    <a href="/overview" class="hover:underline text-sky-600">Devices</a>
-    <span>/</span>
-    <a href="/overview/devices/{%dl p.Device.ID%}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
-    <span>/</span>
-    <a href="/overview/devices/{%dl p.Device.ID%}/sensors/{%s p.Sensor.Code %}" class="hover:underline text-sky-600">{%s p.Sensor.Code %}</a>
-    <span>/</span>
-    <span>{%s p.Datastream.ID.String() %}</span>
-</div>
+<header class="flex justify-between items-center">
+    <div class="flex gap-3 text-sm my-4 italic items-center">
+        <a href="/overview" class="hover:underline text-sky-600">Devices</a>
+        <span>/</span>
+        <a href="/overview/devices/{%dl p.Device.ID%}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
+        <span>/</span>
+        <a href="/overview/devices/{%dl p.Device.ID%}/sensors/{%s p.Sensor.Code %}" class="hover:underline text-sky-600">{%s p.Sensor.Code %}</a>
+        <span>/</span>
+        <span>{%s p.Datastream.ID.String() %}</span>
+    </div>
+
+    <div class="flex gap-2 text-sm">
+            <fieldset class="relative col-span-2">
+                <label for="start" class="absolute bottom-full ml-1 -mb-1 block"><small class="text-xs text-slate-500">Start</small></label>
+                <input type="date" name="start" value="{%s p.Start.Format("2006-01-02") %}" 
+                    class="border px-2 py-1 rounded-md bg-white text-slate-700"
+                />
+            </fieldset>
+            <fieldset class="relative col-span-2">
+                <label for="end" class="absolute bottom-full ml-1 -mb-1 block"><small class="text-xs text-slate-500">End</small></label>
+                <input type="date" name="end" value="{%s p.End.Format("2006-01-02") %}" 
+                    class="border px-2 py-1 rounded-md bg-white text-slate-700"
+                />
+            </fieldset>
+    </div>
+</header>
 <div class="mx-auto flex flex-col lg:grid lg:grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="bg-white rounded-md border col-span-full">
+        <header class="border-b py-2 px-4 text-sm text-slate-700">
+            Datastream
+        </header>
+        <div class="h-96 p-4">
+            <header class="flex justify-between text-sm text-slate-600">
+                <small>{%s p.Device.Code %} - {%s p.Sensor.Code %} - {%s p.Datastream.ObservedProperty %}</small>
+                <small>{%s p.Datastream.Description %}</small>
+                <small>{%s p.Datastream.ID.String() %}</small>
+            </header>
+            {%= renderDataStream(p.Datastream) %}
+        </div>
+    </div>
     <div class="bg-white rounded-md border" id="map">
         {%= renderDeviceMap(p.Device) %}
     </div>
@@ -30,19 +60,6 @@
         </header>
         <div class="p-4">
             {%= SensorDetailBlock(p.Sensor) %}
-        </div>
-    </div>
-    <div class="bg-white rounded-md border col-span-full">
-        <header class="border-b py-2 px-4 text-sm text-slate-700">
-            Datastream
-        </header>
-        <div class="h-96 p-4">
-            <header class="flex justify-between text-sm text-slate-600">
-                <small>{%s p.Device.Code %} - {%s p.Sensor.Code %} - {%s p.Datastream.ObservedProperty %}</small>
-                <small>{%s p.Datastream.Description %}</small>
-                <small>{%s p.Datastream.ID.String() %}</small>
-            </header>
-            {%= renderDataStream(p.Datastream) %}
         </div>
     </div>
 </div>
@@ -92,6 +109,7 @@
             };
 
             const plot = new uPlot(opts, [x,y], target)
+            target.plot = plot;
 
             const ws = new WebSocket(getWebSocketURL("/overview/datastreams/{%s ds.ID.String() %}/stream?start={%s time.Now().Format(time.RFC3339) %}"))
             ws.onmessage = (event) => {
@@ -124,5 +142,7 @@ type DatastreamPage struct {
     Device devices.Device
     Sensor devices.Sensor
     Datastream measurements.Datastream
+    Start time.Time
+    End time.Time
 }
 %}

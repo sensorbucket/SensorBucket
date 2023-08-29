@@ -7,14 +7,17 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/gorilla/websocket"
 
+	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
@@ -70,7 +73,7 @@ func getSG(id string) (*devices.SensorGroup, error) {
 		return nil, err
 	}
 	if res.StatusCode != 200 {
-		return nil, errors.New("Coldnt get sg")
+		return nil, errors.New("could not get SensorGroup")
 	}
 	var resBody web.APIResponse[devices.SensorGroup]
 	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
@@ -94,7 +97,12 @@ func deviceListPage() http.HandlerFunc {
 			page.SensorGroup = sg
 		}
 
-		res, err := http.Get("http://core:3000/devices")
+		q := url.Values{}
+		if page.SensorGroup != nil {
+			q.Set("sensorgroup", strconv.FormatInt(page.SensorGroup.ID, 10))
+		}
+		url := "http://core:3000/devices?" + q.Encode()
+		res, err := http.Get(url)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -163,8 +171,12 @@ func devicesStreamMap() http.HandlerFunc {
 		WriteBufferSize: 1024,
 	}
 
-	getDevicePage := func(cursor string) ([]devices.Device, string, error) {
-		res, err := http.Get("http://core:3000/devices")
+	getDevicePage := func(sensorGroupID, cursor string) ([]devices.Device, string, error) {
+		q := url.Values{}
+		if sensorGroupID != "" {
+			q.Set("sensorgroup", sensorGroupID)
+		}
+		res, err := http.Get("http://core:3000/devices?" + q.Encode())
 		if err != nil {
 			return nil, "", err
 		}
@@ -182,6 +194,7 @@ func devicesStreamMap() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		sensorGroupID := r.URL.Query().Get("sensorgroup")
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			web.HTTPError(w, err)
@@ -192,7 +205,7 @@ func devicesStreamMap() http.HandlerFunc {
 			var nextCursor string
 			for {
 				// Start fetching pages of devices and stream them to the client
-				devices, cursor, err := getDevicePage(nextCursor)
+				devices, cursor, err := getDevicePage(sensorGroupID, nextCursor)
 				if err != nil {
 					ws.Close()
 					return
@@ -203,24 +216,41 @@ func devicesStreamMap() http.HandlerFunc {
 						continue
 					}
 					writer, err := ws.NextWriter(websocket.TextMessage)
-					defer writer.Close()
 					if err != nil {
+						log.Printf("cannot open writer for ws: %v\n", err)
 						continue
 					}
-					writer.Write([]byte(fmt.Sprintf(`{"device_id": %d, "device_code": "%s", "coordinates": [%f,%f]}`, dev.ID, dev.Code, *dev.Latitude, *dev.Longitude)))
+					defer writer.Close()
+					frame := fmt.Sprintf(`{"device_id": %d, "device_code": "%s", "coordinates": [%f,%f]}`, dev.ID, dev.Code, *dev.Latitude, *dev.Longitude)
+					writer.Write([]byte(frame))
 				}
 				nextCursor = cursor
 				if nextCursor == "" {
 					break
 				}
 			}
-			ws.Close()
 		}()
 	}
 }
 
+type overviewDatastreamParams struct {
+	Start time.Time
+	End   time.Time
+}
+
 func overviewDatastream() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		params, err := httpfilter.Parse[overviewDatastreamParams](r)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		if params.Start.IsZero() {
+			params.Start = time.Now().Add(-7 * 24 * time.Hour)
+		}
+		if params.End.IsZero() {
+			params.End = time.Now()
+		}
 		res, err := http.Get(fmt.Sprintf("http://core:3000/datastreams/%s", chi.URLParam(r, "id")))
 		if err != nil {
 			web.HTTPError(w, err)
@@ -236,6 +266,8 @@ func overviewDatastream() http.HandlerFunc {
 			Datastream: *resBody.Data.Datastream,
 			Device:     *resBody.Data.Device,
 			Sensor:     *resBody.Data.Sensor,
+			Start:      params.Start,
+			End:        params.End,
 		}
 		if isHX(r) {
 			page.WriteBody(w)
@@ -298,7 +330,6 @@ func overviewDatastreamStream() http.HandlerFunc {
 					break
 				}
 			}
-			ws.Close()
 		}()
 	}
 }

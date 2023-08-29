@@ -14,7 +14,7 @@
     /** 
      * @param target{HTMLElement}
      */
-    function assertLeaflet(target) {
+    function initLeaflet(target) {
         const mapEl = target.querySelector(".leaflet-container") || document.createElement("div")
         mapEl.innerHTML = ""
         mapEl.classList.add("w-full", "h-full")
@@ -23,6 +23,7 @@
         const latitude = parseFloat(target.getAttribute("data-latitude") ?? "0") || 51.55
         const longitude = parseFloat(target.getAttribute("data-longitude") ?? "0") || 3.9
 
+        console.log("Creating new map")
         const m = L.map(mapEl).setView([latitude, longitude], 9)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
             maxZoom: 19,
@@ -32,23 +33,29 @@
         htmx.trigger(target, "leaflet:init")
     }
 
+    function isLeafletInitialized(target) {
+        return target.leaflet != undefined;
+    }
+
     htmx.defineExtension('leaflet', {
         onEvent: function(name, evt) {
             /** @type{HTMLElement} */
             const target = evt.target;
             switch (name) {
                 case "htmx:afterProcessNode":
-                    if (isRootElement(target)) {
-                        assertLeaflet(target)
-                        break;
+                    if (isRootElement(target) && !isLeafletInitialized(target)) {
+                        initLeaflet(target)
                     }
                     break;
                 case "htmx:beforeCleanupElement":
-                    if (isRootElement(target)) {
+                    if (isRootElement(target) && isLeafletInitialized(target)) {
                         target.leaflet.remove()
                     }
                     break;
             }
+        },
+        handleSwap: (evt) => {
+            console.log({evt})
         }
     })
 

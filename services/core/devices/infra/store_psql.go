@@ -341,6 +341,9 @@ func getSensor(tx DB, id int64) (*devices.Sensor, error) {
         properties, created_at, device_id, is_fallback FROM sensors WHERE id = $1`,
 		id,
 	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, devices.ErrSensorNotFound
+	}
 	if err != nil {
 		return nil, err
 	}
