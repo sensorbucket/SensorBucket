@@ -23,7 +23,6 @@
         const latitude = parseFloat(target.getAttribute("data-latitude") ?? "0") || 51.55
         const longitude = parseFloat(target.getAttribute("data-longitude") ?? "0") || 3.9
 
-        console.log("Creating new map")
         const m = L.map(mapEl).setView([latitude, longitude], 9)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
             maxZoom: 19,
@@ -54,9 +53,6 @@
                     break;
             }
         },
-        handleSwap: (evt) => {
-            console.log({evt})
-        }
     })
 
     class MapMarker extends HTMLElement {

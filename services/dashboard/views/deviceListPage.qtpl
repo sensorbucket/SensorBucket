@@ -1,85 +1,112 @@
 {% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
 
 {% func (p *DeviceListPage) Body() %}
-    <div class="mx-auto w-full xl:w-2/3 flex flex-col gap-6" id="maplist">
-
+    <div class="mx-auto w-full xl:w-2/3 flex flex-col gap-6">
         <div class="grid lg:grid-cols-4 gap-x-4 gap-y-1">
-            <fieldset class="relative col-span-2">
-                <label for="sensorgroup-search" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Sensor group</small></label>
-                {% if p.SensorGroup == nil %}
-                    <input
-                        type="text" name="search" id="sensorgroup-search"
-
-                        class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600"
-                        hx-trigger="keyup changed delay:500ms"
-                        hx-get="/overview/sensorgroups"
-                        hx-target="next ul"
-
-                    />
-                    <ul class="absolute top-full left-0 right-0 block rounded-md rounded-t-none bg-white z-[4000]
-                                text-sm">
-                        
-                    </ul>
-                {% else %}
-                    <a
-                        href="/overview"
-                        class="w-full px-2 py-1 border rounded-md text-primary-600 flex justify-between items-center"
-                    >
-                    {%s p.SensorGroup.Name %}
-                    <iconify-icon icon="charm:cross" class="text-rose-500"></iconify-icon>
-                    </a>
-                {% endif %}
-            </fieldset>
+            {%= RenderFilters(p.SensorGroup, false) %}
         </div>
 
-        <div class="bg-white border rounded-md">
-            {%= renderMap(p.SensorGroup) %}
+        <div class="bg-white border rounded-md" >
+            {%= RenderMap(p.SensorGroup) %}
         </div>
 
-        <div class="bg-white border rounded-md min-h-96 max-h-[90vh] lg:max-h-[50vh] overflow-y-auto">
-            <table class="w-full text-sm border-separate border-spacing-0">
-                <thead class="text-left text-slate-500 sticky top-0 bg-white">
-                    <tr class="h-10">
-                        <th class="font-normal border-b align-middle px-4">
-                            Device ID
-                        </th>
-                        <th class="font-normal border-b align-middle px-4">
-                            Device Code
-                        </th>
-                        <th class="font-normal border-b align-middle px-4">
-                            Device Description
-                        </th>
-                        <th class="font-normal border-b align-middle px-4">
-                            Device Location Description
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for _, dev := range p.Devices %}
-                    <tr class="hover:bg-slate-50 group">
-                        <td class="px-4 h-10 border-b">{%dl dev.ID %}</td>
-                        <td class="border-b"><a
-                            class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-                            href="/overview/devices/{%dl dev.ID %}"
-                        >{%s dev.Code %}</a></td>
-                        <td class="px-4 h-10 border-b">{%s dev.Description %}</td>
-                        <td class="px-4 h-10 border-b">{%s dev.LocationDescription %}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="bg-white border rounded-md min-h-96 max-h-[90vh] lg:max-h-[50vh] overflow-y-auto" id="device-table-wrapper">
+            {%= RenderDeviceTable(p.Devices) %}
         </div>
     </div>
 {% endfunc %}
 
-{% func renderMap(sensorGroup *devices.SensorGroup) %}
+{% func RenderFilters(sensorGroup *devices.SensorGroup, oob bool) %}
+    <fieldset
+        id="filters"
+        class="relative col-span-2"
+        {% if oob %}
+            hx-swap-oob="true"
+        {% endif %}
+    >
+        <label for="sensorgroup-search" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Sensor group</small></label>
+        {% if sensorGroup == nil %}
+            <input
+                type="text" name="search" id="sensorgroup-search"
+
+                class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600"
+                hx-trigger="keyup changed delay:500ms, search"
+                hx-get="/overview/sensorgroups"
+                hx-target="next ul"
+                _="on blur wait 50ms add .hidden to next <ul/> on focus remove .hidden from next <ul/>"
+            />
+            <ul class="absolute top-full left-0 right-0 block rounded-md rounded-t-none bg-white z-[4000]
+                        text-sm">
+                
+            </ul>
+        {% else %}
+            <a
+                href="/overview"
+                hx-get="/overview/devices/table"
+                hx-target="#device-table-wrapper"
+                class="w-full px-2 py-1 border rounded-md text-primary-600 flex justify-between items-center"
+            >
+                {%s sensorGroup.Name %}
+                <iconify-icon icon="charm:cross" class="text-rose-500"></iconify-icon>
+            </a>
+        {% endif %}
+    </fieldset>
+{% endfunc %}
+
+{% func SensorGroupSearch(sgs []devices.SensorGroup) %}
+    {% for _, sg := range sgs %}
+        <li>
+            <a
+                href="?sensorgroup={%dl sg.ID %}"
+                hx-get="/overview/devices/table?sensorgroup={%dl sg.ID %}"
+                hx-target="#device-table-wrapper"
+                class="block hover:bg-primary-100 p-2"
+            >{%s sg.Name %}</a>
+        </li>
+    {% endfor %}
+{% endfunc %}
+
+{% func RenderDeviceTable(devices []devices.Device) %}
+    <table class="w-full text-sm border-separate border-spacing-0">
+        <thead class="text-left text-slate-500 sticky top-0 bg-white">
+            <tr class="h-10">
+                <th class="font-normal border-b align-middle px-4">
+                    Device ID
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Device Code
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Device Description
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Device Location Description
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for _, dev := range devices %}
+            <tr class="hover:bg-slate-50 group">
+                <td class="px-4 h-10 border-b">{%dl dev.ID %}</td>
+                <td class="border-b"><a
+                    class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
+                    href="/overview/devices/{%dl dev.ID %}"
+                >{%s dev.Code %}</a></td>
+                <td class="px-4 h-10 border-b">{%s dev.Description %}</td>
+                <td class="px-4 h-10 border-b">{%s dev.LocationDescription %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endfunc %}
+
+{% func RenderMap(sensorGroup *devices.SensorGroup) %}
     <div 
         hx-ext="leaflet"
         class="w-full h-96"
         id="device-map"
     >
-    </div>
-    <script type="text/javascript">
+        <script type="text/javascript">
         function getWebSocketURL(path) {
             const loc = window.location;
             let newUri;
@@ -95,24 +122,24 @@
             return newUri;
         }
         (() => {
-            let devmap = htmx.find("#device-map")
-            const markers = new Map();
-            async function init() {
-                const map = devmap.leaflet;
-                const markerLayer = L.markerClusterGroup()
+            const devmap = htmx.find("#device-map")
+            let map;
+            let markerLayer;
+            let ws;
+
+            function replaceDevices() {
+                // Remove old
+                if (ws != undefined) ws.close();
+                if (markerLayer != undefined) markerLayer.remove()
+
+                // New layer
+                markerLayer = L.markerClusterGroup()
                 map.addLayer(markerLayer);
 
-                {% if sensorGroup == nil %}
-                const ws = new WebSocket(getWebSocketURL("/overview/devices/stream-map"))
-                {% else %}
-                const ws = new WebSocket(getWebSocketURL("/overview/devices/stream-map?sensorgroup={%dl sensorGroup.ID %}"))
-                {% endif %}
+                // Fetch news
+                ws = new WebSocket(getWebSocketURL("/overview/devices/stream-map" + location.search))
                 ws.onmessage = (event) => {
                     const data = JSON.parse(event.data)
-                    if (markers.has(data.device_id)) {
-                        markers.get(data.device_id).remove()
-                        markers.delete(data.device_id)
-                    }
                     const marker = L.marker(data.coordinates).addTo(markerLayer)
                     marker.on('click', evt => {
                         const url = "/overview/devices/" + data.device_id;
@@ -121,8 +148,14 @@
                         })
                     })
                     marker.bindTooltip(data.device_code)
-                    markers.set(data.device_id, marker)
                 }
+            }
+            htmx.on(document.body, "newDeviceList", () => {
+                replaceDevices()
+            })
+            async function init() {
+                map = devmap.leaflet;
+                replaceDevices()
             }
 
             if (devmap.leaflet !== undefined) {
@@ -132,6 +165,7 @@
             }
         })()
     </script>
+    </div>
 {% endfunc %}
 
 {% code

@@ -33,6 +33,33 @@ func createOverviewPageHandler() http.Handler {
 	r.Use(middleware.GetHead)
 	r.Get("/", deviceListPage())
 	r.Get("/devices/stream-map", devicesStreamMap())
+	r.Get("/devices/table", func(w http.ResponseWriter, r *http.Request) {
+		var err error
+		sgID := r.URL.Query().Get("sensorgroup")
+		var sg *devices.SensorGroup
+		if sgID != "" {
+			sg, err = getSG(sgID)
+			if err != nil {
+				web.HTTPError(w, err)
+				return
+			}
+		}
+		url := "http://core:3000/devices?" + r.URL.Query().Encode()
+		res, err := http.Get(url)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		var resBody web.APIResponse[[]devices.Device]
+		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		w.Header().Set("hx-push-url", "/overview?"+r.URL.Query().Encode())
+		w.Header().Set("hx-trigger-after-settle", "newDeviceList")
+		views.WriteRenderFilters(w, sg, true)
+		views.WriteRenderDeviceTable(w, resBody.Data)
+	})
 	r.With(resolveDevice).Get("/devices/{device_id}", deviceDetailPage())
 	r.With(resolveDevice).With(resolveSensor).Get("/devices/{device_id}/sensors/{sensor_code}", sensorDetailPage())
 
