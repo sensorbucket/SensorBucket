@@ -66,19 +66,84 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
     </div>
 
     <script type="text/javascript">
-    function updateQueryParam(name, value) {
-        let urlParams = new URLSearchParams(window.location.search)
-        urlParams.set(name, value)
-        window.history.replaceState({}, '', '?' + urlParams.toString())
-    }
+        function updateQueryParam(name, value) {
+            let urlParams = new URLSearchParams(window.location.search)
+            urlParams.set(name, value)
+            window.history.replaceState({}, '', '?' + urlParams.toString())
+        }
+
+        function downloadCsv() {
+
+            // Find the plot on the page
+            const target = htmx.find("#chart");
+            const plot = target.plot;
+            if (plot == undefined || plot == null) {
+
+                // couldn't find plot
+                return;
+            }
+
+            // Map the data in the plot to a format easily converted to a csv
+            const x = plot.data[0];
+            const y = plot.data[1]
+            const rows = x.map((xVal, index) => {
+                // Conver the UTC date to a readable local format
+                var local = new Date(0);
+                local.setUTCSeconds(xVal);
+                return [xVal, local.toISOString(), y[index]];
+            });
+
+
+            // Create the csv with download
+            const csvContent = "Time(Epoch UTC),Time(Local),`)
+//line services/dashboard/views/datastream.qtpl:47
+	qw422016.E().S(p.Datastream.UnitOfMeasurement)
+//line services/dashboard/views/datastream.qtpl:47
+	qw422016.N().S(`\n" + rows.map(row => row.join(",")).join("\n");
+            const blob = new Blob([csvContent], { type: "text/csv" });
+
+            const downloadLink = document.createElement("a");
+            downloadLink.href = URL.createObjectURL(blob);
+
+            const summary = ('`)
+//line services/dashboard/views/datastream.qtpl:53
+	qw422016.E().S(p.Device.Code)
+//line services/dashboard/views/datastream.qtpl:53
+	qw422016.N().S(`-`)
+//line services/dashboard/views/datastream.qtpl:53
+	qw422016.E().S(p.Sensor.Code)
+//line services/dashboard/views/datastream.qtpl:53
+	qw422016.N().S(`-`)
+//line services/dashboard/views/datastream.qtpl:53
+	qw422016.E().S(p.Datastream.ObservedProperty)
+//line services/dashboard/views/datastream.qtpl:53
+	qw422016.N().S(`').replace(/\s/g, '').toLowerCase();
+            const title = summary + ' - `)
+//line services/dashboard/views/datastream.qtpl:54
+	qw422016.E().S(p.Start.Format("02-01-2006"))
+//line services/dashboard/views/datastream.qtpl:54
+	qw422016.N().S(` tot `)
+//line services/dashboard/views/datastream.qtpl:54
+	qw422016.E().S(p.End.Format("02-01-2006"))
+//line services/dashboard/views/datastream.qtpl:54
+	qw422016.N().S(`';
+
+            downloadLink.download = title;
+            downloadLink.click();
+        }
     </script>
     <div class="flex gap-2 text-sm">
             <fieldset class="relative col-span-2">
+                <button onclick="downloadCsv()" class="bg-transparent hover:bg-gray-500 text-gray-700 font-normal hover:text-white py-1 px-2 border border-gray-600 hover:border-transparent rounded">
+                    Export
+                </button>
+            </fieldset>
+            <fieldset class="relative col-span-2">
                 <label for="start" class="absolute bottom-full ml-1 -mb-1 block"><small class="text-xs text-slate-500">Start</small></label>
                 <input type="date" name="start" value="`)
-//line services/dashboard/views/datastream.qtpl:27
+//line services/dashboard/views/datastream.qtpl:68
 	qw422016.E().S(p.Start.Format("2006-01-02"))
-//line services/dashboard/views/datastream.qtpl:27
+//line services/dashboard/views/datastream.qtpl:68
 	qw422016.N().S(`" 
                     class="border px-2 py-1 rounded-md bg-white text-slate-700"
                     _="on change debounced at 500ms call updateQueryParam(me.name, me.value) then trigger updateDatastream on body"
@@ -87,9 +152,9 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
             <fieldset class="relative col-span-2">
                 <label for="end" class="absolute bottom-full ml-1 -mb-1 block"><small class="text-xs text-slate-500">End</small></label>
                 <input type="date" name="end" value="`)
-//line services/dashboard/views/datastream.qtpl:34
+//line services/dashboard/views/datastream.qtpl:75
 	qw422016.E().S(p.End.Format("2006-01-02"))
-//line services/dashboard/views/datastream.qtpl:34
+//line services/dashboard/views/datastream.qtpl:75
 	qw422016.N().S(`" 
                     class="border px-2 py-1 rounded-md bg-white text-slate-700"
                     _="on change debounced at 500ms call updateQueryParam(me.name, me.value) then trigger updateDatastream on body"
@@ -105,41 +170,41 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
         <div class="h-96 p-4">
             <header class="flex justify-between text-sm text-slate-600">
                 <small>`)
-//line services/dashboard/views/datastream.qtpl:48
+//line services/dashboard/views/datastream.qtpl:89
 	qw422016.E().S(p.Device.Code)
-//line services/dashboard/views/datastream.qtpl:48
+//line services/dashboard/views/datastream.qtpl:89
 	qw422016.N().S(` - `)
-//line services/dashboard/views/datastream.qtpl:48
+//line services/dashboard/views/datastream.qtpl:89
 	qw422016.E().S(p.Sensor.Code)
-//line services/dashboard/views/datastream.qtpl:48
+//line services/dashboard/views/datastream.qtpl:89
 	qw422016.N().S(` - `)
-//line services/dashboard/views/datastream.qtpl:48
+//line services/dashboard/views/datastream.qtpl:89
 	qw422016.E().S(p.Datastream.ObservedProperty)
-//line services/dashboard/views/datastream.qtpl:48
+//line services/dashboard/views/datastream.qtpl:89
 	qw422016.N().S(`</small>
                 <small>`)
-//line services/dashboard/views/datastream.qtpl:49
+//line services/dashboard/views/datastream.qtpl:90
 	qw422016.E().S(p.Datastream.Description)
-//line services/dashboard/views/datastream.qtpl:49
+//line services/dashboard/views/datastream.qtpl:90
 	qw422016.N().S(`</small>
                 <small>`)
-//line services/dashboard/views/datastream.qtpl:50
+//line services/dashboard/views/datastream.qtpl:91
 	qw422016.E().S(p.Datastream.ID.String())
-//line services/dashboard/views/datastream.qtpl:50
+//line services/dashboard/views/datastream.qtpl:91
 	qw422016.N().S(`</small>
             </header>
             `)
-//line services/dashboard/views/datastream.qtpl:52
+//line services/dashboard/views/datastream.qtpl:93
 	streamrenderDataStream(qw422016, p.Datastream, p.Start, p.End)
-//line services/dashboard/views/datastream.qtpl:52
+//line services/dashboard/views/datastream.qtpl:93
 	qw422016.N().S(`
         </div>
     </div>
     <div class="bg-white rounded-md border" id="map">
         `)
-//line services/dashboard/views/datastream.qtpl:56
+//line services/dashboard/views/datastream.qtpl:97
 	streamrenderDeviceMap(qw422016, p.Device)
-//line services/dashboard/views/datastream.qtpl:56
+//line services/dashboard/views/datastream.qtpl:97
 	qw422016.N().S(`
     </div>
     <div class="bg-white rounded-md border" id="device">
@@ -148,9 +213,9 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
         </header>
         <div class="p-4">
             `)
-//line services/dashboard/views/datastream.qtpl:63
+//line services/dashboard/views/datastream.qtpl:104
 	StreamDeviceDetailBlock(qw422016, p.Device)
-//line services/dashboard/views/datastream.qtpl:63
+//line services/dashboard/views/datastream.qtpl:104
 	qw422016.N().S(`
         </div>
     </div>
@@ -160,46 +225,46 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
         </header>
         <div class="p-4">
             `)
-//line services/dashboard/views/datastream.qtpl:71
+//line services/dashboard/views/datastream.qtpl:112
 	StreamSensorDetailBlock(qw422016, p.Sensor)
-//line services/dashboard/views/datastream.qtpl:71
+//line services/dashboard/views/datastream.qtpl:112
 	qw422016.N().S(`
         </div>
     </div>
 </div>
 `)
-//line services/dashboard/views/datastream.qtpl:75
+//line services/dashboard/views/datastream.qtpl:116
 }
 
-//line services/dashboard/views/datastream.qtpl:75
+//line services/dashboard/views/datastream.qtpl:116
 func (p *DatastreamPage) WriteBody(qq422016 qtio422016.Writer) {
-//line services/dashboard/views/datastream.qtpl:75
+//line services/dashboard/views/datastream.qtpl:116
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/datastream.qtpl:75
+//line services/dashboard/views/datastream.qtpl:116
 	p.StreamBody(qw422016)
-//line services/dashboard/views/datastream.qtpl:75
+//line services/dashboard/views/datastream.qtpl:116
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/datastream.qtpl:75
+//line services/dashboard/views/datastream.qtpl:116
 }
 
-//line services/dashboard/views/datastream.qtpl:75
+//line services/dashboard/views/datastream.qtpl:116
 func (p *DatastreamPage) Body() string {
-//line services/dashboard/views/datastream.qtpl:75
+//line services/dashboard/views/datastream.qtpl:116
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/datastream.qtpl:75
+//line services/dashboard/views/datastream.qtpl:116
 	p.WriteBody(qb422016)
-//line services/dashboard/views/datastream.qtpl:75
+//line services/dashboard/views/datastream.qtpl:116
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/datastream.qtpl:75
+//line services/dashboard/views/datastream.qtpl:116
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/datastream.qtpl:75
+//line services/dashboard/views/datastream.qtpl:116
 	return qs422016
-//line services/dashboard/views/datastream.qtpl:75
+//line services/dashboard/views/datastream.qtpl:116
 }
 
-//line services/dashboard/views/datastream.qtpl:77
+//line services/dashboard/views/datastream.qtpl:118
 func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastream, start, end time.Time) {
-//line services/dashboard/views/datastream.qtpl:77
+//line services/dashboard/views/datastream.qtpl:118
 	qw422016.N().S(`
     <div id="chart" class="w-full h-full">
     </div>
@@ -227,17 +292,17 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
             let end = document.querySelector('input[name="end"').value
             plot.setScale('x', {min: start, max: end});
             const ws = new WebSocket(getWebSocketURL(`)
-//line services/dashboard/views/datastream.qtpl:77
+//line services/dashboard/views/datastream.qtpl:118
 	qw422016.N().S("`")
-//line services/dashboard/views/datastream.qtpl:77
+//line services/dashboard/views/datastream.qtpl:118
 	qw422016.N().S(`/overview/datastreams/`)
-//line services/dashboard/views/datastream.qtpl:103
+//line services/dashboard/views/datastream.qtpl:144
 	qw422016.E().S(ds.ID.String())
-//line services/dashboard/views/datastream.qtpl:103
+//line services/dashboard/views/datastream.qtpl:144
 	qw422016.N().S(`/stream?start=${start}&end=${end}`)
-//line services/dashboard/views/datastream.qtpl:103
+//line services/dashboard/views/datastream.qtpl:144
 	qw422016.N().S("`")
-//line services/dashboard/views/datastream.qtpl:103
+//line services/dashboard/views/datastream.qtpl:144
 	qw422016.N().S(`))
             ws.onmessage = (event) => {
                 const reader = new FileReader();
@@ -258,6 +323,7 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
                 reader.readAsArrayBuffer(event.data);
             }
         }
+
         function init() {
             const target = htmx.find("#chart")
             const x = [];
@@ -270,14 +336,14 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
                     x: {
                         time: true,
                         min: `)
-//line services/dashboard/views/datastream.qtpl:134
+//line services/dashboard/views/datastream.qtpl:176
 	qw422016.N().DL(start.Unix())
-//line services/dashboard/views/datastream.qtpl:134
+//line services/dashboard/views/datastream.qtpl:176
 	qw422016.N().S(`,
                         max: `)
-//line services/dashboard/views/datastream.qtpl:135
+//line services/dashboard/views/datastream.qtpl:177
 	qw422016.N().DL(end.Unix())
-//line services/dashboard/views/datastream.qtpl:135
+//line services/dashboard/views/datastream.qtpl:177
 	qw422016.N().S(`,
                     },
                     y: {
@@ -288,13 +354,13 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
                     {
                         stroke: "red",
                         label: "`)
-//line services/dashboard/views/datastream.qtpl:144
+//line services/dashboard/views/datastream.qtpl:186
 	qw422016.E().S(ds.ObservedProperty)
-//line services/dashboard/views/datastream.qtpl:144
+//line services/dashboard/views/datastream.qtpl:186
 	qw422016.N().S(` (`)
-//line services/dashboard/views/datastream.qtpl:144
+//line services/dashboard/views/datastream.qtpl:186
 	qw422016.E().S(ds.UnitOfMeasurement)
-//line services/dashboard/views/datastream.qtpl:144
+//line services/dashboard/views/datastream.qtpl:186
 	qw422016.N().S(`)"
                     }
                 ]
@@ -311,36 +377,36 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
     }
     </script>
 `)
-//line services/dashboard/views/datastream.qtpl:159
+//line services/dashboard/views/datastream.qtpl:201
 }
 
-//line services/dashboard/views/datastream.qtpl:159
+//line services/dashboard/views/datastream.qtpl:201
 func writerenderDataStream(qq422016 qtio422016.Writer, ds measurements.Datastream, start, end time.Time) {
-//line services/dashboard/views/datastream.qtpl:159
+//line services/dashboard/views/datastream.qtpl:201
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/datastream.qtpl:159
+//line services/dashboard/views/datastream.qtpl:201
 	streamrenderDataStream(qw422016, ds, start, end)
-//line services/dashboard/views/datastream.qtpl:159
+//line services/dashboard/views/datastream.qtpl:201
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/datastream.qtpl:159
+//line services/dashboard/views/datastream.qtpl:201
 }
 
-//line services/dashboard/views/datastream.qtpl:159
+//line services/dashboard/views/datastream.qtpl:201
 func renderDataStream(ds measurements.Datastream, start, end time.Time) string {
-//line services/dashboard/views/datastream.qtpl:159
+//line services/dashboard/views/datastream.qtpl:201
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/datastream.qtpl:159
+//line services/dashboard/views/datastream.qtpl:201
 	writerenderDataStream(qb422016, ds, start, end)
-//line services/dashboard/views/datastream.qtpl:159
+//line services/dashboard/views/datastream.qtpl:201
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/datastream.qtpl:159
+//line services/dashboard/views/datastream.qtpl:201
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/datastream.qtpl:159
+//line services/dashboard/views/datastream.qtpl:201
 	return qs422016
-//line services/dashboard/views/datastream.qtpl:159
+//line services/dashboard/views/datastream.qtpl:201
 }
 
-//line services/dashboard/views/datastream.qtpl:162
+//line services/dashboard/views/datastream.qtpl:204
 type DatastreamPage struct {
 	BasePage
 	Device     devices.Device
