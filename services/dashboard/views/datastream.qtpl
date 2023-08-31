@@ -15,13 +15,54 @@
     </div>
 
     <script type="text/javascript">
-    function updateQueryParam(name, value) {
-        let urlParams = new URLSearchParams(window.location.search)
-        urlParams.set(name, value)
-        window.history.replaceState({}, '', '?' + urlParams.toString())
-    }
+        function updateQueryParam(name, value) {
+            let urlParams = new URLSearchParams(window.location.search)
+            urlParams.set(name, value)
+            window.history.replaceState({}, '', '?' + urlParams.toString())
+        }
+
+        function downloadCsv() {
+
+            // Find the plot on the page
+            const target = htmx.find("#chart");
+            const plot = target.plot;
+            if (plot == undefined || plot == null) {
+
+                // couldn't find plot
+                return;
+            }
+
+            // Map the data in the plot to a format easily converted to a csv
+            const x = plot.data[0];
+            const y = plot.data[1]
+            const rows = x.map((xVal, index) => {
+                // Conver the UTC date to a readable local format
+                var local = new Date(0);
+                local.setUTCSeconds(xVal);
+                return [xVal, local.toLocaleString(), y[index]];
+            });
+
+
+            // Create the csv with download
+            const csvContent = "Time(Epoch UTC),Time(Local),{%s p.Datastream.UnitOfMeasurement %}\n" + rows.map(row => row.join(",")).join("\n");
+            const blob = new Blob([csvContent], { type: "text/csv" });
+
+            const downloadLink = document.createElement("a");
+            downloadLink.href = URL.createObjectURL(blob);
+
+            const summary = ('{%s p.Device.Code %}-{%s p.Sensor.Code %}-{%s p.Datastream.ObservedProperty %}').replace(/\s/g, '').toLowerCase();
+            const title = summary + '-{%s p.Start.Format("02-01-2006") %}-{%s p.End.Format("02-01-2006") %}.csv';
+
+            downloadLink.download = title;
+            downloadLink.click();
+        }
     </script>
     <div class="flex gap-2 text-sm">
+            <fieldset class="relative col-span-2">
+                <button onclick="downloadCsv()" class="bg-transparent hover:bg-gray-500 text-gray-700 font-normal hover:text-white py-1 px-2 border border-gray-600 hover:border-transparent rounded">
+                    Export
+                </button>
+            </fieldset>
             <fieldset class="relative col-span-2">
                 <label for="start" class="absolute bottom-full ml-1 -mb-1 block"><small class="text-xs text-slate-500">Start</small></label>
                 <input type="date" name="start" value="{%s p.Start.Format("2006-01-02") %}" 
@@ -131,6 +172,7 @@
                 reader.readAsArrayBuffer(event.data);
             };
         }
+
         function init() {
             const target = htmx.find("#chart")
             target.innerHTML = ""
