@@ -19,10 +19,16 @@ func NewStorePSQL(db *sqlx.DB) *stepStore {
 	}
 }
 
-func (s *stepStore) Insert(step tracing.Step) error {
+func (s *stepStore) UpsertStep(step tracing.Step, withError bool) error {
 	q := sq.Insert("steps").
 		Columns("tracing_id", "step_index", "steps_remaining", "start_time", "error", "device_id").
 		Values(step.TracingID, step.StepIndex, step.StepsRemaining, step.StartTime, step.Error, step.DeviceId)
+	if withError {
+		q = q.Suffix("ON CONFLICT ON CONSTRAINT steps_pkey DO UPDATE SET error = ?", step.Error)
+	} else {
+		q = q.Suffix("ON CONFLICT ON CONSTRAINT steps_pkey DO NOTHING")
+	}
+
 	_, err := q.PlaceholderFormat(sq.Dollar).RunWith(s.db).Exec()
 	if err != nil {
 		return err
@@ -44,7 +50,7 @@ func (s *stepStore) QueryTraces(filter tracing.Filter, r pagination.Request) (*p
 	cursor := pagination.GetCursor[TraceQueryPage](r)
 
 	// TODO: should this be distinct?
-	q := sq.Select().From("archived_ingress_dtos archive").Join("enriched_steps_view steps on archive.tracing_id = steps.tracing_id")
+	q := sq.Select().Distinct().From("archived_ingress_dtos archive").RightJoin("enriched_steps_view steps on archive.tracing_id = steps.tracing_id")
 	if len(filter.DeviceIds) > 0 {
 		q = q.Where(sq.Eq{"steps.device_id": filter.DeviceIds})
 	}
@@ -110,7 +116,6 @@ func (s *stepStore) GetStepsByTracingIds(tracingIds []string) ([]tracing.Enriche
 		From("enriched_steps_view").
 		Where(sq.Eq{"tracing_id": tracingIds})
 
-	fmt.Println(sq.DebugSqlizer(q))
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(s.db).Query()
 	if err != nil {
 		return nil, err

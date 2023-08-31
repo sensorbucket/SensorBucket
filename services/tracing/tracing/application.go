@@ -11,7 +11,7 @@ import (
 )
 
 type StepStore interface {
-	Insert(Step) error
+	UpsertStep(step Step, withError bool) error
 	GetStepsByTracingIds([]string) ([]EnrichedStep, error)
 	QueryTraces(filter Filter, r pagination.Request) (*pagination.Page[string], error)
 }
@@ -43,7 +43,7 @@ func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message) error 
 		step.DeviceId = &pipelineMessage.Device.ID
 	}
 
-	return s.addStep(step)
+	return s.stepStore.UpsertStep(step, false)
 }
 
 func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError) error {
@@ -63,23 +63,22 @@ func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError) error
 		step.DeviceId = &errorMessage.ProcessingAttempt.Device.ID
 	}
 
-	return s.addStep(step)
+	return s.stepStore.UpsertStep(step, true)
 }
 
 func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[TraceDTO], error) {
-
 	// Retrieve all the traces according to it's pagination first
 	filteredTraces, err := s.stepStore.QueryTraces(f, r)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(filteredTraces, err)
 
 	// Prepare the correctly ordered result map
 	// TODO: does this function keep the order of the list?
 	grouped := lo.SliceToMap(filteredTraces.Data, func(tracingId string) (string, []EnrichedStep) {
 		return tracingId, []EnrichedStep{}
 	})
+	fmt.Printf("grouped: %v\n", len(grouped))
 
 	// Now enrich the trace data with the step data
 	steps, err := s.stepStore.GetStepsByTracingIds(filteredTraces.Data)
@@ -96,7 +95,6 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 
 	// Now change the map of trace ids with their steps to the required trace dto
 	traces := lo.MapToSlice(grouped, func(key string, value []EnrichedStep) TraceDTO {
-
 		asEnriched := EnrichedSteps(value)
 
 		return TraceDTO{
@@ -145,8 +143,4 @@ type StepDTO struct {
 	Status   string        `json:"status"`
 	Duration time.Duration `json:"duration"`
 	Error    string        `json:"error"`
-}
-
-func (s *Service) addStep(step Step) error {
-	return s.stepStore.Insert(step)
 }
