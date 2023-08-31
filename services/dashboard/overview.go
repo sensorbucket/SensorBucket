@@ -17,7 +17,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/gorilla/websocket"
 
-	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
@@ -200,6 +199,7 @@ func devicesStreamMap() http.HandlerFunc {
 
 	getDevicePage := func(sensorGroupID, cursor string) ([]devices.Device, string, error) {
 		q := url.Values{}
+		q.Set("cursor", cursor)
 		if sensorGroupID != "" {
 			q.Set("sensorgroup", sensorGroupID)
 		}
@@ -260,23 +260,32 @@ func devicesStreamMap() http.HandlerFunc {
 	}
 }
 
-type overviewDatastreamParams struct {
-	Start time.Time
-	End   time.Time
-}
-
 func overviewDatastream() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		params, err := httpfilter.Parse[overviewDatastreamParams](r)
-		if err != nil {
-			web.HTTPError(w, err)
-			return
+		var err error
+		var start time.Time
+		var end time.Time
+
+		startQ := r.URL.Query().Get("start")
+		endQ := r.URL.Query().Get("end")
+		if startQ != "" {
+			start, err = time.Parse("2006-01-02", startQ)
+			if err != nil {
+				web.HTTPError(w, err)
+			}
 		}
-		if params.Start.IsZero() {
-			params.Start = time.Now().Add(-7 * 24 * time.Hour)
+		if endQ != "" {
+			end, err = time.Parse("2006-01-02", endQ)
+			if err != nil {
+				web.HTTPError(w, err)
+			}
 		}
-		if params.End.IsZero() {
-			params.End = time.Now()
+
+		if start.IsZero() {
+			start = time.Now().Add(-7 * 24 * time.Hour)
+		}
+		if end.IsZero() {
+			end = time.Now()
 		}
 		res, err := http.Get(fmt.Sprintf("http://core:3000/datastreams/%s", chi.URLParam(r, "id")))
 		if err != nil {
@@ -293,8 +302,8 @@ func overviewDatastream() http.HandlerFunc {
 			Datastream: *resBody.Data.Datastream,
 			Device:     *resBody.Data.Device,
 			Sensor:     *resBody.Data.Sensor,
-			Start:      params.Start,
-			End:        params.End,
+			Start:      start,
+			End:        end,
 		}
 		if isHX(r) {
 			page.WriteBody(w)

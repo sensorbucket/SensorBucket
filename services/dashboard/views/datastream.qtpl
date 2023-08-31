@@ -14,17 +14,26 @@
         <span>{%s p.Datastream.ID.String() %}</span>
     </div>
 
+    <script type="text/javascript">
+    function updateQueryParam(name, value) {
+        let urlParams = new URLSearchParams(window.location.search)
+        urlParams.set(name, value)
+        window.history.replaceState({}, '', '?' + urlParams.toString())
+    }
+    </script>
     <div class="flex gap-2 text-sm">
             <fieldset class="relative col-span-2">
                 <label for="start" class="absolute bottom-full ml-1 -mb-1 block"><small class="text-xs text-slate-500">Start</small></label>
                 <input type="date" name="start" value="{%s p.Start.Format("2006-01-02") %}" 
                     class="border px-2 py-1 rounded-md bg-white text-slate-700"
+                    _="on change debounced at 500ms call updateQueryParam(me.name, me.value) then trigger updateDatastream on body"
                 />
             </fieldset>
             <fieldset class="relative col-span-2">
                 <label for="end" class="absolute bottom-full ml-1 -mb-1 block"><small class="text-xs text-slate-500">End</small></label>
                 <input type="date" name="end" value="{%s p.End.Format("2006-01-02") %}" 
                     class="border px-2 py-1 rounded-md bg-white text-slate-700"
+                    _="on change debounced at 500ms call updateQueryParam(me.name, me.value) then trigger updateDatastream on body"
                 />
             </fieldset>
     </div>
@@ -40,7 +49,7 @@
                 <small>{%s p.Datastream.Description %}</small>
                 <small>{%s p.Datastream.ID.String() %}</small>
             </header>
-            {%= renderDataStream(p.Datastream) %}
+            {%= renderDataStream(p.Datastream, p.Start, p.End) %}
         </div>
     </div>
     <div class="bg-white rounded-md border" id="map">
@@ -65,7 +74,7 @@
 </div>
 {% endfunc %}
 
-{% func renderDataStream(ds measurements.Datastream) %}
+{% func renderDataStream(ds measurements.Datastream, start, end time.Time) %}
     <div id="chart" class="w-full h-full">
     </div>
     <script type="text/javascript">
@@ -84,34 +93,14 @@
             
             return newUri;
         }
-        function init() {
-            const target = htmx.find("#chart")
-            const x = [];
-            const y = [];
-
-            const opts = {
-                width: target.clientWidth,
-                height: target.clientHeight - 60,
-                scales: {
-                    x: {
-                        time: true,
-                    },
-                    y: {
-                    }
-                },
-                series: [
-                    {},
-                    {
-                        stroke: "red",
-                        label: "{%s ds.ObservedProperty %} ({%s ds.UnitOfMeasurement%})"
-                    }
-                ]
-            };
-
-            const plot = new uPlot(opts, [x,y], target)
-            target.plot = plot;
-
-            const ws = new WebSocket(getWebSocketURL("/overview/datastreams/{%s ds.ID.String() %}/stream?start={%s time.Now().Format(time.RFC3339) %}"))
+        let plot;
+        function updateDatastream() {
+            let x = [];
+            let y = [];
+            let start = document.querySelector('input[name="start"').value
+            let end = document.querySelector('input[name="end"').value
+            plot.setScale('x', {min: start, max: end});
+            const ws = new WebSocket(getWebSocketURL(`/overview/datastreams/{%s ds.ID.String() %}/stream?start=${start}&end=${end}`))
             ws.onmessage = (event) => {
                 const reader = new FileReader();
                 reader.onload = function() {
@@ -130,6 +119,39 @@
                 };
                 reader.readAsArrayBuffer(event.data);
             }
+        }
+        function init() {
+            const target = htmx.find("#chart")
+            const x = [];
+            const y = [];
+
+            const opts = {
+                width: target.clientWidth,
+                height: target.clientHeight - 60,
+                scales: {
+                    x: {
+                        time: true,
+                        min: {%dl start.Unix() %},
+                        max: {%dl end.Unix() %},
+                    },
+                    y: {
+                    }
+                },
+                series: [
+                    {},
+                    {
+                        stroke: "red",
+                        label: "{%s ds.ObservedProperty %} ({%s ds.UnitOfMeasurement%})"
+                    }
+                ]
+            };
+
+            if (plot == undefined) {
+                plot = new uPlot(opts, [x,y], target)
+                target.plot = plot;
+            }
+            htmx.on(document.body, "updateDatastream", () => updateDatastream())
+            updateDatastream()
         }
         (() => init())()
     }
