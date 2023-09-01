@@ -85,6 +85,9 @@ type HTTPDeviceFilters struct {
 
 func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
+		web.HTTPError(rw, devices.ErrDeviceNotFound)
+		return
+
 		filter, err := httpfilter.Parse[HTTPDeviceFilters](r)
 		if err != nil {
 			web.HTTPError(rw, err)

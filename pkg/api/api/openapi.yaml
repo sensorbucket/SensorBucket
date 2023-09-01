@@ -1,0 +1,1777 @@
+openapi: 3.0.0
+info:
+  contact:
+    email: info@pollex.nl
+    name: Tim van Osch
+    url: https://sensorbucket.nl
+  description: "SensorBucket processes data from different sources and devices into\
+    \ a single standardized format. \nAn applications connected to SensorBucket, can\
+    \ use all devices SensorBucket supports.\n\nMissing a device or source? SensorBucket\
+    \ is designed to be scalable and extendable. Create your own worker\nthat receives\
+    \ data from an AMQP source, process said data and output in the expected worker\
+    \ output format.\n\nFind out more at: https://developer.sensorbucket.nl/\n\nDeveloped\
+    \ and designed by Provincie Zeeland and Pollex\n"
+  license:
+    name: EUPLv1.2
+    url: https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+  title: Sensorbucket API
+  version: "1.0"
+servers:
+- description: Production
+  url: https://sensorbucket.nl/api
+- description: Local docker environment
+  url: http://localhost:3000/api
+security:
+- basicAuth: []
+tags:
+- name: Devices
+- name: Pipelines
+- name: Measurements
+- name: Uplink
+paths:
+  /devices:
+    get:
+      description: |
+        Fetch a list of devices.
+
+        Devices can be filtered on three items: properties, distance from a location or a bounding box.
+         - Filtering on properties filters devices on whether their property attribute is a superset of the given JSON object value
+         - Distance from location filtering requires a latitude, longitude and distance (in meters). All devices within that range will be returned
+         - Bounding box requires a North,East,South and West point. All devices within that box will be returned.
+
+        The filters distance from location and bounding box are mutually exclusive. The location distance filter will take precedence.
+      operationId: ListDevices
+      parameters:
+      - description: Used to filter devices by its properties. This filters devices
+          on whether their property contains the provided value. The value must be
+          a JSON string and depending on your client should be URL Escaped
+        in: query
+        name: properties
+        schema:
+          example: "{ \"eui\": \"1122334455667788\" }"
+          type: string
+      - description: Used to filter devices within a bounding box
+        in: query
+        name: north
+        schema:
+          example: 3.6175560329103202
+          type: number
+      - description: Used to filter devices within a bounding box
+        in: query
+        name: west
+        schema:
+          example: 51.518796779610035
+          type: number
+      - description: Used to filter devices within a bounding box
+        in: query
+        name: east
+        schema:
+          example: 51.47912508218688
+          type: number
+      - description: Used to filter devices within a bounding box
+        in: query
+        name: south
+        schema:
+          example: 3.655955445579366
+          type: number
+      - description: Used to filter devices within a distance from a point
+        in: query
+        name: latitude
+        schema:
+          example: 51.496227862014685
+          type: number
+      - description: Used to filter devices within a distance from a point
+        in: query
+        name: longitude
+        schema:
+          example: 3.615071953647924
+          type: number
+      - description: "Used to filter devices within a distance from a point. \nThe\
+          \ distance is given in meters.\n"
+        in: query
+        name: distance
+        schema:
+          example: 1000
+          type: number
+      - description: The cursor for the current page
+        in: query
+        name: cursor
+        schema:
+          type: string
+      - description: |
+          The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+        in: query
+        name: limit
+        schema:
+          type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDevices_200_response'
+          description: OK
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDevices_default_response'
+          description: Default API Error
+      summary: List devices
+      tags:
+      - Devices
+      x-is-paginated: true
+    post:
+      description: "Create a new device.\n\nDepending on the type of device and the\
+        \ network it is registered on. The device might need specific properties to\
+        \ be set.  \n**For example:** A LoRaWAN device often requires a `dev_eui`\
+        \ property to be set. The system will match incoming traffic against that\
+        \ property.\n"
+      operationId: CreateDevice
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createDeviceRequest'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateDevice_201_response'
+          description: Created
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+      summary: Create device
+      tags:
+      - Devices
+  /devices/{id}:
+    get:
+      description: |
+        Get the device with the given identifier.
+
+        The returned device will also include the full model of the sensors attached to that device.
+      operationId: GetDevice
+      parameters:
+      - description: The numeric ID of the device
+        in: path
+        name: id
+        required: true
+        schema:
+          type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetDevice_200_response'
+          description: Fetched device
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: The request failed because the requested resource could not
+            be found
+      summary: Get device
+      tags:
+      - Devices
+    patch:
+      description: |
+        Update a some properties of the device with the given identifier.
+
+        The request body should contain one or more modifiable properties of the Device.
+      operationId: UpdateDevice
+      parameters:
+      - description: The numeric ID of the device
+        in: path
+        name: id
+        required: true
+        schema:
+          type: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateDeviceRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateDevice_200_response'
+          description: Updated device properties
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: The request failed because the requested resource could not
+            be found
+      summary: Update device properties
+      tags:
+      - Devices
+  /devices/{device_id}/sensors:
+    get:
+      description: |
+        List all sensors related to the device with the provided identifier
+      operationId: ListDeviceSensors
+      parameters:
+      - description: The identifier of the device
+        in: path
+        name: device_id
+        required: true
+        schema:
+          type: number
+      - description: The cursor for the current page
+        in: query
+        name: cursor
+        schema:
+          type: string
+      - description: |
+          The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+        in: query
+        name: limit
+        schema:
+          type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDeviceSensors_200_response'
+          description: Listed device sensors
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: The request failed because the requested resource could not
+            be found
+      summary: List sensors device
+      tags:
+      - Devices
+      x-is-paginated: true
+    post:
+      description: |
+        Create a new sensor for the device with the given identifier.
+
+        A device can not have sensors with either a duplicate `code` or duplicate `external_id` field.
+        As this would result in conflicts while matching incoming messages to devices and sensors.
+      operationId: CreateDeviceSensor
+      parameters:
+      - description: The identifier of the device
+        in: path
+        name: device_id
+        required: true
+        schema:
+          type: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createSensorRequest'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateDeviceSensor_201_response'
+          description: Created new sensor for device
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: The request failed because the requested resource could not
+            be found
+      summary: Create sensor for device
+      tags:
+      - Devices
+  /device/{device_id}/sensors/{sensor_code}:
+    delete:
+      description: "Delete a sensor from the system. \n\nSince a sensor can only be\
+        \ related to one and only one device at a time, the sensor will be deleted\
+        \ from the system completely\n"
+      operationId: DeleteDeviceSensor
+      parameters:
+      - description: The identifier of the device
+        in: path
+        name: device_id
+        required: true
+        schema:
+          type: number
+      - description: The code of the sensor
+        in: path
+        name: sensor_code
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteDeviceSensor_200_response'
+          description: Deleted sensor from device
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: The request failed because the requested resource could not
+            be found
+      summary: Delete sensor
+      tags:
+      - Devices
+  /sensors:
+    get:
+      description: |
+        List all sensors.
+      operationId: ListSensors
+      parameters:
+      - description: The cursor for the current page
+        in: query
+        name: cursor
+        schema:
+          type: string
+      - description: |
+          The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+        in: query
+        name: limit
+        schema:
+          type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDeviceSensors_200_response'
+          description: Fetched sensors
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+      summary: List sensors
+      tags:
+      - Devices
+      x-is-paginated: true
+  /sensor-groups:
+    get:
+      description: |
+        Fetch a list of sensor groups.
+      operationId: ListSensorGroups
+      parameters:
+      - description: The cursor for the current page
+        in: query
+        name: cursor
+        schema:
+          type: string
+      - description: |
+          The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+        in: query
+        name: limit
+        schema:
+          type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSensorGroups_200_response'
+          description: OK
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+      summary: List sensor groups
+      tags:
+      - Devices
+      x-is-paginated: true
+    post:
+      description: |
+        Create a new sensor group.
+      operationId: CreateSensorGroup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createSensorGroupRequest'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSensorGroup_201_response'
+          description: Created
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+      summary: Create sensor group
+      tags:
+      - Devices
+  /sensor-groups/{id}:
+    delete:
+      description: |
+        Delete a sensor group
+      operationId: DeleteSensorGroup
+      parameters:
+      - description: The id of the sensor group
+        in: path
+        name: id
+        required: true
+        schema:
+          type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSensorGroup_200_response'
+          description: Sensor group deleted
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: The request failed because the requested resource could not
+            be found
+      summary: Delete sensor group
+      tags:
+      - Devices
+    get:
+      description: |
+        Get the sensor group with the given identifier.
+      operationId: GetSensorGroup
+      parameters:
+      - description: The numeric ID of the sensor group
+        in: path
+        name: id
+        required: true
+        schema:
+          type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetSensorGroup_200_response'
+          description: Fetched sensor group
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: The request failed because the requested resource could not
+            be found
+      summary: Get sensor group
+      tags:
+      - Devices
+    patch:
+      description: |
+        Update a some properties of the sensor group with the given identifier.
+
+        The request body should contain one or more modifiable properties of the sensor group.
+      operationId: UpdateSensorGroup
+      parameters:
+      - description: The numeric ID of the sensor group
+        in: path
+        name: id
+        required: true
+        schema:
+          type: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateSensorGroupRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateSensorGroup_200_response'
+          description: Updated Sensor Group properties
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: The request failed because the requested resource could not
+            be found
+      summary: Update sensor group
+      tags:
+      - Devices
+  /sensor-groups/{id}/sensors:
+    post:
+      description: |
+        Add a sensor by its ID to a sensor group by its ID
+      operationId: AddSensorToSensorGroup
+      parameters:
+      - description: The identifier of the Sensor Group
+        in: path
+        name: id
+        required: true
+        schema:
+          type: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddSensorToSensorGroup_request'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddSensorToSensorGroup_201_response'
+          description: Added sensor to sensor group
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: The request failed because the requested resource could not
+            be found
+      summary: Add sensor to a sensor group
+      tags:
+      - Devices
+  /sensor-groups/{id}/sensors/{sensor_id}:
+    delete:
+      description: |
+        Delete a sensor from a sensor group
+      operationId: DeleteSensorFromSensorGroup
+      parameters:
+      - description: The identifier of the sensor group
+        in: path
+        name: id
+        required: true
+        schema:
+          type: number
+      - description: The id of the sensor
+        in: path
+        name: sensor_id
+        required: true
+        schema:
+          type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSensorFromSensorGroup_200_response'
+          description: Deleted sensor from sensor group
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: The request failed because the requested resource could not
+            be found
+      summary: Delete sensor from sensor group
+      tags:
+      - Devices
+  /measurements:
+    get:
+      description: "Query a list of measurements.\n\nThis endpoint is used to get\
+        \ all measurements that correspond with the given filters.\n\nIt is commonly\
+        \ required to get a single stream of measurements from a single sensor. This\
+        \ can be accomplished by \nfinding the corresponding datastream ID and using\
+        \ that in the `datastream` filter. \n\nMost query parameters can be repeated\
+        \ to get an OR combination of filters. For example, providing the `datastream`\
+        \ \nparameter twice will return measurements for either datastreams.\n"
+      operationId: QueryMeasurements
+      parameters:
+      - in: query
+        name: start
+        required: true
+        schema:
+          example: 2022-01-01T00:00:00Z
+          format: iso8601
+          type: string
+      - in: query
+        name: end
+        required: true
+        schema:
+          example: 2022-12-31T23:59:59Z
+          format: iso8601
+          type: string
+      - in: query
+        name: device_id
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: datastream
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: sensor_code
+        required: false
+        schema:
+          type: string
+      - description: The cursor for the current page
+        in: query
+        name: cursor
+        schema:
+          type: string
+      - description: |
+          The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+        in: query
+        name: limit
+        schema:
+          type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryMeasurements_200_response'
+          description: Fetched measurements
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+      summary: Query measurements
+      tags:
+      - Measurements
+      x-is-paginated: true
+  /datastreams:
+    get:
+      description: "List all datastreams.\n\nA sensor can produce one or more timeseries\
+        \ of measurements. Such a unique timeserie is called a datastream.  \n\n**For\
+        \ example:** A Particulate Matter sensor might return count the number of\
+        \ particles smaller than 2.5 μg/cm2, 5 μg/cm2 and 10 μg/cm2.\nthis is one\
+        \ sensor producing three datastreams.\n\nAnother example would be a worker\
+        \ which processes raw incoming values into meaningful data.\nAn underwater\
+        \ pressure sensor might supply its measurement in milli Amperes, but the worker\
+        \ converts it to watercolumn in meters.\nThe sensor now has two datastreams.\
+        \ Presusre in millivolt and watercolumn in meters.\n"
+      operationId: ListDatastreams
+      parameters:
+      - description: only return datastreams that are produced by the given sensor
+          identifier
+        in: query
+        name: sensor
+        schema:
+          type: number
+      - description: The cursor for the current page
+        in: query
+        name: cursor
+        schema:
+          type: string
+      - description: |
+          The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+        in: query
+        name: limit
+        schema:
+          type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDatastreams_200_response'
+          description: Fetched datastreams
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+      summary: List all datastreams
+      tags:
+      - Measurements
+      x-is-paginated: true
+  /pipelines:
+    get:
+      description: |
+        List pipelines. By default only `state=active` pipelines are returned.
+        By providing the query parameter `inactive` only the inactive pipelines will be returned.
+
+        Pipelines can be filtered by providing one or more `step`s. This query parameter can be repeated to include more steps.
+        When multiple steps are given, pipelines containing one of the given steps will be returned.
+      operationId: ListPipelines
+      parameters:
+      - description: Only show inactive pipelines
+        in: query
+        name: inactive
+        required: false
+        schema:
+          type: boolean
+      - description: Only show pipelines that include at least one of these steps
+        example:
+        - thethingsnetwork
+        - multiflexmeter
+        in: query
+        name: step
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+      - description: The cursor for the current page
+        in: query
+        name: cursor
+        schema:
+          type: string
+      - description: |
+          The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+        in: query
+        name: limit
+        schema:
+          type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListPipelines_200_response'
+          description: Fetched pipelines
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+      summary: List pipelines
+      tags:
+      - Pipelines
+      x-is-paginated: true
+    post:
+      description: "Create a new pipeline. \n\nA pipeline determines which workers,\
+        \ in which order the incoming data will be processed by.\n\nA pipeline step\
+        \ is used as routing key in the Message Queue. This might be changed in future\
+        \ releases.\n\n**Note:** currently there are no validations in place on whether\
+        \ a worker for the provided step actually exists.\n"
+      operationId: CreatePipeline
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createPipelineRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePipeline_200_response'
+          description: Created pipeline
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+      summary: Create pipeline
+      tags:
+      - Pipelines
+  /pipelines/{id}:
+    delete:
+      description: |
+        Disables a pipeline by setting its status to inactive.
+
+        Inactive pipelines will - by default - not appear in the `ListPipelines` and `GetPipeline` endpoints,
+        unless the `status=inactive` query parameter is given on that endpoint.
+      operationId: DisablePipeline
+      parameters:
+      - description: The UUID of the pipeline
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisablePipeline_200_response'
+          description: pipeline disabled
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: |
+            The request failed because the requested resource could not be found or because the resource is disabled
+        "405":
+          description: |
+            The request failed because the request is invalid.
+      summary: Disable pipeline
+      tags:
+      - Pipelines
+    get:
+      description: |
+        Get the pipeline with the given identifier.
+
+        This endpoint by default returns a 404 Not Found for inactive pipelines.
+        To get an inactive pipeline, provide the `status=inactive` query parameter.
+      operationId: GetPipeline
+      parameters:
+      - description: The UUID of the pipeline
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: |
+          The status of the pipeline. Use `inactive` to view inactive pipelines instead of getting a 404 error
+        example:
+        - active
+        - inactive
+        in: query
+        name: status
+        schema:
+          items:
+            type: string
+          type: array
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPipeline_200_response'
+          description: Fetched pipeline
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: |
+            The request failed because the requested resource could not be found or because the resource is disabled
+      summary: Get pipeline
+      tags:
+      - Pipelines
+    patch:
+      description: "Update some properties of the pipeline with the given identifier.\
+        \ \n\nSetting an invalid state or making an invalid state transition will\
+        \ result in an error.\n"
+      operationId: UpdatePipeline
+      parameters:
+      - description: The UUID of the pipeline
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updatePipelineRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdatePipeline_200_response'
+          description: Updated pipeline
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: |
+            The request failed because the requested resource could not be found or because the resource is disabled
+        "405":
+          description: |
+            The request failed because the request is invalid.
+      summary: Update pipeline
+      tags:
+      - Pipelines
+  /uplinks/{pipeline_id}:
+    post:
+      description: "Push an uplink message to the HTTP Importer for processing.\n\n\
+        The request body and content-type can be anything the workers (defined by\
+        \ the pipeline steps) in the pipeline expect.\n\nAs this process is asynchronuous,\
+        \ any processing error will not be returned in the response.\nOnly if the\
+        \ HTTP Importer is unable to push the message to the Message Queue, will an\
+        \ error be returned. \n"
+      operationId: processUplinkData
+      parameters:
+      - description: The UUID of the pipeline
+        example: c4d4fabd-9109-40cd-88b0-be40ca1745f7
+        in: path
+        name: pipeline_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Accepted uplink
+        "401":
+          description: The request failed because the provided credentials are invalid
+            or missing
+        "403":
+          description: The request failed because the provided credentials do not
+            have the required permissions to perform this action
+        "404":
+          description: The request failed because the requested resource could not
+            be found or is disabled.
+      summary: Process uplink message
+      tags:
+      - Uplink
+components:
+  responses:
+    "401":
+      description: The request failed because the provided credentials are invalid
+        or missing
+    "403":
+      description: The request failed because the provided credentials do not have
+        the required permissions to perform this action
+    apierror:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListDevices_default_response'
+      description: Default API Error
+    "404":
+      description: The request failed because the requested resource could not be
+        found
+  schemas:
+    paginatedResponse:
+      properties:
+        links:
+          $ref: '#/components/schemas/paginatedResponse_links'
+        page_size:
+          type: integer
+        total_count:
+          type: integer
+        data:
+          items: {}
+          type: array
+      required:
+      - data
+      - links
+      - page_size
+      - total_count
+      type: object
+    device:
+      example:
+        code: mfm1000
+        sensors:
+        - code: S123
+          description: Pressure sensor at 5 meters depth
+          created_at: 2023-05-17T15:00:00Z
+          external_id: "5"
+          archive_time: 7
+          id: 1
+          brand: SensorCompany LTD. SCL115
+          properties:
+            mount_height: 15cm
+        - code: S123
+          description: Pressure sensor at 5 meters depth
+          created_at: 2023-05-17T15:00:00Z
+          external_id: "5"
+          archive_time: 7
+          id: 1
+          brand: SensorCompany LTD. SCL115
+          properties:
+            mount_height: 15cm
+        latitude: 1.2345
+        description: Grasfield pipe 24
+        organisation: provincie_zeeland
+        id: 1
+        location_description: Description of location
+        properties:
+          eui: 060708090A0B0C0D
+        longitude: 1.2345
+      properties:
+        id:
+          example: 1
+          type: number
+        code:
+          example: mfm1000
+          type: string
+        description:
+          example: Grasfield pipe 24
+          type: string
+        organisation:
+          example: provincie_zeeland
+          type: string
+        properties:
+          example:
+            eui: 060708090A0B0C0D
+          type: object
+        latitude:
+          example: 1.2345
+          type: number
+        longitude:
+          example: 1.2345
+          type: number
+        location_description:
+          example: Description of location
+          type: string
+        sensors:
+          items:
+            $ref: '#/components/schemas/sensor'
+          type: array
+      type: object
+    sensor:
+      example:
+        code: S123
+        description: Pressure sensor at 5 meters depth
+        created_at: 2023-05-17T15:00:00Z
+        external_id: "5"
+        archive_time: 7
+        id: 1
+        brand: SensorCompany LTD. SCL115
+        properties:
+          mount_height: 15cm
+      properties:
+        id:
+          example: 1
+          type: number
+        code:
+          example: S123
+          type: string
+        description:
+          example: Pressure sensor at 5 meters depth
+          type: string
+        external_id:
+          example: "5"
+          type: string
+        brand:
+          example: SensorCompany LTD. SCL115
+          type: string
+        archive_time:
+          example: 7
+          type: number
+        properties:
+          example:
+            mount_height: 15cm
+          type: object
+        created_at:
+          example: 2023-05-17T15:00:00Z
+          format: iso8601
+          type: string
+      type: object
+    createDeviceRequest:
+      properties:
+        code:
+          example: mfm1000
+          type: string
+        description:
+          example: Grasfield pipe 24
+          type: string
+        latitude:
+          example: 1.2345
+          type: number
+        longitude:
+          example: 1.2345
+          type: number
+        location_description:
+          example: Description of location
+          type: string
+        properties:
+          example:
+            eui: 060708090A0B0C0D
+          type: object
+      required:
+      - code
+      type: object
+    updateDeviceRequest:
+      properties:
+        description:
+          example: 1
+          type: number
+        latitude:
+          example: 1.2345
+          type: number
+        longitude:
+          example: 1.2345
+          type: number
+        location_description:
+          example: Description of location
+          type: string
+        properties:
+          example:
+            eui: 060708090A0B0C0D
+          type: object
+      type: object
+    createSensorRequest:
+      properties:
+        code:
+          example: S123
+          type: string
+        description:
+          example: Pressure sensor at 5 meters depth
+          type: string
+        external_id:
+          example: "5"
+          type: string
+        brand:
+          example: sensor brand ABC
+          type: string
+        properties:
+          example:
+            mount_height: 15cm
+          type: object
+        archive_time:
+          example: 7
+          type: number
+      required:
+      - code
+      - external_id
+      type: object
+    sensorGroup:
+      example:
+        sensors:
+        - code: S123
+          description: Pressure sensor at 5 meters depth
+          created_at: 2023-05-17T15:00:00Z
+          external_id: "5"
+          archive_time: 7
+          id: 1
+          brand: SensorCompany LTD. SCL115
+          properties:
+            mount_height: 15cm
+        - code: S123
+          description: Pressure sensor at 5 meters depth
+          created_at: 2023-05-17T15:00:00Z
+          external_id: "5"
+          archive_time: 7
+          id: 1
+          brand: SensorCompany LTD. SCL115
+          properties:
+            mount_height: 15cm
+        name: name
+        description: description
+        id: 0.8008281904610115
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        description:
+          type: string
+        sensors:
+          items:
+            $ref: '#/components/schemas/sensor'
+          type: array
+      type: object
+    createSensorGroupRequest:
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+      type: object
+    updateSensorGroupRequest:
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+      type: object
+    measurement:
+      properties:
+        uplink_message_id:
+          example: ca29e28e-eeb6-4662-922c-6cf6a36ccb6e
+          type: string
+        device_id:
+          example: 5
+          type: number
+        device_code:
+          example: mfm1000
+          type: string
+        device_description:
+          example: Particulate matter device
+          type: string
+        device_latitude:
+          example: 5.131313
+          type: number
+        device_longitude:
+          example: 5.131313
+          type: number
+        device_altitude:
+          example: 5.131313
+          type: number
+        device_location_description:
+          example: Grasfield pipe 24
+          type: string
+        device_properties:
+          example:
+            eui: 060708090A0B0C0D
+          type: object
+        device_state:
+          example: 0
+          type: number
+        sensor_id:
+          example: 3
+          type: number
+        sensor_code:
+          example: S123
+          type: string
+        sensor_description:
+          example: Pressure sensor at 5 meters depth
+          type: string
+        sensor_external_id:
+          example: "5"
+          type: string
+        sensor_properties:
+          example: {}
+          type: object
+        sensor_brand:
+          example: SensorCompany Inc. SC123
+          type: string
+        sensor_archive_time:
+          example: 7
+          type: number
+        datastream_id:
+          example: 153205d7-bdfc-4a0b-9de5-c6fa04c665f6
+          format: uuid
+          type: string
+        datastream_description:
+          example: Concentration of particles smaller than 2.5 micrometer
+          type: string
+        datastream_observed_property:
+          example: pm2.5
+          type: string
+        datastream_unit_of_measurement:
+          example: ug/cm3
+          type: string
+        measurement_timestamp:
+          example: 2022-01-01T00:00:00Z
+          format: iso8601
+          type: string
+        measurement_value:
+          example: 3.44
+          type: number
+        measurement_latitude:
+          example: 3.44
+          type: number
+        measurement_longitude:
+          example: 3.44
+          type: number
+        measurement_altitude:
+          example: 3.44
+          type: number
+        measurement_properties:
+          type: object
+        measurement_expiration:
+          example: 2022-01-01T00:00:00Z
+          format: iso8601
+          type: string
+        created_at:
+          example: 2022-01-01T00:00:00Z
+          format: iso8601
+          type: string
+      required:
+      - datastream_id
+      - datastream_observed_property
+      - datastream_unit_of_measurement
+      - device_code
+      - device_id
+      - device_state
+      - measurement_expiration
+      - measurement_timestamp
+      - measurement_value
+      - sensor_code
+      - sensor_external_id
+      - sensor_id
+      - uplink_message_id
+      type: object
+    datastream:
+      properties:
+        id:
+          format: uuid
+          type: string
+        description:
+          type: string
+        sensor_id:
+          type: number
+        observed_property:
+          type: string
+        unit_of_measurement:
+          format: ucum
+          type: string
+        created_at:
+          example: 2022-01-01T00:00:00Z
+          format: iso8601
+          type: string
+      type: object
+    pipeline:
+      example:
+        last_status_change: 2022-01-01T00:00:00Z
+        description: Pipeline for Multiflexmeter Groundwater devices
+        created_at: 2022-01-01T00:00:00Z
+        id: 9d4a0944-c11d-42ef-880f-a97c9619c5c0
+        steps:
+        - TTN@1.0.0
+        - MFMGroundwater@1.0.0
+        status: active
+      properties:
+        id:
+          example: 9d4a0944-c11d-42ef-880f-a97c9619c5c0
+          type: string
+        description:
+          example: Pipeline for Multiflexmeter Groundwater devices
+          type: string
+        steps:
+          example:
+          - TTN@1.0.0
+          - MFMGroundwater@1.0.0
+          items:
+            type: string
+          type: array
+        status:
+          example: active
+          type: string
+        last_status_change:
+          example: 2022-01-01T00:00:00Z
+          format: iso8601
+          type: string
+        created_at:
+          example: 2022-01-01T00:00:00Z
+          format: iso8601
+          type: string
+      type: object
+    createPipelineRequest:
+      properties:
+        description:
+          example: Pipeline for Multiflexmeter Groundwater devices
+          type: string
+        steps:
+          example:
+          - TTN@1.0.0
+          - MFMGroundwater@1.0.0
+          items:
+            type: string
+          type: array
+      type: object
+    updatePipelineRequest:
+      properties:
+        description:
+          example: Pipeline for Multiflexmeter Groundwater devices
+          type: string
+        steps:
+          example:
+          - TTN@1.0.0
+          - MFMGroundwater@1.0.0
+          items:
+            type: string
+          type: array
+        status:
+          description: "Used to change a pipeline from inactive to active or vice-versa.\
+            \ \nMoving from active to inactive can also be achieve by `DELETE`ing\
+            \ the pipeline resource.\n"
+          example: active
+          type: string
+      type: object
+    ListDevices_200_response_allOf:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/device'
+          type: array
+      type: object
+    ListDevices_200_response:
+      allOf:
+      - $ref: '#/components/schemas/paginatedResponse'
+      - $ref: '#/components/schemas/ListDevices_200_response_allOf'
+    ListDevices_default_response:
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        http_status:
+          type: number
+      type: object
+    CreateDevice_201_response:
+      example:
+        data:
+          code: mfm1000
+          sensors:
+          - code: S123
+            description: Pressure sensor at 5 meters depth
+            created_at: 2023-05-17T15:00:00Z
+            external_id: "5"
+            archive_time: 7
+            id: 1
+            brand: SensorCompany LTD. SCL115
+            properties:
+              mount_height: 15cm
+          - code: S123
+            description: Pressure sensor at 5 meters depth
+            created_at: 2023-05-17T15:00:00Z
+            external_id: "5"
+            archive_time: 7
+            id: 1
+            brand: SensorCompany LTD. SCL115
+            properties:
+              mount_height: 15cm
+          latitude: 1.2345
+          description: Grasfield pipe 24
+          organisation: provincie_zeeland
+          id: 1
+          location_description: Description of location
+          properties:
+            eui: 060708090A0B0C0D
+          longitude: 1.2345
+        message: created device
+      properties:
+        message:
+          example: created device
+          type: string
+        data:
+          $ref: '#/components/schemas/device'
+      type: object
+    GetDevice_200_response:
+      example:
+        data:
+          code: mfm1000
+          sensors:
+          - code: S123
+            description: Pressure sensor at 5 meters depth
+            created_at: 2023-05-17T15:00:00Z
+            external_id: "5"
+            archive_time: 7
+            id: 1
+            brand: SensorCompany LTD. SCL115
+            properties:
+              mount_height: 15cm
+          - code: S123
+            description: Pressure sensor at 5 meters depth
+            created_at: 2023-05-17T15:00:00Z
+            external_id: "5"
+            archive_time: 7
+            id: 1
+            brand: SensorCompany LTD. SCL115
+            properties:
+              mount_height: 15cm
+          latitude: 1.2345
+          description: Grasfield pipe 24
+          organisation: provincie_zeeland
+          id: 1
+          location_description: Description of location
+          properties:
+            eui: 060708090A0B0C0D
+          longitude: 1.2345
+        message: Fetched device
+      properties:
+        message:
+          example: Fetched device
+          type: string
+        data:
+          $ref: '#/components/schemas/device'
+      type: object
+    UpdateDevice_200_response:
+      example:
+        message: Updated device properties
+      properties:
+        message:
+          example: Updated device properties
+          type: string
+      type: object
+    ListDeviceSensors_200_response_allOf:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/sensor'
+          type: array
+      type: object
+    ListDeviceSensors_200_response:
+      allOf:
+      - $ref: '#/components/schemas/paginatedResponse'
+      - $ref: '#/components/schemas/ListDeviceSensors_200_response_allOf'
+    CreateDeviceSensor_201_response:
+      example:
+        message: Created new sensor for device
+      properties:
+        message:
+          example: Created new sensor for device
+          type: string
+      type: object
+    DeleteDeviceSensor_200_response:
+      example:
+        message: Deleted sensor from device
+      properties:
+        message:
+          example: Deleted sensor from device
+          type: string
+      type: object
+    ListSensorGroups_200_response_allOf:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/sensorGroup'
+          type: array
+      type: object
+    ListSensorGroups_200_response:
+      allOf:
+      - $ref: '#/components/schemas/paginatedResponse'
+      - $ref: '#/components/schemas/ListSensorGroups_200_response_allOf'
+    CreateSensorGroup_201_response:
+      example:
+        data:
+          sensors:
+          - code: S123
+            description: Pressure sensor at 5 meters depth
+            created_at: 2023-05-17T15:00:00Z
+            external_id: "5"
+            archive_time: 7
+            id: 1
+            brand: SensorCompany LTD. SCL115
+            properties:
+              mount_height: 15cm
+          - code: S123
+            description: Pressure sensor at 5 meters depth
+            created_at: 2023-05-17T15:00:00Z
+            external_id: "5"
+            archive_time: 7
+            id: 1
+            brand: SensorCompany LTD. SCL115
+            properties:
+              mount_height: 15cm
+          name: name
+          description: description
+          id: 0.8008281904610115
+        message: created sensor group
+      properties:
+        message:
+          example: created sensor group
+          type: string
+        data:
+          $ref: '#/components/schemas/sensorGroup'
+      type: object
+    GetSensorGroup_200_response:
+      example:
+        data:
+          sensors:
+          - code: S123
+            description: Pressure sensor at 5 meters depth
+            created_at: 2023-05-17T15:00:00Z
+            external_id: "5"
+            archive_time: 7
+            id: 1
+            brand: SensorCompany LTD. SCL115
+            properties:
+              mount_height: 15cm
+          - code: S123
+            description: Pressure sensor at 5 meters depth
+            created_at: 2023-05-17T15:00:00Z
+            external_id: "5"
+            archive_time: 7
+            id: 1
+            brand: SensorCompany LTD. SCL115
+            properties:
+              mount_height: 15cm
+          name: name
+          description: description
+          id: 0.8008281904610115
+        message: Fetched sensor group
+      properties:
+        message:
+          example: Fetched sensor group
+          type: string
+        data:
+          $ref: '#/components/schemas/sensorGroup'
+      type: object
+    DeleteSensorGroup_200_response:
+      example:
+        message: sensor group deleted
+      properties:
+        message:
+          example: sensor group deleted
+          type: string
+      type: object
+    UpdateSensorGroup_200_response:
+      example:
+        message: Updated Sensor Group properties
+      properties:
+        message:
+          example: Updated Sensor Group properties
+          type: string
+      type: object
+    AddSensorToSensorGroup_request:
+      properties:
+        sensor_id:
+          description: id of the sensor to add
+          example: 5
+          type: number
+      type: object
+    AddSensorToSensorGroup_201_response:
+      example:
+        message: Added sensor to sensor group
+      properties:
+        message:
+          example: Added sensor to sensor group
+          type: string
+      type: object
+    DeleteSensorFromSensorGroup_200_response:
+      example:
+        message: Deleted sensor from sensor group
+      properties:
+        message:
+          example: Deleted sensor from sensor group
+          type: string
+      type: object
+    QueryMeasurements_200_response_allOf:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/measurement'
+          type: array
+      type: object
+    QueryMeasurements_200_response:
+      allOf:
+      - $ref: '#/components/schemas/paginatedResponse'
+      - $ref: '#/components/schemas/QueryMeasurements_200_response_allOf'
+    ListDatastreams_200_response_allOf:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/datastream'
+          type: array
+      type: object
+    ListDatastreams_200_response:
+      allOf:
+      - $ref: '#/components/schemas/paginatedResponse'
+      - $ref: '#/components/schemas/ListDatastreams_200_response_allOf'
+    ListPipelines_200_response_allOf:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/pipeline'
+          type: array
+      type: object
+    ListPipelines_200_response:
+      allOf:
+      - $ref: '#/components/schemas/paginatedResponse'
+      - $ref: '#/components/schemas/ListPipelines_200_response_allOf'
+    CreatePipeline_200_response:
+      example:
+        data:
+          last_status_change: 2022-01-01T00:00:00Z
+          description: Pipeline for Multiflexmeter Groundwater devices
+          created_at: 2022-01-01T00:00:00Z
+          id: 9d4a0944-c11d-42ef-880f-a97c9619c5c0
+          steps:
+          - TTN@1.0.0
+          - MFMGroundwater@1.0.0
+          status: active
+        message: Created pipeline
+      properties:
+        message:
+          example: Created pipeline
+          type: string
+        data:
+          $ref: '#/components/schemas/pipeline'
+      type: object
+    GetPipeline_200_response:
+      example:
+        data:
+          last_status_change: 2022-01-01T00:00:00Z
+          description: Pipeline for Multiflexmeter Groundwater devices
+          created_at: 2022-01-01T00:00:00Z
+          id: 9d4a0944-c11d-42ef-880f-a97c9619c5c0
+          steps:
+          - TTN@1.0.0
+          - MFMGroundwater@1.0.0
+          status: active
+        message: Fetched pipeline
+      properties:
+        message:
+          example: Fetched pipeline
+          type: string
+        data:
+          $ref: '#/components/schemas/pipeline'
+      type: object
+    DisablePipeline_200_response:
+      example:
+        message: Disabled pipeline
+      properties:
+        message:
+          example: Disabled pipeline
+          type: string
+      type: object
+    UpdatePipeline_200_response:
+      example:
+        data:
+          last_status_change: 2022-01-01T00:00:00Z
+          description: Pipeline for Multiflexmeter Groundwater devices
+          created_at: 2022-01-01T00:00:00Z
+          id: 9d4a0944-c11d-42ef-880f-a97c9619c5c0
+          steps:
+          - TTN@1.0.0
+          - MFMGroundwater@1.0.0
+          status: active
+        message: Updated pipeline
+      properties:
+        message:
+          example: Updated pipeline
+          type: string
+        data:
+          $ref: '#/components/schemas/pipeline'
+      type: object
+    paginatedResponse_links:
+      properties:
+        previous:
+          type: string
+        next:
+          type: string
+      type: object
+  securitySchemes:
+    basicAuth:
+      description: |
+        Temporary default authentication method until token based authentication is implemented.
+      scheme: basic
+      type: http
