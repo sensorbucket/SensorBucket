@@ -155,7 +155,7 @@ sensor:
         mount_height: 15cm
     created_at:
       type: string
-      format: iso8601
+      format: date-time
       example: 2023-05-17T15:00:00Z
 
 measurement:
@@ -242,7 +242,7 @@ measurement:
       example: "ug/cm3"
     measurement_timestamp:
       type: string
-      format: iso8601
+      format: date-time
       example: "2022-01-01T00:00:00Z"
     measurement_value:
       type: number
@@ -260,11 +260,11 @@ measurement:
       type: object
     measurement_expiration:
       type: string
-      format: iso8601
+      format: date-time
       example: "2022-01-01T00:00:00Z"
     created_at:
       type: string
-      format: iso8601
+      format: date-time
       example: 2022-01-01T00:00:00Z
 
 pipeline:
@@ -291,11 +291,11 @@ pipeline:
       example: active
     last_status_change:
       type: string
-      format: iso8601
+      format: date-time
       example: 2022-01-01T00:00:00Z
     created_at:
       type: string
-      format: iso8601
+      format: date-time
       example: 2022-01-01T00:00:00Z
 
 
@@ -350,7 +350,7 @@ datastream:
       format: ucum
     created_at:
       type: string
-      format: iso8601
+      format: date-time
       example: 2022-01-01T00:00:00Z
 
 sensorGroup:

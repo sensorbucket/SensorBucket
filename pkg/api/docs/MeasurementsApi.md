@@ -26,7 +26,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -96,12 +96,13 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    "time"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
-    start := "2022-01-01T00:00:00Z" // string | 
-    end := "2022-12-31T23:59:59Z" // string | 
+    start := time.Now() // time.Time | 
+    end := time.Now() // time.Time | 
     deviceId := "deviceId_example" // string |  (optional)
     datastream := "datastream_example" // string |  (optional)
     sensorCode := "sensorCode_example" // string |  (optional)
@@ -131,8 +132,8 @@ Other parameters are passed through a pointer to a apiQueryMeasurementsRequest s
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **start** | **string** |  | 
- **end** | **string** |  | 
+ **start** | **time.Time** |  | 
+ **end** | **time.Time** |  | 
  **deviceId** | **string** |  | 
  **datastream** | **string** |  | 
  **sensorCode** | **string** |  | 

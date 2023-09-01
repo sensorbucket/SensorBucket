@@ -117,12 +117,6 @@ paths:
         "403":
           description: The request failed because the provided credentials do not
             have the required permissions to perform this action
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ListDevices_default_response'
-          description: Default API Error
       summary: List devices
       tags:
       - Devices
@@ -624,14 +618,14 @@ paths:
         required: true
         schema:
           example: 2022-01-01T00:00:00Z
-          format: iso8601
+          format: date-time
           type: string
       - in: query
         name: end
         required: true
         schema:
           example: 2022-12-31T23:59:59Z
-          format: iso8601
+          format: date-time
           type: string
       - in: query
         name: device_id
@@ -975,12 +969,6 @@ components:
     "403":
       description: The request failed because the provided credentials do not have
         the required permissions to perform this action
-    apierror:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ListDevices_default_response'
-      description: Default API Error
     "404":
       description: The request failed because the requested resource could not be
         found
@@ -1099,7 +1087,7 @@ components:
           type: object
         created_at:
           example: 2023-05-17T15:00:00Z
-          format: iso8601
+          format: date-time
           type: string
       type: object
     createDeviceRequest:
@@ -1289,7 +1277,7 @@ components:
           type: string
         measurement_timestamp:
           example: 2022-01-01T00:00:00Z
-          format: iso8601
+          format: date-time
           type: string
         measurement_value:
           example: 3.44
@@ -1307,11 +1295,11 @@ components:
           type: object
         measurement_expiration:
           example: 2022-01-01T00:00:00Z
-          format: iso8601
+          format: date-time
           type: string
         created_at:
           example: 2022-01-01T00:00:00Z
-          format: iso8601
+          format: date-time
           type: string
       required:
       - datastream_id
@@ -1344,7 +1332,7 @@ components:
           type: string
         created_at:
           example: 2022-01-01T00:00:00Z
-          format: iso8601
+          format: date-time
           type: string
       type: object
     pipeline:
@@ -1376,11 +1364,11 @@ components:
           type: string
         last_status_change:
           example: 2022-01-01T00:00:00Z
-          format: iso8601
+          format: date-time
           type: string
         created_at:
           example: 2022-01-01T00:00:00Z
-          format: iso8601
+          format: date-time
           type: string
       type: object
     createPipelineRequest:
@@ -1426,15 +1414,6 @@ components:
       allOf:
       - $ref: '#/components/schemas/paginatedResponse'
       - $ref: '#/components/schemas/ListDevices_200_response_allOf'
-    ListDevices_default_response:
-      properties:
-        message:
-          type: string
-        code:
-          type: string
-        http_status:
-          type: number
-      type: object
     CreateDevice_201_response:
       example:
         data:

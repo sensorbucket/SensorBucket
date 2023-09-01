@@ -11,7 +11,7 @@ Name | Type | Description | Notes
 **Brand** | Pointer to **string** |  | [optional] 
 **ArchiveTime** | Pointer to **float32** |  | [optional] 
 **Properties** | Pointer to **map[string]interface{}** |  | [optional] 
-**CreatedAt** | Pointer to **string** |  | [optional] 
+**CreatedAt** | Pointer to **time.Time** |  | [optional] 
 
 ## Methods
 
@@ -209,20 +209,20 @@ HasProperties returns a boolean if a field has been set.
 
 ### GetCreatedAt
 
-`func (o *Sensor) GetCreatedAt() string`
+`func (o *Sensor) GetCreatedAt() time.Time`
 
 GetCreatedAt returns the CreatedAt field if non-nil, zero value otherwise.
 
 ### GetCreatedAtOk
 
-`func (o *Sensor) GetCreatedAtOk() (*string, bool)`
+`func (o *Sensor) GetCreatedAtOk() (*time.Time, bool)`
 
 GetCreatedAtOk returns a tuple with the CreatedAt field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetCreatedAt
 
-`func (o *Sensor) SetCreatedAt(v string)`
+`func (o *Sensor) SetCreatedAt(v time.Time)`
 
 SetCreatedAt sets CreatedAt field to given value.
 

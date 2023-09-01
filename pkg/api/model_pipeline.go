@@ -13,6 +13,7 @@ package api
 
 import (
 	"encoding/json"
+	"time"
 )
 
 // checks if the Pipeline type satisfies the MappedNullable interface at compile time
@@ -24,8 +25,8 @@ type Pipeline struct {
 	Description *string `json:"description,omitempty"`
 	Steps []string `json:"steps,omitempty"`
 	Status *string `json:"status,omitempty"`
-	LastStatusChange *string `json:"last_status_change,omitempty"`
-	CreatedAt *string `json:"created_at,omitempty"`
+	LastStatusChange *time.Time `json:"last_status_change,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
 // NewPipeline instantiates a new Pipeline object
@@ -174,9 +175,9 @@ func (o *Pipeline) SetStatus(v string) {
 }
 
 // GetLastStatusChange returns the LastStatusChange field value if set, zero value otherwise.
-func (o *Pipeline) GetLastStatusChange() string {
+func (o *Pipeline) GetLastStatusChange() time.Time {
 	if o == nil || IsNil(o.LastStatusChange) {
-		var ret string
+		var ret time.Time
 		return ret
 	}
 	return *o.LastStatusChange
@@ -184,7 +185,7 @@ func (o *Pipeline) GetLastStatusChange() string {
 
 // GetLastStatusChangeOk returns a tuple with the LastStatusChange field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Pipeline) GetLastStatusChangeOk() (*string, bool) {
+func (o *Pipeline) GetLastStatusChangeOk() (*time.Time, bool) {
 	if o == nil || IsNil(o.LastStatusChange) {
 		return nil, false
 	}
@@ -200,15 +201,15 @@ func (o *Pipeline) HasLastStatusChange() bool {
 	return false
 }
 
-// SetLastStatusChange gets a reference to the given string and assigns it to the LastStatusChange field.
-func (o *Pipeline) SetLastStatusChange(v string) {
+// SetLastStatusChange gets a reference to the given time.Time and assigns it to the LastStatusChange field.
+func (o *Pipeline) SetLastStatusChange(v time.Time) {
 	o.LastStatusChange = &v
 }
 
 // GetCreatedAt returns the CreatedAt field value if set, zero value otherwise.
-func (o *Pipeline) GetCreatedAt() string {
+func (o *Pipeline) GetCreatedAt() time.Time {
 	if o == nil || IsNil(o.CreatedAt) {
-		var ret string
+		var ret time.Time
 		return ret
 	}
 	return *o.CreatedAt
@@ -216,7 +217,7 @@ func (o *Pipeline) GetCreatedAt() string {
 
 // GetCreatedAtOk returns a tuple with the CreatedAt field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Pipeline) GetCreatedAtOk() (*string, bool) {
+func (o *Pipeline) GetCreatedAtOk() (*time.Time, bool) {
 	if o == nil || IsNil(o.CreatedAt) {
 		return nil, false
 	}
@@ -232,8 +233,8 @@ func (o *Pipeline) HasCreatedAt() bool {
 	return false
 }
 
-// SetCreatedAt gets a reference to the given string and assigns it to the CreatedAt field.
-func (o *Pipeline) SetCreatedAt(v string) {
+// SetCreatedAt gets a reference to the given time.Time and assigns it to the CreatedAt field.
+func (o *Pipeline) SetCreatedAt(v time.Time) {
 	o.CreatedAt = &v
 }
 

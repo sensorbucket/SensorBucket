@@ -39,7 +39,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -111,7 +111,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -177,7 +177,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -249,7 +249,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -315,7 +315,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -388,7 +388,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -461,7 +461,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -531,7 +531,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -601,7 +601,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -671,7 +671,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -745,7 +745,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -829,7 +829,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -897,7 +897,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -965,7 +965,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {
@@ -1037,7 +1037,7 @@ import (
     "context"
     "fmt"
     "os"
-    openapiclient "github.com/sensorbucket/sensorbucket/pkg/api"
+    openapiclient "sensorbucket.nl/GIT_USER_ID/api"
 )
 
 func main() {

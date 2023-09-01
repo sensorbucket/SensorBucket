@@ -25,20 +25,20 @@ Name | Type | Description | Notes
 **DatastreamDescription** | Pointer to **string** |  | [optional] 
 **DatastreamObservedProperty** | **string** |  | 
 **DatastreamUnitOfMeasurement** | **string** |  | 
-**MeasurementTimestamp** | **string** |  | 
+**MeasurementTimestamp** | **time.Time** |  | 
 **MeasurementValue** | **float32** |  | 
 **MeasurementLatitude** | Pointer to **float32** |  | [optional] 
 **MeasurementLongitude** | Pointer to **float32** |  | [optional] 
 **MeasurementAltitude** | Pointer to **float32** |  | [optional] 
 **MeasurementProperties** | Pointer to **map[string]interface{}** |  | [optional] 
-**MeasurementExpiration** | **string** |  | 
-**CreatedAt** | Pointer to **string** |  | [optional] 
+**MeasurementExpiration** | **time.Time** |  | 
+**CreatedAt** | Pointer to **time.Time** |  | [optional] 
 
 ## Methods
 
 ### NewMeasurement
 
-`func NewMeasurement(uplinkMessageId string, deviceId float32, deviceCode string, deviceState float32, sensorId float32, sensorCode string, sensorExternalId string, datastreamId string, datastreamObservedProperty string, datastreamUnitOfMeasurement string, measurementTimestamp string, measurementValue float32, measurementExpiration string, ) *Measurement`
+`func NewMeasurement(uplinkMessageId string, deviceId float32, deviceCode string, deviceState float32, sensorId float32, sensorCode string, sensorExternalId string, datastreamId string, datastreamObservedProperty string, datastreamUnitOfMeasurement string, measurementTimestamp time.Time, measurementValue float32, measurementExpiration time.Time, ) *Measurement`
 
 NewMeasurement instantiates a new Measurement object
 This constructor will assign default values to properties that have it defined,
@@ -530,20 +530,20 @@ SetDatastreamUnitOfMeasurement sets DatastreamUnitOfMeasurement field to given v
 
 ### GetMeasurementTimestamp
 
-`func (o *Measurement) GetMeasurementTimestamp() string`
+`func (o *Measurement) GetMeasurementTimestamp() time.Time`
 
 GetMeasurementTimestamp returns the MeasurementTimestamp field if non-nil, zero value otherwise.
 
 ### GetMeasurementTimestampOk
 
-`func (o *Measurement) GetMeasurementTimestampOk() (*string, bool)`
+`func (o *Measurement) GetMeasurementTimestampOk() (*time.Time, bool)`
 
 GetMeasurementTimestampOk returns a tuple with the MeasurementTimestamp field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetMeasurementTimestamp
 
-`func (o *Measurement) SetMeasurementTimestamp(v string)`
+`func (o *Measurement) SetMeasurementTimestamp(v time.Time)`
 
 SetMeasurementTimestamp sets MeasurementTimestamp field to given value.
 
@@ -670,40 +670,40 @@ HasMeasurementProperties returns a boolean if a field has been set.
 
 ### GetMeasurementExpiration
 
-`func (o *Measurement) GetMeasurementExpiration() string`
+`func (o *Measurement) GetMeasurementExpiration() time.Time`
 
 GetMeasurementExpiration returns the MeasurementExpiration field if non-nil, zero value otherwise.
 
 ### GetMeasurementExpirationOk
 
-`func (o *Measurement) GetMeasurementExpirationOk() (*string, bool)`
+`func (o *Measurement) GetMeasurementExpirationOk() (*time.Time, bool)`
 
 GetMeasurementExpirationOk returns a tuple with the MeasurementExpiration field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetMeasurementExpiration
 
-`func (o *Measurement) SetMeasurementExpiration(v string)`
+`func (o *Measurement) SetMeasurementExpiration(v time.Time)`
 
 SetMeasurementExpiration sets MeasurementExpiration field to given value.
 
 
 ### GetCreatedAt
 
-`func (o *Measurement) GetCreatedAt() string`
+`func (o *Measurement) GetCreatedAt() time.Time`
 
 GetCreatedAt returns the CreatedAt field if non-nil, zero value otherwise.
 
 ### GetCreatedAtOk
 
-`func (o *Measurement) GetCreatedAtOk() (*string, bool)`
+`func (o *Measurement) GetCreatedAtOk() (*time.Time, bool)`
 
 GetCreatedAtOk returns a tuple with the CreatedAt field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetCreatedAt
 
-`func (o *Measurement) SetCreatedAt(v string)`
+`func (o *Measurement) SetCreatedAt(v time.Time)`
 
 SetCreatedAt sets CreatedAt field to given value.
 

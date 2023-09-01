@@ -31,7 +31,7 @@ go get golang.org/x/net/context
 Put the package under your project folder and add the following in import:
 
 ```golang
-import api "github.com/sensorbucket/sensorbucket/pkg/api"
+import api "sensorbucket.nl/GIT_USER_ID/api"
 ```
 
 To use a proxy, set the environment variable `HTTP_PROXY`:
@@ -139,7 +139,6 @@ Class | Method | HTTP request | Description
  - [ListDeviceSensors200ResponseAllOf](docs/ListDeviceSensors200ResponseAllOf.md)
  - [ListDevices200Response](docs/ListDevices200Response.md)
  - [ListDevices200ResponseAllOf](docs/ListDevices200ResponseAllOf.md)
- - [ListDevicesDefaultResponse](docs/ListDevicesDefaultResponse.md)
  - [ListPipelines200Response](docs/ListPipelines200Response.md)
  - [ListPipelines200ResponseAllOf](docs/ListPipelines200ResponseAllOf.md)
  - [ListSensorGroups200Response](docs/ListSensorGroups200Response.md)

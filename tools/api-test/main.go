@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"time"
 
+	"github.com/samber/lo"
 	"sensorbucket.nl/api"
 )
 
@@ -19,12 +20,14 @@ func Run() error {
 	cfg.Host = "localhost:3000"
 	cfg.Scheme = "http"
 	sb := api.NewAPIClient(cfg)
-	devices, _, err := sb.DevicesApi.ListDevices(context.Background()).Execute()
+	mdls, _, err := sb.MeasurementsApi.QueryMeasurements(context.Background()).
+		Start(time.UnixMilli(0)).
+		End(time.Now()).
+		Execute()
 	if err != nil {
-		err := err.(*api.GenericOpenAPIError)
-		log.Printf("Got: %T\n", err.Model())
 		return err
 	}
-	fmt.Printf("devices: %v\n", len(devices.GetData()))
+	ms := lo.Map(mdls.GetData(), func(m api.Measurement, _ int) float64 { return float64(m.MeasurementValue) })
+	fmt.Printf("ms: %v\n", ms)
 	return nil
 }

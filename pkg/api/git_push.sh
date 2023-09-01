@@ -9,17 +9,17 @@ release_note=$3
 git_host=$4
 
 if [ "$git_host" = "" ]; then
-    git_host="github.com"
+    git_host="sensorbucket.nl"
     echo "[INFO] No command line input provided. Set \$git_host to $git_host"
 fi
 
 if [ "$git_user_id" = "" ]; then
-    git_user_id="sensorbucket"
+    git_user_id="GIT_USER_ID"
     echo "[INFO] No command line input provided. Set \$git_user_id to $git_user_id"
 fi
 
 if [ "$git_repo_id" = "" ]; then
-    git_repo_id="sensorbucket/pkg/api"
+    git_repo_id="api"
     echo "[INFO] No command line input provided. Set \$git_repo_id to $git_repo_id"
 fi
 

@@ -34,7 +34,6 @@ docs/ListDeviceSensors200Response.md
 docs/ListDeviceSensors200ResponseAllOf.md
 docs/ListDevices200Response.md
 docs/ListDevices200ResponseAllOf.md
-docs/ListDevicesDefaultResponse.md
 docs/ListPipelines200Response.md
 docs/ListPipelines200ResponseAllOf.md
 docs/ListSensorGroups200Response.md
@@ -84,7 +83,6 @@ model_list_device_sensors_200_response.go
 model_list_device_sensors_200_response_all_of.go
 model_list_devices_200_response.go
 model_list_devices_200_response_all_of.go
-model_list_devices_default_response.go
 model_list_pipelines_200_response.go
 model_list_pipelines_200_response_all_of.go
 model_list_sensor_groups_200_response.go

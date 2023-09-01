@@ -17,6 +17,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+    "sensorbucket.nl/sensorbucket/pkg/web"
 	"strings"
 )
 
@@ -120,10 +121,12 @@ func (a *UplinkApiService) ProcessUplinkDataExecute(r ApiProcessUplinkDataReques
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarHTTPResponse, newErr
 	}
 

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+    "sensorbucket.nl/sensorbucket/pkg/web"
 {{#imports}}	"{{import}}"
 {{/imports}}
 )
@@ -350,10 +351,12 @@ func (a *{{{classname}}}Service) {{nickname}}Execute(r {{#structPrefix}}{{&class
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return {{#returnType}}localVarReturnValue, {{/returnType}}localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		{{#responses}}
 		{{#dataType}}
 		{{^is1xx}}

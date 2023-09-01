@@ -9,7 +9,7 @@ Name | Type | Description | Notes
 **SensorId** | Pointer to **float32** |  | [optional] 
 **ObservedProperty** | Pointer to **string** |  | [optional] 
 **UnitOfMeasurement** | Pointer to **string** |  | [optional] 
-**CreatedAt** | Pointer to **string** |  | [optional] 
+**CreatedAt** | Pointer to **time.Time** |  | [optional] 
 
 ## Methods
 
@@ -157,20 +157,20 @@ HasUnitOfMeasurement returns a boolean if a field has been set.
 
 ### GetCreatedAt
 
-`func (o *Datastream) GetCreatedAt() string`
+`func (o *Datastream) GetCreatedAt() time.Time`
 
 GetCreatedAt returns the CreatedAt field if non-nil, zero value otherwise.
 
 ### GetCreatedAtOk
 
-`func (o *Datastream) GetCreatedAtOk() (*string, bool)`
+`func (o *Datastream) GetCreatedAtOk() (*time.Time, bool)`
 
 GetCreatedAtOk returns a tuple with the CreatedAt field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetCreatedAt
 
-`func (o *Datastream) SetCreatedAt(v string)`
+`func (o *Datastream) SetCreatedAt(v time.Time)`
 
 SetCreatedAt sets CreatedAt field to given value.
 

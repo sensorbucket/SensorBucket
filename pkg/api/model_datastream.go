@@ -13,6 +13,7 @@ package api
 
 import (
 	"encoding/json"
+	"time"
 )
 
 // checks if the Datastream type satisfies the MappedNullable interface at compile time
@@ -25,7 +26,7 @@ type Datastream struct {
 	SensorId *float32 `json:"sensor_id,omitempty"`
 	ObservedProperty *string `json:"observed_property,omitempty"`
 	UnitOfMeasurement *string `json:"unit_of_measurement,omitempty"`
-	CreatedAt *string `json:"created_at,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
 // NewDatastream instantiates a new Datastream object
@@ -206,9 +207,9 @@ func (o *Datastream) SetUnitOfMeasurement(v string) {
 }
 
 // GetCreatedAt returns the CreatedAt field value if set, zero value otherwise.
-func (o *Datastream) GetCreatedAt() string {
+func (o *Datastream) GetCreatedAt() time.Time {
 	if o == nil || IsNil(o.CreatedAt) {
-		var ret string
+		var ret time.Time
 		return ret
 	}
 	return *o.CreatedAt
@@ -216,7 +217,7 @@ func (o *Datastream) GetCreatedAt() string {
 
 // GetCreatedAtOk returns a tuple with the CreatedAt field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Datastream) GetCreatedAtOk() (*string, bool) {
+func (o *Datastream) GetCreatedAtOk() (*time.Time, bool) {
 	if o == nil || IsNil(o.CreatedAt) {
 		return nil, false
 	}
@@ -232,8 +233,8 @@ func (o *Datastream) HasCreatedAt() bool {
 	return false
 }
 
-// SetCreatedAt gets a reference to the given string and assigns it to the CreatedAt field.
-func (o *Datastream) SetCreatedAt(v string) {
+// SetCreatedAt gets a reference to the given time.Time and assigns it to the CreatedAt field.
+func (o *Datastream) SetCreatedAt(v time.Time) {
 	o.CreatedAt = &v
 }
 

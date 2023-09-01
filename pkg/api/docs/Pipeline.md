@@ -8,8 +8,8 @@ Name | Type | Description | Notes
 **Description** | Pointer to **string** |  | [optional] 
 **Steps** | Pointer to **[]string** |  | [optional] 
 **Status** | Pointer to **string** |  | [optional] 
-**LastStatusChange** | Pointer to **string** |  | [optional] 
-**CreatedAt** | Pointer to **string** |  | [optional] 
+**LastStatusChange** | Pointer to **time.Time** |  | [optional] 
+**CreatedAt** | Pointer to **time.Time** |  | [optional] 
 
 ## Methods
 
@@ -132,20 +132,20 @@ HasStatus returns a boolean if a field has been set.
 
 ### GetLastStatusChange
 
-`func (o *Pipeline) GetLastStatusChange() string`
+`func (o *Pipeline) GetLastStatusChange() time.Time`
 
 GetLastStatusChange returns the LastStatusChange field if non-nil, zero value otherwise.
 
 ### GetLastStatusChangeOk
 
-`func (o *Pipeline) GetLastStatusChangeOk() (*string, bool)`
+`func (o *Pipeline) GetLastStatusChangeOk() (*time.Time, bool)`
 
 GetLastStatusChangeOk returns a tuple with the LastStatusChange field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetLastStatusChange
 
-`func (o *Pipeline) SetLastStatusChange(v string)`
+`func (o *Pipeline) SetLastStatusChange(v time.Time)`
 
 SetLastStatusChange sets LastStatusChange field to given value.
 
@@ -157,20 +157,20 @@ HasLastStatusChange returns a boolean if a field has been set.
 
 ### GetCreatedAt
 
-`func (o *Pipeline) GetCreatedAt() string`
+`func (o *Pipeline) GetCreatedAt() time.Time`
 
 GetCreatedAt returns the CreatedAt field if non-nil, zero value otherwise.
 
 ### GetCreatedAtOk
 
-`func (o *Pipeline) GetCreatedAtOk() (*string, bool)`
+`func (o *Pipeline) GetCreatedAtOk() (*time.Time, bool)`
 
 GetCreatedAtOk returns a tuple with the CreatedAt field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetCreatedAt
 
-`func (o *Pipeline) SetCreatedAt(v string)`
+`func (o *Pipeline) SetCreatedAt(v time.Time)`
 
 SetCreatedAt sets CreatedAt field to given value.
 

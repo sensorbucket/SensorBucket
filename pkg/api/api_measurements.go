@@ -17,6 +17,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+    "sensorbucket.nl/sensorbucket/pkg/web"
+	"time"
 )
 
 
@@ -143,10 +145,12 @@ func (a *MeasurementsApiService) ListDatastreamsExecute(r ApiListDatastreamsRequ
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -165,8 +169,8 @@ func (a *MeasurementsApiService) ListDatastreamsExecute(r ApiListDatastreamsRequ
 type ApiQueryMeasurementsRequest struct {
 	ctx context.Context
 	ApiService *MeasurementsApiService
-	start *string
-	end *string
+	start *time.Time
+	end *time.Time
 	deviceId *string
 	datastream *string
 	sensorCode *string
@@ -174,12 +178,12 @@ type ApiQueryMeasurementsRequest struct {
 	limit *float32
 }
 
-func (r ApiQueryMeasurementsRequest) Start(start string) ApiQueryMeasurementsRequest {
+func (r ApiQueryMeasurementsRequest) Start(start time.Time) ApiQueryMeasurementsRequest {
 	r.start = &start
 	return r
 }
 
-func (r ApiQueryMeasurementsRequest) End(end string) ApiQueryMeasurementsRequest {
+func (r ApiQueryMeasurementsRequest) End(end time.Time) ApiQueryMeasurementsRequest {
 	r.end = &end
 	return r
 }
@@ -318,10 +322,12 @@ func (a *MeasurementsApiService) QueryMeasurementsExecute(r ApiQueryMeasurements
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 

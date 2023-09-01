@@ -13,6 +13,7 @@ package api
 
 import (
 	"encoding/json"
+	"time"
 )
 
 // checks if the Measurement type satisfies the MappedNullable interface at compile time
@@ -41,21 +42,21 @@ type Measurement struct {
 	DatastreamDescription *string `json:"datastream_description,omitempty"`
 	DatastreamObservedProperty string `json:"datastream_observed_property"`
 	DatastreamUnitOfMeasurement string `json:"datastream_unit_of_measurement"`
-	MeasurementTimestamp string `json:"measurement_timestamp"`
+	MeasurementTimestamp time.Time `json:"measurement_timestamp"`
 	MeasurementValue float32 `json:"measurement_value"`
 	MeasurementLatitude *float32 `json:"measurement_latitude,omitempty"`
 	MeasurementLongitude *float32 `json:"measurement_longitude,omitempty"`
 	MeasurementAltitude *float32 `json:"measurement_altitude,omitempty"`
 	MeasurementProperties map[string]interface{} `json:"measurement_properties,omitempty"`
-	MeasurementExpiration string `json:"measurement_expiration"`
-	CreatedAt *string `json:"created_at,omitempty"`
+	MeasurementExpiration time.Time `json:"measurement_expiration"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
 // NewMeasurement instantiates a new Measurement object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewMeasurement(uplinkMessageId string, deviceId float32, deviceCode string, deviceState float32, sensorId float32, sensorCode string, sensorExternalId string, datastreamId string, datastreamObservedProperty string, datastreamUnitOfMeasurement string, measurementTimestamp string, measurementValue float32, measurementExpiration string) *Measurement {
+func NewMeasurement(uplinkMessageId string, deviceId float32, deviceCode string, deviceState float32, sensorId float32, sensorCode string, sensorExternalId string, datastreamId string, datastreamObservedProperty string, datastreamUnitOfMeasurement string, measurementTimestamp time.Time, measurementValue float32, measurementExpiration time.Time) *Measurement {
 	this := Measurement{}
 	this.UplinkMessageId = uplinkMessageId
 	this.DeviceId = deviceId
@@ -674,9 +675,9 @@ func (o *Measurement) SetDatastreamUnitOfMeasurement(v string) {
 }
 
 // GetMeasurementTimestamp returns the MeasurementTimestamp field value
-func (o *Measurement) GetMeasurementTimestamp() string {
+func (o *Measurement) GetMeasurementTimestamp() time.Time {
 	if o == nil {
-		var ret string
+		var ret time.Time
 		return ret
 	}
 
@@ -685,7 +686,7 @@ func (o *Measurement) GetMeasurementTimestamp() string {
 
 // GetMeasurementTimestampOk returns a tuple with the MeasurementTimestamp field value
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetMeasurementTimestampOk() (*string, bool) {
+func (o *Measurement) GetMeasurementTimestampOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -693,7 +694,7 @@ func (o *Measurement) GetMeasurementTimestampOk() (*string, bool) {
 }
 
 // SetMeasurementTimestamp sets field value
-func (o *Measurement) SetMeasurementTimestamp(v string) {
+func (o *Measurement) SetMeasurementTimestamp(v time.Time) {
 	o.MeasurementTimestamp = v
 }
 
@@ -850,9 +851,9 @@ func (o *Measurement) SetMeasurementProperties(v map[string]interface{}) {
 }
 
 // GetMeasurementExpiration returns the MeasurementExpiration field value
-func (o *Measurement) GetMeasurementExpiration() string {
+func (o *Measurement) GetMeasurementExpiration() time.Time {
 	if o == nil {
-		var ret string
+		var ret time.Time
 		return ret
 	}
 
@@ -861,7 +862,7 @@ func (o *Measurement) GetMeasurementExpiration() string {
 
 // GetMeasurementExpirationOk returns a tuple with the MeasurementExpiration field value
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetMeasurementExpirationOk() (*string, bool) {
+func (o *Measurement) GetMeasurementExpirationOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -869,14 +870,14 @@ func (o *Measurement) GetMeasurementExpirationOk() (*string, bool) {
 }
 
 // SetMeasurementExpiration sets field value
-func (o *Measurement) SetMeasurementExpiration(v string) {
+func (o *Measurement) SetMeasurementExpiration(v time.Time) {
 	o.MeasurementExpiration = v
 }
 
 // GetCreatedAt returns the CreatedAt field value if set, zero value otherwise.
-func (o *Measurement) GetCreatedAt() string {
+func (o *Measurement) GetCreatedAt() time.Time {
 	if o == nil || IsNil(o.CreatedAt) {
-		var ret string
+		var ret time.Time
 		return ret
 	}
 	return *o.CreatedAt
@@ -884,7 +885,7 @@ func (o *Measurement) GetCreatedAt() string {
 
 // GetCreatedAtOk returns a tuple with the CreatedAt field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetCreatedAtOk() (*string, bool) {
+func (o *Measurement) GetCreatedAtOk() (*time.Time, bool) {
 	if o == nil || IsNil(o.CreatedAt) {
 		return nil, false
 	}
@@ -900,8 +901,8 @@ func (o *Measurement) HasCreatedAt() bool {
 	return false
 }
 
-// SetCreatedAt gets a reference to the given string and assigns it to the CreatedAt field.
-func (o *Measurement) SetCreatedAt(v string) {
+// SetCreatedAt gets a reference to the given time.Time and assigns it to the CreatedAt field.
+func (o *Measurement) SetCreatedAt(v time.Time) {
 	o.CreatedAt = &v
 }
 

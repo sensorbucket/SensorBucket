@@ -48,6 +48,6 @@ endif
 golib:
 	@docker run --rm -v $(CURDIR):/sensorbucket --user `id -u` \
 		openapitools/openapi-generator-cli generate -i /sensorbucket/tools/openapi/api.yaml \
-		-g go -o /sensorbucket/pkg/api \
-		--git-user-id=sensorbucket --git-repo-id=sensorbucket/pkg/api \
+		-g go -o /sensorbucket/pkg/api -t /sensorbucket/tools/openapi-templates/go \
+		--git-host=sensorbucket.nl --git-repo-id=api \
 		--additional-properties=packageName=api,packageUrl='https://sensorbucket.nl'

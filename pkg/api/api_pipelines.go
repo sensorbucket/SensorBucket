@@ -17,6 +17,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+    "sensorbucket.nl/sensorbucket/pkg/web"
 	"strings"
 )
 
@@ -119,10 +120,12 @@ func (a *PipelinesApiService) CreatePipelineExecute(r ApiCreatePipelineRequest) 
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -226,10 +229,12 @@ func (a *PipelinesApiService) DisablePipelineExecute(r ApiDisablePipelineRequest
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -343,10 +348,12 @@ func (a *PipelinesApiService) GetPipelineExecute(r ApiGetPipelineRequest) (*GetP
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -487,10 +494,12 @@ func (a *PipelinesApiService) ListPipelinesExecute(r ApiListPipelinesRequest) (*
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -601,10 +610,12 @@ func (a *PipelinesApiService) UpdatePipelineExecute(r ApiUpdatePipelineRequest) 
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 

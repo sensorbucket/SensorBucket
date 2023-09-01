@@ -92,8 +92,6 @@ get:
       $ref: './responses.yaml#/401'
     '403':
       $ref: './responses.yaml#/403'
-    default:
-      $ref: './responses.yaml#/apierror'
 
 post:
   operationId: CreateDevice

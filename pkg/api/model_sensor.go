@@ -13,6 +13,7 @@ package api
 
 import (
 	"encoding/json"
+	"time"
 )
 
 // checks if the Sensor type satisfies the MappedNullable interface at compile time
@@ -27,7 +28,7 @@ type Sensor struct {
 	Brand *string `json:"brand,omitempty"`
 	ArchiveTime *float32 `json:"archive_time,omitempty"`
 	Properties map[string]interface{} `json:"properties,omitempty"`
-	CreatedAt *string `json:"created_at,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
 // NewSensor instantiates a new Sensor object
@@ -272,9 +273,9 @@ func (o *Sensor) SetProperties(v map[string]interface{}) {
 }
 
 // GetCreatedAt returns the CreatedAt field value if set, zero value otherwise.
-func (o *Sensor) GetCreatedAt() string {
+func (o *Sensor) GetCreatedAt() time.Time {
 	if o == nil || IsNil(o.CreatedAt) {
-		var ret string
+		var ret time.Time
 		return ret
 	}
 	return *o.CreatedAt
@@ -282,7 +283,7 @@ func (o *Sensor) GetCreatedAt() string {
 
 // GetCreatedAtOk returns a tuple with the CreatedAt field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Sensor) GetCreatedAtOk() (*string, bool) {
+func (o *Sensor) GetCreatedAtOk() (*time.Time, bool) {
 	if o == nil || IsNil(o.CreatedAt) {
 		return nil, false
 	}
@@ -298,8 +299,8 @@ func (o *Sensor) HasCreatedAt() bool {
 	return false
 }
 
-// SetCreatedAt gets a reference to the given string and assigns it to the CreatedAt field.
-func (o *Sensor) SetCreatedAt(v string) {
+// SetCreatedAt gets a reference to the given time.Time and assigns it to the CreatedAt field.
+func (o *Sensor) SetCreatedAt(v time.Time) {
 	o.CreatedAt = &v
 }
 

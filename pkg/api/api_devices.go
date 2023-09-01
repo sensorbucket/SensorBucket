@@ -1,7 +1,7 @@
 /*
 Sensorbucket API
 
-SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex
+SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex 
 
 API version: 1.0
 Contact: info@pollex.nl
@@ -17,16 +17,18 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+    "sensorbucket.nl/sensorbucket/pkg/web"
 	"strings"
 )
+
 
 // DevicesApiService DevicesApi service
 type DevicesApiService service
 
 type ApiAddSensorToSensorGroupRequest struct {
-	ctx                           context.Context
-	ApiService                    *DevicesApiService
-	id                            float32
+	ctx context.Context
+	ApiService *DevicesApiService
+	id float32
 	addSensorToSensorGroupRequest *AddSensorToSensorGroupRequest
 }
 
@@ -42,29 +44,29 @@ func (r ApiAddSensorToSensorGroupRequest) Execute() (*AddSensorToSensorGroup201R
 /*
 AddSensorToSensorGroup Add sensor to a sensor group
 
-# Add a sensor by its ID to a sensor group by its ID
+Add a sensor by its ID to a sensor group by its ID
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param id The identifier of the Sensor Group
-	@return ApiAddSensorToSensorGroupRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param id The identifier of the Sensor Group
+ @return ApiAddSensorToSensorGroupRequest
 */
 func (a *DevicesApiService) AddSensorToSensorGroup(ctx context.Context, id float32) ApiAddSensorToSensorGroupRequest {
 	return ApiAddSensorToSensorGroupRequest{
 		ApiService: a,
-		ctx:        ctx,
-		id:         id,
+		ctx: ctx,
+		id: id,
 	}
 }
 
 // Execute executes the request
-//
-//	@return AddSensorToSensorGroup201Response
+//  @return AddSensorToSensorGroup201Response
 func (a *DevicesApiService) AddSensorToSensorGroupExecute(r ApiAddSensorToSensorGroupRequest) (*AddSensorToSensorGroup201Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodPost
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *AddSensorToSensorGroup201Response
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *AddSensorToSensorGroup201Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.AddSensorToSensorGroup")
@@ -116,10 +118,12 @@ func (a *DevicesApiService) AddSensorToSensorGroupExecute(r ApiAddSensorToSensor
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -136,8 +140,8 @@ func (a *DevicesApiService) AddSensorToSensorGroupExecute(r ApiAddSensorToSensor
 }
 
 type ApiCreateDeviceRequest struct {
-	ctx                 context.Context
-	ApiService          *DevicesApiService
+	ctx context.Context
+	ApiService *DevicesApiService
 	createDeviceRequest *CreateDeviceRequest
 }
 
@@ -155,28 +159,28 @@ CreateDevice Create device
 
 Create a new device.
 
-Depending on the type of device and the network it is registered on. The device might need specific properties to be set.
+Depending on the type of device and the network it is registered on. The device might need specific properties to be set.  
 **For example:** A LoRaWAN device often requires a `dev_eui` property to be set. The system will match incoming traffic against that property.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiCreateDeviceRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiCreateDeviceRequest
 */
 func (a *DevicesApiService) CreateDevice(ctx context.Context) ApiCreateDeviceRequest {
 	return ApiCreateDeviceRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return CreateDevice201Response
+//  @return CreateDevice201Response
 func (a *DevicesApiService) CreateDeviceExecute(r ApiCreateDeviceRequest) (*CreateDevice201Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodPost
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *CreateDevice201Response
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *CreateDevice201Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.CreateDevice")
@@ -227,10 +231,12 @@ func (a *DevicesApiService) CreateDeviceExecute(r ApiCreateDeviceRequest) (*Crea
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -247,9 +253,9 @@ func (a *DevicesApiService) CreateDeviceExecute(r ApiCreateDeviceRequest) (*Crea
 }
 
 type ApiCreateDeviceSensorRequest struct {
-	ctx                 context.Context
-	ApiService          *DevicesApiService
-	deviceId            float32
+	ctx context.Context
+	ApiService *DevicesApiService
+	deviceId float32
 	createSensorRequest *CreateSensorRequest
 }
 
@@ -270,27 +276,27 @@ Create a new sensor for the device with the given identifier.
 A device can not have sensors with either a duplicate `code` or duplicate `external_id` field.
 As this would result in conflicts while matching incoming messages to devices and sensors.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param deviceId The identifier of the device
-	@return ApiCreateDeviceSensorRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param deviceId The identifier of the device
+ @return ApiCreateDeviceSensorRequest
 */
 func (a *DevicesApiService) CreateDeviceSensor(ctx context.Context, deviceId float32) ApiCreateDeviceSensorRequest {
 	return ApiCreateDeviceSensorRequest{
 		ApiService: a,
-		ctx:        ctx,
-		deviceId:   deviceId,
+		ctx: ctx,
+		deviceId: deviceId,
 	}
 }
 
 // Execute executes the request
-//
-//	@return CreateDeviceSensor201Response
+//  @return CreateDeviceSensor201Response
 func (a *DevicesApiService) CreateDeviceSensorExecute(r ApiCreateDeviceSensorRequest) (*CreateDeviceSensor201Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodPost
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *CreateDeviceSensor201Response
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *CreateDeviceSensor201Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.CreateDeviceSensor")
@@ -342,10 +348,12 @@ func (a *DevicesApiService) CreateDeviceSensorExecute(r ApiCreateDeviceSensorReq
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -362,8 +370,8 @@ func (a *DevicesApiService) CreateDeviceSensorExecute(r ApiCreateDeviceSensorReq
 }
 
 type ApiCreateSensorGroupRequest struct {
-	ctx                      context.Context
-	ApiService               *DevicesApiService
+	ctx context.Context
+	ApiService *DevicesApiService
 	createSensorGroupRequest *CreateSensorGroupRequest
 }
 
@@ -381,25 +389,25 @@ CreateSensorGroup Create sensor group
 
 Create a new sensor group.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiCreateSensorGroupRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiCreateSensorGroupRequest
 */
 func (a *DevicesApiService) CreateSensorGroup(ctx context.Context) ApiCreateSensorGroupRequest {
 	return ApiCreateSensorGroupRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return CreateSensorGroup201Response
+//  @return CreateSensorGroup201Response
 func (a *DevicesApiService) CreateSensorGroupExecute(r ApiCreateSensorGroupRequest) (*CreateSensorGroup201Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodPost
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *CreateSensorGroup201Response
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *CreateSensorGroup201Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.CreateSensorGroup")
@@ -450,10 +458,12 @@ func (a *DevicesApiService) CreateSensorGroupExecute(r ApiCreateSensorGroupReque
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -470,9 +480,9 @@ func (a *DevicesApiService) CreateSensorGroupExecute(r ApiCreateSensorGroupReque
 }
 
 type ApiDeleteDeviceSensorRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *DevicesApiService
-	deviceId   float32
+	deviceId float32
 	sensorCode string
 }
 
@@ -483,33 +493,33 @@ func (r ApiDeleteDeviceSensorRequest) Execute() (*DeleteDeviceSensor200Response,
 /*
 DeleteDeviceSensor Delete sensor
 
-Delete a sensor from the system.
+Delete a sensor from the system. 
 
-# Since a sensor can only be related to one and only one device at a time, the sensor will be deleted from the system completely
+Since a sensor can only be related to one and only one device at a time, the sensor will be deleted from the system completely
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param deviceId The identifier of the device
-	@param sensorCode The code of the sensor
-	@return ApiDeleteDeviceSensorRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param deviceId The identifier of the device
+ @param sensorCode The code of the sensor
+ @return ApiDeleteDeviceSensorRequest
 */
 func (a *DevicesApiService) DeleteDeviceSensor(ctx context.Context, deviceId float32, sensorCode string) ApiDeleteDeviceSensorRequest {
 	return ApiDeleteDeviceSensorRequest{
 		ApiService: a,
-		ctx:        ctx,
-		deviceId:   deviceId,
+		ctx: ctx,
+		deviceId: deviceId,
 		sensorCode: sensorCode,
 	}
 }
 
 // Execute executes the request
-//
-//	@return DeleteDeviceSensor200Response
+//  @return DeleteDeviceSensor200Response
 func (a *DevicesApiService) DeleteDeviceSensorExecute(r ApiDeleteDeviceSensorRequest) (*DeleteDeviceSensor200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodDelete
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *DeleteDeviceSensor200Response
+		localVarHTTPMethod   = http.MethodDelete
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *DeleteDeviceSensor200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.DeleteDeviceSensor")
@@ -560,10 +570,12 @@ func (a *DevicesApiService) DeleteDeviceSensorExecute(r ApiDeleteDeviceSensorReq
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -580,10 +592,10 @@ func (a *DevicesApiService) DeleteDeviceSensorExecute(r ApiDeleteDeviceSensorReq
 }
 
 type ApiDeleteSensorFromSensorGroupRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *DevicesApiService
-	id         float32
-	sensorId   float32
+	id float32
+	sensorId float32
 }
 
 func (r ApiDeleteSensorFromSensorGroupRequest) Execute() (*DeleteSensorFromSensorGroup200Response, *http.Response, error) {
@@ -593,31 +605,31 @@ func (r ApiDeleteSensorFromSensorGroupRequest) Execute() (*DeleteSensorFromSenso
 /*
 DeleteSensorFromSensorGroup Delete sensor from sensor group
 
-# Delete a sensor from a sensor group
+Delete a sensor from a sensor group
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param id The identifier of the sensor group
-	@param sensorId The id of the sensor
-	@return ApiDeleteSensorFromSensorGroupRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param id The identifier of the sensor group
+ @param sensorId The id of the sensor
+ @return ApiDeleteSensorFromSensorGroupRequest
 */
 func (a *DevicesApiService) DeleteSensorFromSensorGroup(ctx context.Context, id float32, sensorId float32) ApiDeleteSensorFromSensorGroupRequest {
 	return ApiDeleteSensorFromSensorGroupRequest{
 		ApiService: a,
-		ctx:        ctx,
-		id:         id,
-		sensorId:   sensorId,
+		ctx: ctx,
+		id: id,
+		sensorId: sensorId,
 	}
 }
 
 // Execute executes the request
-//
-//	@return DeleteSensorFromSensorGroup200Response
+//  @return DeleteSensorFromSensorGroup200Response
 func (a *DevicesApiService) DeleteSensorFromSensorGroupExecute(r ApiDeleteSensorFromSensorGroupRequest) (*DeleteSensorFromSensorGroup200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodDelete
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *DeleteSensorFromSensorGroup200Response
+		localVarHTTPMethod   = http.MethodDelete
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *DeleteSensorFromSensorGroup200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.DeleteSensorFromSensorGroup")
@@ -668,10 +680,12 @@ func (a *DevicesApiService) DeleteSensorFromSensorGroupExecute(r ApiDeleteSensor
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -688,9 +702,9 @@ func (a *DevicesApiService) DeleteSensorFromSensorGroupExecute(r ApiDeleteSensor
 }
 
 type ApiDeleteSensorGroupRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *DevicesApiService
-	id         float32
+	id float32
 }
 
 func (r ApiDeleteSensorGroupRequest) Execute() (*DeleteSensorGroup200Response, *http.Response, error) {
@@ -700,29 +714,29 @@ func (r ApiDeleteSensorGroupRequest) Execute() (*DeleteSensorGroup200Response, *
 /*
 DeleteSensorGroup Delete sensor group
 
-# Delete a sensor group
+Delete a sensor group
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param id The id of the sensor group
-	@return ApiDeleteSensorGroupRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param id The id of the sensor group
+ @return ApiDeleteSensorGroupRequest
 */
 func (a *DevicesApiService) DeleteSensorGroup(ctx context.Context, id float32) ApiDeleteSensorGroupRequest {
 	return ApiDeleteSensorGroupRequest{
 		ApiService: a,
-		ctx:        ctx,
-		id:         id,
+		ctx: ctx,
+		id: id,
 	}
 }
 
 // Execute executes the request
-//
-//	@return DeleteSensorGroup200Response
+//  @return DeleteSensorGroup200Response
 func (a *DevicesApiService) DeleteSensorGroupExecute(r ApiDeleteSensorGroupRequest) (*DeleteSensorGroup200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodDelete
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *DeleteSensorGroup200Response
+		localVarHTTPMethod   = http.MethodDelete
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *DeleteSensorGroup200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.DeleteSensorGroup")
@@ -772,10 +786,12 @@ func (a *DevicesApiService) DeleteSensorGroupExecute(r ApiDeleteSensorGroupReque
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -792,9 +808,9 @@ func (a *DevicesApiService) DeleteSensorGroupExecute(r ApiDeleteSensorGroupReque
 }
 
 type ApiGetDeviceRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *DevicesApiService
-	id         float32
+	id float32
 }
 
 func (r ApiGetDeviceRequest) Execute() (*GetDevice200Response, *http.Response, error) {
@@ -808,27 +824,27 @@ Get the device with the given identifier.
 
 The returned device will also include the full model of the sensors attached to that device.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param id The numeric ID of the device
-	@return ApiGetDeviceRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param id The numeric ID of the device
+ @return ApiGetDeviceRequest
 */
 func (a *DevicesApiService) GetDevice(ctx context.Context, id float32) ApiGetDeviceRequest {
 	return ApiGetDeviceRequest{
 		ApiService: a,
-		ctx:        ctx,
-		id:         id,
+		ctx: ctx,
+		id: id,
 	}
 }
 
 // Execute executes the request
-//
-//	@return GetDevice200Response
+//  @return GetDevice200Response
 func (a *DevicesApiService) GetDeviceExecute(r ApiGetDeviceRequest) (*GetDevice200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *GetDevice200Response
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *GetDevice200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.GetDevice")
@@ -878,10 +894,12 @@ func (a *DevicesApiService) GetDeviceExecute(r ApiGetDeviceRequest) (*GetDevice2
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -898,9 +916,9 @@ func (a *DevicesApiService) GetDeviceExecute(r ApiGetDeviceRequest) (*GetDevice2
 }
 
 type ApiGetSensorGroupRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *DevicesApiService
-	id         float32
+	id float32
 }
 
 func (r ApiGetSensorGroupRequest) Execute() (*GetSensorGroup200Response, *http.Response, error) {
@@ -912,27 +930,27 @@ GetSensorGroup Get sensor group
 
 Get the sensor group with the given identifier.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param id The numeric ID of the sensor group
-	@return ApiGetSensorGroupRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param id The numeric ID of the sensor group
+ @return ApiGetSensorGroupRequest
 */
 func (a *DevicesApiService) GetSensorGroup(ctx context.Context, id float32) ApiGetSensorGroupRequest {
 	return ApiGetSensorGroupRequest{
 		ApiService: a,
-		ctx:        ctx,
-		id:         id,
+		ctx: ctx,
+		id: id,
 	}
 }
 
 // Execute executes the request
-//
-//	@return GetSensorGroup200Response
+//  @return GetSensorGroup200Response
 func (a *DevicesApiService) GetSensorGroupExecute(r ApiGetSensorGroupRequest) (*GetSensorGroup200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *GetSensorGroup200Response
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *GetSensorGroup200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.GetSensorGroup")
@@ -982,10 +1000,12 @@ func (a *DevicesApiService) GetSensorGroupExecute(r ApiGetSensorGroupRequest) (*
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -1002,11 +1022,11 @@ func (a *DevicesApiService) GetSensorGroupExecute(r ApiGetSensorGroupRequest) (*
 }
 
 type ApiListDeviceSensorsRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *DevicesApiService
-	deviceId   float32
-	cursor     *string
-	limit      *float32
+	deviceId float32
+	cursor *string
+	limit *float32
 }
 
 // The cursor for the current page
@@ -1015,7 +1035,7 @@ func (r ApiListDeviceSensorsRequest) Cursor(cursor string) ApiListDeviceSensorsR
 	return r
 }
 
-// The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place.
+// The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
 func (r ApiListDeviceSensorsRequest) Limit(limit float32) ApiListDeviceSensorsRequest {
 	r.limit = &limit
 	return r
@@ -1028,29 +1048,29 @@ func (r ApiListDeviceSensorsRequest) Execute() (*ListDeviceSensors200Response, *
 /*
 ListDeviceSensors List sensors device
 
-# List all sensors related to the device with the provided identifier
+List all sensors related to the device with the provided identifier
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param deviceId The identifier of the device
-	@return ApiListDeviceSensorsRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param deviceId The identifier of the device
+ @return ApiListDeviceSensorsRequest
 */
 func (a *DevicesApiService) ListDeviceSensors(ctx context.Context, deviceId float32) ApiListDeviceSensorsRequest {
 	return ApiListDeviceSensorsRequest{
 		ApiService: a,
-		ctx:        ctx,
-		deviceId:   deviceId,
+		ctx: ctx,
+		deviceId: deviceId,
 	}
 }
 
 // Execute executes the request
-//
-//	@return ListDeviceSensors200Response
+//  @return ListDeviceSensors200Response
 func (a *DevicesApiService) ListDeviceSensorsExecute(r ApiListDeviceSensorsRequest) (*ListDeviceSensors200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *ListDeviceSensors200Response
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *ListDeviceSensors200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.ListDeviceSensors")
@@ -1106,10 +1126,12 @@ func (a *DevicesApiService) ListDeviceSensorsExecute(r ApiListDeviceSensorsReque
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -1126,18 +1148,18 @@ func (a *DevicesApiService) ListDeviceSensorsExecute(r ApiListDeviceSensorsReque
 }
 
 type ApiListDevicesRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *DevicesApiService
 	properties *string
-	north      *float32
-	west       *float32
-	east       *float32
-	south      *float32
-	latitude   *float32
-	longitude  *float32
-	distance   *float32
-	cursor     *string
-	limit      *float32
+	north *float32
+	west *float32
+	east *float32
+	south *float32
+	latitude *float32
+	longitude *float32
+	distance *float32
+	cursor *string
+	limit *float32
 }
 
 // Used to filter devices by its properties. This filters devices on whether their property contains the provided value. The value must be a JSON string and depending on your client should be URL Escaped
@@ -1182,7 +1204,7 @@ func (r ApiListDevicesRequest) Longitude(longitude float32) ApiListDevicesReques
 	return r
 }
 
-// Used to filter devices within a distance from a point.  The distance is given in meters.
+// Used to filter devices within a distance from a point.  The distance is given in meters. 
 func (r ApiListDevicesRequest) Distance(distance float32) ApiListDevicesRequest {
 	r.distance = &distance
 	return r
@@ -1194,7 +1216,7 @@ func (r ApiListDevicesRequest) Cursor(cursor string) ApiListDevicesRequest {
 	return r
 }
 
-// The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place.
+// The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
 func (r ApiListDevicesRequest) Limit(limit float32) ApiListDevicesRequest {
 	r.limit = &limit
 	return r
@@ -1210,31 +1232,31 @@ ListDevices List devices
 Fetch a list of devices.
 
 Devices can be filtered on three items: properties, distance from a location or a bounding box.
-  - Filtering on properties filters devices on whether their property attribute is a superset of the given JSON object value
-  - Distance from location filtering requires a latitude, longitude and distance (in meters). All devices within that range will be returned
-  - Bounding box requires a North,East,South and West point. All devices within that box will be returned.
+ - Filtering on properties filters devices on whether their property attribute is a superset of the given JSON object value
+ - Distance from location filtering requires a latitude, longitude and distance (in meters). All devices within that range will be returned
+ - Bounding box requires a North,East,South and West point. All devices within that box will be returned.
 
 The filters distance from location and bounding box are mutually exclusive. The location distance filter will take precedence.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiListDevicesRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiListDevicesRequest
 */
 func (a *DevicesApiService) ListDevices(ctx context.Context) ApiListDevicesRequest {
 	return ApiListDevicesRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return ListDevices200Response
+//  @return ListDevices200Response
 func (a *DevicesApiService) ListDevicesExecute(r ApiListDevicesRequest) (*ListDevices200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *ListDevices200Response
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *ListDevices200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.ListDevices")
@@ -1313,18 +1335,12 @@ func (a *DevicesApiService) ListDevicesExecute(r ApiListDevicesRequest) (*ListDe
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
-		var v ListDevicesDefaultResponse
-		err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-		if err != nil {
-			newErr.error = err.Error()
-			return localVarReturnValue, localVarHTTPResponse, newErr
-		}
-		newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-		newErr.model = v
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -1341,10 +1357,10 @@ func (a *DevicesApiService) ListDevicesExecute(r ApiListDevicesRequest) (*ListDe
 }
 
 type ApiListSensorGroupsRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *DevicesApiService
-	cursor     *string
-	limit      *float32
+	cursor *string
+	limit *float32
 }
 
 // The cursor for the current page
@@ -1353,7 +1369,7 @@ func (r ApiListSensorGroupsRequest) Cursor(cursor string) ApiListSensorGroupsReq
 	return r
 }
 
-// The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place.
+// The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
 func (r ApiListSensorGroupsRequest) Limit(limit float32) ApiListSensorGroupsRequest {
 	r.limit = &limit
 	return r
@@ -1368,25 +1384,25 @@ ListSensorGroups List sensor groups
 
 Fetch a list of sensor groups.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiListSensorGroupsRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiListSensorGroupsRequest
 */
 func (a *DevicesApiService) ListSensorGroups(ctx context.Context) ApiListSensorGroupsRequest {
 	return ApiListSensorGroupsRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return ListSensorGroups200Response
+//  @return ListSensorGroups200Response
 func (a *DevicesApiService) ListSensorGroupsExecute(r ApiListSensorGroupsRequest) (*ListSensorGroups200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *ListSensorGroups200Response
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *ListSensorGroups200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.ListSensorGroups")
@@ -1441,10 +1457,12 @@ func (a *DevicesApiService) ListSensorGroupsExecute(r ApiListSensorGroupsRequest
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -1461,10 +1479,10 @@ func (a *DevicesApiService) ListSensorGroupsExecute(r ApiListSensorGroupsRequest
 }
 
 type ApiListSensorsRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *DevicesApiService
-	cursor     *string
-	limit      *float32
+	cursor *string
+	limit *float32
 }
 
 // The cursor for the current page
@@ -1473,7 +1491,7 @@ func (r ApiListSensorsRequest) Cursor(cursor string) ApiListSensorsRequest {
 	return r
 }
 
-// The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place.
+// The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
 func (r ApiListSensorsRequest) Limit(limit float32) ApiListSensorsRequest {
 	r.limit = &limit
 	return r
@@ -1488,25 +1506,25 @@ ListSensors List sensors
 
 List all sensors.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiListSensorsRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiListSensorsRequest
 */
 func (a *DevicesApiService) ListSensors(ctx context.Context) ApiListSensorsRequest {
 	return ApiListSensorsRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return ListDeviceSensors200Response
+//  @return ListDeviceSensors200Response
 func (a *DevicesApiService) ListSensorsExecute(r ApiListSensorsRequest) (*ListDeviceSensors200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *ListDeviceSensors200Response
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *ListDeviceSensors200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.ListSensors")
@@ -1561,10 +1579,12 @@ func (a *DevicesApiService) ListSensorsExecute(r ApiListSensorsRequest) (*ListDe
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -1581,9 +1601,9 @@ func (a *DevicesApiService) ListSensorsExecute(r ApiListSensorsRequest) (*ListDe
 }
 
 type ApiUpdateDeviceRequest struct {
-	ctx                 context.Context
-	ApiService          *DevicesApiService
-	id                  float32
+	ctx context.Context
+	ApiService *DevicesApiService
+	id float32
 	updateDeviceRequest *UpdateDeviceRequest
 }
 
@@ -1603,27 +1623,27 @@ Update a some properties of the device with the given identifier.
 
 The request body should contain one or more modifiable properties of the Device.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param id The numeric ID of the device
-	@return ApiUpdateDeviceRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param id The numeric ID of the device
+ @return ApiUpdateDeviceRequest
 */
 func (a *DevicesApiService) UpdateDevice(ctx context.Context, id float32) ApiUpdateDeviceRequest {
 	return ApiUpdateDeviceRequest{
 		ApiService: a,
-		ctx:        ctx,
-		id:         id,
+		ctx: ctx,
+		id: id,
 	}
 }
 
 // Execute executes the request
-//
-//	@return UpdateDevice200Response
+//  @return UpdateDevice200Response
 func (a *DevicesApiService) UpdateDeviceExecute(r ApiUpdateDeviceRequest) (*UpdateDevice200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodPatch
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *UpdateDevice200Response
+		localVarHTTPMethod   = http.MethodPatch
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *UpdateDevice200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.UpdateDevice")
@@ -1675,10 +1695,12 @@ func (a *DevicesApiService) UpdateDeviceExecute(r ApiUpdateDeviceRequest) (*Upda
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -1695,9 +1717,9 @@ func (a *DevicesApiService) UpdateDeviceExecute(r ApiUpdateDeviceRequest) (*Upda
 }
 
 type ApiUpdateSensorGroupRequest struct {
-	ctx                      context.Context
-	ApiService               *DevicesApiService
-	id                       float32
+	ctx context.Context
+	ApiService *DevicesApiService
+	id float32
 	updateSensorGroupRequest *UpdateSensorGroupRequest
 }
 
@@ -1717,27 +1739,27 @@ Update a some properties of the sensor group with the given identifier.
 
 The request body should contain one or more modifiable properties of the sensor group.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param id The numeric ID of the sensor group
-	@return ApiUpdateSensorGroupRequest
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param id The numeric ID of the sensor group
+ @return ApiUpdateSensorGroupRequest
 */
 func (a *DevicesApiService) UpdateSensorGroup(ctx context.Context, id float32) ApiUpdateSensorGroupRequest {
 	return ApiUpdateSensorGroupRequest{
 		ApiService: a,
-		ctx:        ctx,
-		id:         id,
+		ctx: ctx,
+		id: id,
 	}
 }
 
 // Execute executes the request
-//
-//	@return UpdateSensorGroup200Response
+//  @return UpdateSensorGroup200Response
 func (a *DevicesApiService) UpdateSensorGroupExecute(r ApiUpdateSensorGroupRequest) (*UpdateSensorGroup200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodPatch
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *UpdateSensorGroup200Response
+		localVarHTTPMethod   = http.MethodPatch
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *UpdateSensorGroup200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.UpdateSensorGroup")
@@ -1789,10 +1811,12 @@ func (a *DevicesApiService) UpdateSensorGroupExecute(r ApiUpdateSensorGroupReque
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
+        var newErr *web.APIError
+        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+        if err != nil {
+            return localVarReturnValue, localVarHTTPResponse, err
+        }
+        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
