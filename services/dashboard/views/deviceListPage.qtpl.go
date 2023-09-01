@@ -109,7 +109,7 @@ func StreamRenderFilters(qw422016 *qt422016.Writer, sensorGroup *devices.SensorG
 
                 class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600"
                 hx-trigger="keyup changed delay:500ms, search"
-                hx-get="/overview/sensorgroups"
+                hx-get="/overview/sensor-groups"
                 hx-target="next ul"
                 _="on blur wait 50ms add .hidden to next <ul/> on focus remove .hidden from next <ul/>"
             />

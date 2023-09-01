@@ -34,7 +34,7 @@ func createOverviewPageHandler() http.Handler {
 	r.Get("/devices/stream-map", devicesStreamMap())
 	r.Get("/devices/table", func(w http.ResponseWriter, r *http.Request) {
 		var err error
-		sgID := r.URL.Query().Get("sensorgroup")
+		sgID := r.URL.Query().Get("sensor_group")
 		var sg *devices.SensorGroup
 		if sgID != "" {
 			sg, err = getSG(sgID)
@@ -62,7 +62,7 @@ func createOverviewPageHandler() http.Handler {
 	r.With(resolveDevice).Get("/devices/{device_id}", deviceDetailPage())
 	r.With(resolveDevice).With(resolveSensor).Get("/devices/{device_id}/sensors/{sensor_code}", sensorDetailPage())
 
-	r.Get("/sensorgroups", searchSensorGroups())
+	r.Get("/sensor-groups", searchSensorGroups())
 
 	r.Get("/datastreams/{id}", overviewDatastream())
 	r.Get("/datastreams/{id}/stream", overviewDatastreamStream())
@@ -113,7 +113,7 @@ func deviceListPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		page := &views.DeviceListPage{}
 
-		sensorGroupID := r.URL.Query().Get("sensorgroup")
+		sensorGroupID := r.URL.Query().Get("sensor_group")
 		if sensorGroupID != "" {
 			sg, err := getSG(sensorGroupID)
 			if err != nil {
@@ -125,7 +125,7 @@ func deviceListPage() http.HandlerFunc {
 
 		q := url.Values{}
 		if page.SensorGroup != nil {
-			q.Set("sensorgroup", strconv.FormatInt(page.SensorGroup.ID, 10))
+			q.Set("sensor_group", strconv.FormatInt(page.SensorGroup.ID, 10))
 		}
 		url := "http://core:3000/devices?" + q.Encode()
 		res, err := http.Get(url)
@@ -201,7 +201,7 @@ func devicesStreamMap() http.HandlerFunc {
 		q := url.Values{}
 		q.Set("cursor", cursor)
 		if sensorGroupID != "" {
-			q.Set("sensorgroup", sensorGroupID)
+			q.Set("sensor_group", sensorGroupID)
 		}
 		res, err := http.Get("http://core:3000/devices?" + q.Encode())
 		if err != nil {
@@ -221,7 +221,7 @@ func devicesStreamMap() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		sensorGroupID := r.URL.Query().Get("sensorgroup")
+		sensorGroupID := r.URL.Query().Get("sensor_group")
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			web.HTTPError(w, err)
@@ -292,6 +292,16 @@ func overviewDatastream() http.HandlerFunc {
 			web.HTTPError(w, err)
 			return
 		}
+		if res.StatusCode != 200 {
+			var apiError web.APIError
+			if err := json.NewDecoder(res.Body).Decode(&apiError); err != nil {
+				web.HTTPError(w, err)
+				return
+			}
+			apiError.HTTPStatus = res.StatusCode
+			web.HTTPError(w, &apiError)
+			return
+		}
 		var resBody web.APIResponse[coretransport.GetDatastreamResponse]
 		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
 			web.HTTPError(w, err)
@@ -327,6 +337,14 @@ func overviewDatastreamStream() http.HandlerFunc {
 		if err != nil {
 			return nil, "", err
 		}
+		if res.StatusCode != 200 {
+			var apiError web.APIError
+			if err := json.NewDecoder(res.Body).Decode(&apiError); err != nil {
+				return nil, "", err
+			}
+			apiError.HTTPStatus = res.StatusCode
+			return nil, "", &apiError
+		}
 		var resBody pagination.APIResponse[measurements.Measurement]
 		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
 			return nil, "", err
@@ -343,6 +361,8 @@ func overviewDatastreamStream() http.HandlerFunc {
 
 		go func() {
 			var nextCursor string
+			defer ws.Close()
+		ws_loop:
 			for {
 				// Start fetching pages of measurements and stream them to the client
 				measurements, cursor, err := getMeasurementsPage(datastreamID, nextCursor)
@@ -354,7 +374,7 @@ func overviewDatastreamStream() http.HandlerFunc {
 				for _, point := range measurements {
 					writer, err := ws.NextWriter(websocket.BinaryMessage)
 					if err != nil {
-						continue
+						break ws_loop
 					}
 					defer writer.Close()
 					// Write to client

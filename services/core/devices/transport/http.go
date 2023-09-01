@@ -84,7 +84,7 @@ func (t *HTTPTransport) SetupRoutes(r chi.Router) {
 type HTTPDeviceFilters struct {
 	devices.DeviceFilter
 	pagination.Request
-	SensorGroup int64 `schema:"sensorgroup"`
+	SensorGroup int64 `schema:"sensor_group"`
 }
 
 func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
