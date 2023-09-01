@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
-	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/web"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	"sensorbucket.nl/sensorbucket/pkg/worker"
 )

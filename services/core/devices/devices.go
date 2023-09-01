@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"time"
 
-	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/web"
 )
 
 var (

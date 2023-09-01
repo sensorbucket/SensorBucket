@@ -10,7 +10,7 @@ import (
 	"github.com/rs/cors"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
-	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/web"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/httpimporter/service"
 )

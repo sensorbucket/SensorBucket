@@ -11,7 +11,7 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
-	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/web"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
 
