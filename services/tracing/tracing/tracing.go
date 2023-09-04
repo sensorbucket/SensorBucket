@@ -1,7 +1,6 @@
 package tracing
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/samber/lo"
@@ -31,7 +30,7 @@ func (s Status) String() string {
 	case Failed:
 		return "failed"
 	default:
-		return Unknown.String()
+		return "unknown"
 	}
 }
 
@@ -77,8 +76,14 @@ func (es EnrichedSteps) DeviceID() *int64 {
 	return nil
 }
 
+func (es EnrichedSteps) Exists(stepIndex uint64) bool {
+	_, ok := lo.Find(es, func(item EnrichedStep) bool {
+		return stepIndex == item.StepIndex
+	})
+	return ok
+}
+
 func (es EnrichedSteps) AllSteps() EnrichedSteps {
-	fmt.Println("hi there")
 	if len(es) == 0 {
 		return []EnrichedStep{}
 	}
@@ -89,34 +94,17 @@ func (es EnrichedSteps) AllSteps() EnrichedSteps {
 	// The last step status and steps remaining determines if any steps need to be added to the step list
 	lastStep := es[len(es)-1]
 
-	type t struct {
-		StartTime time.Time
-	}
-
-	type embed struct {
-		t
-	}
-	// log.Println(lastStep)
-	fmt.Println("stuff1", t{
-		StartTime: time.Now().Add(time.Second * 10),
-	})
-	fmt.Println("stuff2", embed{
-		t{
-			StartTime: time.Now().Add(time.Second * 10),
-		},
-	})
-	//fmt.Printf("last step %v\n", lastStep)
-
 	remainingStatus := Pending
 	if lastStep.Status == Failed {
 		// When the last step in the list has failed all the remaining steps are canceled
 		remainingStatus = Canceled
 	}
 
-	steps := lo.Times(int(lastStep.StepIndex+1)+int(lastStep.StepsRemaining), func(index int) EnrichedStep {
+	totalSteps := int(lastStep.StepsRemaining + lastStep.StepIndex + 1)
+	indexOffset := 0
 
-		if index >= int(lastStep.StepIndex) {
-			fmt.Println("trigger", index, int(lastStep.StepIndex))
+	steps := lo.Times(int(lastStep.StepIndex+1)+int(lastStep.StepsRemaining), func(index int) EnrichedStep {
+		if index > int(lastStep.StepIndex) {
 
 			// We are past the last available step in the step list
 			// add any remaining (non-existent in the database) steps and derive
@@ -125,25 +113,26 @@ func (es EnrichedSteps) AllSteps() EnrichedSteps {
 				Step: Step{
 					TracingID:      lastStep.TracingID,
 					StepIndex:      uint64(index),
-					StepsRemaining: uint64(len(es) + int(lastStep.StepsRemaining) - index - 1),
+					StepsRemaining: uint64(totalSteps - index - 1),
 				},
 				Status: remainingStatus,
 			}
 		}
 
-		if index != int(es[index].StepIndex) {
+		if !es.Exists(uint64(index)) {
 			// There is a step missing somewhere in between the steps in the list.
+			indexOffset++
 			return EnrichedStep{
 				Step: Step{
 					TracingID:      lastStep.TracingID,
 					StepIndex:      uint64(index),
-					StepsRemaining: uint64(len(es) + int(lastStep.StepsRemaining) - index - 1),
+					StepsRemaining: uint64(totalSteps - index - 1),
 				},
 				Status: Unknown,
 			}
 		}
 
-		return es[index]
+		return es[index-indexOffset]
 	})
 
 	return steps

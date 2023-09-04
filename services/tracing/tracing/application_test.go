@@ -1,157 +1,196 @@
 package tracing
 
-// func TestPipelineErrorAppears(t *testing.T) {
-// 	// Arrange
-// 	stepStore := stepStoreMock{}
-// 	tracingService := Service{
-// 		stepStore: &stepStore,
-// 	}
+import (
+	"testing"
+	"time"
 
-// 	type scene struct {
-// 		input    pipeline.PipelineError
-// 		expected Step
-// 	}
-// 	e := asPointer("some weird error occurred!!")
-// 	scenarios := map[string]scene{
-// 		"pipeline error with 3 steps remaining": {
-// 			input: pipeline.PipelineError{
-// 				ReceivedByWorker: pipeline.Message{
-// 					ID:            "234324",
-// 					Timestamp:     21342143,
-// 					StepIndex:     3,
-// 					PipelineSteps: []string{"A", "B", "C", "D", "E", "F", "G"},
-// 				},
-// 				Error: "some weird error occurred!!",
-// 			},
-// 			expected: Step{
-// 				TracingID:      "234324",
-// 				StepIndex:      3,
-// 				StepsRemaining: 3,
-// 				StartTime:      21342143,
-// 				Error:          e,
-// 			},
-// 		},
-// 		"pipeline message with 0 steps remaining": {
-// 			input: pipeline.PipelineError{
-// 				ReceivedByWorker: pipeline.Message{
-// 					ID:            "234324",
-// 					Timestamp:     21342143,
-// 					StepIndex:     6,
-// 					PipelineSteps: []string{"A", "B", "C", "D", "E", "F", "G"},
-// 				},
-// 				Error: "some weird error occurred!!",
-// 			},
-// 			expected: Step{
-// 				TracingID:      "234324",
-// 				StepIndex:      6,
-// 				StepsRemaining: 0,
-// 				StartTime:      21342143,
-// 				Error:          e,
-// 			},
-// 		},
-// 		"pipeline message with 1 step remaining": {
-// 			input: pipeline.PipelineError{
-// 				ReceivedByWorker: pipeline.Message{
-// 					ID:            "234324",
-// 					Timestamp:     21342143,
-// 					StepIndex:     5,
-// 					PipelineSteps: []string{"A", "B", "C", "D", "E", "F", "G"},
-// 				},
-// 				Error: "some weird error occurred!!",
-// 			},
-// 			expected: Step{
-// 				TracingID:      "234324",
-// 				StepIndex:      5,
-// 				StepsRemaining: 1,
-// 				StartTime:      21342143,
-// 				Error:          e,
-// 			},
-// 		},
-// 	}
+	"github.com/stretchr/testify/assert"
+	"sensorbucket.nl/sensorbucket/pkg/pipeline"
+)
 
-// 	for scene, cfg := range scenarios {
-// 		t.Run(scene, func(t *testing.T) {
-// 			// Act and Assert
-// 			assert.NoError(t, tracingService.HandlePipelineError(cfg.input))
-// 			assert.Equal(t, cfg.expected, stepStore.inserted)
-// 		})
-// 	}
-// }
+func TestPipelineMessageWithInvalidAmountOfPipelineSteps(t *testing.T) {
+	svc := Service{}
+	assert.EqualError(t, svc.HandlePipelineMessage(
+		pipeline.Message{
+			PipelineSteps: []string{"1", "2", "3"},
+			StepIndex:     3,
+		},
+		time.Now()), "steps remaining cannot be smaller than 0 (pipelinesteps len: 3, stepindex: 3)")
+	assert.EqualError(t, svc.HandlePipelineError(
+		pipeline.PipelineError{
+			ReceivedByWorker: pipeline.Message{
+				PipelineSteps: []string{"1", "2", "3", "4", "5"},
+				StepIndex:     5,
+			},
+		},
+		time.Now()), "steps remaining cannot be smaller than 0 (pipelinesteps len: 5, stepindex: 5)")
+}
 
-// func TestPipelineMessageAppears(t *testing.T) {
-// 	// Arrange
-// 	stepStore := stepStoreMock{}
-// 	tracingService := Service{
-// 		stepStore: &stepStore,
-// 	}
+func TestPipelineErrorAppears(t *testing.T) {
+	// Arrange
+	type scene struct {
+		input    pipeline.PipelineError
+		expected Step
+	}
+	publishTime := time.Now()
+	e := asPointer("some weird error occurred!!")
+	scenarios := map[string]scene{
+		"pipeline error with 3 steps remaining": {
+			input: pipeline.PipelineError{
+				ReceivedByWorker: pipeline.Message{
+					ID:            "234324",
+					Timestamp:     21342143,
+					StepIndex:     3,
+					PipelineSteps: []string{"A", "B", "C", "D", "E", "F", "G"},
+				},
+				Error: "some weird error occurred!!",
+			},
+			expected: Step{
+				TracingID:      "234324",
+				StepIndex:      3,
+				StepsRemaining: 3,
+				StartTime:      publishTime,
+				Error:          e,
+			},
+		},
+		"pipeline message with 0 steps remaining": {
+			input: pipeline.PipelineError{
+				ReceivedByWorker: pipeline.Message{
+					ID:            "234324",
+					Timestamp:     21342143,
+					StepIndex:     6,
+					PipelineSteps: []string{"A", "B", "C", "D", "E", "F", "G"},
+				},
+				Error: "some weird error occurred!!",
+			},
+			expected: Step{
+				TracingID:      "234324",
+				StepIndex:      6,
+				StepsRemaining: 0,
+				StartTime:      publishTime,
+				Error:          e,
+			},
+		},
+		"pipeline message with 1 step remaining": {
+			input: pipeline.PipelineError{
+				ReceivedByWorker: pipeline.Message{
+					ID:            "234324",
+					Timestamp:     21342143,
+					StepIndex:     5,
+					PipelineSteps: []string{"A", "B", "C", "D", "E", "F", "G"},
+				},
+				Error: "some weird error occurred!!",
+			},
+			expected: Step{
+				TracingID:      "234324",
+				StepIndex:      5,
+				StepsRemaining: 1,
+				StartTime:      publishTime,
+				Error:          e,
+			},
+		},
+	}
 
-// 	type scene struct {
-// 		input    pipeline.Message
-// 		expected Step
-// 	}
-// 	scenarios := map[string]scene{
-// 		"pipeline message with 3 steps remaining": {
-// 			input: pipeline.Message{
-// 				ID:            "234324",
-// 				Timestamp:     21342143,
-// 				StepIndex:     3,
-// 				PipelineSteps: []string{"A", "B", "C", "D", "E", "F", "G"},
-// 			},
-// 			expected: Step{
-// 				TracingID:      "234324",
-// 				StepIndex:      3,
-// 				StepsRemaining: 3,
-// 				StartTime:      21342143,
-// 			},
-// 		},
-// 		"pipeline message with 0 steps remaining": {
-// 			input: pipeline.Message{
-// 				ID:            "234324",
-// 				Timestamp:     21342143,
-// 				StepIndex:     3,
-// 				PipelineSteps: []string{"A", "B", "C", "D"},
-// 			},
-// 			expected: Step{
-// 				TracingID:      "234324",
-// 				StepIndex:      3,
-// 				StepsRemaining: 0,
-// 				StartTime:      21342143,
-// 			},
-// 		},
-// 		"pipeline message with 1 step remaining": {
-// 			input: pipeline.Message{
-// 				ID:            "234324",
-// 				Timestamp:     21342143,
-// 				StepIndex:     4,
-// 				PipelineSteps: []string{"A", "B", "C", "D", "E", "F"},
-// 			},
-// 			expected: Step{
-// 				TracingID:      "234324",
-// 				StepIndex:      4,
-// 				StepsRemaining: 1,
-// 				StartTime:      21342143,
-// 			},
-// 		},
-// 	}
+	for scene, cfg := range scenarios {
+		t.Run(scene, func(t *testing.T) {
+			stepStore := StepStoreMock{
+				UpsertStepFunc: func(step Step, withError bool) error {
+					return nil
+				},
+			}
+			tracingService := Service{
+				stepStore: &stepStore,
+			}
 
-// 	for scene, cfg := range scenarios {
-// 		t.Run(scene, func(t *testing.T) {
-// 			// Act and Assert
-// 			assert.NoError(t, tracingService.HandlePipelineMessage(cfg.input))
-// 			assert.Equal(t, cfg.expected, stepStore.inserted)
-// 		})
-// 	}
-// }
+			// Act and Assert
+			assert.NoError(t, tracingService.HandlePipelineError(cfg.input, publishTime))
+			assert.Equal(t, []struct {
+				Step      Step
+				WithError bool
+			}{
+				{
+					Step:      cfg.expected,
+					WithError: true,
+				},
+			}, stepStore.UpsertStepCalls())
+		})
+	}
+}
 
-// type stepStoreMock struct {
-// 	inserted Step
-// }
+func TestPipelineMessageAppears(t *testing.T) {
+	// Arrange
+	type scene struct {
+		input    pipeline.Message
+		expected Step
+	}
+	publishTime := time.Now()
+	scenarios := map[string]scene{
+		"pipeline message with 3 steps remaining": {
+			input: pipeline.Message{
+				ID:            "234324",
+				Timestamp:     21342143,
+				StepIndex:     3,
+				PipelineSteps: []string{"A", "B", "C", "D", "E", "F", "G"},
+			},
+			expected: Step{
+				TracingID:      "234324",
+				StepIndex:      3,
+				StepsRemaining: 3,
+				StartTime:      publishTime,
+			},
+		},
+		"pipeline message with 0 steps remaining": {
+			input: pipeline.Message{
+				ID:            "234324",
+				Timestamp:     21342143,
+				StepIndex:     3,
+				PipelineSteps: []string{"A", "B", "C", "D"},
+			},
+			expected: Step{
+				TracingID:      "234324",
+				StepIndex:      3,
+				StepsRemaining: 0,
+				StartTime:      publishTime,
+			},
+		},
+		"pipeline message with 1 step remaining": {
+			input: pipeline.Message{
+				ID:            "234324",
+				Timestamp:     21342143,
+				StepIndex:     4,
+				PipelineSteps: []string{"A", "B", "C", "D", "E", "F"},
+			},
+			expected: Step{
+				TracingID:      "234324",
+				StepIndex:      4,
+				StepsRemaining: 1,
+				StartTime:      publishTime,
+			},
+		},
+	}
 
-// func (s *stepStoreMock) Insert(step Step) error {
-// 	s.inserted = step
-// 	return nil
-// }
+	for scene, cfg := range scenarios {
+		t.Run(scene, func(t *testing.T) {
+			stepStore := StepStoreMock{
+				UpsertStepFunc: func(step Step, withError bool) error {
+					return nil
+				},
+			}
+			tracingService := Service{
+				stepStore: &stepStore,
+			}
 
-// func (s *stepStoreMock) Query(Filter, pagination.Request) (*pagination.Page[EnrichedStep], error) {
-// 	return &pagination.Page[EnrichedStep]{}, nil
-// }
+			// Act and Assert
+			assert.NoError(t, tracingService.HandlePipelineMessage(cfg.input, publishTime))
+			assert.Equal(t, []struct {
+				Step      Step
+				WithError bool
+			}{
+				{
+					Step:      cfg.expected,
+					WithError: false,
+				},
+			}, stepStore.UpsertStepCalls())
+		})
+	}
+}
