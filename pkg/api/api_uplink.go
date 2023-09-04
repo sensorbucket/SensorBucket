@@ -17,7 +17,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-    "sensorbucket.nl/sensorbucket/pkg/web"
+    "sensorbucket.nl/sensorbucket/internal/web"
 	"strings"
 )
 
