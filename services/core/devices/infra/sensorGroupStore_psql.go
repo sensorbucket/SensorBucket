@@ -167,9 +167,9 @@ func (s *PSQLSensorGroupStore) Get(id int64) (*devices.SensorGroup, error) {
 		LeftJoin("sensor_groups_sensors sgs on sgs.sensor_group_id = sg.id").Where(sq.Eq{"sg.id": id})
 
 	rows, err := q.RunWith(s.db).Query()
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, devices.ErrSensorGroupNotFound
-	}
+	// As this is an exec query with a DB Cursor, sql.ErrNoRows will not be thrown
+	// So at the end of this function we check if `for rows.Next()` was actually
+	// ran, if not then throw 404
 	if err != nil {
 		return nil, err
 	}
@@ -202,6 +202,10 @@ func (s *PSQLSensorGroupStore) Get(id int64) (*devices.SensorGroup, error) {
 			group.Sensors = append(group.Sensors, *sensorID)
 		}
 	}
+	if group == nil {
+		return nil, devices.ErrSensorGroupNotFound
+	}
+
 	return group, nil
 }
 

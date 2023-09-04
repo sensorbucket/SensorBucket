@@ -229,6 +229,7 @@ func devicesStreamMap() http.HandlerFunc {
 		}
 
 		go func() {
+			defer ws.Close()
 			var nextCursor string
 			for {
 				// Start fetching pages of devices and stream them to the client
@@ -245,7 +246,7 @@ func devicesStreamMap() http.HandlerFunc {
 					writer, err := ws.NextWriter(websocket.TextMessage)
 					if err != nil {
 						log.Printf("cannot open writer for ws: %v\n", err)
-						continue
+						return
 					}
 					defer writer.Close()
 					frame := fmt.Sprintf(`{"device_id": %d, "device_code": "%s", "coordinates": [%f,%f]}`, dev.ID, dev.Code, *dev.Latitude, *dev.Longitude)
@@ -253,7 +254,7 @@ func devicesStreamMap() http.HandlerFunc {
 				}
 				nextCursor = cursor
 				if nextCursor == "" {
-					break
+					return
 				}
 			}
 		}()
@@ -362,7 +363,6 @@ func overviewDatastreamStream() http.HandlerFunc {
 		go func() {
 			var nextCursor string
 			defer ws.Close()
-		ws_loop:
 			for {
 				// Start fetching pages of measurements and stream them to the client
 				measurements, cursor, err := getMeasurementsPage(datastreamID, nextCursor)
@@ -374,7 +374,8 @@ func overviewDatastreamStream() http.HandlerFunc {
 				for _, point := range measurements {
 					writer, err := ws.NextWriter(websocket.BinaryMessage)
 					if err != nil {
-						break ws_loop
+						log.Printf("cannot open writer for ws: %v\n", err)
+						return
 					}
 					defer writer.Close()
 					// Write to client
@@ -383,7 +384,7 @@ func overviewDatastreamStream() http.HandlerFunc {
 				}
 				nextCursor = cursor
 				if nextCursor == "" {
-					break
+					return
 				}
 			}
 		}()
