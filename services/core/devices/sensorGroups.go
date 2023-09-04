@@ -6,7 +6,7 @@ import (
 
 	"github.com/samber/lo"
 
-	"sensorbucket.nl/sensorbucket/pkg/web"
+	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
 var (

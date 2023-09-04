@@ -21,7 +21,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	"sensorbucket.nl/sensorbucket/pkg/web"
+	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
 	seed "sensorbucket.nl/sensorbucket/services/core/devices/infra/test_seed"

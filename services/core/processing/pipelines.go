@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"sensorbucket.nl/sensorbucket/pkg/web"
+	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
 var (
