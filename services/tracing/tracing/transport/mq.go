@@ -21,6 +21,10 @@ func StartMQ(svc *tracing.Service, conn *mq.AMQPConnection, errQueue string, que
 func processMessage(queue string, deliveries <-chan amqp091.Delivery, svc *tracing.Service) {
 	log.Println("Measurement MQ Transport running, tracing pipeline errors...")
 	for msg := range deliveries {
+		if msg.Timestamp.IsZero() {
+			log.Printf("Error: msg timestamp cannot be empty")
+			continue
+		}
 		if msg.RoutingKey == "errors" {
 			var res pipeline.PipelineError
 			if err := json.Unmarshal(msg.Body, &res); err != nil {
@@ -29,7 +33,7 @@ func processMessage(queue string, deliveries <-chan amqp091.Delivery, svc *traci
 				continue
 			}
 
-			if err := svc.HandlePipelineError(res); err != nil {
+			if err := svc.HandlePipelineError(res, msg.Timestamp); err != nil {
 				msg.Nack(false, false)
 				log.Printf("Error handling pipeline message: %v\n", err)
 				continue
@@ -42,7 +46,7 @@ func processMessage(queue string, deliveries <-chan amqp091.Delivery, svc *traci
 				continue
 			}
 
-			if err := svc.HandlePipelineMessage(res); err != nil {
+			if err := svc.HandlePipelineMessage(res, msg.Timestamp); err != nil {
 				msg.Nack(false, false)
 				log.Printf("Error handling pipeline message: %v\n", err)
 				continue

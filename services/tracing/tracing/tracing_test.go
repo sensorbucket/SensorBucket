@@ -26,7 +26,7 @@ func TestAllStepsAddsCorrectRemainingSteps(t *testing.T) {
 				StepIndex:      1,
 				StepsRemaining: 4,
 				StartTime:      434234324,
-				DeviceId:       device,
+				DeviceID:       device,
 			},
 			Status: Success,
 		},
@@ -48,7 +48,7 @@ func TestAllStepsAddsCorrectRemainingSteps(t *testing.T) {
 	// Assert
 	assert.Equal(t, Failed, all.TotalStatus())
 	assert.Equal(t, int64(5432), all.TotalStartTime())
-	assert.Equal(t, device, all.DeviceId())
+	assert.Equal(t, device, all.DeviceID())
 	assert.Equal(t,
 		append(enriched,
 			EnrichedStep{

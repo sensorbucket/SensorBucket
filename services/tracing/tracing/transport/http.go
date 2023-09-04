@@ -29,9 +29,6 @@ func NewHTTP(svc *tracing.Service, url string) *HTTPTransport {
 }
 
 func (t *HTTPTransport) SetupRoutes(r chi.Router) {
-	r.Get("/health", func(rw http.ResponseWriter, r *http.Request) {
-		rw.Write([]byte("healthy"))
-	})
 	r.Get("/tracing", t.httpGetTraces())
 }
 
@@ -53,9 +50,8 @@ func (t *HTTPTransport) httpGetTraces() http.HandlerFunc {
 
 		if params.DurationGreaterThan != nil &&
 			params.DurationLowerThan != nil &&
-			*params.DurationGreaterThan != 0 &&
-			*params.DurationLowerThan <= *params.DurationLowerThan {
-			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "duration_greater_than cannot be smaller than or equal to duration_smaller_than", ""))
+			*params.DurationGreaterThan >= *params.DurationLowerThan {
+			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "duration_greater_than cannot be greater than or equal to duration_smaller_than", ""))
 			return
 		}
 

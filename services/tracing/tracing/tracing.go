@@ -19,8 +19,6 @@ const (
 
 func (s Status) String() string {
 	switch s {
-	case Unknown:
-		return "unknown"
 	case Canceled:
 		return "canceled"
 	case Pending:
@@ -31,16 +29,17 @@ func (s Status) String() string {
 		return "in progress"
 	case Failed:
 		return "failed"
+	default:
+		return Unknown.String()
 	}
-	return "unknown"
 }
 
 type Step struct {
 	TracingID      string
-	StepIndex      int64
-	StepsRemaining int64
-	StartTime      int64
-	DeviceId       *int64
+	StepIndex      uint64
+	StepsRemaining uint64
+	StartTime      time.Time
+	DeviceID       *int64
 	Error          *string
 }
 
@@ -54,10 +53,10 @@ type EnrichedStep struct {
 
 type EnrichedSteps []EnrichedStep
 
-func (es EnrichedSteps) TotalStartTime() int64 {
+func (es EnrichedSteps) TotalStartTime() time.Time {
 	return lo.MinBy(es, func(item, min EnrichedStep) bool {
 		// A StartTime with value 0 is considered to be not set
-		return item.StartTime > 0 && item.StartTime < min.StartTime
+		return item.StartTime.UnixMilli() > 0 && item.StartTime.UnixMilli() < min.StartTime.UnixMilli()
 	}).StartTime
 }
 
@@ -68,11 +67,11 @@ func (es EnrichedSteps) TotalStatus() Status {
 	return es[0].HighestCollectiveStatus
 }
 
-func (es EnrichedSteps) DeviceId() *int64 {
+func (es EnrichedSteps) DeviceID() *int64 {
 	if val, ok := lo.Find(es, func(item EnrichedStep) bool {
-		return item.DeviceId != nil
+		return item.DeviceID != nil
 	}); ok {
-		return val.DeviceId
+		return val.DeviceID
 	}
 	return nil
 }
@@ -93,20 +92,34 @@ func (es EnrichedSteps) AllSteps() EnrichedSteps {
 		remainingStatus = Canceled
 	}
 
-	steps := lo.Times(len(es)+int(lastStep.StepsRemaining), func(index int) EnrichedStep {
-		if index >= len(es) {
+	steps := lo.Times(int(lastStep.StepIndex+1)+int(lastStep.StepsRemaining), func(index int) EnrichedStep {
+
+		if index >= int(lastStep.StepIndex) {
 			// We are past the last available step in the step list
 			// add any remaining (non-existent in the database) steps and derive
 			// their states from the lastStep in the list
 			return EnrichedStep{
 				Step: Step{
 					TracingID:      lastStep.TracingID,
-					StepIndex:      int64(index),
-					StepsRemaining: int64(len(es) + int(lastStep.StepsRemaining) - index - 1),
+					StepIndex:      uint64(index),
+					StepsRemaining: uint64(len(es) + int(lastStep.StepsRemaining) - index - 1),
 				},
 				Status: remainingStatus,
 			}
 		}
+
+		if index != int(es[index].StepIndex) {
+			// There is a step missing somewhere in between the steps in the list.
+			return EnrichedStep{
+				Step: Step{
+					TracingID:      lastStep.TracingID,
+					StepIndex:      uint64(index),
+					StepsRemaining: uint64(len(es) + int(lastStep.StepsRemaining) - index - 1),
+				},
+				Status: Unknown,
+			}
+		}
+
 		return es[index]
 	})
 

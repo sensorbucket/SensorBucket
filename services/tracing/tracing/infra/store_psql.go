@@ -1,7 +1,6 @@
 package tracinginfra
 
 import (
-	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -22,7 +21,7 @@ func NewStorePSQL(db *sqlx.DB) *stepStore {
 func (s *stepStore) UpsertStep(step tracing.Step, withError bool) error {
 	q := sq.Insert("steps").
 		Columns("tracing_id", "step_index", "steps_remaining", "start_time", "error", "device_id").
-		Values(step.TracingID, step.StepIndex, step.StepsRemaining, step.StartTime, step.Error, step.DeviceId)
+		Values(step.TracingID, step.StepIndex, step.StepsRemaining, step.StartTime, step.Error, step.DeviceID)
 	if withError {
 		q = q.Suffix("ON CONFLICT ON CONSTRAINT steps_pkey DO UPDATE SET error = ?", step.Error)
 	} else {
@@ -42,7 +41,6 @@ type TraceQueryPage struct {
 	TracingID uuid.UUID `pagination:"archive.tracing_id,DESC"`
 }
 
-// TODO: this is not a maintainable solution, the second query might receive a thousand values in the 'IN' clause
 func (s *stepStore) QueryTraces(filter tracing.Filter, r pagination.Request) (*pagination.Page[string], error) {
 	var err error
 
@@ -74,7 +72,6 @@ func (s *stepStore) QueryTraces(filter tracing.Filter, r pagination.Request) (*p
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(sq.DebugSqlizer(q))
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(s.db).Query()
 	if err != nil {
 		return nil, err
@@ -101,7 +98,7 @@ func (s *stepStore) QueryTraces(filter tracing.Filter, r pagination.Request) (*p
 	return &page, nil
 }
 
-func (s *stepStore) GetStepsByTracingIds(tracingIds []string) ([]tracing.EnrichedStep, error) {
+func (s *stepStore) GetStepsByTracingIDs(tracingIds []string) ([]tracing.EnrichedStep, error) {
 	q := sq.Select(
 		"tracing_id",
 		"device_id",
@@ -126,7 +123,7 @@ func (s *stepStore) GetStepsByTracingIds(tracingIds []string) ([]tracing.Enriche
 		var t tracing.EnrichedStep
 		err = rows.Scan(
 			&t.Step.TracingID,
-			&t.Step.DeviceId,
+			&t.Step.DeviceID,
 			&t.Step.StepIndex,
 			&t.Step.StepsRemaining,
 			&t.Step.StartTime,

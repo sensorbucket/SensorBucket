@@ -27,9 +27,9 @@ var (
 	DB_DSN                      = env.Must("DB_DSN")
 	HTTP_ADDR                   = env.Could("HTTP_ADDR", ":3000")
 	HTTP_BASE                   = env.Could("HTTP_BASE", "http://localhost:3000/api")
-	AMQP_HOST                   = env.Could("AMQP_HOST", "")
-	AMQP_QUEUE_PIPELINEMESSAGES = env.Could("AMQP_QUEUE_PIPELINEMESSAGES", "")
-	AMQP_QUEUE_ERRORS           = env.Could("AMQP_QUEUE_ERRORS", "")
+	AMQP_HOST                   = env.Must("AMQP_HOST")
+	AMQP_QUEUE_PIPELINEMESSAGES = env.Must("AMQP_QUEUE_PIPELINEMESSAGES")
+	AMQP_QUEUE_ERRORS           = env.Must("AMQP_QUEUE_ERRORS")
 	AMQP_QUEUE_INGRESS          = env.Could("AMQP_QUEUE_INGRESS", "archive-ingress")
 	AMQP_XCHG_INGRESS           = env.Could("AMQP_XCHG_INGRESS", "ingress")
 	AMQP_XCHG_INGRESS_TOPIC     = env.Could("AMQP_XCHG_INGRESS_TOPIC", "ingress.*")
@@ -88,7 +88,6 @@ func main() {
 	defer cancelTO()
 
 	// Shutdown transports
-	mqConn.Shutdown()
 	mqConn.Shutdown()
 
 	log.Println("Shutdown complete")

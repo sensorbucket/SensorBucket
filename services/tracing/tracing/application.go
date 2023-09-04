@@ -12,7 +12,7 @@ import (
 
 type StepStore interface {
 	UpsertStep(step Step, withError bool) error
-	GetStepsByTracingIds([]string) ([]EnrichedStep, error)
+	GetStepsByTracingIDs([]string) ([]EnrichedStep, error)
 	QueryTraces(filter Filter, r pagination.Request) (*pagination.Page[string], error)
 }
 
@@ -26,41 +26,55 @@ type Service struct {
 	stepStore StepStore
 }
 
-func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message) error {
+func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message, time time.Time) error {
+	if len(pipelineMessage.PipelineSteps)-(int(pipelineMessage.StepIndex+1)) < 0 {
+		return fmt.Errorf("steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d)",
+			len(pipelineMessage.PipelineSteps),
+			pipelineMessage.StepIndex,
+		)
+	}
+
 	step := Step{
 		TracingID: pipelineMessage.ID,
 		StepIndex: pipelineMessage.StepIndex,
 
 		// We have to add 1 to the stepindex to get the actual steps remaining
-		StepsRemaining: int64(len(pipelineMessage.PipelineSteps) - (int(pipelineMessage.StepIndex + 1))),
+		StepsRemaining: uint64(len(pipelineMessage.PipelineSteps) - (int(pipelineMessage.StepIndex + 1))),
 
 		// The timestamp is set by the mq when it is send to the queue. The next step's starttime can be used to deduce the processing time between the 2 steps
 		// this duration consists of: Time in Queue and the Processing Time in the worker
-		StartTime: pipelineMessage.Timestamp,
+		StartTime: time,
 	}
 
 	if pipelineMessage.Device != nil {
-		step.DeviceId = &pipelineMessage.Device.ID
+		step.DeviceID = &pipelineMessage.Device.ID
 	}
 
 	return s.stepStore.UpsertStep(step, false)
 }
 
-func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError) error {
+func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError, time time.Time) error {
+	if len(errorMessage.ReceivedByWorker.PipelineSteps)-(int(errorMessage.ReceivedByWorker.StepIndex+1)) < 0 {
+		return fmt.Errorf("steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d)",
+			len(errorMessage.ReceivedByWorker.PipelineSteps),
+			errorMessage.ReceivedByWorker.StepIndex,
+		)
+	}
+
 	step := Step{
 		TracingID:      errorMessage.ReceivedByWorker.ID,
 		StepIndex:      errorMessage.ReceivedByWorker.StepIndex,
-		StepsRemaining: int64(len(errorMessage.ReceivedByWorker.PipelineSteps) - (int(errorMessage.ReceivedByWorker.StepIndex + 1))),
-		StartTime:      errorMessage.ReceivedByWorker.Timestamp,
+		StepsRemaining: uint64(len(errorMessage.ReceivedByWorker.PipelineSteps) - (int(errorMessage.ReceivedByWorker.StepIndex + 1))),
+		StartTime:      time,
 		Error:          &errorMessage.Error,
 	}
 
 	if errorMessage.ReceivedByWorker.Device != nil {
-		step.DeviceId = &errorMessage.ReceivedByWorker.Device.ID
+		step.DeviceID = &errorMessage.ReceivedByWorker.Device.ID
 	}
 
 	if errorMessage.ProcessingAttempt.Device != nil {
-		step.DeviceId = &errorMessage.ProcessingAttempt.Device.ID
+		step.DeviceID = &errorMessage.ProcessingAttempt.Device.ID
 	}
 
 	return s.stepStore.UpsertStep(step, true)
@@ -74,14 +88,15 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 	}
 
 	// Prepare the correctly ordered result map
-	// TODO: does this function keep the order of the list?
 	grouped := lo.SliceToMap(filteredTraces.Data, func(tracingId string) (string, []EnrichedStep) {
 		return tracingId, []EnrichedStep{}
 	})
 	fmt.Printf("grouped: %v\n", len(grouped))
 
+	// TODO: this is not a maintainable solution, the second query might receive a thousand values in the 'IN' clause
+
 	// Now enrich the trace data with the step data
-	steps, err := s.stepStore.GetStepsByTracingIds(filteredTraces.Data)
+	steps, err := s.stepStore.GetStepsByTracingIDs(filteredTraces.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +116,7 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 			TracingId: key,
 			Status:    asEnriched.TotalStatus().String(),
 			StartTime: asEnriched.TotalStartTime(),
-			DeviceId:  asEnriched.DeviceId(),
+			DeviceId:  asEnriched.DeviceID(),
 
 			// The EnrichedSteps also have to be updated to a DTO object
 			Steps: lo.Map(asEnriched.AllSteps(), func(val EnrichedStep, _ int) StepDTO {
@@ -134,7 +149,7 @@ type Filter struct {
 type TraceDTO struct {
 	TracingId string    `json:"tracing_id"`
 	DeviceId  *int64    `json:"device_id"`
-	StartTime int64     `json:"start_time"`
+	StartTime time.Time `json:"start_time"`
 	Status    string    `json:"status"`
 	Steps     []StepDTO `json:"steps"`
 }

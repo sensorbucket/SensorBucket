@@ -1,6 +1,0 @@
-BEGIN;
-
-   ALTER TABLE steps
-   ADD COLUMN device_id BIGINT;
-
-COMMIT;
