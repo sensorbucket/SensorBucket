@@ -13,6 +13,7 @@ import (
 var d = schema.NewDecoder()
 
 func init() {
+	d.IgnoreUnknownKeys(true)
 	d.RegisterConverter(json.RawMessage{}, convertJSON)
 	d.RegisterConverter(uuid.UUID{}, convertUUID)
 }

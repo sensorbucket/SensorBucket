@@ -1,0 +1,124 @@
+{% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
+{% import "fmt" %}
+
+{% func DeviceDetailBlock(device devices.Device) %}
+    <div class="grid grid-cols-3 gap-x-8 gap-y-3 [&>*]:min-h-[2rem] text-sm">
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Device Code</small>
+            <span>{%s device.Code %}</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Device ID</small>
+            <span>{%dl device.ID %}</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Organisation</small>
+            <span>{%s device.Organisation %}</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Sensor Count</small>
+            <span>{%s fmt.Sprintf("Has %d sensors", len(device.Sensors)) %}</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">State</small>
+            <span>
+            {% switch device.State %}
+            {% case devices.DeviceStateUnknown %}
+            Unknown
+            {% case devices.DeviceEnabled %}
+            Enabled
+            {% case devices.DeviceDisabled %}
+            Disabled
+            {% endswitch %}
+            </span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Created at</small>
+            <span>{%s device.CreatedAt.Format("Mon, 02 Jan 2006") %}</span>
+        </div>
+        <div class="flex flex-col col-span-full">
+            <small class="text-xs font-semibold text-slate-500">Description</small>
+            <span>{%s device.Description %}</span>
+        </div>
+        <div class="flex flex-col col-span-full">
+            <small class="text-xs font-semibold text-slate-500">Location (Latitude, Longitude, Altitude)</small>
+            <div class="grid grid-cols-3 items-center">
+                {% if device.Latitude != nil && device.Longitude != nil %}
+                <span>{%f.3 *device.Latitude %}</span>
+                <span>{%f.3 *device.Longitude %}</span>
+                {% else %}
+                <span>No latitude</span>
+                <span>No longitude</span>
+                {% endif %}
+                {% if device.Altitude != nil %}
+                <span>{%f.3 *device.Altitude %}</span>
+                {% endif %}
+                <span class="col-span-full">{%s device.LocationDescription %}</span>
+            </div>
+        </div>
+        <div class="flex flex-col col-span-full">
+            <small class="text-xs font-semibold text-slate-500">Properties</small>
+            <span>{%s string(device.Properties) %}</span>
+        </div>
+    </div>
+{% endfunc %}
+
+{% func SensorDetailBlock(sensor devices.Sensor) %}
+    <div class="grid grid-cols-3 gap-x-8 gap-y-3 [&>*]:min-h-[2rem] text-sm">
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Sensor ID</small>
+            <span>{%dl sensor.ID %}</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Sensor Code</small>
+            <span>{%s sensor.Code %}</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Sensor Brand</small>
+            <span>{%s sensor.Brand %}</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Archive Time</small>
+            <span>
+            {% if sensor.ArchiveTime != nil %}
+                {%d *sensor.ArchiveTime %} days
+            {% else %}
+                Not set
+            {% endif %}
+            </span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">Parent Device ID</small>
+            <span>{%dl sensor.DeviceID %}</span>
+        </div>
+        <div class="flex flex-col">
+            <small class="text-xs font-semibold text-slate-500">External ID</small>
+            <span>{%s sensor.ExternalID %}</span>
+        </div>
+        <div class="flex flex-col col-span-full">
+            <small class="text-xs font-semibold text-slate-500">Properties</small>
+            <span>{%s string(sensor.Properties) %}</span>
+        </div>
+    </div>
+{% endfunc %}
+
+{% func renderDeviceMap(device devices.Device) %}
+    {% if device.Latitude != nil && device.Longitude != nil %}
+        <div
+            class="w-full h-96" 
+            id="device-map"
+            hx-ext="leaflet" 
+            data-latitude="{%f *device.Latitude %}"
+            data-longitude="{%f *device.Longitude %}"
+            data-zoom="11"
+        >
+            <map-marker
+                latitude="{%f *device.Latitude %}"
+                longitude="{%f *device.Longitude %}"
+                label="{%s device.Code %}"
+            ></map-marker>
+        </div>
+    {% else %}
+        <span> Device has no location set </span>
+    {% endif %}
+{% endfunc %}

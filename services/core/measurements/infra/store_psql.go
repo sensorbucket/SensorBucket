@@ -9,6 +9,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 )
@@ -138,9 +139,14 @@ func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Req
 		"measurement_expiration",
 		"created_at",
 	).
-		From("measurements").
-		Where("measurement_timestamp >= ?", query.Start).
-		Where("measurement_timestamp <= ?", query.End)
+		From("measurements")
+
+	if !query.Start.IsZero() {
+		q = q.Where("measurement_timestamp >= ?", query.Start)
+	}
+	if !query.End.IsZero() {
+		q = q.Where("measurement_timestamp <= ?", query.End)
+	}
 
 	if len(query.DeviceIDs) > 0 {
 		q = q.Where(sq.Eq{"device_id": query.DeviceIDs})
@@ -153,7 +159,10 @@ func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Req
 	}
 
 	// pagination
-	cursor := pagination.GetCursor[MeasurementQueryPage](r)
+	cursor, err := pagination.GetCursor[MeasurementQueryPage](r)
+	if err != nil {
+		return nil, fmt.Errorf("Query Measurements, error getting pagination cursor: %w", err)
+	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, err
@@ -268,7 +277,7 @@ type datastreamPageQuery struct {
 
 func (s *MeasurementStorePSQL) ListDatastreams(filter measurements.DatastreamFilter, r pagination.Request) (*pagination.Page[measurements.Datastream], error) {
 	var err error
-	var ds = []measurements.Datastream{}
+	ds := []measurements.Datastream{}
 	q := pq.Select(
 		"id", "description", "sensor_id", "observed_property", "unit_of_measurement", "created_at",
 	).From("datastreams")
@@ -277,7 +286,10 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter measurements.DatastreamFil
 		q = q.Where(sq.Eq{"sensor_id": filter.Sensor})
 	}
 
-	cursor := pagination.GetCursor[datastreamPageQuery](r)
+	cursor, err := pagination.GetCursor[datastreamPageQuery](r)
+	if err != nil {
+		return nil, fmt.Errorf("list datastreams, error getting pagination cursor: %w", err)
+	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, err
@@ -308,4 +320,22 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter measurements.DatastreamFil
 
 	page := pagination.CreatePageT(ds, cursor)
 	return &page, nil
+}
+
+func (s *MeasurementStorePSQL) GetDatastream(id uuid.UUID) (*measurements.Datastream, error) {
+	var ds measurements.Datastream
+	idB, _ := id.MarshalBinary()
+	err := s.db.Get(&ds, `
+		SELECT 
+        id, description, sensor_id, observed_property, unit_of_measurement, created_at
+        FROM datastreams
+        WHERE id=$1 
+    `, idB)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, measurements.ErrDatastreamNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &ds, nil
 }

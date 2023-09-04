@@ -9,6 +9,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/schema v1.2.0
+	github.com/gorilla/websocket v1.5.0
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/rabbitmq/amqp091-go v1.3.4
@@ -16,6 +17,7 @@ require (
 	github.com/samber/lo v1.37.0
 	github.com/stretchr/testify v1.8.4
 	github.com/testcontainers/testcontainers-go v0.23.0
+	github.com/valyala/quicktemplate v1.7.0
 )
 
 require golang.org/x/sys v0.11.0 // indirect
@@ -63,6 +65,7 @@ require (
 	github.com/lib/pq v1.10.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.9.2 // indirect
+	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
