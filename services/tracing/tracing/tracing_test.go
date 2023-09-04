@@ -2,6 +2,7 @@ package tracing
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -9,13 +10,14 @@ import (
 func TestAllStepsAddsCorrectRemainingSteps(t *testing.T) {
 	// Arrange
 	device := asPointer(int64(542))
+	startT := time.Now()
 	enriched := EnrichedSteps{
 		EnrichedStep{
 			Step: Step{
 				TracingID:      "blabla",
 				StepIndex:      0,
 				StepsRemaining: 5,
-				StartTime:      5432,
+				StartTime:      startT,
 			},
 			Status:                  Success,
 			HighestCollectiveStatus: Failed,
@@ -25,7 +27,7 @@ func TestAllStepsAddsCorrectRemainingSteps(t *testing.T) {
 				TracingID:      "blabla",
 				StepIndex:      1,
 				StepsRemaining: 4,
-				StartTime:      434234324,
+				StartTime:      startT.Add(time.Second * 10),
 				DeviceID:       device,
 			},
 			Status: Success,
@@ -35,7 +37,7 @@ func TestAllStepsAddsCorrectRemainingSteps(t *testing.T) {
 				TracingID:      "blabla",
 				StepIndex:      2,
 				StepsRemaining: 3,
-				StartTime:      3253254354,
+				StartTime:      startT.Add(time.Second * 10),
 				Error:          asPointer("some weird error occurred!!"),
 			},
 			Status: Failed,
@@ -47,7 +49,7 @@ func TestAllStepsAddsCorrectRemainingSteps(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, Failed, all.TotalStatus())
-	assert.Equal(t, int64(5432), all.TotalStartTime())
+	assert.Equal(t, startT, all.TotalStartTime())
 	assert.Equal(t, device, all.DeviceID())
 	assert.Equal(t,
 		append(enriched,
