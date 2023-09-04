@@ -235,7 +235,7 @@ func devicesStreamMap() http.HandlerFunc {
 				// Start fetching pages of devices and stream them to the client
 				devices, cursor, err := getDevicePage(sensorGroupID, nextCursor)
 				if err != nil {
-					ws.Close()
+					log.Printf("Failed to fetch devices for client: %v\n", err)
 					return
 				}
 
@@ -367,7 +367,7 @@ func overviewDatastreamStream() http.HandlerFunc {
 				// Start fetching pages of measurements and stream them to the client
 				measurements, cursor, err := getMeasurementsPage(datastreamID, nextCursor)
 				if err != nil {
-					ws.Close()
+					log.Printf("Failed to fetch devices for client: %v\n", err)
 					return
 				}
 
