@@ -45,7 +45,10 @@ func (s *stepStore) QueryTraces(filter tracing.Filter, r pagination.Request) (*p
 	var err error
 
 	// Pagination
-	cursor := pagination.GetCursor[TraceQueryPage](r)
+	cursor, err := pagination.GetCursor[TraceQueryPage](r)
+	if err != nil {
+		return nil, err
+	}
 
 	// TODO: should this be distinct?
 	q := sq.Select().Distinct().From("archived_ingress_dtos archive").RightJoin("enriched_steps_view steps on archive.tracing_id = steps.tracing_id")
