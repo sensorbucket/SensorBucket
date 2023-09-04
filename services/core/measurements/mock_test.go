@@ -4,6 +4,7 @@
 package measurements_test
 
 import (
+	"github.com/google/uuid"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	"sync"
@@ -24,6 +25,9 @@ var _ measurements.Store = &StoreMock{}
 //			},
 //			FindDatastreamFunc: func(sensorID int64, observedProperty string) (*measurements.Datastream, error) {
 //				panic("mock out the FindDatastream method")
+//			},
+//			GetDatastreamFunc: func(id uuid.UUID) (*measurements.Datastream, error) {
+//				panic("mock out the GetDatastream method")
 //			},
 //			InsertFunc: func(measurement measurements.Measurement) error {
 //				panic("mock out the Insert method")
@@ -46,6 +50,9 @@ type StoreMock struct {
 
 	// FindDatastreamFunc mocks the FindDatastream method.
 	FindDatastreamFunc func(sensorID int64, observedProperty string) (*measurements.Datastream, error)
+
+	// GetDatastreamFunc mocks the GetDatastream method.
+	GetDatastreamFunc func(id uuid.UUID) (*measurements.Datastream, error)
 
 	// InsertFunc mocks the Insert method.
 	InsertFunc func(measurement measurements.Measurement) error
@@ -70,6 +77,11 @@ type StoreMock struct {
 			// ObservedProperty is the observedProperty argument value.
 			ObservedProperty string
 		}
+		// GetDatastream holds details about calls to the GetDatastream method.
+		GetDatastream []struct {
+			// ID is the id argument value.
+			ID uuid.UUID
+		}
 		// Insert holds details about calls to the Insert method.
 		Insert []struct {
 			// Measurement is the measurement argument value.
@@ -92,6 +104,7 @@ type StoreMock struct {
 	}
 	lockCreateDatastream sync.RWMutex
 	lockFindDatastream   sync.RWMutex
+	lockGetDatastream    sync.RWMutex
 	lockInsert           sync.RWMutex
 	lockListDatastreams  sync.RWMutex
 	lockQuery            sync.RWMutex
@@ -162,6 +175,38 @@ func (mock *StoreMock) FindDatastreamCalls() []struct {
 	mock.lockFindDatastream.RLock()
 	calls = mock.calls.FindDatastream
 	mock.lockFindDatastream.RUnlock()
+	return calls
+}
+
+// GetDatastream calls GetDatastreamFunc.
+func (mock *StoreMock) GetDatastream(id uuid.UUID) (*measurements.Datastream, error) {
+	if mock.GetDatastreamFunc == nil {
+		panic("StoreMock.GetDatastreamFunc: method is nil but Store.GetDatastream was just called")
+	}
+	callInfo := struct {
+		ID uuid.UUID
+	}{
+		ID: id,
+	}
+	mock.lockGetDatastream.Lock()
+	mock.calls.GetDatastream = append(mock.calls.GetDatastream, callInfo)
+	mock.lockGetDatastream.Unlock()
+	return mock.GetDatastreamFunc(id)
+}
+
+// GetDatastreamCalls gets all the calls that were made to GetDatastream.
+// Check the length with:
+//
+//	len(mockedStore.GetDatastreamCalls())
+func (mock *StoreMock) GetDatastreamCalls() []struct {
+	ID uuid.UUID
+} {
+	var calls []struct {
+		ID uuid.UUID
+	}
+	mock.lockGetDatastream.RLock()
+	calls = mock.calls.GetDatastream
+	mock.lockGetDatastream.RUnlock()
 	return calls
 }
 

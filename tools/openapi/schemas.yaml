@@ -71,6 +71,10 @@ updateDeviceRequest:
 
 device:
   type: object
+  required:
+    - id
+    - code
+    - organisation
   properties:
     id:
       type: number

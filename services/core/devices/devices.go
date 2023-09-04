@@ -77,6 +77,7 @@ type Sensor struct {
 	ID          int64           `json:"id"`
 	Code        string          `json:"code"`
 	Description string          `json:"description"`
+	DeviceID    int64           `json:"device_id" db:"device_id"`
 	Brand       string          `json:"brand"`
 	ArchiveTime *int            `json:"archive_time" db:"archive_time"`
 	ExternalID  string          `json:"external_id" db:"external_id"`
@@ -181,6 +182,7 @@ func (d *Device) AddSensor(opts NewSensorOpts) error {
 	if err != nil {
 		return err
 	}
+	sensor.DeviceID = d.ID
 
 	// Append sensor
 	d.Sensors = append(d.Sensors, *sensor)

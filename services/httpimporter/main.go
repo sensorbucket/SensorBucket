@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/rs/cors"
@@ -30,7 +29,7 @@ var (
 
 func main() {
 	if err := Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Fatal error: %v", err)
+		panic(fmt.Sprintf("Fatal error: %v", err))
 	}
 }
 
