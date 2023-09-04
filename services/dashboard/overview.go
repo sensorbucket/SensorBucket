@@ -344,7 +344,6 @@ func overviewDatastreamStream() http.HandlerFunc {
 					log.Printf("Failed to fetch devices for client: %v\n", err)
 					return
 				}
-				log.Printf("%d measurements, %s cursor, %v err", len(measurements), cursor, err)
 
 				writer, err := ws.NextWriter(websocket.BinaryMessage)
 				if err != nil {
