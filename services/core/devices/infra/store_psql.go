@@ -3,6 +3,7 @@ package deviceinfra
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -97,7 +98,10 @@ func (s *PSQLStore) ListSensors(p pagination.Request) (*pagination.Page[devices.
 		"brand", "created_at", "is_fallback",
 	).From("sensors")
 
-	cursor := pagination.GetCursor[SensorPaginationQuery](p)
+	cursor, err := pagination.GetCursor[SensorPaginationQuery](p)
+	if err != nil {
+		return nil, fmt.Errorf("list sensors, error getting pagination cursor: %w", err)
+	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, err

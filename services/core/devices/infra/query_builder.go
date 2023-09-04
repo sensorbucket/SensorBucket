@@ -44,7 +44,10 @@ func (b deviceQueryBuilder) WithPagination(p pagination.Request) deviceQueryBuil
 	if b.err != nil {
 		return b
 	}
-	b.cursor = pagination.GetCursor[DevicePaginationQuery](p)
+	b.cursor, b.err = pagination.GetCursor[DevicePaginationQuery](p)
+	if b.err != nil {
+		b.err = fmt.Errorf("list devices, error getting pagination cursor: %w", b.err)
+	}
 	return b
 }
 

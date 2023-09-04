@@ -330,9 +330,11 @@ func overviewDatastreamStream() http.HandlerFunc {
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
-	getMeasurementsPage := func(dsID, cursor string) ([]measurements.Measurement, string, error) {
+	getMeasurementsPage := func(dsID string, start, end time.Time, cursor string) ([]measurements.Measurement, string, error) {
 		q := url.Values{}
 		q.Set("datastream", dsID)
+		q.Set("start", start.Format(time.RFC3339))
+		q.Set("end", end.Format(time.RFC3339))
 		q.Set("cursor", cursor)
 		res, err := http.Get("http://core:3000/measurements?" + q.Encode())
 		if err != nil {
@@ -350,10 +352,29 @@ func overviewDatastreamStream() http.HandlerFunc {
 		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
 			return nil, "", err
 		}
-		return resBody.Data, resBody.Links.Next, nil
+
+		nextCursor := ""
+		if resBody.Links.Next != "" {
+			next, err := url.Parse(resBody.Links.Next)
+			if err != nil {
+				return nil, "", errors.New("stream datastream, invalid next link in paginated response")
+			}
+			nextCursor = next.Query().Get("cursor")
+		}
+
+		return resBody.Data, nextCursor, nil
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		datastreamID := chi.URLParam(r, "id")
+		start, err := time.Parse(time.RFC3339, r.URL.Query().Get("start"))
+		if err != nil {
+			web.HTTPError(w, web.NewError(http.StatusBadRequest, "Start parameter is not ISO8601/RFC3339", ""))
+		}
+		end, err := time.Parse(time.RFC3339, r.URL.Query().Get("end"))
+		if err != nil {
+			web.HTTPError(w, web.NewError(http.StatusBadRequest, "End parameter is not ISO8601/RFC3339", ""))
+		}
+
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			web.HTTPError(w, err)
@@ -365,11 +386,12 @@ func overviewDatastreamStream() http.HandlerFunc {
 			defer ws.Close()
 			for {
 				// Start fetching pages of measurements and stream them to the client
-				measurements, cursor, err := getMeasurementsPage(datastreamID, nextCursor)
+				measurements, cursor, err := getMeasurementsPage(datastreamID, start, end, nextCursor)
 				if err != nil {
 					log.Printf("Failed to fetch devices for client: %v\n", err)
 					return
 				}
+				log.Printf("%d measurements, %s cursor, %v err", len(measurements), cursor, err)
 
 				for _, point := range measurements {
 					writer, err := ws.NextWriter(websocket.BinaryMessage)

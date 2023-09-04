@@ -159,7 +159,10 @@ func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Req
 	}
 
 	// pagination
-	cursor := pagination.GetCursor[MeasurementQueryPage](r)
+	cursor, err := pagination.GetCursor[MeasurementQueryPage](r)
+	if err != nil {
+		return nil, fmt.Errorf("Query Measurements, error getting pagination cursor: %w", err)
+	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, err
@@ -283,7 +286,10 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter measurements.DatastreamFil
 		q = q.Where(sq.Eq{"sensor_id": filter.Sensor})
 	}
 
-	cursor := pagination.GetCursor[datastreamPageQuery](r)
+	cursor, err := pagination.GetCursor[datastreamPageQuery](r)
+	if err != nil {
+		return nil, fmt.Errorf("list datastreams, error getting pagination cursor: %w", err)
+	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, err

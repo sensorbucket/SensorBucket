@@ -114,7 +114,10 @@ func (s *PSQLSensorGroupStore) List(p pagination.Request) (*pagination.Page[devi
 	q := pq.Select("sg.id", "sg.name", "sg.description", "sgs.sensor_id").From("sensor_groups sg").
 		LeftJoin("sensor_groups_sensors sgs on sgs.sensor_group_id = sg.id")
 
-	cursor := pagination.GetCursor[SensorGroupPaginationQuery](p)
+	cursor, err := pagination.GetCursor[SensorGroupPaginationQuery](p)
+	if err != nil {
+		return nil, fmt.Errorf("list sensorsGroups, error getting pagination cursor: %w", err)
+	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, err
