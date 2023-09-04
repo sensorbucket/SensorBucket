@@ -10,8 +10,8 @@
             {%= RenderMap(p.SensorGroup) %}
         </div>
 
-        <div class="bg-white border rounded-md min-h-96 max-h-[90vh] lg:max-h-[50vh] overflow-y-auto" id="device-table-wrapper">
-            {%= RenderDeviceTable(p.Devices) %}
+        <div class="bg-white border rounded-md min-h-96 max-h-[90vh] lg:max-h-[50vh] overflow-y-auto">
+            {%= RenderDeviceTable(p.Devices, p.DevicesNextPage) %}
         </div>
     </div>
 {% endfunc %}
@@ -42,8 +42,8 @@
         {% else %}
             <a
                 href="/overview"
-                hx-get="/overview/devices/table"
-                hx-target="#device-table-wrapper"
+                hx-delete="/overview/sensor-groups"
+                hx-target="#device-table"
                 class="w-full px-2 py-1 border rounded-md text-primary-600 flex justify-between items-center"
             >
                 {%s sensorGroup.Name %}
@@ -58,16 +58,16 @@
         <li>
             <a
                 href="?sensor_group={%dl sg.ID %}"
-                hx-get="/overview/devices/table?sensor_group={%dl sg.ID %}"
-                hx-target="#device-table-wrapper"
+                hx-post="/overview/sensor-groups?sensor_group={%dl sg.ID %}"
+                hx-target="#device-table"
                 class="block hover:bg-primary-100 p-2"
             >{%s sg.Name %}</a>
         </li>
     {% endfor %}
 {% endfunc %}
 
-{% func RenderDeviceTable(devices []devices.Device) %}
-    <table class="w-full text-sm border-separate border-spacing-0">
+{% func RenderDeviceTable(devices []devices.Device, nextPage string) %}
+    <table class="w-full text-sm border-separate border-spacing-0" id="device-table">
         <thead class="text-left text-slate-500 sticky top-0 bg-white">
             <tr class="h-10">
                 <th class="font-normal border-b align-middle px-4">
@@ -85,19 +85,32 @@
             </tr>
         </thead>
         <tbody>
-            {% for _, dev := range devices %}
-            <tr class="hover:bg-slate-50 group">
-                <td class="px-4 h-10 border-b">{%dl dev.ID %}</td>
-                <td class="border-b"><a
-                    class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-                    href="/overview/devices/{%dl dev.ID %}"
-                >{%s dev.Code %}</a></td>
-                <td class="px-4 h-10 border-b">{%s dev.Description %}</td>
-                <td class="px-4 h-10 border-b">{%s dev.LocationDescription %}</td>
-            </tr>
-            {% endfor %}
+            {%= RenderDeviceTableRows(devices, nextPage) %}
         </tbody>
     </table>
+{% endfunc %}
+
+{% func RenderDeviceTableRows(devices []devices.Device, nextPage string) %}
+    {% for ix, dev := range devices %}
+    <tr
+        class="hover:bg-slate-50 group"
+        {% if nextPage != "" && ix == len(devices)-1 %}
+        hx-trigger="revealed"
+        hx-target="this"
+        hx-swap="afterend"
+        hx-get="{%s nextPage %}"
+        {% endif %}
+    >
+        <td class="px-4 h-10 border-b">{%dl dev.ID %}</td>
+        <td class="border-b"><a
+            class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
+            href="/overview/devices/{%dl dev.ID %}"
+            hx-target="main"
+        >{%s dev.Code %}</a></td>
+        <td class="px-4 h-10 border-b">{%s dev.Description %}</td>
+        <td class="px-4 h-10 border-b">{%s dev.LocationDescription %}</td>
+    </tr>
+    {% endfor %}
 {% endfunc %}
 
 {% func RenderMap(sensorGroup *devices.SensorGroup) %}
@@ -172,6 +185,7 @@
 type DeviceListPage struct {
     BasePage
     Devices []devices.Device
+    DevicesNextPage string
     SensorGroup *devices.SensorGroup
 }
 %}

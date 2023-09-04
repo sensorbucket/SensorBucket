@@ -2,7 +2,7 @@
 {% import "sensorbucket.nl/sensorbucket/services/core/measurements" %}
 
 {% func (p *SensorDetailPage) Body() %}
-    <div class="flex gap-3 text-sm my-4 italic items-center">
+    <div class="flex gap-3 text-sm my-4 italic items-center" hx-target="main">
         <a href="/overview" class="hover:underline text-sky-600">Devices</a>
         <span>/</span>
         <a href="/overview/devices/{%dl p.Device.ID%}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
@@ -51,6 +51,7 @@
                     {% for _, datastream := range p.Datastreams %}
                     <tr class="hover:bg-slate-50 group">
                         <td class="border-b"><a
+                            hx-target="main"
                             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
                             href="/overview/datastreams/{%s datastream.ID.String() %}"
                         >{%s datastream.ID.String() %}</a></td>

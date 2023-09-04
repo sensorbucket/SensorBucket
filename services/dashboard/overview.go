@@ -33,36 +33,63 @@ func createOverviewPageHandler() http.Handler {
 	r.Get("/", deviceListPage())
 	r.Get("/devices/stream-map", devicesStreamMap())
 	r.Get("/devices/table", func(w http.ResponseWriter, r *http.Request) {
+		res, err := http.Get("http://core:3000/devices?" + r.URL.Query().Encode())
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		var resBody pagination.APIResponse[devices.Device]
+		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		nextCursor := ""
+		if resBody.Links.Next != "" {
+			next, err := url.Parse(resBody.Links.Next)
+			if err != nil {
+				err = errors.New("stream datastream, invalid next link in paginated response")
+				web.HTTPError(w, err)
+			}
+			nextCursor = "/overview/devices/table?cursor=" + next.Query().Get("cursor")
+		}
+		views.WriteRenderDeviceTable(w, resBody.Data, nextCursor)
+	})
+	r.With(resolveDevice).Get("/devices/{device_id}", deviceDetailPage())
+	r.With(resolveDevice).With(resolveSensor).Get("/devices/{device_id}/sensors/{sensor_code}", sensorDetailPage())
+
+	r.Get("/sensor-groups", searchSensorGroups())
+	r.Post("/sensor-groups", func(w http.ResponseWriter, r *http.Request) {
 		var err error
 		sgID := r.URL.Query().Get("sensor_group")
 		var sg *devices.SensorGroup
 		if sgID != "" {
-			sg, err = getSG(sgID)
+			sg, err = getSensorGroup(sgID)
 			if err != nil {
 				web.HTTPError(w, err)
 				return
 			}
 		}
-		url := "http://core:3000/devices?" + r.URL.Query().Encode()
-		res, err := http.Get(url)
+		devices, cursor, err := getDevices("", sgID)
 		if err != nil {
-			web.HTTPError(w, err)
-			return
-		}
-		var resBody web.APIResponse[[]devices.Device]
-		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
 			web.HTTPError(w, err)
 			return
 		}
 		w.Header().Set("hx-push-url", "/overview?"+r.URL.Query().Encode())
 		w.Header().Set("hx-trigger-after-settle", "newDeviceList")
 		views.WriteRenderFilters(w, sg, true)
-		views.WriteRenderDeviceTable(w, resBody.Data)
+		views.WriteRenderDeviceTable(w, devices, cursor)
 	})
-	r.With(resolveDevice).Get("/devices/{device_id}", deviceDetailPage())
-	r.With(resolveDevice).With(resolveSensor).Get("/devices/{device_id}/sensors/{sensor_code}", sensorDetailPage())
-
-	r.Get("/sensor-groups", searchSensorGroups())
+	r.Delete("/sensor-groups", func(w http.ResponseWriter, r *http.Request) {
+		devices, cursor, err := getDevices("", "")
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		w.Header().Set("hx-push-url", "/overview?"+r.URL.Query().Encode())
+		w.Header().Set("hx-trigger-after-settle", "newDeviceList")
+		views.WriteRenderFilters(w, nil, true)
+		views.WriteRenderDeviceTable(w, devices, cursor)
+	})
 
 	r.Get("/datastreams/{id}", overviewDatastream())
 	r.Get("/datastreams/{id}/stream", overviewDatastreamStream())
@@ -93,52 +120,29 @@ func searchSensorGroups() http.HandlerFunc {
 	}
 }
 
-func getSG(id string) (*devices.SensorGroup, error) {
-	res, err := http.Get("http://core:3000/sensor-groups/" + id)
-	if err != nil {
-		return nil, err
-	}
-	if res.StatusCode != 200 {
-		return nil, errors.New("could not get SensorGroup")
-	}
-	var resBody web.APIResponse[devices.SensorGroup]
-	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
-		return nil, err
-	}
-
-	return &resBody.Data, nil
-}
-
 func deviceListPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var err error
 		page := &views.DeviceListPage{}
-
 		sensorGroupID := r.URL.Query().Get("sensor_group")
 		if sensorGroupID != "" {
-			sg, err := getSG(sensorGroupID)
+			page.SensorGroup, err = getSensorGroup(sensorGroupID)
 			if err != nil {
 				web.HTTPError(w, err)
 				return
 			}
-			page.SensorGroup = sg
 		}
 
-		q := url.Values{}
-		if page.SensorGroup != nil {
-			q.Set("sensor_group", strconv.FormatInt(page.SensorGroup.ID, 10))
-		}
-		url := "http://core:3000/devices?" + q.Encode()
-		res, err := http.Get(url)
+		devices, cursor, err := getDevices("", sensorGroupID)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
-		var resBody web.APIResponse[[]devices.Device]
-		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
-			web.HTTPError(w, err)
-			return
+		page.Devices = devices
+
+		if cursor != "" {
+			page.DevicesNextPage = "/overview/devices/table?cursor=" + cursor
 		}
-		page.Devices = resBody.Data
 
 		if isHX(r) {
 			page.WriteBody(w)
@@ -196,31 +200,6 @@ func devicesStreamMap() http.HandlerFunc {
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
-
-	getDevicePage := func(sensorGroupID, cursor string) ([]devices.Device, string, error) {
-		q := url.Values{}
-		q.Set("cursor", cursor)
-		if sensorGroupID != "" {
-			q.Set("sensor_group", sensorGroupID)
-		}
-		res, err := http.Get("http://core:3000/devices?" + q.Encode())
-		if err != nil {
-			return nil, "", err
-		}
-		var resBody pagination.APIResponse[devices.Device]
-		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
-			return nil, "", err
-		}
-		nextCursor := ""
-		if resBody.Links.Next != "" {
-			next, err := url.Parse(resBody.Links.Next)
-			if err != nil {
-				return nil, "", errors.New("stream datastream, invalid next link in paginated response")
-			}
-			nextCursor = next.Query().Get("cursor")
-		}
-		return resBody.Data, nextCursor, nil
-	}
 	type Marker struct {
 		DeviceID  int64   `json:"device_id"`
 		Label     string  `json:"label"`
@@ -241,7 +220,7 @@ func devicesStreamMap() http.HandlerFunc {
 			var nextCursor string
 			for {
 				// Start fetching pages of devices and stream them to the client
-				devices, cursor, err := getDevicePage(sensorGroupID, nextCursor)
+				devices, cursor, err := getDevices(nextCursor, sensorGroupID)
 				if err != nil {
 					log.Printf("Failed to fetch devices for client: %v\n", err)
 					return
@@ -338,40 +317,6 @@ func overviewDatastreamStream() http.HandlerFunc {
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
-	getMeasurementsPage := func(dsID string, start, end time.Time, cursor string) ([]measurements.Measurement, string, error) {
-		q := url.Values{}
-		q.Set("datastream", dsID)
-		q.Set("start", start.Format(time.RFC3339))
-		q.Set("end", end.Format(time.RFC3339))
-		q.Set("cursor", cursor)
-		res, err := http.Get("http://core:3000/measurements?" + q.Encode())
-		if err != nil {
-			return nil, "", err
-		}
-		if res.StatusCode != 200 {
-			var apiError web.APIError
-			if err := json.NewDecoder(res.Body).Decode(&apiError); err != nil {
-				return nil, "", err
-			}
-			apiError.HTTPStatus = res.StatusCode
-			return nil, "", &apiError
-		}
-		var resBody pagination.APIResponse[measurements.Measurement]
-		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
-			return nil, "", err
-		}
-
-		nextCursor := ""
-		if resBody.Links.Next != "" {
-			next, err := url.Parse(resBody.Links.Next)
-			if err != nil {
-				return nil, "", errors.New("stream datastream, invalid next link in paginated response")
-			}
-			nextCursor = next.Query().Get("cursor")
-		}
-
-		return resBody.Data, nextCursor, nil
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		datastreamID := chi.URLParam(r, "id")
 		start, err := time.Parse(time.RFC3339, r.URL.Query().Get("start"))
@@ -401,13 +346,13 @@ func overviewDatastreamStream() http.HandlerFunc {
 				}
 				log.Printf("%d measurements, %s cursor, %v err", len(measurements), cursor, err)
 
+				writer, err := ws.NextWriter(websocket.BinaryMessage)
+				if err != nil {
+					log.Printf("cannot open writer for ws: %v\n", err)
+					return
+				}
+				defer writer.Close()
 				for _, point := range measurements {
-					writer, err := ws.NextWriter(websocket.BinaryMessage)
-					if err != nil {
-						log.Printf("cannot open writer for ws: %v\n", err)
-						return
-					}
-					defer writer.Close()
 					// Write to client
 					binary.Write(writer, binary.BigEndian, point.MeasurementTimestamp.UnixMilli())
 					binary.Write(writer, binary.BigEndian, point.MeasurementValue)
@@ -424,6 +369,78 @@ func overviewDatastreamStream() http.HandlerFunc {
 // =============
 // Helpers and middleware
 // =============
+
+func getCursor[T any](page pagination.APIResponse[T]) string {
+	if page.Links.Next == "" {
+		return ""
+	}
+	u, err := url.Parse(page.Links.Next)
+	if err != nil {
+		return ""
+	}
+	return u.Query().Get("cursor")
+}
+
+func getSensorGroup(id string) (*devices.SensorGroup, error) {
+	res, err := http.Get("http://core:3000/sensor-groups/" + id)
+	if err != nil {
+		return nil, err
+	}
+	if res.StatusCode != 200 {
+		return nil, errors.New("could not get SensorGroup")
+	}
+	var resBody web.APIResponse[devices.SensorGroup]
+	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+		return nil, err
+	}
+
+	return &resBody.Data, nil
+}
+
+func getDevices(cursor, sensorGroupID string) ([]devices.Device, string, error) {
+	q := url.Values{}
+	q.Set("cursor", cursor)
+	if sensorGroupID != "" {
+		q.Set("sensor_group", sensorGroupID)
+	}
+	res, err := http.Get("http://core:3000/devices?" + q.Encode())
+	if err != nil {
+		return nil, "", err
+	}
+	var resBody pagination.APIResponse[devices.Device]
+	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+		return nil, "", err
+	}
+	nextCursor := getCursor(resBody)
+	return resBody.Data, nextCursor, nil
+}
+
+func getMeasurementsPage(dsID string, start, end time.Time, cursor string) ([]measurements.Measurement, string, error) {
+	q := url.Values{}
+	q.Set("datastream", dsID)
+	q.Set("start", start.Format(time.RFC3339))
+	q.Set("end", end.Format(time.RFC3339))
+	q.Set("cursor", cursor)
+	res, err := http.Get("http://core:3000/measurements?" + q.Encode())
+	if err != nil {
+		return nil, "", err
+	}
+	if res.StatusCode != 200 {
+		var apiError web.APIError
+		if err := json.NewDecoder(res.Body).Decode(&apiError); err != nil {
+			return nil, "", err
+		}
+		apiError.HTTPStatus = res.StatusCode
+		return nil, "", &apiError
+	}
+	var resBody pagination.APIResponse[measurements.Measurement]
+	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
+		return nil, "", err
+	}
+
+	nextCursor := getCursor(resBody)
+	return resBody.Data, nextCursor, nil
+}
 
 func resolveDevice(next http.Handler) http.Handler {
 	getDevice := func(id int64) (*devices.Device, error) {

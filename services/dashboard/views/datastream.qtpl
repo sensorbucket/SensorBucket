@@ -4,7 +4,7 @@
 
 {% func (p *DatastreamPage) Body() %}
 <header class="flex justify-between items-center">
-    <div class="flex gap-3 text-sm my-4 italic items-center">
+    <div class="flex gap-3 text-sm my-4 italic items-center" hx-target="main">
         <a href="/overview" class="hover:underline text-sky-600">Devices</a>
         <span>/</span>
         <a href="/overview/devices/{%dl p.Device.ID%}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
@@ -108,22 +108,32 @@
                 reader.onload = function() {
                     const buffer = this.result;
                     const view = new DataView(buffer);
-
-                    // Get the timestamp and value
-                    const ts = Number(view.getBigUint64(0, false))/1000; // get timestamp from the first 8 bytes
-                    const val = view.getFloat64(8, false);  // get float64 value from the next 8 bytes
-
-                    // Prepend to the existing arrays
-                    x.unshift(ts);
-                    y.unshift(val);
+                    
+                    // Determine the number of points in the message
+                    const pointSize = 8 + 8; // 8 bytes for timestamp and 8 bytes for value
+                    const numPoints = buffer.byteLength / pointSize;
+                    
+                    // Loop through each point in the message
+                    for (let i = 0; i < numPoints; i++) {
+                        const offset = i * pointSize;
+                        
+                        // Get the timestamp and value
+                        const ts = Number(view.getBigUint64(offset, false)) / 1000; // get timestamp from the first 8 bytes
+                        const val = view.getFloat64(offset + 8, false); // get float64 value from the next 8 bytes
+                        
+                        // Prepend to the existing arrays
+                        x.unshift(ts);
+                        y.unshift(val);
+                    }
 
                     plot.setData([x, y]);
                 };
                 reader.readAsArrayBuffer(event.data);
-            }
+            };
         }
         function init() {
             const target = htmx.find("#chart")
+            target.innerHTML = ""
             const x = [];
             const y = [];
 

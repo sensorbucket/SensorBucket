@@ -226,7 +226,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
 	qw422016.N().S(`
 </head>
 
-<body class="min-h-full" hx-boost="true" hx-target="main">
+<body class="min-h-full" hx-boost="true">
     <sidebar class="w-screen lg:w-sidebar fixed lg:h-screen top-0 left-0 flex flex-col bg-secondary-600 z-[5000]">
         <header class="h-12 lg:h-header flex justify-between lg:flex-col lg:justify-end">
             <a class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="/overview"><img src="/static/logo-white.png" alt="SensorBucket" class="h-full" /></a>
@@ -337,7 +337,7 @@ func streamdebugHeaders(qw422016 *qt422016.Writer) {
 <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4/dist/ext/ws.js"></script>
 <script type="text/javascript" src="https://unpkg.com/hyperscript.org@0.9.11"></script>
 <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
-<script type="text/javascript" src="https://livejs.com/live.js"></script>
+<!--<script type="text/javascript" src="https://livejs.com/live.js"></script>-->
 `)
 //line services/dashboard/views/layout.qtpl:110
 }

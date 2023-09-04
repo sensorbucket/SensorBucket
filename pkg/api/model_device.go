@@ -20,10 +20,10 @@ var _ MappedNullable = &Device{}
 
 // Device struct for Device
 type Device struct {
-	Id *float32 `json:"id,omitempty"`
-	Code *string `json:"code,omitempty"`
+	Id float32 `json:"id"`
+	Code string `json:"code"`
 	Description *string `json:"description,omitempty"`
-	Organisation *string `json:"organisation,omitempty"`
+	Organisation string `json:"organisation"`
 	Properties map[string]interface{} `json:"properties,omitempty"`
 	Latitude *float32 `json:"latitude,omitempty"`
 	Longitude *float32 `json:"longitude,omitempty"`
@@ -35,8 +35,11 @@ type Device struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewDevice() *Device {
+func NewDevice(id float32, code string, organisation string) *Device {
 	this := Device{}
+	this.Id = id
+	this.Code = code
+	this.Organisation = organisation
 	return &this
 }
 
@@ -48,68 +51,52 @@ func NewDeviceWithDefaults() *Device {
 	return &this
 }
 
-// GetId returns the Id field value if set, zero value otherwise.
+// GetId returns the Id field value
 func (o *Device) GetId() float32 {
-	if o == nil || IsNil(o.Id) {
+	if o == nil {
 		var ret float32
 		return ret
 	}
-	return *o.Id
+
+	return o.Id
 }
 
-// GetIdOk returns a tuple with the Id field value if set, nil otherwise
+// GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
 func (o *Device) GetIdOk() (*float32, bool) {
-	if o == nil || IsNil(o.Id) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Id, true
+	return &o.Id, true
 }
 
-// HasId returns a boolean if a field has been set.
-func (o *Device) HasId() bool {
-	if o != nil && !IsNil(o.Id) {
-		return true
-	}
-
-	return false
-}
-
-// SetId gets a reference to the given float32 and assigns it to the Id field.
+// SetId sets field value
 func (o *Device) SetId(v float32) {
-	o.Id = &v
+	o.Id = v
 }
 
-// GetCode returns the Code field value if set, zero value otherwise.
+// GetCode returns the Code field value
 func (o *Device) GetCode() string {
-	if o == nil || IsNil(o.Code) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.Code
+
+	return o.Code
 }
 
-// GetCodeOk returns a tuple with the Code field value if set, nil otherwise
+// GetCodeOk returns a tuple with the Code field value
 // and a boolean to check if the value has been set.
 func (o *Device) GetCodeOk() (*string, bool) {
-	if o == nil || IsNil(o.Code) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Code, true
+	return &o.Code, true
 }
 
-// HasCode returns a boolean if a field has been set.
-func (o *Device) HasCode() bool {
-	if o != nil && !IsNil(o.Code) {
-		return true
-	}
-
-	return false
-}
-
-// SetCode gets a reference to the given string and assigns it to the Code field.
+// SetCode sets field value
 func (o *Device) SetCode(v string) {
-	o.Code = &v
+	o.Code = v
 }
 
 // GetDescription returns the Description field value if set, zero value otherwise.
@@ -144,36 +131,28 @@ func (o *Device) SetDescription(v string) {
 	o.Description = &v
 }
 
-// GetOrganisation returns the Organisation field value if set, zero value otherwise.
+// GetOrganisation returns the Organisation field value
 func (o *Device) GetOrganisation() string {
-	if o == nil || IsNil(o.Organisation) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.Organisation
+
+	return o.Organisation
 }
 
-// GetOrganisationOk returns a tuple with the Organisation field value if set, nil otherwise
+// GetOrganisationOk returns a tuple with the Organisation field value
 // and a boolean to check if the value has been set.
 func (o *Device) GetOrganisationOk() (*string, bool) {
-	if o == nil || IsNil(o.Organisation) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Organisation, true
+	return &o.Organisation, true
 }
 
-// HasOrganisation returns a boolean if a field has been set.
-func (o *Device) HasOrganisation() bool {
-	if o != nil && !IsNil(o.Organisation) {
-		return true
-	}
-
-	return false
-}
-
-// SetOrganisation gets a reference to the given string and assigns it to the Organisation field.
+// SetOrganisation sets field value
 func (o *Device) SetOrganisation(v string) {
-	o.Organisation = &v
+	o.Organisation = v
 }
 
 // GetProperties returns the Properties field value if set, zero value otherwise.
@@ -346,18 +325,12 @@ func (o Device) MarshalJSON() ([]byte, error) {
 
 func (o Device) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Id) {
-		toSerialize["id"] = o.Id
-	}
-	if !IsNil(o.Code) {
-		toSerialize["code"] = o.Code
-	}
+	toSerialize["id"] = o.Id
+	toSerialize["code"] = o.Code
 	if !IsNil(o.Description) {
 		toSerialize["description"] = o.Description
 	}
-	if !IsNil(o.Organisation) {
-		toSerialize["organisation"] = o.Organisation
-	}
+	toSerialize["organisation"] = o.Organisation
 	if !IsNil(o.Properties) {
 		toSerialize["properties"] = o.Properties
 	}

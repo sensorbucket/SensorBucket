@@ -102,6 +102,7 @@ Class | Method | HTTP request | Description
 *DevicesApi* | [**ListSensors**](docs/DevicesApi.md#listsensors) | **Get** /sensors | List sensors
 *DevicesApi* | [**UpdateDevice**](docs/DevicesApi.md#updatedevice) | **Patch** /devices/{id} | Update device properties
 *DevicesApi* | [**UpdateSensorGroup**](docs/DevicesApi.md#updatesensorgroup) | **Patch** /sensor-groups/{id} | Update sensor group
+*MeasurementsApi* | [**GetDatastream**](docs/MeasurementsApi.md#getdatastream) | **Get** /datastreams/{id} | Get datastream
 *MeasurementsApi* | [**ListDatastreams**](docs/MeasurementsApi.md#listdatastreams) | **Get** /datastreams | List all datastreams
 *MeasurementsApi* | [**QueryMeasurements**](docs/MeasurementsApi.md#querymeasurements) | **Get** /measurements | Query measurements
 *PipelinesApi* | [**CreatePipeline**](docs/PipelinesApi.md#createpipeline) | **Post** /pipelines | Create pipeline
@@ -130,6 +131,9 @@ Class | Method | HTTP request | Description
  - [DeleteSensorGroup200Response](docs/DeleteSensorGroup200Response.md)
  - [Device](docs/Device.md)
  - [DisablePipeline200Response](docs/DisablePipeline200Response.md)
+ - [GetDatastream200Response](docs/GetDatastream200Response.md)
+ - [GetDatastream200ResponseData](docs/GetDatastream200ResponseData.md)
+ - [GetDatastream200ResponseDataAllOf](docs/GetDatastream200ResponseDataAllOf.md)
  - [GetDevice200Response](docs/GetDevice200Response.md)
  - [GetPipeline200Response](docs/GetPipeline200Response.md)
  - [GetSensorGroup200Response](docs/GetSensorGroup200Response.md)
