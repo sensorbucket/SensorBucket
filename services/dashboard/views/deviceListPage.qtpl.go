@@ -98,14 +98,14 @@ func StreamRenderFilters(qw422016 *qt422016.Writer, sensorGroup *devices.SensorG
 //line services/dashboard/views/deviceListPage.qtpl:25
 	qw422016.N().S(`
     >
-        <label for="sensorgroup-search" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Sensor group</small></label>
+        <label for="sensor-group-search" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Sensor group</small></label>
         `)
 //line services/dashboard/views/deviceListPage.qtpl:28
 	if sensorGroup == nil {
 //line services/dashboard/views/deviceListPage.qtpl:28
 		qw422016.N().S(`
             <input
-                type="text" name="search" id="sensorgroup-search"
+                type="text" name="search" id="sensor-group-search"
 
                 class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600"
                 hx-trigger="keyup changed delay:500ms, search"
@@ -182,12 +182,12 @@ func StreamSensorGroupSearch(qw422016 *qt422016.Writer, sgs []devices.SensorGrou
 		qw422016.N().S(`
         <li>
             <a
-                href="?sensorgroup=`)
+                href="?sensor_group=`)
 //line services/dashboard/views/deviceListPage.qtpl:60
 		qw422016.N().DL(sg.ID)
 //line services/dashboard/views/deviceListPage.qtpl:60
 		qw422016.N().S(`"
-                hx-get="/overview/devices/table?sensorgroup=`)
+                hx-get="/overview/devices/table?sensor_group=`)
 //line services/dashboard/views/deviceListPage.qtpl:61
 		qw422016.N().DL(sg.ID)
 //line services/dashboard/views/deviceListPage.qtpl:61

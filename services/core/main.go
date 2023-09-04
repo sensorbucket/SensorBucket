@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/cors"
 
@@ -80,6 +81,7 @@ func Run() error {
 
 	// Setup HTTP Transport
 	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 	deviceshttp.SetupRoutes(r)
 	measurementhttp.SetupRoutes(r)
 	processinghttp.SetupRoutes(r)

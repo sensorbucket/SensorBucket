@@ -211,7 +211,15 @@ func devicesStreamMap() http.HandlerFunc {
 		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
 			return nil, "", err
 		}
-		return resBody.Data, resBody.Links.Next, nil
+		nextCursor := ""
+		if resBody.Links.Next != "" {
+			next, err := url.Parse(resBody.Links.Next)
+			if err != nil {
+				return nil, "", errors.New("stream datastream, invalid next link in paginated response")
+			}
+			nextCursor = next.Query().Get("cursor")
+		}
+		return resBody.Data, nextCursor, nil
 	}
 	type Marker struct {
 		DeviceID  int64   `json:"device_id"`

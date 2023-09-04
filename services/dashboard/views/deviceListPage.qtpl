@@ -24,10 +24,10 @@
             hx-swap-oob="true"
         {% endif %}
     >
-        <label for="sensorgroup-search" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Sensor group</small></label>
+        <label for="sensor-group-search" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Sensor group</small></label>
         {% if sensorGroup == nil %}
             <input
-                type="text" name="search" id="sensorgroup-search"
+                type="text" name="search" id="sensor-group-search"
 
                 class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600"
                 hx-trigger="keyup changed delay:500ms, search"
@@ -57,8 +57,8 @@
     {% for _, sg := range sgs %}
         <li>
             <a
-                href="?sensorgroup={%dl sg.ID %}"
-                hx-get="/overview/devices/table?sensorgroup={%dl sg.ID %}"
+                href="?sensor_group={%dl sg.ID %}"
+                hx-get="/overview/devices/table?sensor_group={%dl sg.ID %}"
                 hx-target="#device-table-wrapper"
                 class="block hover:bg-primary-100 p-2"
             >{%s sg.Name %}</a>
