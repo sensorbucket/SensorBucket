@@ -1,0 +1,164 @@
+-- Truncate tables
+TRUNCATE TABLE measurements,
+datastreams,
+sensor_groups,
+sensor_groups_sensors,
+sensors,
+devices CASCADE;
+
+-- Generate random devices
+INSERT INTO
+    devices (
+        code,
+        description,
+        organisation,
+        properties,
+        location,
+        location_description,
+        altitude,
+        state
+    )
+SELECT
+    md5(random() :: text || clock_timestamp() :: text) :: text,
+    'Device ' || i,
+    'Org ' || (i % 5),
+    jsonb_build_object('key', 'value'),
+    ST_MakePoint(
+        random() * 0.3 + 4.9,
+        -- Longitude within Netherlands
+        random() * 0.2 + 51.8 -- Latitude within Netherlands
+    ),
+    'Location ' || i,
+    random() * 100,
+    floor(random() * 3)
+FROM
+    generate_series(1, 10) AS i;
+
+-- Generate random sensors linked to devices
+INSERT INTO
+    sensors (code, device_id, description, properties, brand)
+SELECT
+    md5(random() :: text || clock_timestamp() :: text) :: text,
+    d.id,
+    'Sensor ' || i,
+    jsonb_build_object('key', 'value'),
+    'Brand ' || (i % 3)
+FROM
+    devices d
+    CROSS JOIN generate_series(1, 5) AS i;
+
+-- Generate random datastreams linked to sensors
+INSERT INTO
+    datastreams (
+        id,
+        sensor_id,
+        description,
+        observed_property,
+        unit_of_measurement
+    )
+SELECT
+    gen_random_uuid(),
+    s.id,
+    'Datastream ' || i,
+    'Property ' || (i % 4),
+    'Unit ' || (i % 2)
+FROM
+    sensors s
+    CROSS JOIN generate_series(1, 3) AS i;
+
+-- Generate random measurements linked to sensors, devices, and datastreams
+INSERT INTO
+    measurements (
+        uplink_message_id,
+        device_id,
+        device_code,
+        device_description,
+        measurement_timestamp,
+        measurement_value,
+        coordinates,
+        location_id,
+        device_location_description,
+        measurement_location,
+        sensor_code,
+        sensor_description,
+        sensor_external_id,
+        measurement_properties,
+        organisation_id,
+        organisation_name,
+        organisation_address,
+        organisation_zipcode,
+        organisation_city,
+        organisation_chamber_of_commerce_id,
+        organisation_headquarter_id,
+        device_location,
+        device_properties,
+        sensor_id,
+        sensor_properties,
+        sensor_brand,
+        organisation_state,
+        organisation_archive_time,
+        device_altitude,
+        device_state,
+        sensor_archive_time,
+        datastream_id,
+        datastream_description,
+        datastream_observed_property,
+        datastream_unit_of_measurement,
+        measurement_altitude,
+        measurement_expiration
+    )
+SELECT
+    gen_random_uuid(),
+    s.device_id,
+    d.code AS device_code,
+    d.description AS device_description,
+    now() - ((i * 10) || ' minutes') :: interval AS measurement_timestamp,
+    random() * 100 AS measurement_value,
+    ST_MakePoint(
+        random() * 0.2 + 51.8,
+        -- Latitude within Netherlands
+        random() * 0.3 + 4.9 -- Longitude within Netherlands
+    ) AS coordinates,
+    floor(random() * 1000000) AS location_id,
+    'Location ' || (i % 5) || '-' || substring(md5(random()::text), 1, 5),
+    ST_MakePoint(
+        random() * 0.2 + 51.8,
+        -- Latitude within Netherlands
+        random() * 0.3 + 4.9 -- Longitude within Netherlands
+    ) AS measurement_location,
+    'Sensor ' || (i % 5) || '-' || substring(md5(random()::text), 1, 5),
+    'Sensor Desc ' || (i % 5) || '-' || substring(md5(random()::text), 1, 5),
+    'External ' || (i % 5) || '-' || substring(md5(random()::text), 1, 5),
+    jsonb_build_object('key', 'value') AS measurement_properties,
+    floor(random() * 1000000) AS organisation_id,
+    'Org ' || (i % 5) || '-' || substring(md5(random()::text), 1, 5),
+    'Address ' || (i % 5) || '-' || substring(md5(random()::text), 1, 5),
+    'Zip ' || (i % 5) || '-' || substring(md5(random()::text), 1, 5),
+    'City ' || (i % 5) || '-' || substring(md5(random()::text), 1, 5),
+    'Chamber ' || (i % 5) || '-' || substring(md5(random()::text), 1, 5),
+    'Headquarter ' || (i % 5) || '-' || substring(md5(random()::text), 1, 5),
+    ST_MakePoint(
+        random() * 0.2 + 51.8,
+        -- Latitude within Netherlands
+        random() * 0.3 + 4.9 -- Longitude within Netherlands
+    ) AS device_location,
+    jsonb_build_object('key', 'value') AS device_properties,
+    s.id AS sensor_id,
+    jsonb_build_object('key', 'value') AS sensor_properties,
+    'Brand ' || (i % 5) || '-' || substring(md5(random()::text), 1, 5) AS sensor_brand,
+    floor(random() * 3) AS organisation_state,
+    floor(random() * 10) AS organisation_archive_time,
+    random() * 100 AS device_altitude,
+    floor(random() * 3) AS device_state,
+    floor(random() * 10) AS sensor_archive_time,
+    ds.id AS datastream_id,
+    ds.description AS datastream_description,
+    ds.observed_property AS datastream_observed_property,
+    ds.unit_of_measurement AS datastream_unit_of_measurement,
+    random() * 100 AS measurement_altitude,
+    now() + (floor(random() * 7) || ' days') :: interval AS measurement_expiration
+FROM
+    sensors s
+    JOIN devices d ON s.device_id = d.id
+    JOIN datastreams ds ON s.id = ds.sensor_id
+    CROSS JOIN generate_series(1, 250) AS i;
