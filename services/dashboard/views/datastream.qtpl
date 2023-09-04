@@ -144,13 +144,11 @@
                     init: [
 						u => {
 							u.over.ondblclick = e => {
-                                setTimeout(() => {
-                                    let start = document.querySelector('input[name="start"').valueAsDate
-                                    let end = document.querySelector('input[name="end"').valueAsDate
-                                    let min = start.getTime()/1000
-                                    let max = end.getTime()/1000
-                                    u.setScale('x', {min,max})
-                                }, 1);
+                                let start = document.querySelector('input[name="start"').valueAsDate
+                                let end = document.querySelector('input[name="end"').valueAsDate
+                                let min = start.getTime()/1000
+                                let max = end.getTime()/1000
+                                u.setScale('x', {min,max})
 							}
 						}
 					],

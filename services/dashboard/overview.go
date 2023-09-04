@@ -386,7 +386,12 @@ func getSensorGroup(id string) (*devices.SensorGroup, error) {
 		return nil, err
 	}
 	if res.StatusCode != 200 {
-		return nil, errors.New("could not get SensorGroup")
+		var apiError web.APIError
+		if err := json.NewDecoder(res.Body).Decode(&apiError); err != nil {
+			return nil, err
+		}
+		apiError.HTTPStatus = res.StatusCode
+		return nil, &apiError
 	}
 	var resBody web.APIResponse[devices.SensorGroup]
 	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
@@ -445,8 +450,12 @@ func resolveDevice(next http.Handler) http.Handler {
 	getDevice := func(id int64) (*devices.Device, error) {
 		res, _ := http.Get(fmt.Sprintf("http://core:3000/devices/%d", id))
 		if res.StatusCode != 200 {
-			body, _ := io.ReadAll(res.Body)
-			return nil, fmt.Errorf("error getting device: %s", string(body))
+			var apiError web.APIError
+			if err := json.NewDecoder(res.Body).Decode(&apiError); err != nil {
+				return nil, err
+			}
+			apiError.HTTPStatus = res.StatusCode
+			return nil, &apiError
 		}
 		var resBody web.APIResponse[devices.Device]
 		if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {

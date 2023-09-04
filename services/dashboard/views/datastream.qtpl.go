@@ -282,13 +282,11 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
                     init: [
 						u => {
 							u.over.ondblclick = e => {
-                                setTimeout(() => {
-                                    let start = document.querySelector('input[name="start"').valueAsDate
-                                    let end = document.querySelector('input[name="end"').valueAsDate
-                                    let min = start.getTime()/1000
-                                    let max = end.getTime()/1000
-                                    u.setScale('x', {min,max})
-                                }, 1);
+                                let start = document.querySelector('input[name="start"').valueAsDate
+                                let end = document.querySelector('input[name="end"').valueAsDate
+                                let min = start.getTime()/1000
+                                let max = end.getTime()/1000
+                                u.setScale('x', {min,max})
 							}
 						}
 					],
@@ -306,13 +304,13 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
                     {
                         stroke: "red",
                         label: "`)
-//line services/dashboard/views/datastream.qtpl:170
+//line services/dashboard/views/datastream.qtpl:168
 	qw422016.E().S(ds.ObservedProperty)
-//line services/dashboard/views/datastream.qtpl:170
+//line services/dashboard/views/datastream.qtpl:168
 	qw422016.N().S(` (`)
-//line services/dashboard/views/datastream.qtpl:170
+//line services/dashboard/views/datastream.qtpl:168
 	qw422016.E().S(ds.UnitOfMeasurement)
-//line services/dashboard/views/datastream.qtpl:170
+//line services/dashboard/views/datastream.qtpl:168
 	qw422016.N().S(`)"
                     }
                 ]
@@ -330,36 +328,36 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
     }
     </script>
 `)
-//line services/dashboard/views/datastream.qtpl:186
+//line services/dashboard/views/datastream.qtpl:184
 }
 
-//line services/dashboard/views/datastream.qtpl:186
+//line services/dashboard/views/datastream.qtpl:184
 func writerenderDataStream(qq422016 qtio422016.Writer, ds measurements.Datastream, start, end time.Time) {
-//line services/dashboard/views/datastream.qtpl:186
+//line services/dashboard/views/datastream.qtpl:184
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/datastream.qtpl:186
+//line services/dashboard/views/datastream.qtpl:184
 	streamrenderDataStream(qw422016, ds, start, end)
-//line services/dashboard/views/datastream.qtpl:186
+//line services/dashboard/views/datastream.qtpl:184
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/datastream.qtpl:186
+//line services/dashboard/views/datastream.qtpl:184
 }
 
-//line services/dashboard/views/datastream.qtpl:186
+//line services/dashboard/views/datastream.qtpl:184
 func renderDataStream(ds measurements.Datastream, start, end time.Time) string {
-//line services/dashboard/views/datastream.qtpl:186
+//line services/dashboard/views/datastream.qtpl:184
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/datastream.qtpl:186
+//line services/dashboard/views/datastream.qtpl:184
 	writerenderDataStream(qb422016, ds, start, end)
-//line services/dashboard/views/datastream.qtpl:186
+//line services/dashboard/views/datastream.qtpl:184
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/datastream.qtpl:186
+//line services/dashboard/views/datastream.qtpl:184
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/datastream.qtpl:186
+//line services/dashboard/views/datastream.qtpl:184
 	return qs422016
-//line services/dashboard/views/datastream.qtpl:186
+//line services/dashboard/views/datastream.qtpl:184
 }
 
-//line services/dashboard/views/datastream.qtpl:189
+//line services/dashboard/views/datastream.qtpl:187
 type DatastreamPage struct {
 	BasePage
 	Device     devices.Device
