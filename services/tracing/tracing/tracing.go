@@ -83,7 +83,7 @@ func (es EnrichedSteps) Exists(stepIndex uint64) bool {
 	return ok
 }
 
-func (es EnrichedSteps) AllSteps() EnrichedSteps {
+func (es EnrichedSteps) AllSteps() (stuff EnrichedSteps) {
 	if len(es) == 0 {
 		return []EnrichedStep{}
 	}

@@ -91,7 +91,6 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 	grouped := lo.SliceToMap(filteredTraces.Data, func(tracingId string) (string, []EnrichedStep) {
 		return tracingId, []EnrichedStep{}
 	})
-	fmt.Printf("grouped: %v\n", len(grouped))
 
 	// TODO: this is not a maintainable solution, the second query might receive a thousand values in the 'IN' clause
 
