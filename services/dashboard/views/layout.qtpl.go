@@ -229,7 +229,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
 <body class="min-h-full" hx-boost="true">
     <sidebar class="w-screen lg:w-sidebar fixed lg:h-screen top-0 left-0 flex flex-col bg-secondary-600 z-[5000]">
         <header class="h-12 lg:h-header flex justify-between lg:flex-col lg:justify-end">
-            <a class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="/overview"><img src="/static/logo-white.png" alt="SensorBucket" class="h-full" /></a>
+            <a hx-target="main" class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="/overview"><img src="/static/logo-white.png" alt="SensorBucket" class="h-full" /></a>
             <button 
                 class="h-8 w-8 self-center lg:hidden"
                 _="on click toggle .h-auto on <nav/>
@@ -240,7 +240,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
             </button>
         </header>
         <nav class="mt-4 px-8 pb-4 hidden lg:block">
-            <ul>
+            <ul hx-target="main">
                 <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
                 `)
 //line services/dashboard/views/layout.qtpl:73
