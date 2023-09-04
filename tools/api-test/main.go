@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/samber/lo"
-	"sensorbucket.nl/api"
+
+	"sensorbucket.nl/sensorbucket/pkg/api"
 )
 
 func main() {
