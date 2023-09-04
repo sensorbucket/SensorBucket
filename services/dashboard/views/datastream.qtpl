@@ -97,10 +97,12 @@
         function updateDatastream() {
             let x = [];
             let y = [];
-            let start = document.querySelector('input[name="start"').value
-            let end = document.querySelector('input[name="end"').value
-            plot.setScale('x', {min: start, max: end});
-            const ws = new WebSocket(getWebSocketURL(`/overview/datastreams/{%s ds.ID.String() %}/stream?start=${start}&end=${end}`))
+            let start = document.querySelector('input[name="start"').valueAsDate
+            let end = document.querySelector('input[name="end"').valueAsDate
+            let min = start.getTime()/1000
+            let max = end.getTime()/1000
+            plot.setScale('x', {min, max})
+            const ws = new WebSocket(getWebSocketURL(`/overview/datastreams/{%s ds.ID.String() %}/stream?start=${start.toISOString()}&end=${end.toISOString()}`))
             ws.onmessage = (event) => {
                 const reader = new FileReader();
                 reader.onload = function() {
@@ -128,11 +130,25 @@
             const opts = {
                 width: target.clientWidth,
                 height: target.clientHeight - 60,
+                hooks: {
+                    init: [
+						u => {
+							u.over.ondblclick = e => {
+                                setTimeout(() => {
+                                    let start = document.querySelector('input[name="start"').valueAsDate
+                                    let end = document.querySelector('input[name="end"').valueAsDate
+                                    let min = start.getTime()/1000
+                                    let max = end.getTime()/1000
+                                    u.setScale('x', {min,max})
+                                }, 1);
+							}
+						}
+					],
+                },
                 scales: {
                     x: {
                         time: true,
-                        min: {%dl start.Unix() %},
-                        max: {%dl end.Unix() %},
+                        auto: false,
                     },
                     y: {
                     }
@@ -149,6 +165,7 @@
             if (plot == undefined) {
                 plot = new uPlot(opts, [x,y], target)
                 target.plot = plot;
+                console.log(plot)
             }
             htmx.on(document.body, "updateDatastream", () => updateDatastream())
             updateDatastream()
