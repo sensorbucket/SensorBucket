@@ -48,7 +48,7 @@ type EnrichedStep struct {
 	Step
 	HighestCollectiveStatus Status
 	Status                  Status
-	Duration                time.Duration
+	Duration                *time.Duration
 }
 
 type EnrichedSteps []EnrichedStep

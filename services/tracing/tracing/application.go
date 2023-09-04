@@ -155,7 +155,7 @@ type TraceDTO struct {
 }
 
 type StepDTO struct {
-	Status   string        `json:"status"`
-	Duration time.Duration `json:"duration"`
-	Error    string        `json:"error"`
+	Status   string         `json:"status"`
+	Duration *time.Duration `json:"duration"`
+	Error    string         `json:"error"`
 }

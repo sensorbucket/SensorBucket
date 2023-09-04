@@ -28,7 +28,7 @@ OR REPLACE VIEW enriched_steps_view AS (
     SELECT
         currentstep.*,
         (
-            COALESCE(nextstep.start_time, currentstep.start_time) - currentstep.start_time
+            SELECT EXTRACT(EPOCH FROM (nextstep.start_time - currentstep.start_time)) * 1000::bigint
         ) AS duration,
         (
             CASE
