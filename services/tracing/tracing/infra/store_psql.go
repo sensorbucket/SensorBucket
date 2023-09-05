@@ -114,7 +114,7 @@ func (s *stepStore) GetStepsByTracingIDs(tracingIds []string) ([]tracing.Enriche
 	).
 		From("enriched_steps_view").
 		Where(sq.Eq{"tracing_id": tracingIds}).
-		OrderBy("start_time, step_index ASC")
+		OrderBy("tracing_id, start_time, step_index ASC")
 
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(s.db).Query()
 	if err != nil {
