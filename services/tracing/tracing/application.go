@@ -87,11 +87,6 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 		return nil, err
 	}
 
-	// Prepare the correctly ordered result map
-	grouped := lo.SliceToMap(filteredTraces.Data, func(tracingId string) (string, []EnrichedStep) {
-		return tracingId, []EnrichedStep{}
-	})
-
 	// TODO: this is not a maintainable solution, the second query might receive a thousand values in the 'IN' clause
 
 	// Now enrich the trace data with the step data
@@ -100,25 +95,20 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 		return nil, err
 	}
 
-	lo.ForEach(steps, func(item EnrichedStep, index int) {
-		if val, ok := grouped[item.TracingID]; ok {
-			grouped[item.TracingID] = append(val, item)
-			return
-		}
-	})
-
-	// Now change the map of trace ids with their steps to the required trace dto
-	traces := lo.MapToSlice(grouped, func(key string, value []EnrichedStep) TraceDTO {
-		asEnriched := EnrichedSteps(value)
-
-		return TraceDTO{
-			TracingId: key,
-			Status:    asEnriched.TotalStatus().String(),
-			StartTime: asEnriched.TotalStartTime(),
-			DeviceId:  asEnriched.DeviceID(),
+	// Now change the map the filtered trace ids to the correct steps and keep the order of traces
+	traces := []TraceDTO{}
+	lo.ForEach(filteredTraces.Data, func(tracingId string, index int) {
+		enrichedSteps := EnrichedSteps(lo.Filter(steps, func(s EnrichedStep, index int) bool {
+			return s.TracingID == tracingId
+		}))
+		traces = append(traces, TraceDTO{
+			TracingId: tracingId,
+			Status:    enrichedSteps.TotalStatus().String(),
+			StartTime: enrichedSteps.TotalStartTime(),
+			DeviceId:  enrichedSteps.DeviceID(),
 
 			// The EnrichedSteps also have to be updated to a DTO object
-			Steps: lo.Map(asEnriched.AllSteps(), func(val EnrichedStep, _ int) StepDTO {
+			Steps: lo.Map(enrichedSteps.AllSteps(), func(val EnrichedStep, _ int) StepDTO {
 				stepDto := StepDTO{
 					Status:   val.Status.String(),
 					Duration: val.Duration,
@@ -128,7 +118,7 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 				}
 				return stepDto
 			}),
-		}
+		})
 	})
 
 	return &pagination.Page[TraceDTO]{

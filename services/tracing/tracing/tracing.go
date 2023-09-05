@@ -83,6 +83,10 @@ func (es EnrichedSteps) Exists(stepIndex uint64) bool {
 	return ok
 }
 
+func (es EnrichedSteps) IsLastStep(step EnrichedStep) bool {
+	return es[len(es)-1] == step
+}
+
 func (es EnrichedSteps) AllSteps() EnrichedSteps {
 	if len(es) == 0 {
 		return []EnrichedStep{}
@@ -103,7 +107,7 @@ func (es EnrichedSteps) AllSteps() EnrichedSteps {
 	totalSteps := int(lastStep.StepsRemaining + lastStep.StepIndex + 1)
 	indexOffset := 0
 
-	steps := lo.Times(int(lastStep.StepIndex+1)+int(lastStep.StepsRemaining), func(index int) EnrichedStep {
+	steps := lo.Times(int(lastStep.StepIndex+1)+int(lastStep.StepsRemaining), func(index int) (enrStep EnrichedStep) {
 		if index > int(lastStep.StepIndex) {
 
 			// We are past the last available step in the step list
@@ -128,11 +132,20 @@ func (es EnrichedSteps) AllSteps() EnrichedSteps {
 					StepIndex:      uint64(index),
 					StepsRemaining: uint64(totalSteps - index - 1),
 				},
-				Status: Unknown,
+
+				// if a step is missing in between the other steps, it's safe to assume the step has been succesfully executed
+				// otherwise the next steps would've been canceled.
+				Status: Success,
 			}
 		}
 
-		return es[index-indexOffset]
+		// if the next step doesn't exist but there is a next step in the list we have to adjust the status of this step
+		// if any steps exists after this step the status has to be succesful otherwise the next steps would've been canceled
+		step := es[index-indexOffset]
+		if step.Status == InProgress && !es.IsLastStep(step) {
+			step.Status = Success
+		}
+		return step
 	})
 
 	return steps
