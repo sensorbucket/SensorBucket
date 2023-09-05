@@ -3,6 +3,7 @@ package deviceinfra
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -38,19 +39,6 @@ func NewPSQLStore(db *sqlx.DB) *PSQLStore {
 
 type DeviceModel struct {
 	devices.Device
-}
-
-type SensorModel struct {
-	*devices.Sensor
-	DeviceID int64 `db:"device_id"`
-}
-
-func sensorModelsToSensors(models []SensorModel) []devices.Sensor {
-	sensors := make([]devices.Sensor, len(models))
-	for ix := range models {
-		sensors[ix] = *models[ix].Sensor
-	}
-	return sensors
 }
 
 type DevicePaginationQuery struct {
@@ -110,7 +98,10 @@ func (s *PSQLStore) ListSensors(p pagination.Request) (*pagination.Page[devices.
 		"brand", "created_at", "is_fallback",
 	).From("sensors")
 
-	cursor := pagination.GetCursor[SensorPaginationQuery](p)
+	cursor, err := pagination.GetCursor[SensorPaginationQuery](p)
+	if err != nil {
+		return nil, fmt.Errorf("list sensors, error getting pagination cursor: %w", err)
+	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, err
@@ -202,21 +193,21 @@ func (s *PSQLStore) updateSensors(devID int64, sensors []devices.Sensor) error {
 		tx.Rollback()
 		return err
 	}
-	var createdSensors []SensorModel
-	var updatedSensors []SensorModel
+	var createdSensors []*devices.Sensor
+	var updatedSensors []*devices.Sensor
 	var deletedSensors []int64
 create_delta_loop:
 	for ix := range sensors {
 		s := &sensors[ix]
 		// If the sensor has ID 0 then it is new and must be created
 		if s.ID == 0 {
-			createdSensors = append(createdSensors, SensorModel{Sensor: s, DeviceID: devID})
+			createdSensors = append(createdSensors, s)
 			continue
 		}
 		// If the sensor is present in db and this list then assume it is updated
 		for _, dbs := range dbSensors {
 			if dbs.ID == s.ID {
-				updatedSensors = append(updatedSensors, SensorModel{Sensor: s, DeviceID: devID})
+				updatedSensors = append(updatedSensors, s)
 				continue create_delta_loop
 			}
 		}
@@ -280,14 +271,14 @@ func find(db DB, id int64) (*devices.Device, error) {
 	if err != nil {
 		return nil, err
 	}
-	dev.Sensors = sensorModelsToSensors(sensors)
+	dev.Sensors = sensors
 
 	return &dev.Device, nil
 }
 
 type SelectQueryMod func(q sq.SelectBuilder) sq.SelectBuilder
 
-func listSensors(db DB, mods ...SelectQueryMod) ([]SensorModel, error) {
+func listSensors(db DB, mods ...SelectQueryMod) ([]devices.Sensor, error) {
 	q := pq.Select(
 		"s.id", "s.brand", "s.code", "s.description", "s.external_id", "s.properties", "s.archive_time",
 		"s.device_id", "s.created_at", "s.is_fallback",
@@ -303,11 +294,9 @@ func listSensors(db DB, mods ...SelectQueryMod) ([]SensorModel, error) {
 		return nil, err
 	}
 
-	sensors := []SensorModel{}
+	sensors := []devices.Sensor{}
 	for rows.Next() {
-		s := SensorModel{
-			Sensor: &devices.Sensor{},
-		}
+		s := devices.Sensor{}
 		if err := rows.Scan(
 			&s.ID, &s.Brand, &s.Code, &s.Description, &s.ExternalID, &s.Properties, &s.ArchiveTime,
 			&s.DeviceID, &s.CreatedAt, &s.IsFallback,
@@ -319,7 +308,7 @@ func listSensors(db DB, mods ...SelectQueryMod) ([]SensorModel, error) {
 	return sensors, nil
 }
 
-func createSensors(tx DB, sensors []SensorModel) error {
+func createSensors(tx DB, sensors []*devices.Sensor) error {
 	if len(sensors) == 0 {
 		return nil
 	}
@@ -348,21 +337,24 @@ func createSensors(tx DB, sensors []SensorModel) error {
 }
 
 func getSensor(tx DB, id int64) (*devices.Sensor, error) {
-	var model SensorModel
+	var sensor devices.Sensor
 	err := tx.Get(
-		&model,
+		&sensor,
 		`SELECT 
         id, code, description, brand, archive_time, external_id,
         properties, created_at, device_id, is_fallback FROM sensors WHERE id = $1`,
 		id,
 	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, devices.ErrSensorNotFound
+	}
 	if err != nil {
 		return nil, err
 	}
-	return model.Sensor, nil
+	return &sensor, nil
 }
 
-func updateSensors(tx DB, sensors []SensorModel) error {
+func updateSensors(tx DB, sensors []*devices.Sensor) error {
 	if len(sensors) == 0 {
 		return nil
 	}

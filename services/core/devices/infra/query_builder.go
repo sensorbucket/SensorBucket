@@ -44,7 +44,10 @@ func (b deviceQueryBuilder) WithPagination(p pagination.Request) deviceQueryBuil
 	if b.err != nil {
 		return b
 	}
-	b.cursor = pagination.GetCursor[DevicePaginationQuery](p)
+	b.cursor, b.err = pagination.GetCursor[DevicePaginationQuery](p)
+	if b.err != nil {
+		b.err = fmt.Errorf("list devices, error getting pagination cursor: %w", b.err)
+	}
 	return b
 }
 
@@ -137,16 +140,16 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[devices.Device]
 	}
 
 	// Fetch sensors for devices
-	sensorModels, err := listSensors(db, func(q sq.SelectBuilder) sq.SelectBuilder {
+	sensors, err := listSensors(db, func(q sq.SelectBuilder) sq.SelectBuilder {
 		return q.Where(sq.Eq{"device_id": ids})
 	})
 	if err != nil {
 		return nil, err
 	}
-	for ix := range sensorModels {
-		model := sensorModels[ix]
-		dev := devMap[model.DeviceID]
-		dev.Sensors = append(dev.Sensors, *model.Sensor)
+	for ix := range sensors {
+		sensor := sensors[ix]
+		dev := devMap[sensor.DeviceID]
+		dev.Sensors = append(dev.Sensors, sensor)
 	}
 
 	devices := make([]devices.Device, len(deviceModels))

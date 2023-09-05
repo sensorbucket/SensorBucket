@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -26,7 +25,7 @@ var (
 
 func main() {
 	if err := Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		panic(fmt.Sprintf("Error: %v\n", err))
 	}
 }
 
