@@ -31,12 +31,12 @@ func (s *service) warn(from string, recipient string, daysTillDeletion int) erro
 		"SensorBucket - Geplande gegevensopruiming ",
 		from,
 		recipient,
-		"email_template.html",
+		"email-templates/email_template_inlined.html",
 		struct {
 			DaysTillDeletion int
 			DeletionDate     string
 		}{
-			DeletionDate: time.Now().Add(time.Hour * 24 * time.Duration(daysTillDeletion)).String(),
+			DeletionDate: time.Now().Add(time.Hour * 24 * time.Duration(daysTillDeletion)).Format("2 January 2006"),
 			// TODO: ensure time is displayed in local time to user in html template once emails are a requirement
 			DaysTillDeletion: daysTillDeletion,
 		})

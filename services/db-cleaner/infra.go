@@ -8,20 +8,14 @@ import (
 	"net/smtp"
 )
 
-type mailMock struct{}
-
-func (m *mailMock) SendMail(subject string, from string, to string, templateHtml string, content interface{}) error {
-	log.Printf("[MOCK] Sending mail to '%s' with subject '%s'\n", to, subject)
-	return nil
-}
-
-type smtpMailTransport struct {
+type emailSender struct {
 	username string
 	password string
 	host     string
 }
 
-func (transport *smtpMailTransport) SendMail(subject string, from string, to string, templateHtml string, content interface{}) error {
+func (infra *emailSender) SendMail(subject string, from string, to string, templateHtml string, content interface{}) error {
+	log.Printf("sending mail to '%s'\n", to)
 	t, err := template.ParseFiles(templateHtml)
 	if err != nil {
 		return fmt.Errorf("template parse: %w", err)
@@ -35,5 +29,5 @@ func (transport *smtpMailTransport) SendMail(subject string, from string, to str
 	if err = t.Execute(&body, content); err != nil {
 		return fmt.Errorf("template execute: %w", err)
 	}
-	return smtp.SendMail(transport.host, smtp.CRAMMD5Auth(transport.username, transport.password), from, []string{to}, body.Bytes())
+	return smtp.SendMail(infra.host, smtp.CRAMMD5Auth(infra.username, infra.password), from, []string{to}, body.Bytes())
 }

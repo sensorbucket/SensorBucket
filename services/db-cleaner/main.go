@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strconv"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
@@ -59,12 +60,31 @@ func runCleanup() error {
 }
 
 func runWarn() error {
+
+	var (
+		// SMTP Config
+		SMTP_USERNAME      = env.Must("SMTP_USERNAME")
+		SMTP_PASSWORD      = env.Must("SMTP_PASSWORD")
+		SMTP_HOST          = env.Must("SMTP_HOST")
+		TO_EMAIL           = env.Must("TO_EMAIL")
+		FROM_EMAIL         = env.Must("FROM_EMAIL")
+		DAYS_TILL_DELETION = env.Must("DAYS_TILL_DELETION")
+	)
+
 	// Use a mock while sending mails are not required yet
-	mailSender := mailMock{}
+	mailSender := emailSender{
+		username: SMTP_USERNAME,
+		password: SMTP_PASSWORD,
+		host:     SMTP_HOST,
+	}
 	s := service{
 		mailer: &mailSender,
 	}
-	return s.warn("mock@mock.nl", "mock2@mock.nl", 15)
+	val, err := strconv.ParseInt(DAYS_TILL_DELETION, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	return s.warn(FROM_EMAIL, TO_EMAIL, int(val))
 }
 
 func createDB(dsn string) (*sqlx.DB, error) {
