@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/cors"
 
@@ -26,6 +27,7 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	processinginfra "sensorbucket.nl/sensorbucket/services/core/processing/infra"
 	processingtransport "sensorbucket.nl/sensorbucket/services/core/processing/transport"
+	coretransport "sensorbucket.nl/sensorbucket/services/core/transport"
 )
 
 var (
@@ -43,7 +45,7 @@ var (
 
 func main() {
 	if err := Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Fatal error: %v\n", err)
+		panic(fmt.Sprintf("Fatal error: %v\n", err))
 	}
 }
 
@@ -79,9 +81,11 @@ func Run() error {
 
 	// Setup HTTP Transport
 	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 	deviceshttp.SetupRoutes(r)
 	measurementhttp.SetupRoutes(r)
 	processinghttp.SetupRoutes(r)
+	coretransport.Create(r, measurementservice, deviceservice)
 	httpsrv := createHTTPServer(r)
 	go httpsrv.ListenAndServe()
 	log.Printf("HTTP Listening: %s\n", httpsrv.Addr)

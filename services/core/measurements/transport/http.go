@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
@@ -29,11 +30,9 @@ func NewHTTP(svc *measurements.Service, url string) *HTTPTransport {
 }
 
 func (t *HTTPTransport) SetupRoutes(r chi.Router) {
-	r.Get("/health", func(rw http.ResponseWriter, r *http.Request) {
-		rw.Write([]byte("healthy"))
-	})
 	r.Get("/measurements", t.httpGetMeasurements())
 	r.Get("/datastreams", t.httpListDatastream())
+	r.Get("/datastreams/{id}", t.httpGetDatastream())
 }
 
 func (t *HTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -42,13 +41,18 @@ func (t *HTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (t *HTTPTransport) httpGetMeasurements() http.HandlerFunc {
 	type Params struct {
-		measurements.Filter `pagination:",squash"`
-		pagination.Request  `pagination:",squash"`
+		measurements.Filter
+		pagination.Request
 	}
 	return func(rw http.ResponseWriter, r *http.Request) {
 		params, err := httpfilter.Parse[Params](r)
 		if err != nil {
 			web.HTTPError(rw, err)
+			return
+		}
+
+		if !params.Start.IsZero() && !params.End.IsZero() && params.Start.After(params.End) {
+			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "Start time cannot be after end time", "ERR_BAD_REQUEST"))
 			return
 		}
 
@@ -80,5 +84,24 @@ func (t *HTTPTransport) httpListDatastream() http.HandlerFunc {
 			return
 		}
 		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.url, *page))
+	}
+}
+
+func (t *HTTPTransport) httpGetDatastream() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idQ := chi.URLParam(r, "id")
+		id, err := uuid.Parse(idQ)
+		if err != nil {
+			web.HTTPError(w, web.NewError(http.StatusBadRequest, "Invalid datastream ID", ""))
+			return
+		}
+
+		ds, err := t.svc.GetDatastream(r.Context(), id)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{Data: ds})
 	}
 }

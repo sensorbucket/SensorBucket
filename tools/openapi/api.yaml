@@ -47,6 +47,8 @@ paths:
     $ref: 'path-measurements.yaml'
   /datastreams:
     $ref: 'path-datastreams.yaml'
+  /datastreams/{id}:
+    $ref: 'path-datastreams-by-id.yaml'
   /pipelines:
     $ref: 'path-pipelines.yaml'
   /pipelines/{id}:
