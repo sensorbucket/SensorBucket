@@ -2,11 +2,23 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"time"
 
-	fission "github.com/fission/fission/pkg/crd"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/clientcmd"
+	"github.com/google/uuid"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
+
+	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
+)
+
+var (
+	HTTP_ADDR        = env.Could("HTTP_ADDR", ":3000")
+	WORKER_NAMESPACE = env.Could("WORKER_NAMESPACE", "default")
+	DB_DSN           = env.Must("DB_DSN")
 )
 
 func main() {
@@ -15,24 +27,51 @@ func main() {
 	}
 }
 
+type Store interface {
+	WorkersExists([]uuid.UUID) ([]uuid.UUID, error)
+	ListUserWorkers(req pagination.Request) (*pagination.Page[UserWorker], error)
+}
+
 func Run() error {
-	config, err := clientcmd.BuildConfigFromFlags("", "/home/timvosch/.kube/config")
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
+	db := sqlx.MustOpen("pgx", DB_DSN)
+	store := newPSQLStore(db)
+
+	srv := newHTTPTransport(HTTP_ADDR)
+	go srv.Start()
+
+	ctrl, err := createKubernetesController(store, WORKER_NAMESPACE)
 	if err != nil {
 		return err
 	}
 
-	cg := fission.NewClientGeneratorWithRestConfig(config)
-	fClient, err := cg.GetFissionClient()
-	if err != nil {
-		return err
-	}
+	// Start reconcile loop
+	go func() {
+		log.Println("Reconcile loop started")
+		defer log.Println("Reconcile loop exited")
+		ticker := time.After(1 * time.Second)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker:
+				{
+					if err := ctrl.Reconcile(ctx); err != nil {
+						log.Printf("Error reconciliating: %s\n", err.Error())
+					}
+					ticker = time.After(30 * time.Second)
+				}
+			}
+		}
+	}()
 
-	fls, err := fClient.CoreV1().Functions("").List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("fls: %v\n", fls)
+	<-ctx.Done()
+	log.Println("Shutting down gracefully...")
+	ctxTO, cancelTO := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelTO()
+	srv.Stop(ctxTO)
 
 	return nil
 }
