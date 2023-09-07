@@ -24,6 +24,7 @@ type Pipeline struct {
 	Id *string `json:"id,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Steps []string `json:"steps,omitempty"`
+	// either active or inactive
 	Status *string `json:"status,omitempty"`
 	LastStatusChange *time.Time `json:"last_status_change,omitempty"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`

@@ -51,12 +51,12 @@ func (s *stepStore) QueryTraces(filter tracing.Filter, r pagination.Request) (*p
 	}
 
 	q := sq.Select().Distinct().From("archived_ingress_dtos archive").RightJoin("enriched_steps_view steps on archive.tracing_id = steps.tracing_id")
-	if len(filter.DeviceIds) > 0 {
-		q = q.Where(sq.Eq{"steps.device_id": filter.DeviceIds})
+	if len(filter.DeviceIDs) > 0 {
+		q = q.Where(sq.Eq{"steps.device_id": filter.DeviceIDs})
 	}
 
-	if len(filter.TracingIds) > 0 {
-		q = q.Where(sq.Eq{"steps.tracing_id": filter.TracingIds})
+	if len(filter.TracingIDs) > 0 {
+		q = q.Where(sq.Eq{"steps.tracing_id": filter.TracingIDs})
 	}
 
 	if len(filter.Status) > 0 {
@@ -103,13 +103,13 @@ func (s *stepStore) QueryTraces(filter tracing.Filter, r pagination.Request) (*p
 func (s *stepStore) GetStepsByTracingIDs(tracingIds []string) ([]tracing.EnrichedStep, error) {
 	q := sq.Select(
 		"tracing_id",
-		"device_id",
+		"COALESCE(device_id, 0)",
 		"step_index",
 		"steps_remaining",
 		"start_time",
 		"error",
 		"status",
-		"duration",
+		"COALESCE(duration, 0)",
 		"trace_status",
 	).
 		From("enriched_steps_view").

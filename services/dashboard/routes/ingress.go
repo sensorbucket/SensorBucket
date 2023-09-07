@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -120,7 +121,11 @@ func (h *IngressPageHandler) createViewIngresses() ([]views.Ingress, error) {
 		if !found {
 			continue
 		}
-		traceLog := traceMap[ingress.TracingID.String()]
+		traceLog, ok := traceMap[ingress.TracingID.String()]
+		if !ok {
+			log.Printf("warning: could not find trace for archived ingres: %s\n", ingress.TracingID.String())
+			continue
+		}
 		ingress := views.Ingress{
 			TracingID: ingress.TracingID.String(),
 			CreatedAt: ingress.IngressDTO.CreatedAt,

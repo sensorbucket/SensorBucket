@@ -1,17 +1,21 @@
 package dashboardinfra
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	"sensorbucket.nl/sensorbucket/services/dashboard/routes"
@@ -19,6 +23,7 @@ import (
 )
 
 type SensorBucketAPI struct {
+	api               *api.APIClient
 	ingressEndpoint   string
 	pipelinesEndpoint string
 	tracesEndpoint    string
@@ -26,7 +31,12 @@ type SensorBucketAPI struct {
 }
 
 func NewSensorBucketAPI(ingressEndpoint, pipelinesEndpoint, tracesEndpoint, devicesEndpoint string) *SensorBucketAPI {
+	cfg := api.NewConfiguration()
+	cfg.Debug = true
+	cfg.Scheme = "http"
+	cfg.Host = "caddy"
 	return &SensorBucketAPI{
+		api:               api.NewAPIClient(cfg),
 		ingressEndpoint:   ingressEndpoint,
 		pipelinesEndpoint: pipelinesEndpoint,
 		tracesEndpoint:    tracesEndpoint,
@@ -76,25 +86,29 @@ func (s *SensorBucketAPI) ListPipelines(ids []uuid.UUID) ([]processing.Pipeline,
 }
 
 func (s *SensorBucketAPI) ListTraces(ids []uuid.UUID) ([]routes.TraceDTO, error) {
-	q := url.Values{}
-	q["trace_id"] = lo.Map(ids, func(id uuid.UUID, _ int) string { return id.String() })
-	url := s.tracesEndpoint + "?" + q.Encode()
-	res, err := http.Get(url)
+	idStrings := lo.Map(ids, func(id uuid.UUID, _ int) string { return id.String() })
+	res, _, err := s.api.TracingApi.ListTraces(context.Background()).TracingId(idStrings).Execute()
 	if err != nil {
 		return nil, err
 	}
-	if res.StatusCode != 200 {
-		body, _ := io.ReadAll(res.Body)
-		fmt.Printf("could not fetch traceDTO: %d, %s\n", res.StatusCode, string(body))
-		return nil, fmt.Errorf("could not fetch traceDTO: %d", res.StatusCode)
+	traces := make([]routes.TraceDTO, 0, len(res.Data))
+	for _, resTrace := range res.Data {
+		steps := lo.Map(resTrace.Steps, func(step api.TraceStep, _ int) routes.StepDTO {
+			return routes.StepDTO{
+				Status:   int(step.Status),
+				Duration: time.Duration(int64(step.Duration * 1e9)),
+				Error:    step.GetError(),
+			}
+		})
+		log.Printf("dto: %d now: %d\n", len(resTrace.Steps), len(steps))
+		traces = append(traces, routes.TraceDTO{
+			TracingId: resTrace.TracingId,
+			DeviceID:  resTrace.DeviceId,
+			Status:    int(resTrace.Status),
+			Steps:     steps,
+		})
 	}
-	var resBody web.APIResponse[[]routes.TraceDTO]
-	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
-		fmt.Printf("could not decode traceDTO response: %v", err)
-		return nil, err
-	}
-
-	return resBody.Data, nil
+	return traces, nil
 }
 
 func (s *SensorBucketAPI) ListDevices(ids []int64) ([]devices.Device, error) {

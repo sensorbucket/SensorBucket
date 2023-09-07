@@ -24,6 +24,7 @@ get:
       - inactive
       schema:
         type: array
+        collectionFormat: multi
         items:
           type: string
   responses:

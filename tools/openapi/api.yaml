@@ -71,3 +71,4 @@ tags:
   - name: Pipelines
   - name: Measurements
   - name: Uplink
+  - name: Tracing

@@ -56,6 +56,8 @@ type APIClient struct {
 
 	PipelinesApi *PipelinesApiService
 
+	TracingApi *TracingApiService
+
 	UplinkApi *UplinkApiService
 }
 
@@ -78,6 +80,7 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.DevicesApi = (*DevicesApiService)(&c.common)
 	c.MeasurementsApi = (*MeasurementsApiService)(&c.common)
 	c.PipelinesApi = (*PipelinesApiService)(&c.common)
+	c.TracingApi = (*TracingApiService)(&c.common)
 	c.UplinkApi = (*UplinkApiService)(&c.common)
 
 	return c

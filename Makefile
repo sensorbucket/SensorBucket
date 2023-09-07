@@ -56,6 +56,7 @@ else
 endif
 
 golib:
+	cat pkg/api/.openapi-generator/FILES | xargs -I_ rm pkg/api/_
 	@docker run --rm -v $(CURDIR):/sensorbucket --user `id -u` \
 		openapitools/openapi-generator-cli generate -i /sensorbucket/tools/openapi/api.yaml \
 		-g go -o /sensorbucket/pkg/api -t /sensorbucket/tools/openapi-templates/go \

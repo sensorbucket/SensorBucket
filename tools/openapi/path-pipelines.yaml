@@ -22,6 +22,7 @@ get:
       required: false
       schema:
           type: array
+          collectionFormat: multi
           items:
             type: string
       example:
