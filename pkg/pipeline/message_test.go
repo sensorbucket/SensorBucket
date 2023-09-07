@@ -70,7 +70,7 @@ func TestExpectCurrentStep(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			msg := pipeline.Message{
 				PipelineSteps: []string{"a", "b", "c", "d"},
-				StepIndex:     int64(tC.ix),
+				StepIndex:     uint64(tC.ix),
 			}
 			step, err := msg.CurrentStep()
 			if tC.err != nil {

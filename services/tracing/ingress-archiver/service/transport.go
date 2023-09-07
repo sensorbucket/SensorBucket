@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 	"github.com/rabbitmq/amqp091-go"
 
@@ -55,9 +54,7 @@ type HTTPIngressesFilter struct {
 	pagination.Request
 }
 
-func CreateHTTPTransport(app *Application) http.Handler {
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+func CreateHTTPTransport(r chi.Router, app *Application) {
 	r.Get("/ingresses", func(w http.ResponseWriter, r *http.Request) {
 		params, err := httpfilter.Parse[HTTPIngressesFilter](r)
 		if err != nil {
@@ -78,5 +75,4 @@ func CreateHTTPTransport(app *Application) http.Handler {
 
 		web.HTTPResponse(w, http.StatusOK, pagination.CreateResponse(r, "", *page))
 	})
-	return r
 }

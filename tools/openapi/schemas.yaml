@@ -162,6 +162,25 @@ sensor:
       format: date-time
       example: 2023-05-17T15:00:00Z
 
+trace:
+  type: object
+  properties:
+    tracing_id:
+      type: string
+      example: "a59d28c8-2a0f-4e89-9f49-6942f1c04342"
+    device_id:
+      type: int
+      example: 37
+    start_time:
+      type: int
+      example: 1692877920079
+    status:
+      type: string
+      example: "success"
+    steps:
+      type: step[]
+      example: [{"status": "success", "duration": "5ms", "start_time": 1692877920079}]
+
 measurement:
   type: object
   required:
