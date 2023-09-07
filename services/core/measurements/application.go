@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -41,6 +42,7 @@ type Store interface {
 type Service struct {
 	store             Store
 	systemArchiveTime int
+	observers         []*observer
 }
 
 func New(store Store, systemArchiveTime int) *Service {
@@ -154,6 +156,9 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 		measurement.MeasurementAltitude = m.Altitude
 	}
 
+	// Notify all observers to allow data streaming
+	s.notifyObservers(measurement)
+
 	return s.StoreMeasurement(measurement)
 }
 
@@ -174,6 +179,30 @@ func (s *Service) QueryMeasurements(f Filter, r pagination.Request) (*pagination
 	return page, nil
 }
 
+func (s *Service) StreamMeasurements(f Filter) <-chan Measurement {
+	// TODO: buffer measurement in slice instead of triggering ws every measurement
+	stream := make(chan Measurement)
+	s.observers = append(s.observers, &observer{
+		filter:   f,
+		listener: stream,
+	})
+
+	go func() {
+		for {
+			time.Sleep(time.Second * 5)
+			fmt.Println("testing stream")
+			for _, obs := range s.observers {
+				fmt.Println("sending fake measurement...")
+				obs.Notify(Measurement{
+					MeasurementValue: 4324.54,
+				})
+			}
+		}
+	}()
+
+	return stream
+}
+
 type DatastreamFilter struct {
 	Sensor []int
 }
@@ -184,4 +213,47 @@ func (s *Service) ListDatastreams(ctx context.Context, filter DatastreamFilter, 
 
 func (s *Service) GetDatastream(ctx context.Context, id uuid.UUID) (*Datastream, error) {
 	return s.store.GetDatastream(id)
+}
+
+func (s *Service) notifyObservers(measurement Measurement) {
+	// Notify all observers to allow data streaming
+	for _, observer := range s.observers {
+		if observer.listener == nil {
+			// the observer is marked for deletion
+			fmt.Println("c is nil, continueing")
+			continue
+		}
+		observer.Notify(measurement)
+	}
+
+	// TODO: will this trigger a concurrent write error when writing measurements to channels?
+	s.observers = lo.Filter(s.observers, func(obs *observer, index int) bool {
+		return obs.listener != nil
+	})
+	fmt.Println("resetting list")
+}
+
+type observer struct {
+	filter   Filter
+	measLock sync.Mutex
+	listener chan Measurement
+}
+
+func (o *observer) Notify(measurement Measurement) {
+	// TODO: Check if the measurement matches the given filter
+	go func() {
+		o.measLock.Lock()
+		defer o.measLock.Unlock()
+
+		fmt.Println("putting measurement in channel")
+		// TODO: how to handle order of measurements with go routine??
+		t := time.NewTicker(time.Second * 3)
+		select {
+		case o.listener <- measurement:
+		case <-t.C:
+			log.Println("[Warning] measurement not accepted by data observer within 3 seconds, closing stream")
+			close(o.listener)
+			o.listener = nil
+		}
+	}()
 }
