@@ -70,7 +70,10 @@ func (s *StorePSQL) List(filters ArchiveFilters, pageRequest pagination.Request)
 	).From("archived_ingress_dtos")
 
 	// Apply pagination
-	cursor := pagination.GetCursor[ArchivedIngressPaginationQuery](pageRequest)
+	cursor, err := pagination.GetCursor[ArchivedIngressPaginationQuery](pageRequest)
+	if err != nil {
+		return nil, fmt.Errorf("list archives, error getting pagination cursor: %w", err)
+	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, fmt.Errorf("list archives, could not apply pagination: %w", err)

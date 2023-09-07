@@ -56,7 +56,6 @@ services:
     - AMQP_XCHG_INGRESS=ingress
     - AMQP_XCHG_INGRESS_TOPIC=ingress.#
 
-
   httpimporter:
     build: 
       context: .
@@ -137,6 +136,8 @@ services:
     image: timescale/timescaledb-postgis:latest-pg12
     volumes:
       - ./tools/postgres.d:/docker-entrypoint-initdb.d
+    ports:
+      - 5432:5432
     environment:
     - POSTGRES_USER=sensorbucket
     - POSTGRES_PASSWORD=sensorbucket

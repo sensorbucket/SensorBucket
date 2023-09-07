@@ -55,6 +55,8 @@ paths:
     $ref: 'path-pipelines-by-id.yaml'
   /uplinks/{pipeline_id}:
     $ref: 'path-uplinks-by-pipeline.yaml'
+  /tracing:
+    $ref: 'path-tracing.yaml'
 components:
   securitySchemes:
     basicAuth:    

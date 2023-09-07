@@ -6,8 +6,8 @@ type NavItem struct {
 }
 
 var navItems = []NavItem{
-    {Label: "Overview", URL: "/", Icon: "material-symbols:home-outline-rounded" },
-    {Label: "Ingress", URL: "/ingress", Icon: "mdi:latest" },
+{
+    Label: "Overview", URL: "/", Icon: "material-symbols:home-outline-rounded" },
 }
 %}
 
@@ -44,7 +44,9 @@ type BasePage struct {
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="https://unpkg.com/browse/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+    <script type="text/javascript" src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.25/dist/uPlot.min.css" />
     <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
     <script type="text/javascript" src="/static/uplot.htmx.js"></script>
@@ -55,7 +57,7 @@ type BasePage struct {
 <body class="min-h-full" hx-boost="true">
     <sidebar class="w-screen lg:w-sidebar fixed lg:h-screen top-0 left-0 flex flex-col bg-secondary-600 z-[5000]">
         <header class="h-12 lg:h-header flex justify-between lg:flex-col lg:justify-end">
-            <a class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto " href="/overview"><img src="/static/logo-white.png" alt="SensorBucket" class="h-full" /></a>
+            <a hx-target="main" class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="/overview"><img src="/static/logo-white.png" alt="SensorBucket" class="h-full" /></a>
             <button 
                 class="h-8 w-8 self-center lg:hidden"
                 _="on click toggle .h-auto on <nav/>
@@ -66,7 +68,7 @@ type BasePage struct {
             </button>
         </header>
         <nav class="mt-4 px-8 pb-4 hidden lg:block">
-            <ul>
+            <ul hx-target="main">
                 <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
                 {% for _, item := range navItems %}
                 <li>
@@ -86,7 +88,7 @@ type BasePage struct {
         <header class="h-8 bg-white border-b" id="mustache">
             
         </header>
-        <main class="p-4">
+        <main class="p-4 pt-0 mt-4" id="main">
             {%= page.Body() %}
         </main>
     </section>
@@ -104,5 +106,5 @@ type BasePage struct {
 <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4/dist/ext/ws.js"></script>
 <script type="text/javascript" src="https://unpkg.com/hyperscript.org@0.9.11"></script>
 <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
-<script type="text/javascript" src="https://livejs.com/live.js"></script>
+<!--<script type="text/javascript" src="https://livejs.com/live.js"></script>-->
 {% endfunc %}

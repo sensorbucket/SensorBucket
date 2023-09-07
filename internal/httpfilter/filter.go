@@ -2,6 +2,7 @@ package httpfilter
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"reflect"
 
@@ -12,6 +13,7 @@ import (
 var d = schema.NewDecoder()
 
 func init() {
+	d.IgnoreUnknownKeys(true)
 	d.RegisterConverter(json.RawMessage{}, convertJSON)
 	d.RegisterConverter(uuid.UUID{}, convertUUID)
 }
@@ -21,11 +23,11 @@ func convertJSON(v string) reflect.Value {
 }
 
 func convertUUID(v string) reflect.Value {
-	id, err := uuid.Parse(v)
+	val, err := uuid.Parse(v)
 	if err != nil {
-		return reflect.ValueOf(nil)
+		reflect.ValueOf(fmt.Errorf("invalid uuid '%s'", v))
 	}
-	return reflect.ValueOf(id)
+	return reflect.ValueOf(val)
 }
 
 func Parse[T any](r *http.Request) (T, error) {

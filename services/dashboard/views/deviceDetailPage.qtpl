@@ -1,26 +1,14 @@
 {% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
 
 {% func (p *DeviceDetailPage) Body() %}
+    <div class="flex gap-3 text-sm my-4 italic items-center">
+        <a hx-target="main" href="/overview" class="hover:underline text-sky-600">Devices</a>
+        <span>/</span>
+        <span>{%s p.Device.Code %}</span>
+    </div>
     <div class="mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white border rounded-md">
-            {% if p.Device.Latitude != nil && p.Device.Longitude != nil %}
-                <div
-                    class="w-full h-96" 
-                    id="device-map"
-                    hx-ext="leaflet" 
-                    data-latitude="{%f *p.Device.Latitude %}"
-                    data-longitude="{%f *p.Device.Longitude %}"
-                    data-zoom="11"
-                >
-                    <map-marker
-                        latitude="{%f *p.Device.Latitude %}"
-                        longitude="{%f *p.Device.Longitude %}"
-                        label="{%s p.Device.Code %}"
-                        ></map-marker>
-                </div>
-            {% else %}
-                <span> Device has no location set </span>
-            {% endif %}
+            {%= renderDeviceMap(p.Device) %}
         </div>
         <div class="bg-white border rounded-md">
             <header class="border-b py-2 px-4 text-sm text-slate-700">
@@ -53,9 +41,9 @@
                     <tr class="hover:bg-slate-50 group">
                         <td class="px-4 h-10 border-b">{%dl sensor.ID %}</td>
                         <td class="border-b"><a
+                            hx-target="main"
                             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
                             href="/overview/devices/{%dl p.Device.ID %}/sensors/{%s sensor.Code %}"
-                            hx-target="main"
                         >{%s sensor.Code %}</a></td>
                         <td class="px-4 h-10 border-b">{%s sensor.Brand %}</td>
                         <td class="px-4 h-10 border-b">{%s sensor.Description %}</td>

@@ -20,10 +20,6 @@
             <span>{%s fmt.Sprintf("Has %d sensors", len(device.Sensors)) %}</span>
         </div>
         <div class="flex flex-col">
-            <small class="text-xs font-semibold text-slate-500">Sensor Count</small>
-            <span>{%s fmt.Sprintf("Has %d sensors", len(device.Sensors)) %}</span>
-        </div>
-        <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">State</small>
             <span>
             {% switch device.State %}
@@ -59,6 +55,10 @@
                 {% endif %}
                 <span class="col-span-full">{%s device.LocationDescription %}</span>
             </div>
+        </div>
+        <div class="flex flex-col col-span-full">
+            <small class="text-xs font-semibold text-slate-500">Properties</small>
+            <span>{%s string(device.Properties) %}</span>
         </div>
     </div>
 {% endfunc %}
@@ -100,4 +100,25 @@
             <span>{%s string(sensor.Properties) %}</span>
         </div>
     </div>
+{% endfunc %}
+
+{% func renderDeviceMap(device devices.Device) %}
+    {% if device.Latitude != nil && device.Longitude != nil %}
+        <div
+            class="w-full h-96" 
+            id="device-map"
+            hx-ext="leaflet" 
+            data-latitude="{%f *device.Latitude %}"
+            data-longitude="{%f *device.Longitude %}"
+            data-zoom="11"
+        >
+            <map-marker
+                latitude="{%f *device.Latitude %}"
+                longitude="{%f *device.Longitude %}"
+                label="{%s device.Code %}"
+            ></map-marker>
+        </div>
+    {% else %}
+        <span> Device has no location set </span>
+    {% endif %}
 {% endfunc %}

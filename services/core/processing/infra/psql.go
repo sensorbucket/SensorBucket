@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -95,7 +96,10 @@ func (s *PSQLStore) ListPipelines(filter processing.PipelinesFilter, p paginatio
 	}
 
 	// Pagination
-	cursor := pagination.GetCursor[pipelinePaginationQuery](p)
+	cursor, err := pagination.GetCursor[pipelinePaginationQuery](p)
+	if err != nil {
+		return page, fmt.Errorf("list pipelines, error getting pagination cursor: %w", err)
+	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return page, err

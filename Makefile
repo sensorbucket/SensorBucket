@@ -49,6 +49,15 @@ ifeq ($(strip $(outdir)),)
 else
 	@echo "Generating python client from spec"
 	@mkdir -p $(outdir)
-	@docker run --rm -v $(CURDIR):/sensorbucket -v $(outdir):/target --user `id -u` openapitools/openapi-generator-cli generate -i /sensorbucket/tools/openapi/api.yaml -g python-nextgen -t /sensorbucket/tools/openapi-templates/python -o /target \
+	@docker run --rm -v $(CURDIR):/sensorbucket -v $(outdir):/target --user `id -u` \
+		openapitools/openapi-generator-cli generate -i /sensorbucket/tools/openapi/api.yaml \
+		-g python-nextgen -t /sensorbucket/tools/openapi-templates/python -o /target \
 		--additional-properties=packageName=sensorbucket,packageUrl='https://sensorbucket.nl'
 endif
+
+golib:
+	@docker run --rm -v $(CURDIR):/sensorbucket --user `id -u` \
+		openapitools/openapi-generator-cli generate -i /sensorbucket/tools/openapi/api.yaml \
+		-g go -o /sensorbucket/pkg/api -t /sensorbucket/tools/openapi-templates/go \
+		--git-host=sensorbucket.nl --git-repo-id=api \
+		--additional-properties=packageName=api,packageUrl='https://sensorbucket.nl'
