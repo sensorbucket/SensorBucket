@@ -57,11 +57,14 @@ func (c *AMQPConnection) Start() {
 			close(user)
 		}
 		c.usersLock.Unlock()
-		c.connection.Close()
+		if c.connection != nil {
+			c.connection.Close()
+		}
 		log.Println("AMQPConnection stopped")
 	}()
 
 	retries := 0
+
 	// Keep reconnecting until we get a 'done' signal
 	for {
 		log.Println("AMQPConnection (re)connecting...")
