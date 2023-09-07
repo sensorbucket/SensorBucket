@@ -140,7 +140,9 @@ func (h *IngressPageHandler) createViewIngresses() ([]views.Ingress, error) {
 				if step.Error != "" {
 					viewStep.Tooltip = step.Error
 				} else if step.Duration != 0 {
-					viewStep.Tooltip = step.Duration.Truncate(1 * time.Millisecond).String()
+					viewStep.Tooltip = step.Duration.String()
+				} else if step.Status == 3 || viewStep.Status == 4 {
+					viewStep.Tooltip = "<1s"
 				}
 				return viewStep
 			}),
@@ -160,9 +162,12 @@ func (h *IngressPageHandler) ingressListPage() http.HandlerFunc {
 			web.HTTPError(w, err)
 			return
 		}
-		views.WriteIndex(w, &views.IngressPage{
-			Ingresses: ingresses,
-		})
+		page := &views.IngressPage{Ingresses: ingresses}
+		if isHX(r) {
+			page.WriteBody(w)
+			return
+		}
+		views.WriteIndex(w, page)
 	}
 }
 

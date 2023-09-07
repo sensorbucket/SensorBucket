@@ -16,9 +16,6 @@ import (
 	"time"
 )
 
-// checks if the Measurement type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &Measurement{}
-
 // Measurement struct for Measurement
 type Measurement struct {
 	UplinkMessageId string `json:"uplink_message_id"`
@@ -96,7 +93,7 @@ func (o *Measurement) GetUplinkMessageId() string {
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetUplinkMessageIdOk() (*string, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.UplinkMessageId, true
 }
@@ -120,7 +117,7 @@ func (o *Measurement) GetDeviceId() float32 {
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetDeviceIdOk() (*float32, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.DeviceId, true
 }
@@ -144,7 +141,7 @@ func (o *Measurement) GetDeviceCode() string {
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetDeviceCodeOk() (*string, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.DeviceCode, true
 }
@@ -156,7 +153,7 @@ func (o *Measurement) SetDeviceCode(v string) {
 
 // GetDeviceDescription returns the DeviceDescription field value if set, zero value otherwise.
 func (o *Measurement) GetDeviceDescription() string {
-	if o == nil || IsNil(o.DeviceDescription) {
+	if o == nil || isNil(o.DeviceDescription) {
 		var ret string
 		return ret
 	}
@@ -166,15 +163,15 @@ func (o *Measurement) GetDeviceDescription() string {
 // GetDeviceDescriptionOk returns a tuple with the DeviceDescription field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetDeviceDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.DeviceDescription) {
-		return nil, false
+	if o == nil || isNil(o.DeviceDescription) {
+    return nil, false
 	}
 	return o.DeviceDescription, true
 }
 
 // HasDeviceDescription returns a boolean if a field has been set.
 func (o *Measurement) HasDeviceDescription() bool {
-	if o != nil && !IsNil(o.DeviceDescription) {
+	if o != nil && !isNil(o.DeviceDescription) {
 		return true
 	}
 
@@ -188,7 +185,7 @@ func (o *Measurement) SetDeviceDescription(v string) {
 
 // GetDeviceLatitude returns the DeviceLatitude field value if set, zero value otherwise.
 func (o *Measurement) GetDeviceLatitude() float32 {
-	if o == nil || IsNil(o.DeviceLatitude) {
+	if o == nil || isNil(o.DeviceLatitude) {
 		var ret float32
 		return ret
 	}
@@ -198,15 +195,15 @@ func (o *Measurement) GetDeviceLatitude() float32 {
 // GetDeviceLatitudeOk returns a tuple with the DeviceLatitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetDeviceLatitudeOk() (*float32, bool) {
-	if o == nil || IsNil(o.DeviceLatitude) {
-		return nil, false
+	if o == nil || isNil(o.DeviceLatitude) {
+    return nil, false
 	}
 	return o.DeviceLatitude, true
 }
 
 // HasDeviceLatitude returns a boolean if a field has been set.
 func (o *Measurement) HasDeviceLatitude() bool {
-	if o != nil && !IsNil(o.DeviceLatitude) {
+	if o != nil && !isNil(o.DeviceLatitude) {
 		return true
 	}
 
@@ -220,7 +217,7 @@ func (o *Measurement) SetDeviceLatitude(v float32) {
 
 // GetDeviceLongitude returns the DeviceLongitude field value if set, zero value otherwise.
 func (o *Measurement) GetDeviceLongitude() float32 {
-	if o == nil || IsNil(o.DeviceLongitude) {
+	if o == nil || isNil(o.DeviceLongitude) {
 		var ret float32
 		return ret
 	}
@@ -230,15 +227,15 @@ func (o *Measurement) GetDeviceLongitude() float32 {
 // GetDeviceLongitudeOk returns a tuple with the DeviceLongitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetDeviceLongitudeOk() (*float32, bool) {
-	if o == nil || IsNil(o.DeviceLongitude) {
-		return nil, false
+	if o == nil || isNil(o.DeviceLongitude) {
+    return nil, false
 	}
 	return o.DeviceLongitude, true
 }
 
 // HasDeviceLongitude returns a boolean if a field has been set.
 func (o *Measurement) HasDeviceLongitude() bool {
-	if o != nil && !IsNil(o.DeviceLongitude) {
+	if o != nil && !isNil(o.DeviceLongitude) {
 		return true
 	}
 
@@ -252,7 +249,7 @@ func (o *Measurement) SetDeviceLongitude(v float32) {
 
 // GetDeviceAltitude returns the DeviceAltitude field value if set, zero value otherwise.
 func (o *Measurement) GetDeviceAltitude() float32 {
-	if o == nil || IsNil(o.DeviceAltitude) {
+	if o == nil || isNil(o.DeviceAltitude) {
 		var ret float32
 		return ret
 	}
@@ -262,15 +259,15 @@ func (o *Measurement) GetDeviceAltitude() float32 {
 // GetDeviceAltitudeOk returns a tuple with the DeviceAltitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetDeviceAltitudeOk() (*float32, bool) {
-	if o == nil || IsNil(o.DeviceAltitude) {
-		return nil, false
+	if o == nil || isNil(o.DeviceAltitude) {
+    return nil, false
 	}
 	return o.DeviceAltitude, true
 }
 
 // HasDeviceAltitude returns a boolean if a field has been set.
 func (o *Measurement) HasDeviceAltitude() bool {
-	if o != nil && !IsNil(o.DeviceAltitude) {
+	if o != nil && !isNil(o.DeviceAltitude) {
 		return true
 	}
 
@@ -284,7 +281,7 @@ func (o *Measurement) SetDeviceAltitude(v float32) {
 
 // GetDeviceLocationDescription returns the DeviceLocationDescription field value if set, zero value otherwise.
 func (o *Measurement) GetDeviceLocationDescription() string {
-	if o == nil || IsNil(o.DeviceLocationDescription) {
+	if o == nil || isNil(o.DeviceLocationDescription) {
 		var ret string
 		return ret
 	}
@@ -294,15 +291,15 @@ func (o *Measurement) GetDeviceLocationDescription() string {
 // GetDeviceLocationDescriptionOk returns a tuple with the DeviceLocationDescription field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetDeviceLocationDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.DeviceLocationDescription) {
-		return nil, false
+	if o == nil || isNil(o.DeviceLocationDescription) {
+    return nil, false
 	}
 	return o.DeviceLocationDescription, true
 }
 
 // HasDeviceLocationDescription returns a boolean if a field has been set.
 func (o *Measurement) HasDeviceLocationDescription() bool {
-	if o != nil && !IsNil(o.DeviceLocationDescription) {
+	if o != nil && !isNil(o.DeviceLocationDescription) {
 		return true
 	}
 
@@ -316,7 +313,7 @@ func (o *Measurement) SetDeviceLocationDescription(v string) {
 
 // GetDeviceProperties returns the DeviceProperties field value if set, zero value otherwise.
 func (o *Measurement) GetDeviceProperties() map[string]interface{} {
-	if o == nil || IsNil(o.DeviceProperties) {
+	if o == nil || isNil(o.DeviceProperties) {
 		var ret map[string]interface{}
 		return ret
 	}
@@ -326,15 +323,15 @@ func (o *Measurement) GetDeviceProperties() map[string]interface{} {
 // GetDevicePropertiesOk returns a tuple with the DeviceProperties field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetDevicePropertiesOk() (map[string]interface{}, bool) {
-	if o == nil || IsNil(o.DeviceProperties) {
-		return map[string]interface{}{}, false
+	if o == nil || isNil(o.DeviceProperties) {
+    return map[string]interface{}{}, false
 	}
 	return o.DeviceProperties, true
 }
 
 // HasDeviceProperties returns a boolean if a field has been set.
 func (o *Measurement) HasDeviceProperties() bool {
-	if o != nil && !IsNil(o.DeviceProperties) {
+	if o != nil && !isNil(o.DeviceProperties) {
 		return true
 	}
 
@@ -360,7 +357,7 @@ func (o *Measurement) GetDeviceState() float32 {
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetDeviceStateOk() (*float32, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.DeviceState, true
 }
@@ -384,7 +381,7 @@ func (o *Measurement) GetSensorId() float32 {
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetSensorIdOk() (*float32, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.SensorId, true
 }
@@ -408,7 +405,7 @@ func (o *Measurement) GetSensorCode() string {
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetSensorCodeOk() (*string, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.SensorCode, true
 }
@@ -420,7 +417,7 @@ func (o *Measurement) SetSensorCode(v string) {
 
 // GetSensorDescription returns the SensorDescription field value if set, zero value otherwise.
 func (o *Measurement) GetSensorDescription() string {
-	if o == nil || IsNil(o.SensorDescription) {
+	if o == nil || isNil(o.SensorDescription) {
 		var ret string
 		return ret
 	}
@@ -430,15 +427,15 @@ func (o *Measurement) GetSensorDescription() string {
 // GetSensorDescriptionOk returns a tuple with the SensorDescription field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetSensorDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.SensorDescription) {
-		return nil, false
+	if o == nil || isNil(o.SensorDescription) {
+    return nil, false
 	}
 	return o.SensorDescription, true
 }
 
 // HasSensorDescription returns a boolean if a field has been set.
 func (o *Measurement) HasSensorDescription() bool {
-	if o != nil && !IsNil(o.SensorDescription) {
+	if o != nil && !isNil(o.SensorDescription) {
 		return true
 	}
 
@@ -464,7 +461,7 @@ func (o *Measurement) GetSensorExternalId() string {
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetSensorExternalIdOk() (*string, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.SensorExternalId, true
 }
@@ -476,7 +473,7 @@ func (o *Measurement) SetSensorExternalId(v string) {
 
 // GetSensorProperties returns the SensorProperties field value if set, zero value otherwise.
 func (o *Measurement) GetSensorProperties() map[string]interface{} {
-	if o == nil || IsNil(o.SensorProperties) {
+	if o == nil || isNil(o.SensorProperties) {
 		var ret map[string]interface{}
 		return ret
 	}
@@ -486,15 +483,15 @@ func (o *Measurement) GetSensorProperties() map[string]interface{} {
 // GetSensorPropertiesOk returns a tuple with the SensorProperties field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetSensorPropertiesOk() (map[string]interface{}, bool) {
-	if o == nil || IsNil(o.SensorProperties) {
-		return map[string]interface{}{}, false
+	if o == nil || isNil(o.SensorProperties) {
+    return map[string]interface{}{}, false
 	}
 	return o.SensorProperties, true
 }
 
 // HasSensorProperties returns a boolean if a field has been set.
 func (o *Measurement) HasSensorProperties() bool {
-	if o != nil && !IsNil(o.SensorProperties) {
+	if o != nil && !isNil(o.SensorProperties) {
 		return true
 	}
 
@@ -508,7 +505,7 @@ func (o *Measurement) SetSensorProperties(v map[string]interface{}) {
 
 // GetSensorBrand returns the SensorBrand field value if set, zero value otherwise.
 func (o *Measurement) GetSensorBrand() string {
-	if o == nil || IsNil(o.SensorBrand) {
+	if o == nil || isNil(o.SensorBrand) {
 		var ret string
 		return ret
 	}
@@ -518,15 +515,15 @@ func (o *Measurement) GetSensorBrand() string {
 // GetSensorBrandOk returns a tuple with the SensorBrand field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetSensorBrandOk() (*string, bool) {
-	if o == nil || IsNil(o.SensorBrand) {
-		return nil, false
+	if o == nil || isNil(o.SensorBrand) {
+    return nil, false
 	}
 	return o.SensorBrand, true
 }
 
 // HasSensorBrand returns a boolean if a field has been set.
 func (o *Measurement) HasSensorBrand() bool {
-	if o != nil && !IsNil(o.SensorBrand) {
+	if o != nil && !isNil(o.SensorBrand) {
 		return true
 	}
 
@@ -540,7 +537,7 @@ func (o *Measurement) SetSensorBrand(v string) {
 
 // GetSensorArchiveTime returns the SensorArchiveTime field value if set, zero value otherwise.
 func (o *Measurement) GetSensorArchiveTime() float32 {
-	if o == nil || IsNil(o.SensorArchiveTime) {
+	if o == nil || isNil(o.SensorArchiveTime) {
 		var ret float32
 		return ret
 	}
@@ -550,15 +547,15 @@ func (o *Measurement) GetSensorArchiveTime() float32 {
 // GetSensorArchiveTimeOk returns a tuple with the SensorArchiveTime field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetSensorArchiveTimeOk() (*float32, bool) {
-	if o == nil || IsNil(o.SensorArchiveTime) {
-		return nil, false
+	if o == nil || isNil(o.SensorArchiveTime) {
+    return nil, false
 	}
 	return o.SensorArchiveTime, true
 }
 
 // HasSensorArchiveTime returns a boolean if a field has been set.
 func (o *Measurement) HasSensorArchiveTime() bool {
-	if o != nil && !IsNil(o.SensorArchiveTime) {
+	if o != nil && !isNil(o.SensorArchiveTime) {
 		return true
 	}
 
@@ -584,7 +581,7 @@ func (o *Measurement) GetDatastreamId() string {
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetDatastreamIdOk() (*string, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.DatastreamId, true
 }
@@ -596,7 +593,7 @@ func (o *Measurement) SetDatastreamId(v string) {
 
 // GetDatastreamDescription returns the DatastreamDescription field value if set, zero value otherwise.
 func (o *Measurement) GetDatastreamDescription() string {
-	if o == nil || IsNil(o.DatastreamDescription) {
+	if o == nil || isNil(o.DatastreamDescription) {
 		var ret string
 		return ret
 	}
@@ -606,15 +603,15 @@ func (o *Measurement) GetDatastreamDescription() string {
 // GetDatastreamDescriptionOk returns a tuple with the DatastreamDescription field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetDatastreamDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.DatastreamDescription) {
-		return nil, false
+	if o == nil || isNil(o.DatastreamDescription) {
+    return nil, false
 	}
 	return o.DatastreamDescription, true
 }
 
 // HasDatastreamDescription returns a boolean if a field has been set.
 func (o *Measurement) HasDatastreamDescription() bool {
-	if o != nil && !IsNil(o.DatastreamDescription) {
+	if o != nil && !isNil(o.DatastreamDescription) {
 		return true
 	}
 
@@ -640,7 +637,7 @@ func (o *Measurement) GetDatastreamObservedProperty() string {
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetDatastreamObservedPropertyOk() (*string, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.DatastreamObservedProperty, true
 }
@@ -664,7 +661,7 @@ func (o *Measurement) GetDatastreamUnitOfMeasurement() string {
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetDatastreamUnitOfMeasurementOk() (*string, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.DatastreamUnitOfMeasurement, true
 }
@@ -688,7 +685,7 @@ func (o *Measurement) GetMeasurementTimestamp() time.Time {
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetMeasurementTimestampOk() (*time.Time, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.MeasurementTimestamp, true
 }
@@ -712,7 +709,7 @@ func (o *Measurement) GetMeasurementValue() float32 {
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetMeasurementValueOk() (*float32, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.MeasurementValue, true
 }
@@ -724,7 +721,7 @@ func (o *Measurement) SetMeasurementValue(v float32) {
 
 // GetMeasurementLatitude returns the MeasurementLatitude field value if set, zero value otherwise.
 func (o *Measurement) GetMeasurementLatitude() float32 {
-	if o == nil || IsNil(o.MeasurementLatitude) {
+	if o == nil || isNil(o.MeasurementLatitude) {
 		var ret float32
 		return ret
 	}
@@ -734,15 +731,15 @@ func (o *Measurement) GetMeasurementLatitude() float32 {
 // GetMeasurementLatitudeOk returns a tuple with the MeasurementLatitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetMeasurementLatitudeOk() (*float32, bool) {
-	if o == nil || IsNil(o.MeasurementLatitude) {
-		return nil, false
+	if o == nil || isNil(o.MeasurementLatitude) {
+    return nil, false
 	}
 	return o.MeasurementLatitude, true
 }
 
 // HasMeasurementLatitude returns a boolean if a field has been set.
 func (o *Measurement) HasMeasurementLatitude() bool {
-	if o != nil && !IsNil(o.MeasurementLatitude) {
+	if o != nil && !isNil(o.MeasurementLatitude) {
 		return true
 	}
 
@@ -756,7 +753,7 @@ func (o *Measurement) SetMeasurementLatitude(v float32) {
 
 // GetMeasurementLongitude returns the MeasurementLongitude field value if set, zero value otherwise.
 func (o *Measurement) GetMeasurementLongitude() float32 {
-	if o == nil || IsNil(o.MeasurementLongitude) {
+	if o == nil || isNil(o.MeasurementLongitude) {
 		var ret float32
 		return ret
 	}
@@ -766,15 +763,15 @@ func (o *Measurement) GetMeasurementLongitude() float32 {
 // GetMeasurementLongitudeOk returns a tuple with the MeasurementLongitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetMeasurementLongitudeOk() (*float32, bool) {
-	if o == nil || IsNil(o.MeasurementLongitude) {
-		return nil, false
+	if o == nil || isNil(o.MeasurementLongitude) {
+    return nil, false
 	}
 	return o.MeasurementLongitude, true
 }
 
 // HasMeasurementLongitude returns a boolean if a field has been set.
 func (o *Measurement) HasMeasurementLongitude() bool {
-	if o != nil && !IsNil(o.MeasurementLongitude) {
+	if o != nil && !isNil(o.MeasurementLongitude) {
 		return true
 	}
 
@@ -788,7 +785,7 @@ func (o *Measurement) SetMeasurementLongitude(v float32) {
 
 // GetMeasurementAltitude returns the MeasurementAltitude field value if set, zero value otherwise.
 func (o *Measurement) GetMeasurementAltitude() float32 {
-	if o == nil || IsNil(o.MeasurementAltitude) {
+	if o == nil || isNil(o.MeasurementAltitude) {
 		var ret float32
 		return ret
 	}
@@ -798,15 +795,15 @@ func (o *Measurement) GetMeasurementAltitude() float32 {
 // GetMeasurementAltitudeOk returns a tuple with the MeasurementAltitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetMeasurementAltitudeOk() (*float32, bool) {
-	if o == nil || IsNil(o.MeasurementAltitude) {
-		return nil, false
+	if o == nil || isNil(o.MeasurementAltitude) {
+    return nil, false
 	}
 	return o.MeasurementAltitude, true
 }
 
 // HasMeasurementAltitude returns a boolean if a field has been set.
 func (o *Measurement) HasMeasurementAltitude() bool {
-	if o != nil && !IsNil(o.MeasurementAltitude) {
+	if o != nil && !isNil(o.MeasurementAltitude) {
 		return true
 	}
 
@@ -820,7 +817,7 @@ func (o *Measurement) SetMeasurementAltitude(v float32) {
 
 // GetMeasurementProperties returns the MeasurementProperties field value if set, zero value otherwise.
 func (o *Measurement) GetMeasurementProperties() map[string]interface{} {
-	if o == nil || IsNil(o.MeasurementProperties) {
+	if o == nil || isNil(o.MeasurementProperties) {
 		var ret map[string]interface{}
 		return ret
 	}
@@ -830,15 +827,15 @@ func (o *Measurement) GetMeasurementProperties() map[string]interface{} {
 // GetMeasurementPropertiesOk returns a tuple with the MeasurementProperties field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetMeasurementPropertiesOk() (map[string]interface{}, bool) {
-	if o == nil || IsNil(o.MeasurementProperties) {
-		return map[string]interface{}{}, false
+	if o == nil || isNil(o.MeasurementProperties) {
+    return map[string]interface{}{}, false
 	}
 	return o.MeasurementProperties, true
 }
 
 // HasMeasurementProperties returns a boolean if a field has been set.
 func (o *Measurement) HasMeasurementProperties() bool {
-	if o != nil && !IsNil(o.MeasurementProperties) {
+	if o != nil && !isNil(o.MeasurementProperties) {
 		return true
 	}
 
@@ -864,7 +861,7 @@ func (o *Measurement) GetMeasurementExpiration() time.Time {
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetMeasurementExpirationOk() (*time.Time, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.MeasurementExpiration, true
 }
@@ -876,7 +873,7 @@ func (o *Measurement) SetMeasurementExpiration(v time.Time) {
 
 // GetCreatedAt returns the CreatedAt field value if set, zero value otherwise.
 func (o *Measurement) GetCreatedAt() time.Time {
-	if o == nil || IsNil(o.CreatedAt) {
+	if o == nil || isNil(o.CreatedAt) {
 		var ret time.Time
 		return ret
 	}
@@ -886,15 +883,15 @@ func (o *Measurement) GetCreatedAt() time.Time {
 // GetCreatedAtOk returns a tuple with the CreatedAt field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Measurement) GetCreatedAtOk() (*time.Time, bool) {
-	if o == nil || IsNil(o.CreatedAt) {
-		return nil, false
+	if o == nil || isNil(o.CreatedAt) {
+    return nil, false
 	}
 	return o.CreatedAt, true
 }
 
 // HasCreatedAt returns a boolean if a field has been set.
 func (o *Measurement) HasCreatedAt() bool {
-	if o != nil && !IsNil(o.CreatedAt) {
+	if o != nil && !isNil(o.CreatedAt) {
 		return true
 	}
 
@@ -907,77 +904,95 @@ func (o *Measurement) SetCreatedAt(v time.Time) {
 }
 
 func (o Measurement) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o Measurement) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["uplink_message_id"] = o.UplinkMessageId
-	toSerialize["device_id"] = o.DeviceId
-	toSerialize["device_code"] = o.DeviceCode
-	if !IsNil(o.DeviceDescription) {
+	if true {
+		toSerialize["uplink_message_id"] = o.UplinkMessageId
+	}
+	if true {
+		toSerialize["device_id"] = o.DeviceId
+	}
+	if true {
+		toSerialize["device_code"] = o.DeviceCode
+	}
+	if !isNil(o.DeviceDescription) {
 		toSerialize["device_description"] = o.DeviceDescription
 	}
-	if !IsNil(o.DeviceLatitude) {
+	if !isNil(o.DeviceLatitude) {
 		toSerialize["device_latitude"] = o.DeviceLatitude
 	}
-	if !IsNil(o.DeviceLongitude) {
+	if !isNil(o.DeviceLongitude) {
 		toSerialize["device_longitude"] = o.DeviceLongitude
 	}
-	if !IsNil(o.DeviceAltitude) {
+	if !isNil(o.DeviceAltitude) {
 		toSerialize["device_altitude"] = o.DeviceAltitude
 	}
-	if !IsNil(o.DeviceLocationDescription) {
+	if !isNil(o.DeviceLocationDescription) {
 		toSerialize["device_location_description"] = o.DeviceLocationDescription
 	}
-	if !IsNil(o.DeviceProperties) {
+	if !isNil(o.DeviceProperties) {
 		toSerialize["device_properties"] = o.DeviceProperties
 	}
-	toSerialize["device_state"] = o.DeviceState
-	toSerialize["sensor_id"] = o.SensorId
-	toSerialize["sensor_code"] = o.SensorCode
-	if !IsNil(o.SensorDescription) {
+	if true {
+		toSerialize["device_state"] = o.DeviceState
+	}
+	if true {
+		toSerialize["sensor_id"] = o.SensorId
+	}
+	if true {
+		toSerialize["sensor_code"] = o.SensorCode
+	}
+	if !isNil(o.SensorDescription) {
 		toSerialize["sensor_description"] = o.SensorDescription
 	}
-	toSerialize["sensor_external_id"] = o.SensorExternalId
-	if !IsNil(o.SensorProperties) {
+	if true {
+		toSerialize["sensor_external_id"] = o.SensorExternalId
+	}
+	if !isNil(o.SensorProperties) {
 		toSerialize["sensor_properties"] = o.SensorProperties
 	}
-	if !IsNil(o.SensorBrand) {
+	if !isNil(o.SensorBrand) {
 		toSerialize["sensor_brand"] = o.SensorBrand
 	}
-	if !IsNil(o.SensorArchiveTime) {
+	if !isNil(o.SensorArchiveTime) {
 		toSerialize["sensor_archive_time"] = o.SensorArchiveTime
 	}
-	toSerialize["datastream_id"] = o.DatastreamId
-	if !IsNil(o.DatastreamDescription) {
+	if true {
+		toSerialize["datastream_id"] = o.DatastreamId
+	}
+	if !isNil(o.DatastreamDescription) {
 		toSerialize["datastream_description"] = o.DatastreamDescription
 	}
-	toSerialize["datastream_observed_property"] = o.DatastreamObservedProperty
-	toSerialize["datastream_unit_of_measurement"] = o.DatastreamUnitOfMeasurement
-	toSerialize["measurement_timestamp"] = o.MeasurementTimestamp
-	toSerialize["measurement_value"] = o.MeasurementValue
-	if !IsNil(o.MeasurementLatitude) {
+	if true {
+		toSerialize["datastream_observed_property"] = o.DatastreamObservedProperty
+	}
+	if true {
+		toSerialize["datastream_unit_of_measurement"] = o.DatastreamUnitOfMeasurement
+	}
+	if true {
+		toSerialize["measurement_timestamp"] = o.MeasurementTimestamp
+	}
+	if true {
+		toSerialize["measurement_value"] = o.MeasurementValue
+	}
+	if !isNil(o.MeasurementLatitude) {
 		toSerialize["measurement_latitude"] = o.MeasurementLatitude
 	}
-	if !IsNil(o.MeasurementLongitude) {
+	if !isNil(o.MeasurementLongitude) {
 		toSerialize["measurement_longitude"] = o.MeasurementLongitude
 	}
-	if !IsNil(o.MeasurementAltitude) {
+	if !isNil(o.MeasurementAltitude) {
 		toSerialize["measurement_altitude"] = o.MeasurementAltitude
 	}
-	if !IsNil(o.MeasurementProperties) {
+	if !isNil(o.MeasurementProperties) {
 		toSerialize["measurement_properties"] = o.MeasurementProperties
 	}
-	toSerialize["measurement_expiration"] = o.MeasurementExpiration
-	if !IsNil(o.CreatedAt) {
+	if true {
+		toSerialize["measurement_expiration"] = o.MeasurementExpiration
+	}
+	if !isNil(o.CreatedAt) {
 		toSerialize["created_at"] = o.CreatedAt
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableMeasurement struct {

@@ -14,10 +14,9 @@ package api
 import (
 	"bytes"
 	"context"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
-    "sensorbucket.nl/sensorbucket/internal/web"
 	"strings"
 )
 
@@ -75,7 +74,7 @@ func (a *DevicesApiService) AddSensorToSensorGroupExecute(r ApiAddSensorToSensor
 	}
 
 	localVarPath := localBasePath + "/sensor-groups/{id}/sensors"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -110,20 +109,18 @@ func (a *DevicesApiService) AddSensorToSensorGroupExecute(r ApiAddSensorToSensor
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -223,20 +220,18 @@ func (a *DevicesApiService) CreateDeviceExecute(r ApiCreateDeviceRequest) (*Crea
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -305,7 +300,7 @@ func (a *DevicesApiService) CreateDeviceSensorExecute(r ApiCreateDeviceSensorReq
 	}
 
 	localVarPath := localBasePath + "/devices/{device_id}/sensors"
-	localVarPath = strings.Replace(localVarPath, "{"+"device_id"+"}", url.PathEscape(parameterValueToString(r.deviceId, "deviceId")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"device_id"+"}", url.PathEscape(parameterToString(r.deviceId, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -340,20 +335,18 @@ func (a *DevicesApiService) CreateDeviceSensorExecute(r ApiCreateDeviceSensorReq
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -450,20 +443,18 @@ func (a *DevicesApiService) CreateSensorGroupExecute(r ApiCreateSensorGroupReque
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -528,8 +519,8 @@ func (a *DevicesApiService) DeleteDeviceSensorExecute(r ApiDeleteDeviceSensorReq
 	}
 
 	localVarPath := localBasePath + "/device/{device_id}/sensors/{sensor_code}"
-	localVarPath = strings.Replace(localVarPath, "{"+"device_id"+"}", url.PathEscape(parameterValueToString(r.deviceId, "deviceId")), -1)
-	localVarPath = strings.Replace(localVarPath, "{"+"sensor_code"+"}", url.PathEscape(parameterValueToString(r.sensorCode, "sensorCode")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"device_id"+"}", url.PathEscape(parameterToString(r.deviceId, "")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"sensor_code"+"}", url.PathEscape(parameterToString(r.sensorCode, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -562,20 +553,18 @@ func (a *DevicesApiService) DeleteDeviceSensorExecute(r ApiDeleteDeviceSensorReq
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -638,8 +627,8 @@ func (a *DevicesApiService) DeleteSensorFromSensorGroupExecute(r ApiDeleteSensor
 	}
 
 	localVarPath := localBasePath + "/sensor-groups/{id}/sensors/{sensor_id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
-	localVarPath = strings.Replace(localVarPath, "{"+"sensor_id"+"}", url.PathEscape(parameterValueToString(r.sensorId, "sensorId")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterToString(r.id, "")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"sensor_id"+"}", url.PathEscape(parameterToString(r.sensorId, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -672,20 +661,18 @@ func (a *DevicesApiService) DeleteSensorFromSensorGroupExecute(r ApiDeleteSensor
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -745,7 +732,7 @@ func (a *DevicesApiService) DeleteSensorGroupExecute(r ApiDeleteSensorGroupReque
 	}
 
 	localVarPath := localBasePath + "/sensor-groups/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -778,20 +765,18 @@ func (a *DevicesApiService) DeleteSensorGroupExecute(r ApiDeleteSensorGroupReque
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -853,7 +838,7 @@ func (a *DevicesApiService) GetDeviceExecute(r ApiGetDeviceRequest) (*GetDevice2
 	}
 
 	localVarPath := localBasePath + "/devices/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -886,20 +871,18 @@ func (a *DevicesApiService) GetDeviceExecute(r ApiGetDeviceRequest) (*GetDevice2
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -959,7 +942,7 @@ func (a *DevicesApiService) GetSensorGroupExecute(r ApiGetSensorGroupRequest) (*
 	}
 
 	localVarPath := localBasePath + "/sensor-groups/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -992,20 +975,18 @@ func (a *DevicesApiService) GetSensorGroupExecute(r ApiGetSensorGroupRequest) (*
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -1079,17 +1060,17 @@ func (a *DevicesApiService) ListDeviceSensorsExecute(r ApiListDeviceSensorsReque
 	}
 
 	localVarPath := localBasePath + "/devices/{device_id}/sensors"
-	localVarPath = strings.Replace(localVarPath, "{"+"device_id"+"}", url.PathEscape(parameterValueToString(r.deviceId, "deviceId")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"device_id"+"}", url.PathEscape(parameterToString(r.deviceId, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
 	if r.cursor != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "cursor", r.cursor, "")
+		localVarQueryParams.Add("cursor", parameterToString(*r.cursor, ""))
 	}
 	if r.limit != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "limit", r.limit, "")
+		localVarQueryParams.Add("limit", parameterToString(*r.limit, ""))
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -1118,20 +1099,18 @@ func (a *DevicesApiService) ListDeviceSensorsExecute(r ApiListDeviceSensorsReque
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -1271,34 +1250,34 @@ func (a *DevicesApiService) ListDevicesExecute(r ApiListDevicesRequest) (*ListDe
 	localVarFormParams := url.Values{}
 
 	if r.properties != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "properties", r.properties, "")
+		localVarQueryParams.Add("properties", parameterToString(*r.properties, ""))
 	}
 	if r.north != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "north", r.north, "")
+		localVarQueryParams.Add("north", parameterToString(*r.north, ""))
 	}
 	if r.west != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "west", r.west, "")
+		localVarQueryParams.Add("west", parameterToString(*r.west, ""))
 	}
 	if r.east != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "east", r.east, "")
+		localVarQueryParams.Add("east", parameterToString(*r.east, ""))
 	}
 	if r.south != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "south", r.south, "")
+		localVarQueryParams.Add("south", parameterToString(*r.south, ""))
 	}
 	if r.latitude != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "latitude", r.latitude, "")
+		localVarQueryParams.Add("latitude", parameterToString(*r.latitude, ""))
 	}
 	if r.longitude != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "longitude", r.longitude, "")
+		localVarQueryParams.Add("longitude", parameterToString(*r.longitude, ""))
 	}
 	if r.distance != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "distance", r.distance, "")
+		localVarQueryParams.Add("distance", parameterToString(*r.distance, ""))
 	}
 	if r.cursor != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "cursor", r.cursor, "")
+		localVarQueryParams.Add("cursor", parameterToString(*r.cursor, ""))
 	}
 	if r.limit != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "limit", r.limit, "")
+		localVarQueryParams.Add("limit", parameterToString(*r.limit, ""))
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -1327,20 +1306,18 @@ func (a *DevicesApiService) ListDevicesExecute(r ApiListDevicesRequest) (*ListDe
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -1417,10 +1394,10 @@ func (a *DevicesApiService) ListSensorGroupsExecute(r ApiListSensorGroupsRequest
 	localVarFormParams := url.Values{}
 
 	if r.cursor != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "cursor", r.cursor, "")
+		localVarQueryParams.Add("cursor", parameterToString(*r.cursor, ""))
 	}
 	if r.limit != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "limit", r.limit, "")
+		localVarQueryParams.Add("limit", parameterToString(*r.limit, ""))
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -1449,20 +1426,18 @@ func (a *DevicesApiService) ListSensorGroupsExecute(r ApiListSensorGroupsRequest
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -1539,10 +1514,10 @@ func (a *DevicesApiService) ListSensorsExecute(r ApiListSensorsRequest) (*ListDe
 	localVarFormParams := url.Values{}
 
 	if r.cursor != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "cursor", r.cursor, "")
+		localVarQueryParams.Add("cursor", parameterToString(*r.cursor, ""))
 	}
 	if r.limit != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "limit", r.limit, "")
+		localVarQueryParams.Add("limit", parameterToString(*r.limit, ""))
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -1571,20 +1546,18 @@ func (a *DevicesApiService) ListSensorsExecute(r ApiListSensorsRequest) (*ListDe
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -1652,7 +1625,7 @@ func (a *DevicesApiService) UpdateDeviceExecute(r ApiUpdateDeviceRequest) (*Upda
 	}
 
 	localVarPath := localBasePath + "/devices/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1687,20 +1660,18 @@ func (a *DevicesApiService) UpdateDeviceExecute(r ApiUpdateDeviceRequest) (*Upda
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -1768,7 +1739,7 @@ func (a *DevicesApiService) UpdateSensorGroupExecute(r ApiUpdateSensorGroupReque
 	}
 
 	localVarPath := localBasePath + "/sensor-groups/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1803,20 +1774,18 @@ func (a *DevicesApiService) UpdateSensorGroupExecute(r ApiUpdateSensorGroupReque
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 

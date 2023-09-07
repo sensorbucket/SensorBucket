@@ -19,9 +19,10 @@ get:
         type: number
     - in: query
       name: tracing_id
+      style: form
+      explode: true
       schema:
         type: array
-        collectionFormat: multi
         items:
           type: string
           format: uuid
@@ -36,7 +37,7 @@ get:
       name: status
       schema:
         type: integer
-        example: "in progress"
+        example: 2
     - in: query
       name: duration_greater_than
       schema:

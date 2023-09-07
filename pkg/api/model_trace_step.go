@@ -16,9 +16,6 @@ import (
 	"time"
 )
 
-// checks if the TraceStep type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &TraceStep{}
-
 // TraceStep struct for TraceStep
 type TraceStep struct {
 	StartTime *time.Time `json:"start_time,omitempty"`
@@ -51,7 +48,7 @@ func NewTraceStepWithDefaults() *TraceStep {
 
 // GetStartTime returns the StartTime field value if set, zero value otherwise.
 func (o *TraceStep) GetStartTime() time.Time {
-	if o == nil || IsNil(o.StartTime) {
+	if o == nil || isNil(o.StartTime) {
 		var ret time.Time
 		return ret
 	}
@@ -61,15 +58,15 @@ func (o *TraceStep) GetStartTime() time.Time {
 // GetStartTimeOk returns a tuple with the StartTime field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *TraceStep) GetStartTimeOk() (*time.Time, bool) {
-	if o == nil || IsNil(o.StartTime) {
-		return nil, false
+	if o == nil || isNil(o.StartTime) {
+    return nil, false
 	}
 	return o.StartTime, true
 }
 
 // HasStartTime returns a boolean if a field has been set.
 func (o *TraceStep) HasStartTime() bool {
-	if o != nil && !IsNil(o.StartTime) {
+	if o != nil && !isNil(o.StartTime) {
 		return true
 	}
 
@@ -95,7 +92,7 @@ func (o *TraceStep) GetStatus() int32 {
 // and a boolean to check if the value has been set.
 func (o *TraceStep) GetStatusOk() (*int32, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.Status, true
 }
@@ -119,7 +116,7 @@ func (o *TraceStep) GetStatusString() string {
 // and a boolean to check if the value has been set.
 func (o *TraceStep) GetStatusStringOk() (*string, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.StatusString, true
 }
@@ -143,7 +140,7 @@ func (o *TraceStep) GetDuration() float32 {
 // and a boolean to check if the value has been set.
 func (o *TraceStep) GetDurationOk() (*float32, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.Duration, true
 }
@@ -155,7 +152,7 @@ func (o *TraceStep) SetDuration(v float32) {
 
 // GetError returns the Error field value if set, zero value otherwise.
 func (o *TraceStep) GetError() string {
-	if o == nil || IsNil(o.Error) {
+	if o == nil || isNil(o.Error) {
 		var ret string
 		return ret
 	}
@@ -165,15 +162,15 @@ func (o *TraceStep) GetError() string {
 // GetErrorOk returns a tuple with the Error field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *TraceStep) GetErrorOk() (*string, bool) {
-	if o == nil || IsNil(o.Error) {
-		return nil, false
+	if o == nil || isNil(o.Error) {
+    return nil, false
 	}
 	return o.Error, true
 }
 
 // HasError returns a boolean if a field has been set.
 func (o *TraceStep) HasError() bool {
-	if o != nil && !IsNil(o.Error) {
+	if o != nil && !isNil(o.Error) {
 		return true
 	}
 
@@ -186,25 +183,23 @@ func (o *TraceStep) SetError(v string) {
 }
 
 func (o TraceStep) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o TraceStep) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.StartTime) {
+	if !isNil(o.StartTime) {
 		toSerialize["start_time"] = o.StartTime
 	}
-	toSerialize["status"] = o.Status
-	toSerialize["status_string"] = o.StatusString
-	toSerialize["duration"] = o.Duration
-	if !IsNil(o.Error) {
+	if true {
+		toSerialize["status"] = o.Status
+	}
+	if true {
+		toSerialize["status_string"] = o.StatusString
+	}
+	if true {
+		toSerialize["duration"] = o.Duration
+	}
+	if !isNil(o.Error) {
 		toSerialize["error"] = o.Error
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableTraceStep struct {

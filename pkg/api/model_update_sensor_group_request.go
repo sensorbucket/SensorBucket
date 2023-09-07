@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the UpdateSensorGroupRequest type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &UpdateSensorGroupRequest{}
-
 // UpdateSensorGroupRequest struct for UpdateSensorGroupRequest
 type UpdateSensorGroupRequest struct {
 	Name *string `json:"name,omitempty"`
@@ -43,7 +40,7 @@ func NewUpdateSensorGroupRequestWithDefaults() *UpdateSensorGroupRequest {
 
 // GetName returns the Name field value if set, zero value otherwise.
 func (o *UpdateSensorGroupRequest) GetName() string {
-	if o == nil || IsNil(o.Name) {
+	if o == nil || isNil(o.Name) {
 		var ret string
 		return ret
 	}
@@ -53,15 +50,15 @@ func (o *UpdateSensorGroupRequest) GetName() string {
 // GetNameOk returns a tuple with the Name field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateSensorGroupRequest) GetNameOk() (*string, bool) {
-	if o == nil || IsNil(o.Name) {
-		return nil, false
+	if o == nil || isNil(o.Name) {
+    return nil, false
 	}
 	return o.Name, true
 }
 
 // HasName returns a boolean if a field has been set.
 func (o *UpdateSensorGroupRequest) HasName() bool {
-	if o != nil && !IsNil(o.Name) {
+	if o != nil && !isNil(o.Name) {
 		return true
 	}
 
@@ -75,7 +72,7 @@ func (o *UpdateSensorGroupRequest) SetName(v string) {
 
 // GetDescription returns the Description field value if set, zero value otherwise.
 func (o *UpdateSensorGroupRequest) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+	if o == nil || isNil(o.Description) {
 		var ret string
 		return ret
 	}
@@ -85,15 +82,15 @@ func (o *UpdateSensorGroupRequest) GetDescription() string {
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdateSensorGroupRequest) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
-		return nil, false
+	if o == nil || isNil(o.Description) {
+    return nil, false
 	}
 	return o.Description, true
 }
 
 // HasDescription returns a boolean if a field has been set.
 func (o *UpdateSensorGroupRequest) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+	if o != nil && !isNil(o.Description) {
 		return true
 	}
 
@@ -106,22 +103,14 @@ func (o *UpdateSensorGroupRequest) SetDescription(v string) {
 }
 
 func (o UpdateSensorGroupRequest) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o UpdateSensorGroupRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Name) {
+	if !isNil(o.Name) {
 		toSerialize["name"] = o.Name
 	}
-	if !IsNil(o.Description) {
+	if !isNil(o.Description) {
 		toSerialize["description"] = o.Description
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableUpdateSensorGroupRequest struct {

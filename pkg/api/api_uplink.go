@@ -14,10 +14,9 @@ package api
 import (
 	"bytes"
 	"context"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
-    "sensorbucket.nl/sensorbucket/internal/web"
 	"strings"
 )
 
@@ -78,7 +77,7 @@ func (a *UplinkApiService) ProcessUplinkDataExecute(r ApiProcessUplinkDataReques
 	}
 
 	localVarPath := localBasePath + "/uplinks/{pipeline_id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"pipeline_id"+"}", url.PathEscape(parameterValueToString(r.pipelineId, "pipelineId")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"pipeline_id"+"}", url.PathEscape(parameterToString(r.pipelineId, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -113,20 +112,18 @@ func (a *UplinkApiService) ProcessUplinkDataExecute(r ApiProcessUplinkDataReques
 		return localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarHTTPResponse, newErr
 	}
 

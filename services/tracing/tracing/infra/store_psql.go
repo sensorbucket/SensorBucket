@@ -1,6 +1,7 @@
 package tracinginfra
 
 import (
+	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -138,6 +139,7 @@ func (s *stepStore) GetStepsByTracingIDs(tracingIds []string) ([]tracing.Enriche
 		if err != nil {
 			return nil, err
 		}
+		fmt.Printf("t.Duration: %v\n", t.Duration)
 		list = append(list, t)
 	}
 	return list, nil

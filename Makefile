@@ -1,7 +1,7 @@
 service ?= 
 service_type ?= service
 
-.PHONY: serve start stop logs docs restart
+.PHONY: serve start stop logs docs restart golib golib-clean
 
 serve:
 	@echo "Watching service: $(service)"
@@ -55,10 +55,18 @@ else
 		--additional-properties=packageName=sensorbucket,packageUrl='https://sensorbucket.nl'
 endif
 
-golib:
+golib-clean:
+ifeq ($(wildcard pkg/api/.openapi-generator/FILES),)
+	@echo Nothing to clean 
+else
 	cat pkg/api/.openapi-generator/FILES | xargs -I_ rm pkg/api/_
+	rm pkg/api/.openapi-generator/FILES
+endif
+
+golib: golib-clean
 	@docker run --rm -v $(CURDIR):/sensorbucket --user `id -u` \
-		openapitools/openapi-generator-cli generate -i /sensorbucket/tools/openapi/api.yaml \
+		openapitools/openapi-generator-cli:v6.2.1 generate -i /sensorbucket/tools/openapi/api.yaml \
 		-g go -o /sensorbucket/pkg/api -t /sensorbucket/tools/openapi-templates/go \
 		--git-host=sensorbucket.nl --git-repo-id=api \
+		--enable-post-process-file \
 		--additional-properties=packageName=api,packageUrl='https://sensorbucket.nl'

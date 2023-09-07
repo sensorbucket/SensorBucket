@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the ListTraces200Response type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ListTraces200Response{}
-
 // ListTraces200Response struct for ListTraces200Response
 type ListTraces200Response struct {
 	Links PaginatedResponseLinks `json:"links"`
@@ -61,7 +58,7 @@ func (o *ListTraces200Response) GetLinks() PaginatedResponseLinks {
 // and a boolean to check if the value has been set.
 func (o *ListTraces200Response) GetLinksOk() (*PaginatedResponseLinks, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.Links, true
 }
@@ -85,7 +82,7 @@ func (o *ListTraces200Response) GetPageSize() int32 {
 // and a boolean to check if the value has been set.
 func (o *ListTraces200Response) GetPageSizeOk() (*int32, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.PageSize, true
 }
@@ -109,7 +106,7 @@ func (o *ListTraces200Response) GetTotalCount() int32 {
 // and a boolean to check if the value has been set.
 func (o *ListTraces200Response) GetTotalCountOk() (*int32, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.TotalCount, true
 }
@@ -133,7 +130,7 @@ func (o *ListTraces200Response) GetData() []Trace {
 // and a boolean to check if the value has been set.
 func (o *ListTraces200Response) GetDataOk() ([]Trace, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return o.Data, true
 }
@@ -144,20 +141,20 @@ func (o *ListTraces200Response) SetData(v []Trace) {
 }
 
 func (o ListTraces200Response) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
+	toSerialize := map[string]interface{}{}
+	if true {
+		toSerialize["links"] = o.Links
+	}
+	if true {
+		toSerialize["page_size"] = o.PageSize
+	}
+	if true {
+		toSerialize["total_count"] = o.TotalCount
+	}
+	if true {
+		toSerialize["data"] = o.Data
 	}
 	return json.Marshal(toSerialize)
-}
-
-func (o ListTraces200Response) ToMap() (map[string]interface{}, error) {
-	toSerialize := map[string]interface{}{}
-	toSerialize["links"] = o.Links
-	toSerialize["page_size"] = o.PageSize
-	toSerialize["total_count"] = o.TotalCount
-	toSerialize["data"] = o.Data
-	return toSerialize, nil
 }
 
 type NullableListTraces200Response struct {

@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the AddSensorToSensorGroupRequest type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &AddSensorToSensorGroupRequest{}
-
 // AddSensorToSensorGroupRequest struct for AddSensorToSensorGroupRequest
 type AddSensorToSensorGroupRequest struct {
 	// id of the sensor to add
@@ -43,7 +40,7 @@ func NewAddSensorToSensorGroupRequestWithDefaults() *AddSensorToSensorGroupReque
 
 // GetSensorId returns the SensorId field value if set, zero value otherwise.
 func (o *AddSensorToSensorGroupRequest) GetSensorId() float32 {
-	if o == nil || IsNil(o.SensorId) {
+	if o == nil || isNil(o.SensorId) {
 		var ret float32
 		return ret
 	}
@@ -53,15 +50,15 @@ func (o *AddSensorToSensorGroupRequest) GetSensorId() float32 {
 // GetSensorIdOk returns a tuple with the SensorId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *AddSensorToSensorGroupRequest) GetSensorIdOk() (*float32, bool) {
-	if o == nil || IsNil(o.SensorId) {
-		return nil, false
+	if o == nil || isNil(o.SensorId) {
+    return nil, false
 	}
 	return o.SensorId, true
 }
 
 // HasSensorId returns a boolean if a field has been set.
 func (o *AddSensorToSensorGroupRequest) HasSensorId() bool {
-	if o != nil && !IsNil(o.SensorId) {
+	if o != nil && !isNil(o.SensorId) {
 		return true
 	}
 
@@ -74,19 +71,11 @@ func (o *AddSensorToSensorGroupRequest) SetSensorId(v float32) {
 }
 
 func (o AddSensorToSensorGroupRequest) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o AddSensorToSensorGroupRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.SensorId) {
+	if !isNil(o.SensorId) {
 		toSerialize["sensor_id"] = o.SensorId
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableAddSensorToSensorGroupRequest struct {

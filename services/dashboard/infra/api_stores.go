@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -32,7 +31,6 @@ type SensorBucketAPI struct {
 
 func NewSensorBucketAPI(ingressEndpoint, pipelinesEndpoint, tracesEndpoint, devicesEndpoint string) *SensorBucketAPI {
 	cfg := api.NewConfiguration()
-	cfg.Debug = true
 	cfg.Scheme = "http"
 	cfg.Host = "caddy"
 	return &SensorBucketAPI{
@@ -100,7 +98,6 @@ func (s *SensorBucketAPI) ListTraces(ids []uuid.UUID) ([]routes.TraceDTO, error)
 				Error:    step.GetError(),
 			}
 		})
-		log.Printf("dto: %d now: %d\n", len(resTrace.Steps), len(steps))
 		traces = append(traces, routes.TraceDTO{
 			TracingId: resTrace.TracingId,
 			DeviceID:  resTrace.DeviceId,

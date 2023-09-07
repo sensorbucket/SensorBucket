@@ -22,9 +22,10 @@ get:
       example: 
       - active
       - inactive
+      style: form
+      explode: true
       schema:
         type: array
-        collectionFormat: multi
         items:
           type: string
   responses:

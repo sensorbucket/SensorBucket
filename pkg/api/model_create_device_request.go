@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the CreateDeviceRequest type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &CreateDeviceRequest{}
-
 // CreateDeviceRequest struct for CreateDeviceRequest
 type CreateDeviceRequest struct {
 	Code string `json:"code"`
@@ -60,7 +57,7 @@ func (o *CreateDeviceRequest) GetCode() string {
 // and a boolean to check if the value has been set.
 func (o *CreateDeviceRequest) GetCodeOk() (*string, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.Code, true
 }
@@ -72,7 +69,7 @@ func (o *CreateDeviceRequest) SetCode(v string) {
 
 // GetDescription returns the Description field value if set, zero value otherwise.
 func (o *CreateDeviceRequest) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+	if o == nil || isNil(o.Description) {
 		var ret string
 		return ret
 	}
@@ -82,15 +79,15 @@ func (o *CreateDeviceRequest) GetDescription() string {
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *CreateDeviceRequest) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
-		return nil, false
+	if o == nil || isNil(o.Description) {
+    return nil, false
 	}
 	return o.Description, true
 }
 
 // HasDescription returns a boolean if a field has been set.
 func (o *CreateDeviceRequest) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+	if o != nil && !isNil(o.Description) {
 		return true
 	}
 
@@ -104,7 +101,7 @@ func (o *CreateDeviceRequest) SetDescription(v string) {
 
 // GetLatitude returns the Latitude field value if set, zero value otherwise.
 func (o *CreateDeviceRequest) GetLatitude() float32 {
-	if o == nil || IsNil(o.Latitude) {
+	if o == nil || isNil(o.Latitude) {
 		var ret float32
 		return ret
 	}
@@ -114,15 +111,15 @@ func (o *CreateDeviceRequest) GetLatitude() float32 {
 // GetLatitudeOk returns a tuple with the Latitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *CreateDeviceRequest) GetLatitudeOk() (*float32, bool) {
-	if o == nil || IsNil(o.Latitude) {
-		return nil, false
+	if o == nil || isNil(o.Latitude) {
+    return nil, false
 	}
 	return o.Latitude, true
 }
 
 // HasLatitude returns a boolean if a field has been set.
 func (o *CreateDeviceRequest) HasLatitude() bool {
-	if o != nil && !IsNil(o.Latitude) {
+	if o != nil && !isNil(o.Latitude) {
 		return true
 	}
 
@@ -136,7 +133,7 @@ func (o *CreateDeviceRequest) SetLatitude(v float32) {
 
 // GetLongitude returns the Longitude field value if set, zero value otherwise.
 func (o *CreateDeviceRequest) GetLongitude() float32 {
-	if o == nil || IsNil(o.Longitude) {
+	if o == nil || isNil(o.Longitude) {
 		var ret float32
 		return ret
 	}
@@ -146,15 +143,15 @@ func (o *CreateDeviceRequest) GetLongitude() float32 {
 // GetLongitudeOk returns a tuple with the Longitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *CreateDeviceRequest) GetLongitudeOk() (*float32, bool) {
-	if o == nil || IsNil(o.Longitude) {
-		return nil, false
+	if o == nil || isNil(o.Longitude) {
+    return nil, false
 	}
 	return o.Longitude, true
 }
 
 // HasLongitude returns a boolean if a field has been set.
 func (o *CreateDeviceRequest) HasLongitude() bool {
-	if o != nil && !IsNil(o.Longitude) {
+	if o != nil && !isNil(o.Longitude) {
 		return true
 	}
 
@@ -168,7 +165,7 @@ func (o *CreateDeviceRequest) SetLongitude(v float32) {
 
 // GetLocationDescription returns the LocationDescription field value if set, zero value otherwise.
 func (o *CreateDeviceRequest) GetLocationDescription() string {
-	if o == nil || IsNil(o.LocationDescription) {
+	if o == nil || isNil(o.LocationDescription) {
 		var ret string
 		return ret
 	}
@@ -178,15 +175,15 @@ func (o *CreateDeviceRequest) GetLocationDescription() string {
 // GetLocationDescriptionOk returns a tuple with the LocationDescription field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *CreateDeviceRequest) GetLocationDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.LocationDescription) {
-		return nil, false
+	if o == nil || isNil(o.LocationDescription) {
+    return nil, false
 	}
 	return o.LocationDescription, true
 }
 
 // HasLocationDescription returns a boolean if a field has been set.
 func (o *CreateDeviceRequest) HasLocationDescription() bool {
-	if o != nil && !IsNil(o.LocationDescription) {
+	if o != nil && !isNil(o.LocationDescription) {
 		return true
 	}
 
@@ -200,7 +197,7 @@ func (o *CreateDeviceRequest) SetLocationDescription(v string) {
 
 // GetProperties returns the Properties field value if set, zero value otherwise.
 func (o *CreateDeviceRequest) GetProperties() map[string]interface{} {
-	if o == nil || IsNil(o.Properties) {
+	if o == nil || isNil(o.Properties) {
 		var ret map[string]interface{}
 		return ret
 	}
@@ -210,15 +207,15 @@ func (o *CreateDeviceRequest) GetProperties() map[string]interface{} {
 // GetPropertiesOk returns a tuple with the Properties field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *CreateDeviceRequest) GetPropertiesOk() (map[string]interface{}, bool) {
-	if o == nil || IsNil(o.Properties) {
-		return map[string]interface{}{}, false
+	if o == nil || isNil(o.Properties) {
+    return map[string]interface{}{}, false
 	}
 	return o.Properties, true
 }
 
 // HasProperties returns a boolean if a field has been set.
 func (o *CreateDeviceRequest) HasProperties() bool {
-	if o != nil && !IsNil(o.Properties) {
+	if o != nil && !isNil(o.Properties) {
 		return true
 	}
 
@@ -231,32 +228,26 @@ func (o *CreateDeviceRequest) SetProperties(v map[string]interface{}) {
 }
 
 func (o CreateDeviceRequest) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o CreateDeviceRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["code"] = o.Code
-	if !IsNil(o.Description) {
+	if true {
+		toSerialize["code"] = o.Code
+	}
+	if !isNil(o.Description) {
 		toSerialize["description"] = o.Description
 	}
-	if !IsNil(o.Latitude) {
+	if !isNil(o.Latitude) {
 		toSerialize["latitude"] = o.Latitude
 	}
-	if !IsNil(o.Longitude) {
+	if !isNil(o.Longitude) {
 		toSerialize["longitude"] = o.Longitude
 	}
-	if !IsNil(o.LocationDescription) {
+	if !isNil(o.LocationDescription) {
 		toSerialize["location_description"] = o.LocationDescription
 	}
-	if !IsNil(o.Properties) {
+	if !isNil(o.Properties) {
 		toSerialize["properties"] = o.Properties
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableCreateDeviceRequest struct {

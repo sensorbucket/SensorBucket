@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the Device type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &Device{}
-
 // Device struct for Device
 type Device struct {
 	Id float32 `json:"id"`
@@ -65,7 +62,7 @@ func (o *Device) GetId() float32 {
 // and a boolean to check if the value has been set.
 func (o *Device) GetIdOk() (*float32, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.Id, true
 }
@@ -89,7 +86,7 @@ func (o *Device) GetCode() string {
 // and a boolean to check if the value has been set.
 func (o *Device) GetCodeOk() (*string, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.Code, true
 }
@@ -101,7 +98,7 @@ func (o *Device) SetCode(v string) {
 
 // GetDescription returns the Description field value if set, zero value otherwise.
 func (o *Device) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+	if o == nil || isNil(o.Description) {
 		var ret string
 		return ret
 	}
@@ -111,15 +108,15 @@ func (o *Device) GetDescription() string {
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Device) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
-		return nil, false
+	if o == nil || isNil(o.Description) {
+    return nil, false
 	}
 	return o.Description, true
 }
 
 // HasDescription returns a boolean if a field has been set.
 func (o *Device) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+	if o != nil && !isNil(o.Description) {
 		return true
 	}
 
@@ -145,7 +142,7 @@ func (o *Device) GetOrganisation() string {
 // and a boolean to check if the value has been set.
 func (o *Device) GetOrganisationOk() (*string, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.Organisation, true
 }
@@ -157,7 +154,7 @@ func (o *Device) SetOrganisation(v string) {
 
 // GetProperties returns the Properties field value if set, zero value otherwise.
 func (o *Device) GetProperties() map[string]interface{} {
-	if o == nil || IsNil(o.Properties) {
+	if o == nil || isNil(o.Properties) {
 		var ret map[string]interface{}
 		return ret
 	}
@@ -167,15 +164,15 @@ func (o *Device) GetProperties() map[string]interface{} {
 // GetPropertiesOk returns a tuple with the Properties field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Device) GetPropertiesOk() (map[string]interface{}, bool) {
-	if o == nil || IsNil(o.Properties) {
-		return map[string]interface{}{}, false
+	if o == nil || isNil(o.Properties) {
+    return map[string]interface{}{}, false
 	}
 	return o.Properties, true
 }
 
 // HasProperties returns a boolean if a field has been set.
 func (o *Device) HasProperties() bool {
-	if o != nil && !IsNil(o.Properties) {
+	if o != nil && !isNil(o.Properties) {
 		return true
 	}
 
@@ -189,7 +186,7 @@ func (o *Device) SetProperties(v map[string]interface{}) {
 
 // GetLatitude returns the Latitude field value if set, zero value otherwise.
 func (o *Device) GetLatitude() float32 {
-	if o == nil || IsNil(o.Latitude) {
+	if o == nil || isNil(o.Latitude) {
 		var ret float32
 		return ret
 	}
@@ -199,15 +196,15 @@ func (o *Device) GetLatitude() float32 {
 // GetLatitudeOk returns a tuple with the Latitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Device) GetLatitudeOk() (*float32, bool) {
-	if o == nil || IsNil(o.Latitude) {
-		return nil, false
+	if o == nil || isNil(o.Latitude) {
+    return nil, false
 	}
 	return o.Latitude, true
 }
 
 // HasLatitude returns a boolean if a field has been set.
 func (o *Device) HasLatitude() bool {
-	if o != nil && !IsNil(o.Latitude) {
+	if o != nil && !isNil(o.Latitude) {
 		return true
 	}
 
@@ -221,7 +218,7 @@ func (o *Device) SetLatitude(v float32) {
 
 // GetLongitude returns the Longitude field value if set, zero value otherwise.
 func (o *Device) GetLongitude() float32 {
-	if o == nil || IsNil(o.Longitude) {
+	if o == nil || isNil(o.Longitude) {
 		var ret float32
 		return ret
 	}
@@ -231,15 +228,15 @@ func (o *Device) GetLongitude() float32 {
 // GetLongitudeOk returns a tuple with the Longitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Device) GetLongitudeOk() (*float32, bool) {
-	if o == nil || IsNil(o.Longitude) {
-		return nil, false
+	if o == nil || isNil(o.Longitude) {
+    return nil, false
 	}
 	return o.Longitude, true
 }
 
 // HasLongitude returns a boolean if a field has been set.
 func (o *Device) HasLongitude() bool {
-	if o != nil && !IsNil(o.Longitude) {
+	if o != nil && !isNil(o.Longitude) {
 		return true
 	}
 
@@ -253,7 +250,7 @@ func (o *Device) SetLongitude(v float32) {
 
 // GetLocationDescription returns the LocationDescription field value if set, zero value otherwise.
 func (o *Device) GetLocationDescription() string {
-	if o == nil || IsNil(o.LocationDescription) {
+	if o == nil || isNil(o.LocationDescription) {
 		var ret string
 		return ret
 	}
@@ -263,15 +260,15 @@ func (o *Device) GetLocationDescription() string {
 // GetLocationDescriptionOk returns a tuple with the LocationDescription field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Device) GetLocationDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.LocationDescription) {
-		return nil, false
+	if o == nil || isNil(o.LocationDescription) {
+    return nil, false
 	}
 	return o.LocationDescription, true
 }
 
 // HasLocationDescription returns a boolean if a field has been set.
 func (o *Device) HasLocationDescription() bool {
-	if o != nil && !IsNil(o.LocationDescription) {
+	if o != nil && !isNil(o.LocationDescription) {
 		return true
 	}
 
@@ -285,7 +282,7 @@ func (o *Device) SetLocationDescription(v string) {
 
 // GetSensors returns the Sensors field value if set, zero value otherwise.
 func (o *Device) GetSensors() []Sensor {
-	if o == nil || IsNil(o.Sensors) {
+	if o == nil || isNil(o.Sensors) {
 		var ret []Sensor
 		return ret
 	}
@@ -295,15 +292,15 @@ func (o *Device) GetSensors() []Sensor {
 // GetSensorsOk returns a tuple with the Sensors field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Device) GetSensorsOk() ([]Sensor, bool) {
-	if o == nil || IsNil(o.Sensors) {
-		return nil, false
+	if o == nil || isNil(o.Sensors) {
+    return nil, false
 	}
 	return o.Sensors, true
 }
 
 // HasSensors returns a boolean if a field has been set.
 func (o *Device) HasSensors() bool {
-	if o != nil && !IsNil(o.Sensors) {
+	if o != nil && !isNil(o.Sensors) {
 		return true
 	}
 
@@ -316,37 +313,35 @@ func (o *Device) SetSensors(v []Sensor) {
 }
 
 func (o Device) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o Device) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["id"] = o.Id
-	toSerialize["code"] = o.Code
-	if !IsNil(o.Description) {
+	if true {
+		toSerialize["id"] = o.Id
+	}
+	if true {
+		toSerialize["code"] = o.Code
+	}
+	if !isNil(o.Description) {
 		toSerialize["description"] = o.Description
 	}
-	toSerialize["organisation"] = o.Organisation
-	if !IsNil(o.Properties) {
+	if true {
+		toSerialize["organisation"] = o.Organisation
+	}
+	if !isNil(o.Properties) {
 		toSerialize["properties"] = o.Properties
 	}
-	if !IsNil(o.Latitude) {
+	if !isNil(o.Latitude) {
 		toSerialize["latitude"] = o.Latitude
 	}
-	if !IsNil(o.Longitude) {
+	if !isNil(o.Longitude) {
 		toSerialize["longitude"] = o.Longitude
 	}
-	if !IsNil(o.LocationDescription) {
+	if !isNil(o.LocationDescription) {
 		toSerialize["location_description"] = o.LocationDescription
 	}
-	if !IsNil(o.Sensors) {
+	if !isNil(o.Sensors) {
 		toSerialize["sensors"] = o.Sensors
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableDevice struct {

@@ -20,9 +20,10 @@ get:
       description: Only show pipelines that include at least one of these steps
       in: query
       required: false
+      style: form
+      explode: true
       schema:
           type: array
-          collectionFormat: multi
           items:
             type: string
       example:

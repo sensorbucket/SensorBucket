@@ -16,9 +16,6 @@ import (
 	"time"
 )
 
-// checks if the Trace type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &Trace{}
-
 // Trace struct for Trace
 type Trace struct {
 	TracingId string `json:"tracing_id"`
@@ -67,7 +64,7 @@ func (o *Trace) GetTracingId() string {
 // and a boolean to check if the value has been set.
 func (o *Trace) GetTracingIdOk() (*string, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.TracingId, true
 }
@@ -91,7 +88,7 @@ func (o *Trace) GetDeviceId() int64 {
 // and a boolean to check if the value has been set.
 func (o *Trace) GetDeviceIdOk() (*int64, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.DeviceId, true
 }
@@ -115,7 +112,7 @@ func (o *Trace) GetStartTime() time.Time {
 // and a boolean to check if the value has been set.
 func (o *Trace) GetStartTimeOk() (*time.Time, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.StartTime, true
 }
@@ -139,7 +136,7 @@ func (o *Trace) GetStatus() int32 {
 // and a boolean to check if the value has been set.
 func (o *Trace) GetStatusOk() (*int32, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.Status, true
 }
@@ -163,7 +160,7 @@ func (o *Trace) GetStatusString() string {
 // and a boolean to check if the value has been set.
 func (o *Trace) GetStatusStringOk() (*string, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.StatusString, true
 }
@@ -187,7 +184,7 @@ func (o *Trace) GetSteps() []TraceStep {
 // and a boolean to check if the value has been set.
 func (o *Trace) GetStepsOk() ([]TraceStep, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return o.Steps, true
 }
@@ -198,22 +195,26 @@ func (o *Trace) SetSteps(v []TraceStep) {
 }
 
 func (o Trace) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
+	toSerialize := map[string]interface{}{}
+	if true {
+		toSerialize["tracing_id"] = o.TracingId
+	}
+	if true {
+		toSerialize["device_id"] = o.DeviceId
+	}
+	if true {
+		toSerialize["start_time"] = o.StartTime
+	}
+	if true {
+		toSerialize["status"] = o.Status
+	}
+	if true {
+		toSerialize["status_string"] = o.StatusString
+	}
+	if true {
+		toSerialize["steps"] = o.Steps
 	}
 	return json.Marshal(toSerialize)
-}
-
-func (o Trace) ToMap() (map[string]interface{}, error) {
-	toSerialize := map[string]interface{}{}
-	toSerialize["tracing_id"] = o.TracingId
-	toSerialize["device_id"] = o.DeviceId
-	toSerialize["start_time"] = o.StartTime
-	toSerialize["status"] = o.Status
-	toSerialize["status_string"] = o.StatusString
-	toSerialize["steps"] = o.Steps
-	return toSerialize, nil
 }
 
 type NullableTrace struct {

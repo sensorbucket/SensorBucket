@@ -14,10 +14,10 @@ package api
 import (
 	"bytes"
 	"context"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
-    "sensorbucket.nl/sensorbucket/internal/web"
+	"reflect"
 )
 
 
@@ -115,25 +115,33 @@ func (a *TracingApiService) ListTracesExecute(r ApiListTracesRequest) (*ListTrac
 	localVarFormParams := url.Values{}
 
 	if r.cursor != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "cursor", r.cursor, "")
+		localVarQueryParams.Add("cursor", parameterToString(*r.cursor, ""))
 	}
 	if r.limit != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "limit", r.limit, "")
+		localVarQueryParams.Add("limit", parameterToString(*r.limit, ""))
 	}
 	if r.tracingId != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "tracing_id", r.tracingId, "csv")
+		t := *r.tracingId
+		if reflect.TypeOf(t).Kind() == reflect.Slice {
+			s := reflect.ValueOf(t)
+			for i := 0; i < s.Len(); i++ {
+				localVarQueryParams.Add("tracing_id", parameterToString(s.Index(i), "multi"))
+			}
+		} else {
+			localVarQueryParams.Add("tracing_id", parameterToString(t, "multi"))
+		}
 	}
 	if r.deviceId != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "device_id", r.deviceId, "")
+		localVarQueryParams.Add("device_id", parameterToString(*r.deviceId, ""))
 	}
 	if r.status != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "status", r.status, "")
+		localVarQueryParams.Add("status", parameterToString(*r.status, ""))
 	}
 	if r.durationGreaterThan != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "duration_greater_than", r.durationGreaterThan, "")
+		localVarQueryParams.Add("duration_greater_than", parameterToString(*r.durationGreaterThan, ""))
 	}
 	if r.durationSmallerThan != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "duration_smaller_than", r.durationSmallerThan, "")
+		localVarQueryParams.Add("duration_smaller_than", parameterToString(*r.durationSmallerThan, ""))
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -162,20 +170,18 @@ func (a *TracingApiService) ListTracesExecute(r ApiListTracesRequest) (*ListTrac
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 

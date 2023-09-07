@@ -408,8 +408,8 @@ datastream:
       format: ucum
     created_at:
       type: string
-      format: date-time
-      example: 2022-01-01T00:00:00Z
+      #format: date-time
+      example: "2022-01-01T00:00:00Z"
 
 sensorGroup:
   type: object

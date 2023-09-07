@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the GetDatastream200ResponseDataAllOf type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &GetDatastream200ResponseDataAllOf{}
-
 // GetDatastream200ResponseDataAllOf struct for GetDatastream200ResponseDataAllOf
 type GetDatastream200ResponseDataAllOf struct {
 	Device *Device `json:"device,omitempty"`
@@ -43,7 +40,7 @@ func NewGetDatastream200ResponseDataAllOfWithDefaults() *GetDatastream200Respons
 
 // GetDevice returns the Device field value if set, zero value otherwise.
 func (o *GetDatastream200ResponseDataAllOf) GetDevice() Device {
-	if o == nil || IsNil(o.Device) {
+	if o == nil || isNil(o.Device) {
 		var ret Device
 		return ret
 	}
@@ -53,15 +50,15 @@ func (o *GetDatastream200ResponseDataAllOf) GetDevice() Device {
 // GetDeviceOk returns a tuple with the Device field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseDataAllOf) GetDeviceOk() (*Device, bool) {
-	if o == nil || IsNil(o.Device) {
-		return nil, false
+	if o == nil || isNil(o.Device) {
+    return nil, false
 	}
 	return o.Device, true
 }
 
 // HasDevice returns a boolean if a field has been set.
 func (o *GetDatastream200ResponseDataAllOf) HasDevice() bool {
-	if o != nil && !IsNil(o.Device) {
+	if o != nil && !isNil(o.Device) {
 		return true
 	}
 
@@ -75,7 +72,7 @@ func (o *GetDatastream200ResponseDataAllOf) SetDevice(v Device) {
 
 // GetSensor returns the Sensor field value if set, zero value otherwise.
 func (o *GetDatastream200ResponseDataAllOf) GetSensor() Sensor {
-	if o == nil || IsNil(o.Sensor) {
+	if o == nil || isNil(o.Sensor) {
 		var ret Sensor
 		return ret
 	}
@@ -85,15 +82,15 @@ func (o *GetDatastream200ResponseDataAllOf) GetSensor() Sensor {
 // GetSensorOk returns a tuple with the Sensor field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseDataAllOf) GetSensorOk() (*Sensor, bool) {
-	if o == nil || IsNil(o.Sensor) {
-		return nil, false
+	if o == nil || isNil(o.Sensor) {
+    return nil, false
 	}
 	return o.Sensor, true
 }
 
 // HasSensor returns a boolean if a field has been set.
 func (o *GetDatastream200ResponseDataAllOf) HasSensor() bool {
-	if o != nil && !IsNil(o.Sensor) {
+	if o != nil && !isNil(o.Sensor) {
 		return true
 	}
 
@@ -106,22 +103,14 @@ func (o *GetDatastream200ResponseDataAllOf) SetSensor(v Sensor) {
 }
 
 func (o GetDatastream200ResponseDataAllOf) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o GetDatastream200ResponseDataAllOf) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Device) {
+	if !isNil(o.Device) {
 		toSerialize["device"] = o.Device
 	}
-	if !IsNil(o.Sensor) {
+	if !isNil(o.Sensor) {
 		toSerialize["sensor"] = o.Sensor
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableGetDatastream200ResponseDataAllOf struct {
