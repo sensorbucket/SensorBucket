@@ -9,19 +9,14 @@ services:
       - ./tools/caddy:/etc/caddy
 
   dashboard:
-    build: 
-      context: ./services/dashboard
-      dockerfile: Dockerfile
-      target: builder
-    command: yarn dev --host=0.0.0.0 --port=3000
-    environment:
-      - PUBLIC_EP_DATASTREAMS=http://caddy/api/datastreams
-      - PUBLIC_EP_SENSORS=http://caddy/api/sensors
-      - PUBLIC_EP_DEVICES=http://caddy/api/devices
-      - PUBLIC_EP_PIPELINES=http://caddy/api/pipelines
-      - PUBLIC_EP_MEASUREMENTS=http://caddy/api/measurements
+    build:
+      context: .
+      dockerfile: services/dashboard/Dockerfile
+      target: dev
     volumes:
-      - ./services/dashboard:/app:cached
+      - .:/workspace:cached
+    environment:
+    - STATIC_PATH=services/dashboard/static
 
   core:
     build:
@@ -39,7 +34,7 @@ services:
     - AMQP_XCHG=pipeline.messages
     - SVC_PIPELINE=http://pipeline:3000
 
-  ingressarchiver:
+  tracing:
     build:
       context: .
       dockerfile: Dockerfile
@@ -47,13 +42,15 @@ services:
     volumes:
       - .:/workspace:cached
     environment:
-    - APP_NAME=ingress-archiver
+    - APP_NAME=tracing
     - APP_TYPE=service
-    - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/ingressarchiver?sslmode=disable
+    - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/tracing?sslmode=disable
     - AMQP_HOST=amqp://guest:guest@mq:5672/
-    - AMQP_XCHG=pipeline.messages
-    - AMQP_XCHG_TOPIC=ingress.#
-
+    - AMQP_QUEUE_PIPELINEMESSAGES=pipeline.messages
+    - AMQP_QUEUE_ERRORS=errors
+    - AMQP_QUEUE_INGRESS=archive-ingress
+    - AMQP_XCHG_INGRESS=ingress
+    - AMQP_XCHG_INGRESS_TOPIC=ingress.#
 
   httpimporter:
     build: 
@@ -135,12 +132,19 @@ services:
     image: timescale/timescaledb-postgis:latest-pg12
     volumes:
       - ./tools/postgres.d:/docker-entrypoint-initdb.d
+    ports:
+      - 5432:5432
     environment:
     - POSTGRES_USER=sensorbucket
     - POSTGRES_PASSWORD=sensorbucket
     - POSTGRES_DB=sensorbucket
   dbweb:
     image: dockette/adminer:pgsql
+
+  mail-server:
+    image: mailhog/mailhog
+    ports:
+      - 1025:1025
 
   mq:
     image: rabbitmq:3.8-management

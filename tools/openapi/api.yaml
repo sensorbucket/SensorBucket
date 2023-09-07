@@ -47,12 +47,16 @@ paths:
     $ref: 'path-measurements.yaml'
   /datastreams:
     $ref: 'path-datastreams.yaml'
+  /datastreams/{id}:
+    $ref: 'path-datastreams-by-id.yaml'
   /pipelines:
     $ref: 'path-pipelines.yaml'
   /pipelines/{id}:
     $ref: 'path-pipelines-by-id.yaml'
   /uplinks/{pipeline_id}:
     $ref: 'path-uplinks-by-pipeline.yaml'
+  /tracing:
+    $ref: 'path-tracing.yaml'
 components:
   securitySchemes:
     basicAuth:    

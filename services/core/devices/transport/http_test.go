@@ -236,6 +236,8 @@ func (s *IntegrationTestSuite) TestSensorGroupShouldDelete() {
 	getRec := httptest.NewRecorder()
 	s.transport.ServeHTTP(getRec, getReq)
 	s.Equal(http.StatusNotFound, getRec.Result().StatusCode)
+	resBody, _ := io.ReadAll(getRec.Body)
+	s.T().Logf("Got body: %s\n", resBody)
 }
 
 func (s *IntegrationTestSuite) TestSensorGroupUpdate() {
