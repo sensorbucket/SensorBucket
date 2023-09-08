@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the GetDatastream200Response type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &GetDatastream200Response{}
-
 // GetDatastream200Response struct for GetDatastream200Response
 type GetDatastream200Response struct {
 	Message *string `json:"message,omitempty"`
@@ -43,7 +40,7 @@ func NewGetDatastream200ResponseWithDefaults() *GetDatastream200Response {
 
 // GetMessage returns the Message field value if set, zero value otherwise.
 func (o *GetDatastream200Response) GetMessage() string {
-	if o == nil || IsNil(o.Message) {
+	if o == nil || isNil(o.Message) {
 		var ret string
 		return ret
 	}
@@ -53,15 +50,15 @@ func (o *GetDatastream200Response) GetMessage() string {
 // GetMessageOk returns a tuple with the Message field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200Response) GetMessageOk() (*string, bool) {
-	if o == nil || IsNil(o.Message) {
-		return nil, false
+	if o == nil || isNil(o.Message) {
+    return nil, false
 	}
 	return o.Message, true
 }
 
 // HasMessage returns a boolean if a field has been set.
 func (o *GetDatastream200Response) HasMessage() bool {
-	if o != nil && !IsNil(o.Message) {
+	if o != nil && !isNil(o.Message) {
 		return true
 	}
 
@@ -75,7 +72,7 @@ func (o *GetDatastream200Response) SetMessage(v string) {
 
 // GetData returns the Data field value if set, zero value otherwise.
 func (o *GetDatastream200Response) GetData() GetDatastream200ResponseData {
-	if o == nil || IsNil(o.Data) {
+	if o == nil || isNil(o.Data) {
 		var ret GetDatastream200ResponseData
 		return ret
 	}
@@ -85,15 +82,15 @@ func (o *GetDatastream200Response) GetData() GetDatastream200ResponseData {
 // GetDataOk returns a tuple with the Data field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200Response) GetDataOk() (*GetDatastream200ResponseData, bool) {
-	if o == nil || IsNil(o.Data) {
-		return nil, false
+	if o == nil || isNil(o.Data) {
+    return nil, false
 	}
 	return o.Data, true
 }
 
 // HasData returns a boolean if a field has been set.
 func (o *GetDatastream200Response) HasData() bool {
-	if o != nil && !IsNil(o.Data) {
+	if o != nil && !isNil(o.Data) {
 		return true
 	}
 
@@ -106,22 +103,14 @@ func (o *GetDatastream200Response) SetData(v GetDatastream200ResponseData) {
 }
 
 func (o GetDatastream200Response) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o GetDatastream200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Message) {
+	if !isNil(o.Message) {
 		toSerialize["message"] = o.Message
 	}
-	if !IsNil(o.Data) {
+	if !isNil(o.Data) {
 		toSerialize["data"] = o.Data
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableGetDatastream200Response struct {

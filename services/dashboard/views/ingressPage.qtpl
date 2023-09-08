@@ -1,0 +1,93 @@
+{% import "time" %}
+{% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
+{% func (p *IngressPage) Body() %}
+    <div 
+        class="w-full xl:w-2/3 mx-auto bg-white border rounded-md"
+    >
+        <header class="border-b py-2 px-4 text-sm text-slate-700">
+            Incoming data and processing statusses
+        </header>
+        <div 
+            hx-get="/ingress/list"
+            hx-trigger="every 2s"
+        >
+            {%= RenderIngressList(p.Ingresses) %}
+        </div>
+    </div>
+{% endfunc %}
+
+{% func RenderIngressList(ingresses []Ingress) %}
+{% for _, ingress := range ingresses %}
+    <article class="flex justify-between text-sm border-b border-slate-100 px-4 py-2 hover:bg-slate-50">
+        <section class="flex flex-col">
+            <span>{%s ingress.TracingID %}</span>
+            <div class="text-slate-500 text-xs">
+                <span>{%s ingress.CreatedAt.Format("15:04:05 2006-01-02") %}</span>
+                {% if ingress.Device.ID != 0 %}
+                    <a hx-target="main" href="/overview/devices/{%dl ingress.Device.ID %}" class="ml-3 text-sky-600 hover:underline">{%s ingress.Device.Code %}</a>
+                {% endif %}
+            </div>
+        </section>
+        <section class="relative flex items-center">
+            <ul class="flex items-center gap-4 z-10">
+                {% for _, step := range ingress.Steps %}
+                    <li class="
+                        flex relative items-center rounded-full py-1 px-2 text-xs border
+                        bg-white group
+                        {% switch step.Status %}
+                        {% case 3 %}
+                         border-emerald-500
+                        {% case 4 %}
+                         border-orange-500
+                        {% case 5 %}
+                         border-rose-500
+                        {% default %}
+                        {% endswitch %}
+                    ">
+                        {%s step.Label %}
+                        {% switch step.Status %}
+                        {% case 3 %}
+                        <iconify-icon class="w-3 pl-1 text-emerald-800" icon="fluent:checkmark-12-filled"></iconify-icon>
+                        {% case 4 %}
+                        <iconify-icon class="w-3 pl-1 text-orange-800" icon="carbon:in-progress"></iconify-icon>
+                        {% case 5 %}
+                        <iconify-icon class="w-3 pl-1 text-rose-800" icon="material-symbols:error"></iconify-icon>
+                        {% default %}
+                        <iconify-icon class="w-3 pl-1 text-slate-800" icon="material-symbols:question-mark"></iconify-icon>
+                        {% endswitch %}
+                        {% if step.Tooltip != "" %}
+                        <div class="
+                            hidden hover:block group-hover:block absolute text-white bg-gray-800 bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 rounded py-1
+                            after:content-['_'] after:absolute after:top-full after:-translate-y-[0.25rem] after:left-1/2 after:-translate-x-1/2 after:bg-gray-800 after:w-2 after:h-2 after:rotate-45
+                        ">
+                            {%s step.Tooltip %}
+                        </div>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+            <div class="absolute border-b-2 left-0 right-0 top-1/2 -translate-y-1/2"></div>
+        </section>
+    </article>
+{% endfor %}
+{% endfunc %}
+
+{% code
+type IngressPage struct {
+    BasePage
+    Ingresses []Ingress
+}
+
+type IngressStep struct {
+    Label string
+    Status int
+    Tooltip string
+}
+
+type Ingress struct {
+    TracingID string
+    CreatedAt time.Time
+    Steps []IngressStep
+    Device devices.Device
+}
+%}

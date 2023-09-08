@@ -3,6 +3,7 @@ README.md
 api_devices.go
 api_measurements.go
 api_pipelines.go
+api_tracing.go
 api_uplink.go
 client.go
 configuration.go
@@ -38,6 +39,8 @@ model_list_pipelines_200_response.go
 model_list_pipelines_200_response_all_of.go
 model_list_sensor_groups_200_response.go
 model_list_sensor_groups_200_response_all_of.go
+model_list_traces_200_response.go
+model_list_traces_200_response_all_of.go
 model_measurement.go
 model_paginated_response.go
 model_paginated_response_links.go
@@ -46,6 +49,8 @@ model_query_measurements_200_response.go
 model_query_measurements_200_response_all_of.go
 model_sensor.go
 model_sensor_group.go
+model_trace.go
+model_trace_step.go
 model_update_device_200_response.go
 model_update_device_request.go
 model_update_pipeline_200_response.go

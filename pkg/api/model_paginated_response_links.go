@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the PaginatedResponseLinks type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &PaginatedResponseLinks{}
-
 // PaginatedResponseLinks struct for PaginatedResponseLinks
 type PaginatedResponseLinks struct {
 	Previous *string `json:"previous,omitempty"`
@@ -43,7 +40,7 @@ func NewPaginatedResponseLinksWithDefaults() *PaginatedResponseLinks {
 
 // GetPrevious returns the Previous field value if set, zero value otherwise.
 func (o *PaginatedResponseLinks) GetPrevious() string {
-	if o == nil || IsNil(o.Previous) {
+	if o == nil || isNil(o.Previous) {
 		var ret string
 		return ret
 	}
@@ -53,15 +50,15 @@ func (o *PaginatedResponseLinks) GetPrevious() string {
 // GetPreviousOk returns a tuple with the Previous field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *PaginatedResponseLinks) GetPreviousOk() (*string, bool) {
-	if o == nil || IsNil(o.Previous) {
-		return nil, false
+	if o == nil || isNil(o.Previous) {
+    return nil, false
 	}
 	return o.Previous, true
 }
 
 // HasPrevious returns a boolean if a field has been set.
 func (o *PaginatedResponseLinks) HasPrevious() bool {
-	if o != nil && !IsNil(o.Previous) {
+	if o != nil && !isNil(o.Previous) {
 		return true
 	}
 
@@ -75,7 +72,7 @@ func (o *PaginatedResponseLinks) SetPrevious(v string) {
 
 // GetNext returns the Next field value if set, zero value otherwise.
 func (o *PaginatedResponseLinks) GetNext() string {
-	if o == nil || IsNil(o.Next) {
+	if o == nil || isNil(o.Next) {
 		var ret string
 		return ret
 	}
@@ -85,15 +82,15 @@ func (o *PaginatedResponseLinks) GetNext() string {
 // GetNextOk returns a tuple with the Next field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *PaginatedResponseLinks) GetNextOk() (*string, bool) {
-	if o == nil || IsNil(o.Next) {
-		return nil, false
+	if o == nil || isNil(o.Next) {
+    return nil, false
 	}
 	return o.Next, true
 }
 
 // HasNext returns a boolean if a field has been set.
 func (o *PaginatedResponseLinks) HasNext() bool {
-	if o != nil && !IsNil(o.Next) {
+	if o != nil && !isNil(o.Next) {
 		return true
 	}
 
@@ -106,22 +103,14 @@ func (o *PaginatedResponseLinks) SetNext(v string) {
 }
 
 func (o PaginatedResponseLinks) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o PaginatedResponseLinks) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Previous) {
+	if !isNil(o.Previous) {
 		toSerialize["previous"] = o.Previous
 	}
-	if !IsNil(o.Next) {
+	if !isNil(o.Next) {
 		toSerialize["next"] = o.Next
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullablePaginatedResponseLinks struct {

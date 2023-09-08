@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the GetPipeline200Response type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &GetPipeline200Response{}
-
 // GetPipeline200Response struct for GetPipeline200Response
 type GetPipeline200Response struct {
 	Message *string `json:"message,omitempty"`
@@ -43,7 +40,7 @@ func NewGetPipeline200ResponseWithDefaults() *GetPipeline200Response {
 
 // GetMessage returns the Message field value if set, zero value otherwise.
 func (o *GetPipeline200Response) GetMessage() string {
-	if o == nil || IsNil(o.Message) {
+	if o == nil || isNil(o.Message) {
 		var ret string
 		return ret
 	}
@@ -53,15 +50,15 @@ func (o *GetPipeline200Response) GetMessage() string {
 // GetMessageOk returns a tuple with the Message field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetPipeline200Response) GetMessageOk() (*string, bool) {
-	if o == nil || IsNil(o.Message) {
-		return nil, false
+	if o == nil || isNil(o.Message) {
+    return nil, false
 	}
 	return o.Message, true
 }
 
 // HasMessage returns a boolean if a field has been set.
 func (o *GetPipeline200Response) HasMessage() bool {
-	if o != nil && !IsNil(o.Message) {
+	if o != nil && !isNil(o.Message) {
 		return true
 	}
 
@@ -75,7 +72,7 @@ func (o *GetPipeline200Response) SetMessage(v string) {
 
 // GetData returns the Data field value if set, zero value otherwise.
 func (o *GetPipeline200Response) GetData() Pipeline {
-	if o == nil || IsNil(o.Data) {
+	if o == nil || isNil(o.Data) {
 		var ret Pipeline
 		return ret
 	}
@@ -85,15 +82,15 @@ func (o *GetPipeline200Response) GetData() Pipeline {
 // GetDataOk returns a tuple with the Data field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetPipeline200Response) GetDataOk() (*Pipeline, bool) {
-	if o == nil || IsNil(o.Data) {
-		return nil, false
+	if o == nil || isNil(o.Data) {
+    return nil, false
 	}
 	return o.Data, true
 }
 
 // HasData returns a boolean if a field has been set.
 func (o *GetPipeline200Response) HasData() bool {
-	if o != nil && !IsNil(o.Data) {
+	if o != nil && !isNil(o.Data) {
 		return true
 	}
 
@@ -106,22 +103,14 @@ func (o *GetPipeline200Response) SetData(v Pipeline) {
 }
 
 func (o GetPipeline200Response) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o GetPipeline200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Message) {
+	if !isNil(o.Message) {
 		toSerialize["message"] = o.Message
 	}
-	if !IsNil(o.Data) {
+	if !isNil(o.Data) {
 		toSerialize["data"] = o.Data
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableGetPipeline200Response struct {

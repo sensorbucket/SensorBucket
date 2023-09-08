@@ -16,9 +16,6 @@ import (
 	"time"
 )
 
-// checks if the Sensor type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &Sensor{}
-
 // Sensor struct for Sensor
 type Sensor struct {
 	Id *float32 `json:"id,omitempty"`
@@ -50,7 +47,7 @@ func NewSensorWithDefaults() *Sensor {
 
 // GetId returns the Id field value if set, zero value otherwise.
 func (o *Sensor) GetId() float32 {
-	if o == nil || IsNil(o.Id) {
+	if o == nil || isNil(o.Id) {
 		var ret float32
 		return ret
 	}
@@ -60,15 +57,15 @@ func (o *Sensor) GetId() float32 {
 // GetIdOk returns a tuple with the Id field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Sensor) GetIdOk() (*float32, bool) {
-	if o == nil || IsNil(o.Id) {
-		return nil, false
+	if o == nil || isNil(o.Id) {
+    return nil, false
 	}
 	return o.Id, true
 }
 
 // HasId returns a boolean if a field has been set.
 func (o *Sensor) HasId() bool {
-	if o != nil && !IsNil(o.Id) {
+	if o != nil && !isNil(o.Id) {
 		return true
 	}
 
@@ -82,7 +79,7 @@ func (o *Sensor) SetId(v float32) {
 
 // GetCode returns the Code field value if set, zero value otherwise.
 func (o *Sensor) GetCode() string {
-	if o == nil || IsNil(o.Code) {
+	if o == nil || isNil(o.Code) {
 		var ret string
 		return ret
 	}
@@ -92,15 +89,15 @@ func (o *Sensor) GetCode() string {
 // GetCodeOk returns a tuple with the Code field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Sensor) GetCodeOk() (*string, bool) {
-	if o == nil || IsNil(o.Code) {
-		return nil, false
+	if o == nil || isNil(o.Code) {
+    return nil, false
 	}
 	return o.Code, true
 }
 
 // HasCode returns a boolean if a field has been set.
 func (o *Sensor) HasCode() bool {
-	if o != nil && !IsNil(o.Code) {
+	if o != nil && !isNil(o.Code) {
 		return true
 	}
 
@@ -114,7 +111,7 @@ func (o *Sensor) SetCode(v string) {
 
 // GetDescription returns the Description field value if set, zero value otherwise.
 func (o *Sensor) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+	if o == nil || isNil(o.Description) {
 		var ret string
 		return ret
 	}
@@ -124,15 +121,15 @@ func (o *Sensor) GetDescription() string {
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Sensor) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
-		return nil, false
+	if o == nil || isNil(o.Description) {
+    return nil, false
 	}
 	return o.Description, true
 }
 
 // HasDescription returns a boolean if a field has been set.
 func (o *Sensor) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+	if o != nil && !isNil(o.Description) {
 		return true
 	}
 
@@ -146,7 +143,7 @@ func (o *Sensor) SetDescription(v string) {
 
 // GetExternalId returns the ExternalId field value if set, zero value otherwise.
 func (o *Sensor) GetExternalId() string {
-	if o == nil || IsNil(o.ExternalId) {
+	if o == nil || isNil(o.ExternalId) {
 		var ret string
 		return ret
 	}
@@ -156,15 +153,15 @@ func (o *Sensor) GetExternalId() string {
 // GetExternalIdOk returns a tuple with the ExternalId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Sensor) GetExternalIdOk() (*string, bool) {
-	if o == nil || IsNil(o.ExternalId) {
-		return nil, false
+	if o == nil || isNil(o.ExternalId) {
+    return nil, false
 	}
 	return o.ExternalId, true
 }
 
 // HasExternalId returns a boolean if a field has been set.
 func (o *Sensor) HasExternalId() bool {
-	if o != nil && !IsNil(o.ExternalId) {
+	if o != nil && !isNil(o.ExternalId) {
 		return true
 	}
 
@@ -178,7 +175,7 @@ func (o *Sensor) SetExternalId(v string) {
 
 // GetBrand returns the Brand field value if set, zero value otherwise.
 func (o *Sensor) GetBrand() string {
-	if o == nil || IsNil(o.Brand) {
+	if o == nil || isNil(o.Brand) {
 		var ret string
 		return ret
 	}
@@ -188,15 +185,15 @@ func (o *Sensor) GetBrand() string {
 // GetBrandOk returns a tuple with the Brand field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Sensor) GetBrandOk() (*string, bool) {
-	if o == nil || IsNil(o.Brand) {
-		return nil, false
+	if o == nil || isNil(o.Brand) {
+    return nil, false
 	}
 	return o.Brand, true
 }
 
 // HasBrand returns a boolean if a field has been set.
 func (o *Sensor) HasBrand() bool {
-	if o != nil && !IsNil(o.Brand) {
+	if o != nil && !isNil(o.Brand) {
 		return true
 	}
 
@@ -210,7 +207,7 @@ func (o *Sensor) SetBrand(v string) {
 
 // GetArchiveTime returns the ArchiveTime field value if set, zero value otherwise.
 func (o *Sensor) GetArchiveTime() float32 {
-	if o == nil || IsNil(o.ArchiveTime) {
+	if o == nil || isNil(o.ArchiveTime) {
 		var ret float32
 		return ret
 	}
@@ -220,15 +217,15 @@ func (o *Sensor) GetArchiveTime() float32 {
 // GetArchiveTimeOk returns a tuple with the ArchiveTime field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Sensor) GetArchiveTimeOk() (*float32, bool) {
-	if o == nil || IsNil(o.ArchiveTime) {
-		return nil, false
+	if o == nil || isNil(o.ArchiveTime) {
+    return nil, false
 	}
 	return o.ArchiveTime, true
 }
 
 // HasArchiveTime returns a boolean if a field has been set.
 func (o *Sensor) HasArchiveTime() bool {
-	if o != nil && !IsNil(o.ArchiveTime) {
+	if o != nil && !isNil(o.ArchiveTime) {
 		return true
 	}
 
@@ -242,7 +239,7 @@ func (o *Sensor) SetArchiveTime(v float32) {
 
 // GetProperties returns the Properties field value if set, zero value otherwise.
 func (o *Sensor) GetProperties() map[string]interface{} {
-	if o == nil || IsNil(o.Properties) {
+	if o == nil || isNil(o.Properties) {
 		var ret map[string]interface{}
 		return ret
 	}
@@ -252,15 +249,15 @@ func (o *Sensor) GetProperties() map[string]interface{} {
 // GetPropertiesOk returns a tuple with the Properties field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Sensor) GetPropertiesOk() (map[string]interface{}, bool) {
-	if o == nil || IsNil(o.Properties) {
-		return map[string]interface{}{}, false
+	if o == nil || isNil(o.Properties) {
+    return map[string]interface{}{}, false
 	}
 	return o.Properties, true
 }
 
 // HasProperties returns a boolean if a field has been set.
 func (o *Sensor) HasProperties() bool {
-	if o != nil && !IsNil(o.Properties) {
+	if o != nil && !isNil(o.Properties) {
 		return true
 	}
 
@@ -274,7 +271,7 @@ func (o *Sensor) SetProperties(v map[string]interface{}) {
 
 // GetCreatedAt returns the CreatedAt field value if set, zero value otherwise.
 func (o *Sensor) GetCreatedAt() time.Time {
-	if o == nil || IsNil(o.CreatedAt) {
+	if o == nil || isNil(o.CreatedAt) {
 		var ret time.Time
 		return ret
 	}
@@ -284,15 +281,15 @@ func (o *Sensor) GetCreatedAt() time.Time {
 // GetCreatedAtOk returns a tuple with the CreatedAt field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Sensor) GetCreatedAtOk() (*time.Time, bool) {
-	if o == nil || IsNil(o.CreatedAt) {
-		return nil, false
+	if o == nil || isNil(o.CreatedAt) {
+    return nil, false
 	}
 	return o.CreatedAt, true
 }
 
 // HasCreatedAt returns a boolean if a field has been set.
 func (o *Sensor) HasCreatedAt() bool {
-	if o != nil && !IsNil(o.CreatedAt) {
+	if o != nil && !isNil(o.CreatedAt) {
 		return true
 	}
 
@@ -305,40 +302,32 @@ func (o *Sensor) SetCreatedAt(v time.Time) {
 }
 
 func (o Sensor) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o Sensor) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Id) {
+	if !isNil(o.Id) {
 		toSerialize["id"] = o.Id
 	}
-	if !IsNil(o.Code) {
+	if !isNil(o.Code) {
 		toSerialize["code"] = o.Code
 	}
-	if !IsNil(o.Description) {
+	if !isNil(o.Description) {
 		toSerialize["description"] = o.Description
 	}
-	if !IsNil(o.ExternalId) {
+	if !isNil(o.ExternalId) {
 		toSerialize["external_id"] = o.ExternalId
 	}
-	if !IsNil(o.Brand) {
+	if !isNil(o.Brand) {
 		toSerialize["brand"] = o.Brand
 	}
-	if !IsNil(o.ArchiveTime) {
+	if !isNil(o.ArchiveTime) {
 		toSerialize["archive_time"] = o.ArchiveTime
 	}
-	if !IsNil(o.Properties) {
+	if !isNil(o.Properties) {
 		toSerialize["properties"] = o.Properties
 	}
-	if !IsNil(o.CreatedAt) {
+	if !isNil(o.CreatedAt) {
 		toSerialize["created_at"] = o.CreatedAt
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableSensor struct {

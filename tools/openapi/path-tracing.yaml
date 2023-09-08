@@ -4,7 +4,7 @@ get:
   summary: List traces
   description: |
     Lists traces that match the provided filter.
-  tags: [""]
+  tags: [Tracing]
   parameters:
     - in: query
       name: cursor
@@ -19,19 +19,25 @@ get:
         type: number
     - in: query
       name: tracing_id
+      style: form
+      explode: true
       schema:
-        type: string
-        example: "a59d28c8-2a0f-4e89-9f49-6942f1c04342"
+        type: array
+        items:
+          type: string
+          format: uuid
+          example: "a59d28c8-2a0f-4e89-9f49-6942f1c04342"
     - in: query
       name: device_id
       schema:
-        type: int
+        type: integer
+        format: int64
         example: 5
     - in: query
       name: status
       schema:
-        type: string
-        example: "in progress"
+        type: integer
+        example: 2
     - in: query
       name: duration_greater_than
       schema:

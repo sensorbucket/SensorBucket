@@ -47,7 +47,7 @@ func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message, time t
 	}
 
 	if pipelineMessage.Device != nil {
-		step.DeviceID = &pipelineMessage.Device.ID
+		step.DeviceID = pipelineMessage.Device.ID
 	}
 
 	return s.stepStore.UpsertStep(step, false)
@@ -70,11 +70,11 @@ func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError, time 
 	}
 
 	if errorMessage.ReceivedByWorker.Device != nil {
-		step.DeviceID = &errorMessage.ReceivedByWorker.Device.ID
+		step.DeviceID = errorMessage.ReceivedByWorker.Device.ID
 	}
 
 	if errorMessage.ProcessingAttempt.Device != nil {
-		step.DeviceID = &errorMessage.ProcessingAttempt.Device.ID
+		step.DeviceID = errorMessage.ProcessingAttempt.Device.ID
 	}
 
 	return s.stepStore.UpsertStep(step, true)
@@ -102,16 +102,22 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 			return s.TracingID == tracingId
 		}))
 		traces = append(traces, TraceDTO{
-			TracingId: tracingId,
-			Status:    enrichedSteps.TotalStatus().String(),
-			StartTime: enrichedSteps.TotalStartTime(),
-			DeviceId:  enrichedSteps.DeviceID(),
+			TracingID:    tracingId,
+			Status:       enrichedSteps.TotalStatus(),
+			StatusString: enrichedSteps.TotalStatus().String(),
+			StartTime:    enrichedSteps.TotalStartTime(),
+			DeviceID:     enrichedSteps.DeviceID(),
 
 			// The EnrichedSteps also have to be updated to a DTO object
 			Steps: lo.Map(enrichedSteps.AllSteps(), func(val EnrichedStep, _ int) StepDTO {
 				stepDto := StepDTO{
-					Status:   val.Status.String(),
-					Duration: val.Duration,
+					StartTime:    &val.StartTime,
+					Status:       val.Status,
+					StatusString: val.Status.String(),
+					Duration:     val.Duration.Seconds(),
+				}
+				if stepDto.StartTime.IsZero() {
+					stepDto.StartTime = nil
 				}
 				if val.Error != nil {
 					stepDto.Error = *val.Error
@@ -128,23 +134,26 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 }
 
 type Filter struct {
-	TracingIds          []string `schema:"tracing_id"`
+	TracingIDs          []string `schema:"tracing_id"`
 	Status              []string `schema:"status"`
-	DeviceIds           []int64  `schema:"device_id"`
+	DeviceIDs           []int64  `schema:"device_id"`
 	DurationGreaterThan *int64   `schema:"duration_greater_than"`
 	DurationLowerThan   *int64   `schema:"duration_lower_than"`
 }
 
 type TraceDTO struct {
-	TracingId string    `json:"tracing_id"`
-	DeviceId  *int64    `json:"device_id"`
-	StartTime time.Time `json:"start_time"`
-	Status    string    `json:"status"`
-	Steps     []StepDTO `json:"steps"`
+	TracingID    string    `json:"tracing_id"`
+	DeviceID     int64     `json:"device_id"`
+	StartTime    time.Time `json:"start_time"`
+	Status       Status    `json:"status"`
+	StatusString string    `json:"status_string"`
+	Steps        []StepDTO `json:"steps"`
 }
 
 type StepDTO struct {
-	Status   string         `json:"status"`
-	Duration *time.Duration `json:"duration"`
-	Error    string         `json:"error"`
+	StartTime    *time.Time `json:"start_time"`
+	Status       Status     `json:"status"`
+	StatusString string     `json:"status_string"`
+	Duration     float64    `json:"duration"`
+	Error        string     `json:"error"`
 }

@@ -24,9 +24,9 @@ import (
 )
 
 var (
-	DB_DSN                      = env.Must("DB_DSN")
 	HTTP_ADDR                   = env.Could("HTTP_ADDR", ":3000")
 	HTTP_BASE                   = env.Could("HTTP_BASE", "http://localhost:3000/api")
+	DB_DSN                      = env.Must("DB_DSN")
 	AMQP_HOST                   = env.Must("AMQP_HOST")
 	AMQP_QUEUE_PIPELINEMESSAGES = env.Must("AMQP_QUEUE_PIPELINEMESSAGES")
 	AMQP_QUEUE_ERRORS           = env.Must("AMQP_QUEUE_ERRORS")

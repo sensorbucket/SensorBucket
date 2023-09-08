@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the QueryMeasurements200Response type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &QueryMeasurements200Response{}
-
 // QueryMeasurements200Response struct for QueryMeasurements200Response
 type QueryMeasurements200Response struct {
 	Links PaginatedResponseLinks `json:"links"`
@@ -61,7 +58,7 @@ func (o *QueryMeasurements200Response) GetLinks() PaginatedResponseLinks {
 // and a boolean to check if the value has been set.
 func (o *QueryMeasurements200Response) GetLinksOk() (*PaginatedResponseLinks, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.Links, true
 }
@@ -85,7 +82,7 @@ func (o *QueryMeasurements200Response) GetPageSize() int32 {
 // and a boolean to check if the value has been set.
 func (o *QueryMeasurements200Response) GetPageSizeOk() (*int32, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.PageSize, true
 }
@@ -109,7 +106,7 @@ func (o *QueryMeasurements200Response) GetTotalCount() int32 {
 // and a boolean to check if the value has been set.
 func (o *QueryMeasurements200Response) GetTotalCountOk() (*int32, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return &o.TotalCount, true
 }
@@ -133,7 +130,7 @@ func (o *QueryMeasurements200Response) GetData() []Measurement {
 // and a boolean to check if the value has been set.
 func (o *QueryMeasurements200Response) GetDataOk() ([]Measurement, bool) {
 	if o == nil {
-		return nil, false
+    return nil, false
 	}
 	return o.Data, true
 }
@@ -144,20 +141,20 @@ func (o *QueryMeasurements200Response) SetData(v []Measurement) {
 }
 
 func (o QueryMeasurements200Response) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
+	toSerialize := map[string]interface{}{}
+	if true {
+		toSerialize["links"] = o.Links
+	}
+	if true {
+		toSerialize["page_size"] = o.PageSize
+	}
+	if true {
+		toSerialize["total_count"] = o.TotalCount
+	}
+	if true {
+		toSerialize["data"] = o.Data
 	}
 	return json.Marshal(toSerialize)
-}
-
-func (o QueryMeasurements200Response) ToMap() (map[string]interface{}, error) {
-	toSerialize := map[string]interface{}{}
-	toSerialize["links"] = o.Links
-	toSerialize["page_size"] = o.PageSize
-	toSerialize["total_count"] = o.TotalCount
-	toSerialize["data"] = o.Data
-	return toSerialize, nil
 }
 
 type NullableQueryMeasurements200Response struct {

@@ -25,8 +25,8 @@ type NavItem struct {
 }
 
 var navItems = []NavItem{
-	{
-		Label: "Overview", URL: "/", Icon: "material-symbols:home-outline-rounded"},
+	{Label: "Overview", URL: "/", Icon: "material-symbols:home-outline-rounded"},
+	{Label: "Ingress", URL: "/ingress", Icon: "mdi:latest"},
 }
 
 //line services/dashboard/views/layout.qtpl:15

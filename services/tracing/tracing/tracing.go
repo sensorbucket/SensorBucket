@@ -39,7 +39,7 @@ type Step struct {
 	StepIndex      uint64
 	StepsRemaining uint64
 	StartTime      time.Time
-	DeviceID       *int64
+	DeviceID       int64
 	Error          *string
 }
 
@@ -48,7 +48,7 @@ type EnrichedStep struct {
 	Step
 	HighestCollectiveStatus Status
 	Status                  Status
-	Duration                *time.Duration
+	Duration                time.Duration
 }
 
 type EnrichedSteps []EnrichedStep
@@ -67,13 +67,10 @@ func (es EnrichedSteps) TotalStatus() Status {
 	return es[0].HighestCollectiveStatus
 }
 
-func (es EnrichedSteps) DeviceID() *int64 {
-	if val, ok := lo.Find(es, func(item EnrichedStep) bool {
-		return item.DeviceID != nil
-	}); ok {
-		return val.DeviceID
-	}
-	return nil
+func (es EnrichedSteps) DeviceID() int64 {
+	return lo.MaxBy(es, func(a, b EnrichedStep) bool {
+		return a.DeviceID > b.DeviceID
+	}).DeviceID
 }
 
 func (es EnrichedSteps) Exists(stepIndex uint64) bool {
@@ -109,7 +106,6 @@ func (es EnrichedSteps) AllSteps() EnrichedSteps {
 
 	steps := lo.Times(int(lastStep.StepIndex+1)+int(lastStep.StepsRemaining), func(index int) (enrStep EnrichedStep) {
 		if index > int(lastStep.StepIndex) {
-
 			// We are past the last available step in the step list
 			// add any remaining (non-existent in the database) steps and derive
 			// their states from the lastStep in the list

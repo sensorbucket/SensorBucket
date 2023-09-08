@@ -13,11 +13,7 @@ package api
 
 import (
 	"encoding/json"
-	"time"
 )
-
-// checks if the GetDatastream200ResponseData type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &GetDatastream200ResponseData{}
 
 // GetDatastream200ResponseData struct for GetDatastream200ResponseData
 type GetDatastream200ResponseData struct {
@@ -26,7 +22,7 @@ type GetDatastream200ResponseData struct {
 	SensorId *float32 `json:"sensor_id,omitempty"`
 	ObservedProperty *string `json:"observed_property,omitempty"`
 	UnitOfMeasurement *string `json:"unit_of_measurement,omitempty"`
-	CreatedAt *time.Time `json:"created_at,omitempty"`
+	CreatedAt *string `json:"created_at,omitempty"`
 	Device *Device `json:"device,omitempty"`
 	Sensor *Sensor `json:"sensor,omitempty"`
 }
@@ -50,7 +46,7 @@ func NewGetDatastream200ResponseDataWithDefaults() *GetDatastream200ResponseData
 
 // GetId returns the Id field value if set, zero value otherwise.
 func (o *GetDatastream200ResponseData) GetId() string {
-	if o == nil || IsNil(o.Id) {
+	if o == nil || isNil(o.Id) {
 		var ret string
 		return ret
 	}
@@ -60,15 +56,15 @@ func (o *GetDatastream200ResponseData) GetId() string {
 // GetIdOk returns a tuple with the Id field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetIdOk() (*string, bool) {
-	if o == nil || IsNil(o.Id) {
-		return nil, false
+	if o == nil || isNil(o.Id) {
+    return nil, false
 	}
 	return o.Id, true
 }
 
 // HasId returns a boolean if a field has been set.
 func (o *GetDatastream200ResponseData) HasId() bool {
-	if o != nil && !IsNil(o.Id) {
+	if o != nil && !isNil(o.Id) {
 		return true
 	}
 
@@ -82,7 +78,7 @@ func (o *GetDatastream200ResponseData) SetId(v string) {
 
 // GetDescription returns the Description field value if set, zero value otherwise.
 func (o *GetDatastream200ResponseData) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+	if o == nil || isNil(o.Description) {
 		var ret string
 		return ret
 	}
@@ -92,15 +88,15 @@ func (o *GetDatastream200ResponseData) GetDescription() string {
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
-		return nil, false
+	if o == nil || isNil(o.Description) {
+    return nil, false
 	}
 	return o.Description, true
 }
 
 // HasDescription returns a boolean if a field has been set.
 func (o *GetDatastream200ResponseData) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+	if o != nil && !isNil(o.Description) {
 		return true
 	}
 
@@ -114,7 +110,7 @@ func (o *GetDatastream200ResponseData) SetDescription(v string) {
 
 // GetSensorId returns the SensorId field value if set, zero value otherwise.
 func (o *GetDatastream200ResponseData) GetSensorId() float32 {
-	if o == nil || IsNil(o.SensorId) {
+	if o == nil || isNil(o.SensorId) {
 		var ret float32
 		return ret
 	}
@@ -124,15 +120,15 @@ func (o *GetDatastream200ResponseData) GetSensorId() float32 {
 // GetSensorIdOk returns a tuple with the SensorId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetSensorIdOk() (*float32, bool) {
-	if o == nil || IsNil(o.SensorId) {
-		return nil, false
+	if o == nil || isNil(o.SensorId) {
+    return nil, false
 	}
 	return o.SensorId, true
 }
 
 // HasSensorId returns a boolean if a field has been set.
 func (o *GetDatastream200ResponseData) HasSensorId() bool {
-	if o != nil && !IsNil(o.SensorId) {
+	if o != nil && !isNil(o.SensorId) {
 		return true
 	}
 
@@ -146,7 +142,7 @@ func (o *GetDatastream200ResponseData) SetSensorId(v float32) {
 
 // GetObservedProperty returns the ObservedProperty field value if set, zero value otherwise.
 func (o *GetDatastream200ResponseData) GetObservedProperty() string {
-	if o == nil || IsNil(o.ObservedProperty) {
+	if o == nil || isNil(o.ObservedProperty) {
 		var ret string
 		return ret
 	}
@@ -156,15 +152,15 @@ func (o *GetDatastream200ResponseData) GetObservedProperty() string {
 // GetObservedPropertyOk returns a tuple with the ObservedProperty field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetObservedPropertyOk() (*string, bool) {
-	if o == nil || IsNil(o.ObservedProperty) {
-		return nil, false
+	if o == nil || isNil(o.ObservedProperty) {
+    return nil, false
 	}
 	return o.ObservedProperty, true
 }
 
 // HasObservedProperty returns a boolean if a field has been set.
 func (o *GetDatastream200ResponseData) HasObservedProperty() bool {
-	if o != nil && !IsNil(o.ObservedProperty) {
+	if o != nil && !isNil(o.ObservedProperty) {
 		return true
 	}
 
@@ -178,7 +174,7 @@ func (o *GetDatastream200ResponseData) SetObservedProperty(v string) {
 
 // GetUnitOfMeasurement returns the UnitOfMeasurement field value if set, zero value otherwise.
 func (o *GetDatastream200ResponseData) GetUnitOfMeasurement() string {
-	if o == nil || IsNil(o.UnitOfMeasurement) {
+	if o == nil || isNil(o.UnitOfMeasurement) {
 		var ret string
 		return ret
 	}
@@ -188,15 +184,15 @@ func (o *GetDatastream200ResponseData) GetUnitOfMeasurement() string {
 // GetUnitOfMeasurementOk returns a tuple with the UnitOfMeasurement field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetUnitOfMeasurementOk() (*string, bool) {
-	if o == nil || IsNil(o.UnitOfMeasurement) {
-		return nil, false
+	if o == nil || isNil(o.UnitOfMeasurement) {
+    return nil, false
 	}
 	return o.UnitOfMeasurement, true
 }
 
 // HasUnitOfMeasurement returns a boolean if a field has been set.
 func (o *GetDatastream200ResponseData) HasUnitOfMeasurement() bool {
-	if o != nil && !IsNil(o.UnitOfMeasurement) {
+	if o != nil && !isNil(o.UnitOfMeasurement) {
 		return true
 	}
 
@@ -209,9 +205,9 @@ func (o *GetDatastream200ResponseData) SetUnitOfMeasurement(v string) {
 }
 
 // GetCreatedAt returns the CreatedAt field value if set, zero value otherwise.
-func (o *GetDatastream200ResponseData) GetCreatedAt() time.Time {
-	if o == nil || IsNil(o.CreatedAt) {
-		var ret time.Time
+func (o *GetDatastream200ResponseData) GetCreatedAt() string {
+	if o == nil || isNil(o.CreatedAt) {
+		var ret string
 		return ret
 	}
 	return *o.CreatedAt
@@ -219,30 +215,30 @@ func (o *GetDatastream200ResponseData) GetCreatedAt() time.Time {
 
 // GetCreatedAtOk returns a tuple with the CreatedAt field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetDatastream200ResponseData) GetCreatedAtOk() (*time.Time, bool) {
-	if o == nil || IsNil(o.CreatedAt) {
-		return nil, false
+func (o *GetDatastream200ResponseData) GetCreatedAtOk() (*string, bool) {
+	if o == nil || isNil(o.CreatedAt) {
+    return nil, false
 	}
 	return o.CreatedAt, true
 }
 
 // HasCreatedAt returns a boolean if a field has been set.
 func (o *GetDatastream200ResponseData) HasCreatedAt() bool {
-	if o != nil && !IsNil(o.CreatedAt) {
+	if o != nil && !isNil(o.CreatedAt) {
 		return true
 	}
 
 	return false
 }
 
-// SetCreatedAt gets a reference to the given time.Time and assigns it to the CreatedAt field.
-func (o *GetDatastream200ResponseData) SetCreatedAt(v time.Time) {
+// SetCreatedAt gets a reference to the given string and assigns it to the CreatedAt field.
+func (o *GetDatastream200ResponseData) SetCreatedAt(v string) {
 	o.CreatedAt = &v
 }
 
 // GetDevice returns the Device field value if set, zero value otherwise.
 func (o *GetDatastream200ResponseData) GetDevice() Device {
-	if o == nil || IsNil(o.Device) {
+	if o == nil || isNil(o.Device) {
 		var ret Device
 		return ret
 	}
@@ -252,15 +248,15 @@ func (o *GetDatastream200ResponseData) GetDevice() Device {
 // GetDeviceOk returns a tuple with the Device field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetDeviceOk() (*Device, bool) {
-	if o == nil || IsNil(o.Device) {
-		return nil, false
+	if o == nil || isNil(o.Device) {
+    return nil, false
 	}
 	return o.Device, true
 }
 
 // HasDevice returns a boolean if a field has been set.
 func (o *GetDatastream200ResponseData) HasDevice() bool {
-	if o != nil && !IsNil(o.Device) {
+	if o != nil && !isNil(o.Device) {
 		return true
 	}
 
@@ -274,7 +270,7 @@ func (o *GetDatastream200ResponseData) SetDevice(v Device) {
 
 // GetSensor returns the Sensor field value if set, zero value otherwise.
 func (o *GetDatastream200ResponseData) GetSensor() Sensor {
-	if o == nil || IsNil(o.Sensor) {
+	if o == nil || isNil(o.Sensor) {
 		var ret Sensor
 		return ret
 	}
@@ -284,15 +280,15 @@ func (o *GetDatastream200ResponseData) GetSensor() Sensor {
 // GetSensorOk returns a tuple with the Sensor field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetSensorOk() (*Sensor, bool) {
-	if o == nil || IsNil(o.Sensor) {
-		return nil, false
+	if o == nil || isNil(o.Sensor) {
+    return nil, false
 	}
 	return o.Sensor, true
 }
 
 // HasSensor returns a boolean if a field has been set.
 func (o *GetDatastream200ResponseData) HasSensor() bool {
-	if o != nil && !IsNil(o.Sensor) {
+	if o != nil && !isNil(o.Sensor) {
 		return true
 	}
 
@@ -305,40 +301,32 @@ func (o *GetDatastream200ResponseData) SetSensor(v Sensor) {
 }
 
 func (o GetDatastream200ResponseData) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o GetDatastream200ResponseData) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Id) {
+	if !isNil(o.Id) {
 		toSerialize["id"] = o.Id
 	}
-	if !IsNil(o.Description) {
+	if !isNil(o.Description) {
 		toSerialize["description"] = o.Description
 	}
-	if !IsNil(o.SensorId) {
+	if !isNil(o.SensorId) {
 		toSerialize["sensor_id"] = o.SensorId
 	}
-	if !IsNil(o.ObservedProperty) {
+	if !isNil(o.ObservedProperty) {
 		toSerialize["observed_property"] = o.ObservedProperty
 	}
-	if !IsNil(o.UnitOfMeasurement) {
+	if !isNil(o.UnitOfMeasurement) {
 		toSerialize["unit_of_measurement"] = o.UnitOfMeasurement
 	}
-	if !IsNil(o.CreatedAt) {
+	if !isNil(o.CreatedAt) {
 		toSerialize["created_at"] = o.CreatedAt
 	}
-	if !IsNil(o.Device) {
+	if !isNil(o.Device) {
 		toSerialize["device"] = o.Device
 	}
-	if !IsNil(o.Sensor) {
+	if !isNil(o.Sensor) {
 		toSerialize["sensor"] = o.Sensor
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableGetDatastream200ResponseData struct {

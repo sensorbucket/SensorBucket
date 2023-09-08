@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"

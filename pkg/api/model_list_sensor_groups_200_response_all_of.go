@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the ListSensorGroups200ResponseAllOf type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ListSensorGroups200ResponseAllOf{}
-
 // ListSensorGroups200ResponseAllOf struct for ListSensorGroups200ResponseAllOf
 type ListSensorGroups200ResponseAllOf struct {
 	Data []SensorGroup `json:"data,omitempty"`
@@ -42,7 +39,7 @@ func NewListSensorGroups200ResponseAllOfWithDefaults() *ListSensorGroups200Respo
 
 // GetData returns the Data field value if set, zero value otherwise.
 func (o *ListSensorGroups200ResponseAllOf) GetData() []SensorGroup {
-	if o == nil || IsNil(o.Data) {
+	if o == nil || isNil(o.Data) {
 		var ret []SensorGroup
 		return ret
 	}
@@ -52,15 +49,15 @@ func (o *ListSensorGroups200ResponseAllOf) GetData() []SensorGroup {
 // GetDataOk returns a tuple with the Data field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ListSensorGroups200ResponseAllOf) GetDataOk() ([]SensorGroup, bool) {
-	if o == nil || IsNil(o.Data) {
-		return nil, false
+	if o == nil || isNil(o.Data) {
+    return nil, false
 	}
 	return o.Data, true
 }
 
 // HasData returns a boolean if a field has been set.
 func (o *ListSensorGroups200ResponseAllOf) HasData() bool {
-	if o != nil && !IsNil(o.Data) {
+	if o != nil && !isNil(o.Data) {
 		return true
 	}
 
@@ -73,19 +70,11 @@ func (o *ListSensorGroups200ResponseAllOf) SetData(v []SensorGroup) {
 }
 
 func (o ListSensorGroups200ResponseAllOf) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o ListSensorGroups200ResponseAllOf) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Data) {
+	if !isNil(o.Data) {
 		toSerialize["data"] = o.Data
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableListSensorGroups200ResponseAllOf struct {

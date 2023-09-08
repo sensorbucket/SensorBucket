@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the ListPipelines200ResponseAllOf type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ListPipelines200ResponseAllOf{}
-
 // ListPipelines200ResponseAllOf struct for ListPipelines200ResponseAllOf
 type ListPipelines200ResponseAllOf struct {
 	Data []Pipeline `json:"data,omitempty"`
@@ -42,7 +39,7 @@ func NewListPipelines200ResponseAllOfWithDefaults() *ListPipelines200ResponseAll
 
 // GetData returns the Data field value if set, zero value otherwise.
 func (o *ListPipelines200ResponseAllOf) GetData() []Pipeline {
-	if o == nil || IsNil(o.Data) {
+	if o == nil || isNil(o.Data) {
 		var ret []Pipeline
 		return ret
 	}
@@ -52,15 +49,15 @@ func (o *ListPipelines200ResponseAllOf) GetData() []Pipeline {
 // GetDataOk returns a tuple with the Data field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ListPipelines200ResponseAllOf) GetDataOk() ([]Pipeline, bool) {
-	if o == nil || IsNil(o.Data) {
-		return nil, false
+	if o == nil || isNil(o.Data) {
+    return nil, false
 	}
 	return o.Data, true
 }
 
 // HasData returns a boolean if a field has been set.
 func (o *ListPipelines200ResponseAllOf) HasData() bool {
-	if o != nil && !IsNil(o.Data) {
+	if o != nil && !isNil(o.Data) {
 		return true
 	}
 
@@ -73,19 +70,11 @@ func (o *ListPipelines200ResponseAllOf) SetData(v []Pipeline) {
 }
 
 func (o ListPipelines200ResponseAllOf) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o ListPipelines200ResponseAllOf) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Data) {
+	if !isNil(o.Data) {
 		toSerialize["data"] = o.Data
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableListPipelines200ResponseAllOf struct {

@@ -14,11 +14,11 @@ package api
 import (
 	"bytes"
 	"context"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
-    "sensorbucket.nl/sensorbucket/internal/web"
 	"strings"
+	"reflect"
 )
 
 
@@ -112,20 +112,18 @@ func (a *PipelinesApiService) CreatePipelineExecute(r ApiCreatePipelineRequest) 
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -188,7 +186,7 @@ func (a *PipelinesApiService) DisablePipelineExecute(r ApiDisablePipelineRequest
 	}
 
 	localVarPath := localBasePath + "/pipelines/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -221,20 +219,18 @@ func (a *PipelinesApiService) DisablePipelineExecute(r ApiDisablePipelineRequest
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -304,14 +300,22 @@ func (a *PipelinesApiService) GetPipelineExecute(r ApiGetPipelineRequest) (*GetP
 	}
 
 	localVarPath := localBasePath + "/pipelines/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
 	if r.status != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "status", r.status, "csv")
+		t := *r.status
+		if reflect.TypeOf(t).Kind() == reflect.Slice {
+			s := reflect.ValueOf(t)
+			for i := 0; i < s.Len(); i++ {
+				localVarQueryParams.Add("status", parameterToString(s.Index(i), "multi"))
+			}
+		} else {
+			localVarQueryParams.Add("status", parameterToString(t, "multi"))
+		}
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -340,20 +344,18 @@ func (a *PipelinesApiService) GetPipelineExecute(r ApiGetPipelineRequest) (*GetP
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -448,16 +450,24 @@ func (a *PipelinesApiService) ListPipelinesExecute(r ApiListPipelinesRequest) (*
 	localVarFormParams := url.Values{}
 
 	if r.inactive != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "inactive", r.inactive, "")
+		localVarQueryParams.Add("inactive", parameterToString(*r.inactive, ""))
 	}
 	if r.step != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "step", r.step, "csv")
+		t := *r.step
+		if reflect.TypeOf(t).Kind() == reflect.Slice {
+			s := reflect.ValueOf(t)
+			for i := 0; i < s.Len(); i++ {
+				localVarQueryParams.Add("step", parameterToString(s.Index(i), "multi"))
+			}
+		} else {
+			localVarQueryParams.Add("step", parameterToString(t, "multi"))
+		}
 	}
 	if r.cursor != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "cursor", r.cursor, "")
+		localVarQueryParams.Add("cursor", parameterToString(*r.cursor, ""))
 	}
 	if r.limit != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "limit", r.limit, "")
+		localVarQueryParams.Add("limit", parameterToString(*r.limit, ""))
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -486,20 +496,18 @@ func (a *PipelinesApiService) ListPipelinesExecute(r ApiListPipelinesRequest) (*
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -567,7 +575,7 @@ func (a *PipelinesApiService) UpdatePipelineExecute(r ApiUpdatePipelineRequest) 
 	}
 
 	localVarPath := localBasePath + "/pipelines/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -602,20 +610,18 @@ func (a *PipelinesApiService) UpdatePipelineExecute(r ApiUpdatePipelineRequest) 
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
-        var newErr *web.APIError
-        err = a.client.decode(&newErr, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-        if err != nil {
-            return localVarReturnValue, localVarHTTPResponse, err
-        }
-        newErr.HTTPStatus = localVarHTTPResponse.StatusCode
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 

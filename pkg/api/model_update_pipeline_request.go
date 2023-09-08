@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the UpdatePipelineRequest type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &UpdatePipelineRequest{}
-
 // UpdatePipelineRequest struct for UpdatePipelineRequest
 type UpdatePipelineRequest struct {
 	Description *string `json:"description,omitempty"`
@@ -45,7 +42,7 @@ func NewUpdatePipelineRequestWithDefaults() *UpdatePipelineRequest {
 
 // GetDescription returns the Description field value if set, zero value otherwise.
 func (o *UpdatePipelineRequest) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+	if o == nil || isNil(o.Description) {
 		var ret string
 		return ret
 	}
@@ -55,15 +52,15 @@ func (o *UpdatePipelineRequest) GetDescription() string {
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdatePipelineRequest) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
-		return nil, false
+	if o == nil || isNil(o.Description) {
+    return nil, false
 	}
 	return o.Description, true
 }
 
 // HasDescription returns a boolean if a field has been set.
 func (o *UpdatePipelineRequest) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+	if o != nil && !isNil(o.Description) {
 		return true
 	}
 
@@ -77,7 +74,7 @@ func (o *UpdatePipelineRequest) SetDescription(v string) {
 
 // GetSteps returns the Steps field value if set, zero value otherwise.
 func (o *UpdatePipelineRequest) GetSteps() []string {
-	if o == nil || IsNil(o.Steps) {
+	if o == nil || isNil(o.Steps) {
 		var ret []string
 		return ret
 	}
@@ -87,15 +84,15 @@ func (o *UpdatePipelineRequest) GetSteps() []string {
 // GetStepsOk returns a tuple with the Steps field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdatePipelineRequest) GetStepsOk() ([]string, bool) {
-	if o == nil || IsNil(o.Steps) {
-		return nil, false
+	if o == nil || isNil(o.Steps) {
+    return nil, false
 	}
 	return o.Steps, true
 }
 
 // HasSteps returns a boolean if a field has been set.
 func (o *UpdatePipelineRequest) HasSteps() bool {
-	if o != nil && !IsNil(o.Steps) {
+	if o != nil && !isNil(o.Steps) {
 		return true
 	}
 
@@ -109,7 +106,7 @@ func (o *UpdatePipelineRequest) SetSteps(v []string) {
 
 // GetStatus returns the Status field value if set, zero value otherwise.
 func (o *UpdatePipelineRequest) GetStatus() string {
-	if o == nil || IsNil(o.Status) {
+	if o == nil || isNil(o.Status) {
 		var ret string
 		return ret
 	}
@@ -119,15 +116,15 @@ func (o *UpdatePipelineRequest) GetStatus() string {
 // GetStatusOk returns a tuple with the Status field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UpdatePipelineRequest) GetStatusOk() (*string, bool) {
-	if o == nil || IsNil(o.Status) {
-		return nil, false
+	if o == nil || isNil(o.Status) {
+    return nil, false
 	}
 	return o.Status, true
 }
 
 // HasStatus returns a boolean if a field has been set.
 func (o *UpdatePipelineRequest) HasStatus() bool {
-	if o != nil && !IsNil(o.Status) {
+	if o != nil && !isNil(o.Status) {
 		return true
 	}
 
@@ -140,25 +137,17 @@ func (o *UpdatePipelineRequest) SetStatus(v string) {
 }
 
 func (o UpdatePipelineRequest) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o UpdatePipelineRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Description) {
+	if !isNil(o.Description) {
 		toSerialize["description"] = o.Description
 	}
-	if !IsNil(o.Steps) {
+	if !isNil(o.Steps) {
 		toSerialize["steps"] = o.Steps
 	}
-	if !IsNil(o.Status) {
+	if !isNil(o.Status) {
 		toSerialize["status"] = o.Status
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableUpdatePipelineRequest struct {

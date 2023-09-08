@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the SensorGroup type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &SensorGroup{}
-
 // SensorGroup struct for SensorGroup
 type SensorGroup struct {
 	Id *float32 `json:"id,omitempty"`
@@ -45,7 +42,7 @@ func NewSensorGroupWithDefaults() *SensorGroup {
 
 // GetId returns the Id field value if set, zero value otherwise.
 func (o *SensorGroup) GetId() float32 {
-	if o == nil || IsNil(o.Id) {
+	if o == nil || isNil(o.Id) {
 		var ret float32
 		return ret
 	}
@@ -55,15 +52,15 @@ func (o *SensorGroup) GetId() float32 {
 // GetIdOk returns a tuple with the Id field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *SensorGroup) GetIdOk() (*float32, bool) {
-	if o == nil || IsNil(o.Id) {
-		return nil, false
+	if o == nil || isNil(o.Id) {
+    return nil, false
 	}
 	return o.Id, true
 }
 
 // HasId returns a boolean if a field has been set.
 func (o *SensorGroup) HasId() bool {
-	if o != nil && !IsNil(o.Id) {
+	if o != nil && !isNil(o.Id) {
 		return true
 	}
 
@@ -77,7 +74,7 @@ func (o *SensorGroup) SetId(v float32) {
 
 // GetName returns the Name field value if set, zero value otherwise.
 func (o *SensorGroup) GetName() string {
-	if o == nil || IsNil(o.Name) {
+	if o == nil || isNil(o.Name) {
 		var ret string
 		return ret
 	}
@@ -87,15 +84,15 @@ func (o *SensorGroup) GetName() string {
 // GetNameOk returns a tuple with the Name field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *SensorGroup) GetNameOk() (*string, bool) {
-	if o == nil || IsNil(o.Name) {
-		return nil, false
+	if o == nil || isNil(o.Name) {
+    return nil, false
 	}
 	return o.Name, true
 }
 
 // HasName returns a boolean if a field has been set.
 func (o *SensorGroup) HasName() bool {
-	if o != nil && !IsNil(o.Name) {
+	if o != nil && !isNil(o.Name) {
 		return true
 	}
 
@@ -109,7 +106,7 @@ func (o *SensorGroup) SetName(v string) {
 
 // GetDescription returns the Description field value if set, zero value otherwise.
 func (o *SensorGroup) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+	if o == nil || isNil(o.Description) {
 		var ret string
 		return ret
 	}
@@ -119,15 +116,15 @@ func (o *SensorGroup) GetDescription() string {
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *SensorGroup) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
-		return nil, false
+	if o == nil || isNil(o.Description) {
+    return nil, false
 	}
 	return o.Description, true
 }
 
 // HasDescription returns a boolean if a field has been set.
 func (o *SensorGroup) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+	if o != nil && !isNil(o.Description) {
 		return true
 	}
 
@@ -141,7 +138,7 @@ func (o *SensorGroup) SetDescription(v string) {
 
 // GetSensors returns the Sensors field value if set, zero value otherwise.
 func (o *SensorGroup) GetSensors() []Sensor {
-	if o == nil || IsNil(o.Sensors) {
+	if o == nil || isNil(o.Sensors) {
 		var ret []Sensor
 		return ret
 	}
@@ -151,15 +148,15 @@ func (o *SensorGroup) GetSensors() []Sensor {
 // GetSensorsOk returns a tuple with the Sensors field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *SensorGroup) GetSensorsOk() ([]Sensor, bool) {
-	if o == nil || IsNil(o.Sensors) {
-		return nil, false
+	if o == nil || isNil(o.Sensors) {
+    return nil, false
 	}
 	return o.Sensors, true
 }
 
 // HasSensors returns a boolean if a field has been set.
 func (o *SensorGroup) HasSensors() bool {
-	if o != nil && !IsNil(o.Sensors) {
+	if o != nil && !isNil(o.Sensors) {
 		return true
 	}
 
@@ -172,28 +169,20 @@ func (o *SensorGroup) SetSensors(v []Sensor) {
 }
 
 func (o SensorGroup) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o SensorGroup) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Id) {
+	if !isNil(o.Id) {
 		toSerialize["id"] = o.Id
 	}
-	if !IsNil(o.Name) {
+	if !isNil(o.Name) {
 		toSerialize["name"] = o.Name
 	}
-	if !IsNil(o.Description) {
+	if !isNil(o.Description) {
 		toSerialize["description"] = o.Description
 	}
-	if !IsNil(o.Sensors) {
+	if !isNil(o.Sensors) {
 		toSerialize["sensors"] = o.Sensors
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableSensorGroup struct {

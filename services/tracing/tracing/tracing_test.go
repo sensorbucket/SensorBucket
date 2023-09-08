@@ -9,7 +9,7 @@ import (
 
 func TestEnrichedStepsProperties(t *testing.T) {
 	// Arrange
-	device := asPointer(int64(542))
+	device := int64(542)
 	startT := time.Now()
 	enriched := EnrichedSteps{
 		EnrichedStep{
@@ -196,7 +196,6 @@ func TestAllStepsAppendsMissingSteps(t *testing.T) {
 
 	for scene, cfg := range scenarios {
 		t.Run(scene, func(t *testing.T) {
-
 			// Act and Assert
 			assert.Equal(t, cfg.expected, cfg.input.AllSteps())
 		})

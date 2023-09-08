@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the ListDeviceSensors200ResponseAllOf type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ListDeviceSensors200ResponseAllOf{}
-
 // ListDeviceSensors200ResponseAllOf struct for ListDeviceSensors200ResponseAllOf
 type ListDeviceSensors200ResponseAllOf struct {
 	Data []Sensor `json:"data,omitempty"`
@@ -42,7 +39,7 @@ func NewListDeviceSensors200ResponseAllOfWithDefaults() *ListDeviceSensors200Res
 
 // GetData returns the Data field value if set, zero value otherwise.
 func (o *ListDeviceSensors200ResponseAllOf) GetData() []Sensor {
-	if o == nil || IsNil(o.Data) {
+	if o == nil || isNil(o.Data) {
 		var ret []Sensor
 		return ret
 	}
@@ -52,15 +49,15 @@ func (o *ListDeviceSensors200ResponseAllOf) GetData() []Sensor {
 // GetDataOk returns a tuple with the Data field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ListDeviceSensors200ResponseAllOf) GetDataOk() ([]Sensor, bool) {
-	if o == nil || IsNil(o.Data) {
-		return nil, false
+	if o == nil || isNil(o.Data) {
+    return nil, false
 	}
 	return o.Data, true
 }
 
 // HasData returns a boolean if a field has been set.
 func (o *ListDeviceSensors200ResponseAllOf) HasData() bool {
-	if o != nil && !IsNil(o.Data) {
+	if o != nil && !isNil(o.Data) {
 		return true
 	}
 
@@ -73,19 +70,11 @@ func (o *ListDeviceSensors200ResponseAllOf) SetData(v []Sensor) {
 }
 
 func (o ListDeviceSensors200ResponseAllOf) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o ListDeviceSensors200ResponseAllOf) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Data) {
+	if !isNil(o.Data) {
 		toSerialize["data"] = o.Data
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableListDeviceSensors200ResponseAllOf struct {

@@ -15,9 +15,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the QueryMeasurements200ResponseAllOf type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &QueryMeasurements200ResponseAllOf{}
-
 // QueryMeasurements200ResponseAllOf struct for QueryMeasurements200ResponseAllOf
 type QueryMeasurements200ResponseAllOf struct {
 	Data []Measurement `json:"data,omitempty"`
@@ -42,7 +39,7 @@ func NewQueryMeasurements200ResponseAllOfWithDefaults() *QueryMeasurements200Res
 
 // GetData returns the Data field value if set, zero value otherwise.
 func (o *QueryMeasurements200ResponseAllOf) GetData() []Measurement {
-	if o == nil || IsNil(o.Data) {
+	if o == nil || isNil(o.Data) {
 		var ret []Measurement
 		return ret
 	}
@@ -52,15 +49,15 @@ func (o *QueryMeasurements200ResponseAllOf) GetData() []Measurement {
 // GetDataOk returns a tuple with the Data field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *QueryMeasurements200ResponseAllOf) GetDataOk() ([]Measurement, bool) {
-	if o == nil || IsNil(o.Data) {
-		return nil, false
+	if o == nil || isNil(o.Data) {
+    return nil, false
 	}
 	return o.Data, true
 }
 
 // HasData returns a boolean if a field has been set.
 func (o *QueryMeasurements200ResponseAllOf) HasData() bool {
-	if o != nil && !IsNil(o.Data) {
+	if o != nil && !isNil(o.Data) {
 		return true
 	}
 
@@ -73,19 +70,11 @@ func (o *QueryMeasurements200ResponseAllOf) SetData(v []Measurement) {
 }
 
 func (o QueryMeasurements200ResponseAllOf) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o QueryMeasurements200ResponseAllOf) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Data) {
+	if !isNil(o.Data) {
 		toSerialize["data"] = o.Data
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableQueryMeasurements200ResponseAllOf struct {

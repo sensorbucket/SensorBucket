@@ -17,6 +17,10 @@ services:
       - .:/workspace:cached
     environment:
     - STATIC_PATH=services/dashboard/static
+    - EP_INGRESSES=http://tracing:3000/ingresses
+    - EP_TRACES=http://tracing:3000/tracing
+    - EP_PIPELINES=http://core:3000/pipelines
+    - EP_DEVICES=http://core:3000/devices
 
   core:
     build:

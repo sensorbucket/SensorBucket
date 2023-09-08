@@ -91,6 +91,9 @@ func (s *PSQLStore) ListPipelines(filter processing.PipelinesFilter, p paginatio
 		pipelineIDsThatHaveSteps := pq.Select("pipeline_id").Prefix("id IN (").Suffix(")").Distinct().From("pipeline_steps").Where(sq.Eq{"image": filter.Step})
 		q = q.Where(pipelineIDsThatHaveSteps)
 	}
+	if len(filter.ID) > 0 {
+		q = q.Where(sq.Eq{"id": filter.ID})
+	}
 
 	// Pagination
 	cursor, err := pagination.GetCursor[pipelinePaginationQuery](p)

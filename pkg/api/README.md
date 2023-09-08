@@ -25,6 +25,7 @@ Install the following dependencies:
 
 ```shell
 go get github.com/stretchr/testify/assert
+go get golang.org/x/oauth2
 go get golang.org/x/net/context
 ```
 
@@ -110,6 +111,7 @@ Class | Method | HTTP request | Description
 *PipelinesApi* | [**GetPipeline**](docs/PipelinesApi.md#getpipeline) | **Get** /pipelines/{id} | Get pipeline
 *PipelinesApi* | [**ListPipelines**](docs/PipelinesApi.md#listpipelines) | **Get** /pipelines | List pipelines
 *PipelinesApi* | [**UpdatePipeline**](docs/PipelinesApi.md#updatepipeline) | **Patch** /pipelines/{id} | Update pipeline
+*TracingApi* | [**ListTraces**](docs/TracingApi.md#listtraces) | **Get** /tracing | List traces
 *UplinkApi* | [**ProcessUplinkData**](docs/UplinkApi.md#processuplinkdata) | **Post** /uplinks/{pipeline_id} | Process uplink message
 
 
@@ -147,6 +149,8 @@ Class | Method | HTTP request | Description
  - [ListPipelines200ResponseAllOf](docs/ListPipelines200ResponseAllOf.md)
  - [ListSensorGroups200Response](docs/ListSensorGroups200Response.md)
  - [ListSensorGroups200ResponseAllOf](docs/ListSensorGroups200ResponseAllOf.md)
+ - [ListTraces200Response](docs/ListTraces200Response.md)
+ - [ListTraces200ResponseAllOf](docs/ListTraces200ResponseAllOf.md)
  - [Measurement](docs/Measurement.md)
  - [PaginatedResponse](docs/PaginatedResponse.md)
  - [PaginatedResponseLinks](docs/PaginatedResponseLinks.md)
@@ -155,6 +159,8 @@ Class | Method | HTTP request | Description
  - [QueryMeasurements200ResponseAllOf](docs/QueryMeasurements200ResponseAllOf.md)
  - [Sensor](docs/Sensor.md)
  - [SensorGroup](docs/SensorGroup.md)
+ - [Trace](docs/Trace.md)
+ - [TraceStep](docs/TraceStep.md)
  - [UpdateDevice200Response](docs/UpdateDevice200Response.md)
  - [UpdateDeviceRequest](docs/UpdateDeviceRequest.md)
  - [UpdatePipeline200Response](docs/UpdatePipeline200Response.md)
