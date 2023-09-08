@@ -13,6 +13,7 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/services/fission-user-workers/migrations"
+	userworkers "sensorbucket.nl/sensorbucket/services/fission-user-workers/service"
 )
 
 var (
@@ -32,17 +33,17 @@ func Run() error {
 	defer cancel()
 
 	db := sqlx.MustOpen("pgx", DB_DSN)
-	store := newPSQLStore(db)
+	store := userworkers.NewPSQLStore(db)
 	if err := migrations.MigratePostgres(db.DB); err != nil {
 		return fmt.Errorf("migration failed: %w", err)
 	}
 
-	app := NewApplication(store)
+	app := userworkers.NewApplication(store)
 
-	srv := newHTTPTransport(app, HTTP_ADDR)
+	srv := userworkers.NewHTTPTransport(app, HTTP_ADDR)
 	go srv.Start()
 
-	ctrl, err := createKubernetesController(store, WORKER_NAMESPACE)
+	ctrl, err := userworkers.CreateKubernetesController(store, WORKER_NAMESPACE)
 	if err != nil {
 		return err
 	}

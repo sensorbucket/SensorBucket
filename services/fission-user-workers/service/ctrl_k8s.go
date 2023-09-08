@@ -1,4 +1,4 @@
-package main
+package userworkers
 
 import (
 	"context"
@@ -41,7 +41,7 @@ type KubernetesController struct {
 	mqtExchange        string
 }
 
-func createKubernetesController(store Store, workerNamespace string) (*KubernetesController, error) {
+func CreateKubernetesController(store Store, workerNamespace string) (*KubernetesController, error) {
 	cfg, err := clientcmd.BuildConfigFromFlags("", "/home/timvosch/.kube/config")
 	// cfg, err := rest.InClusterConfig()
 	if err != nil {
@@ -56,7 +56,7 @@ func createKubernetesController(store Store, workerNamespace string) (*Kubernete
 		fission:            fission,
 		workerNamespace:    workerNamespace,
 		prefix:             "worker",
-		mqtImage:           "ghcr.io/sensorbucket/fission-rmq-connector@sha256:62cb799526db7640ad7007b0268998054f9ea213a77526a88306c28eb95e1bb0",
+		mqtImage:           "ghcr.io/sensorbucket/fission-rmq-connector@sha256:eb18f1cc28566b8204165c35826f0e739903ee3e28413180dd56c7a3a3117ef3",
 		mqtImagePullSecret: "regcred",
 		mqtSecret:          "keda-rmq-secret",
 		mqtExchange:        "pipeline.messages",
@@ -246,7 +246,7 @@ func (ctrl *KubernetesController) workerToPackage(worker UserWorker) Package {
 				},
 				Source: fissionV1.Archive{
 					Type:    fissionV1.ArchiveTypeLiteral,
-					Literal: worker.Source,
+					Literal: worker.ZipSource,
 				},
 			},
 		},

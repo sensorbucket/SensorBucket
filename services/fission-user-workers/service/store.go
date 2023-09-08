@@ -1,6 +1,8 @@
-package main
+package userworkers
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
@@ -16,7 +18,7 @@ type PSQLStore struct {
 	db *sqlx.DB
 }
 
-func newPSQLStore(db *sqlx.DB) *PSQLStore {
+func NewPSQLStore(db *sqlx.DB) *PSQLStore {
 	return &PSQLStore{db}
 }
 
@@ -69,7 +71,7 @@ func (s *PSQLStore) ListUserWorkers(req pagination.Request) (*pagination.Page[Us
 		var worker UserWorker
 		if err := rows.Scan(
 			&worker.ID, &worker.Name, &worker.Description, &worker.State, &worker.Language, &worker.Organisation,
-			&worker.Major, &worker.Revision, &worker.Status, &worker.StatusInfo, &worker.Source, &worker.Entrypoint,
+			&worker.Major, &worker.Revision, &worker.Status, &worker.StatusInfo, &worker.ZipSource, &worker.Entrypoint,
 			&cursor.Columns.ID,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning worker from database: %w", err)
@@ -90,9 +92,30 @@ func (s *PSQLStore) CreateWorker(worker *UserWorker) error {
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
         )`,
 		worker.ID, worker.Name, worker.Description, worker.State, worker.Language, worker.Organisation,
-		worker.Major, worker.Revision, worker.Status, worker.Source, worker.Entrypoint,
+		worker.Major, worker.Revision, worker.Status, worker.ZipSource, worker.Entrypoint,
 	); err != nil {
 		return fmt.Errorf("could not create worker in store: %w", err)
+	}
+	return nil
+}
+
+func (s *PSQLStore) GetWorkerByID(id uuid.UUID) (*UserWorker, error) {
+	var worker UserWorker
+	if err := s.db.Get(&worker, "SELECT * FROM user_workers WHERE id=$1", id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrWorkerNotFound
+		}
+		return nil, err
+	}
+	return &worker, nil
+}
+
+func (s *PSQLStore) UpdateWorker(worker *UserWorker) error {
+	if _, err := s.db.Exec(
+		`UPDATE user_workers SET source=$1, revision=$2, state=$3, description=$4 WHERE id=$5`,
+		worker.ZipSource, worker.Revision, worker.State, worker.Description, worker.ID,
+	); err != nil {
+		return fmt.Errorf("could not update worker in store: %w", err)
 	}
 	return nil
 }

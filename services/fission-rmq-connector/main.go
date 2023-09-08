@@ -67,7 +67,7 @@ func Run() error {
 		return nil
 	})
 	consumeChan := conn.Consume(AMQP_QUEUE, func(c *amqp091.Channel) error {
-		c.QueueDeclare(AMQP_QUEUE, true, false, false, false, nil)
+		c.QueueDeclare(AMQP_QUEUE, true, true, false, false, nil)
 		c.ExchangeDeclare(AMQP_XCHG, "topic", true, true, false, false, nil)
 		c.Qos(prefetch, 0, true)
 		return nil
