@@ -280,7 +280,7 @@ func overviewDatastream() http.HandlerFunc {
 			web.HTTPError(w, err)
 			return
 		}
-		if res.StatusCode != 200 {
+		if res.StatusCode != http.StatusOK {
 			var apiError web.APIError
 			if err := json.NewDecoder(res.Body).Decode(&apiError); err != nil {
 				web.HTTPError(w, err)
@@ -385,7 +385,7 @@ func getSensorGroup(id string) (*devices.SensorGroup, error) {
 	if err != nil {
 		return nil, err
 	}
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		var apiError web.APIError
 		if err := json.NewDecoder(res.Body).Decode(&apiError); err != nil {
 			return nil, err
@@ -429,7 +429,7 @@ func getMeasurementsPage(dsID string, start, end time.Time, cursor string) ([]me
 	if err != nil {
 		return nil, "", err
 	}
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		var apiError web.APIError
 		if err := json.NewDecoder(res.Body).Decode(&apiError); err != nil {
 			return nil, "", err
@@ -449,7 +449,7 @@ func getMeasurementsPage(dsID string, start, end time.Time, cursor string) ([]me
 func resolveDevice(next http.Handler) http.Handler {
 	getDevice := func(id int64) (*devices.Device, error) {
 		res, _ := http.Get(fmt.Sprintf("http://core:3000/devices/%d", id))
-		if res.StatusCode != 200 {
+		if res.StatusCode != http.StatusOK {
 			var apiError web.APIError
 			if err := json.NewDecoder(res.Body).Decode(&apiError); err != nil {
 				return nil, err
@@ -516,7 +516,7 @@ func getDatastreamsBySensor(id int64) ([]measurements.Datastream, error) {
 	if err != nil {
 		return nil, err
 	}
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(res.Body)
 		return nil, fmt.Errorf("could not fetch datastreams from remote: %s", string(body))
 	}

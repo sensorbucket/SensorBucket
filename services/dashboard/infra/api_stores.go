@@ -47,7 +47,7 @@ func (s *SensorBucketAPI) ListIngresses() ([]ingressarchiver.ArchivedIngressDTO,
 	if err != nil {
 		return nil, err
 	}
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(res.Body)
 		fmt.Printf("could not fetch ingresses: %d, %s\n", res.StatusCode, string(body))
 		return nil, fmt.Errorf("could not fetch ingresses: %d", res.StatusCode)
@@ -69,7 +69,7 @@ func (s *SensorBucketAPI) ListPipelines(ids []uuid.UUID) ([]processing.Pipeline,
 	if err != nil {
 		return nil, err
 	}
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(res.Body)
 		fmt.Printf("could not fetch pipelines: %d, %s\n", res.StatusCode, string(body))
 		return nil, fmt.Errorf("could not fetch pipelines: %d", res.StatusCode)
@@ -116,7 +116,7 @@ func (s *SensorBucketAPI) ListDevices(ids []int64) ([]devices.Device, error) {
 	if err != nil {
 		return nil, err
 	}
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(res.Body)
 		fmt.Printf("could not fetch traceDTO: %d, %s\n", res.StatusCode, string(body))
 		return nil, fmt.Errorf("could not fetch devices: %d", res.StatusCode)
