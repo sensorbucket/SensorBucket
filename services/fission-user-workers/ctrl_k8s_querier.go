@@ -23,7 +23,7 @@ func (ctrl *KubernetesController) queryFunctions(ctx context.Context, cursor str
 	lo.ForEach(fns.Items, func(fn fissionV1.Function, index int) {
 		id, err := uuid.Parse(fn.GetLabels()["worker-id"])
 		if err != nil {
-			log.Printf("Warning: Function (%s) has controlled-by sensorbucket but invalid worker-id: %w\n", fn.Name, err)
+			log.Printf("Warning: Function (%s) has controlled-by sensorbucket but invalid worker-id: %v\n", fn.Name, err)
 			return
 		}
 		fnMap[id] = fn
@@ -43,7 +43,7 @@ func (ctrl *KubernetesController) queryPackages(ctx context.Context, cursor stri
 	lo.ForEach(pkgs.Items, func(pkg fissionV1.Package, index int) {
 		id, err := uuid.Parse(pkg.GetLabels()["worker-id"])
 		if err != nil {
-			log.Printf("Warning: Package (%s) has controlled-by sensorbucket but invalid worker-id: %w\n", pkg.Name, err)
+			log.Printf("Warning: Package (%s) has controlled-by sensorbucket but invalid worker-id: %v\n", pkg.Name, err)
 			return
 		}
 		pkgMap[id] = pkg
@@ -63,7 +63,7 @@ func (ctrl *KubernetesController) queryMessageQueueTriggers(ctx context.Context,
 	lo.ForEach(mqts.Items, func(mqt fissionV1.MessageQueueTrigger, index int) {
 		id, err := uuid.Parse(mqt.GetLabels()["worker-id"])
 		if err != nil {
-			log.Printf("Warning: MessageQueueTrigger (%s) has controlled-by sensorbucket but invalid worker-id: %w\n", mqt.Name, err)
+			log.Printf("Warning: MessageQueueTrigger (%s) has controlled-by sensorbucket but invalid worker-id: %v\n", mqt.Name, err)
 			return
 		}
 		mqtMap[id] = mqt

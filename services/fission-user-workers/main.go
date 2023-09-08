@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -13,6 +14,7 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/services/fission-user-workers/migrations"
 )
 
 var (
@@ -38,6 +40,9 @@ func Run() error {
 
 	db := sqlx.MustOpen("pgx", DB_DSN)
 	store := newPSQLStore(db)
+	if err := migrations.MigratePostgres(db.DB); err != nil {
+		return fmt.Errorf("migration failed: %w", err)
+	}
 
 	srv := newHTTPTransport(HTTP_ADDR)
 	go srv.Start()
@@ -61,7 +66,7 @@ func Run() error {
 					if err := ctrl.Reconcile(ctx); err != nil {
 						log.Printf("Error reconciliating: %s\n", err.Error())
 					}
-					ticker = time.After(30 * time.Second)
+					ticker = time.After(10 * time.Second)
 				}
 			}
 		}

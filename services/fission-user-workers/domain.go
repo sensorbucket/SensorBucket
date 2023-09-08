@@ -24,4 +24,6 @@ type UserWorker struct {
 	Revision     uint         `json:"revision"`
 	Status       WorkerStatus `json:"status"`
 	StatusInfo   string       `json:"status_info"`
+	Source       []byte       `json:"-"`
+	Entrypoint   string       `json:"entrypoint"`
 }

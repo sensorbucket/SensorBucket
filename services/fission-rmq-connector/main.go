@@ -86,6 +86,7 @@ func Run() error {
 		for delivery := range incoming {
 			concurrency <- 1
 			go func(delivery amqp091.Delivery) {
+				log.Printf("Processing: %s\n", delivery.MessageId)
 				connector.handleDelivery(delivery)
 				<-concurrency
 			}(delivery)
@@ -192,6 +193,12 @@ func doHTTPRequest(body []byte, endpoint string, retries int) (*http.Response, e
 		if res.StatusCode >= 200 && res.StatusCode < 300 {
 			return res, nil
 		}
+		body, _ := io.ReadAll(res.Body)
+		log.Printf("Try of invocation failed with status: %d and body:\n%s\n", res.StatusCode, string(body))
 	}
-	return nil, fmt.Errorf("Invocation of %s failed with statuscode: %d\n", endpoint, res.StatusCode)
+	var statusCode int
+	if res != nil {
+		statusCode = res.StatusCode
+	}
+	return nil, fmt.Errorf("Invocation of %s failed with statuscode: %d\n", endpoint, statusCode)
 }
