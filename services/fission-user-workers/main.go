@@ -8,12 +8,10 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
-	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/fission-user-workers/migrations"
 )
 
@@ -29,11 +27,6 @@ func main() {
 	}
 }
 
-type Store interface {
-	WorkersExists([]uuid.UUID) ([]uuid.UUID, error)
-	ListUserWorkers(req pagination.Request) (*pagination.Page[UserWorker], error)
-}
-
 func Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
@@ -44,7 +37,9 @@ func Run() error {
 		return fmt.Errorf("migration failed: %w", err)
 	}
 
-	srv := newHTTPTransport(HTTP_ADDR)
+	app := NewApplication(store)
+
+	srv := newHTTPTransport(app, HTTP_ADDR)
 	go srv.Start()
 
 	ctrl, err := createKubernetesController(store, WORKER_NAMESPACE)

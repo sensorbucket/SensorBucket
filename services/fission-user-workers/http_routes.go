@@ -7,15 +7,19 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+
+	"sensorbucket.nl/sensorbucket/internal/httpfilter"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
 type HTTPTransport struct {
 	server *http.Server
 }
 
-func newHTTPTransport(addr string) *HTTPTransport {
+func newHTTPTransport(app *Application, addr string) *HTTPTransport {
 	r := chi.NewRouter()
-	createRoutes(r)
+	createRoutes(app, r)
 	srv := &http.Server{
 		Addr:         addr,
 		WriteTimeout: 5 * time.Second,
@@ -37,8 +41,37 @@ func (t *HTTPTransport) Stop(ctx context.Context) {
 	t.server.Shutdown(ctx)
 }
 
-func createRoutes(r chi.Router) {
+func createRoutes(app *Application, r chi.Router) {
 	r.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello"))
+	})
+	r.Get("/workers", func(w http.ResponseWriter, r *http.Request) {
+		params, err := httpfilter.Parse[pagination.Request](r)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		page, err := app.ListWorkers(r.Context(), params)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusOK, pagination.CreateResponse(r, "", *page))
+	})
+	r.Post("/workers", func(w http.ResponseWriter, r *http.Request) {
+		var dto CreateWorkerOpts
+		if err := web.DecodeJSON(r, &dto); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		worker, err := app.CreateWorker(r.Context(), dto)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
+			Message: "Created worker",
+			Data:    worker,
+		})
 	})
 }

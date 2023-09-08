@@ -24,7 +24,7 @@ func (s *PSQLStore) WorkersExists(ids []uuid.UUID) ([]uuid.UUID, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
-	q := sq.Select("id").From("user_workers").Where(sq.Eq{"id": ids})
+	q := sq.Select("id").From("user_workers").Where(sq.Eq{"id": ids, "state": StateEnabled})
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(s.db).Query()
 	if err != nil {
 		return nil, fmt.Errorf("error querying for worker ids: %w", err)
@@ -48,17 +48,18 @@ type UserWorkerPaginationQuery struct {
 func (s *PSQLStore) ListUserWorkers(req pagination.Request) (*pagination.Page[UserWorker], error) {
 	var err error
 	q := sq.Select(
-		"id", "language", "organisation", "major", "revision", "status", "status_info",
-		"source", "entrypoint",
+		"id", "name", "description", "state", "language", "organisation", "major", "revision",
+		"status", "status_info", "source", "entrypoint",
 	).
-		From("user_workers")
+		From("user_workers").Where(sq.Eq{"state": StateEnabled})
+
 	cursor := pagination.GetCursor[UserWorkerPaginationQuery](req)
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, fmt.Errorf("could not apply pagination: %w", err)
 	}
 
-	rows, err := q.RunWith(s.db).Query()
+	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(s.db).Query()
 	if err != nil {
 		return nil, fmt.Errorf("error querying rows: %w", err)
 	}
@@ -67,8 +68,9 @@ func (s *PSQLStore) ListUserWorkers(req pagination.Request) (*pagination.Page[Us
 	for rows.Next() {
 		var worker UserWorker
 		if err := rows.Scan(
-			&worker.ID, &worker.Language, &worker.Organisation, &worker.Major, &worker.Revision,
-			&worker.Status, &worker.StatusInfo, &worker.Source, &worker.Entrypoint, &cursor.Columns.ID,
+			&worker.ID, &worker.Name, &worker.Description, &worker.State, &worker.Language, &worker.Organisation,
+			&worker.Major, &worker.Revision, &worker.Status, &worker.StatusInfo, &worker.Source, &worker.Entrypoint,
+			&cursor.Columns.ID,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning worker from database: %w", err)
 		}
@@ -77,4 +79,20 @@ func (s *PSQLStore) ListUserWorkers(req pagination.Request) (*pagination.Page[Us
 
 	page := pagination.CreatePageT(workers, cursor)
 	return &page, nil
+}
+
+func (s *PSQLStore) CreateWorker(worker *UserWorker) error {
+	if _, err := s.db.Exec(
+		`INSERT INTO user_workers (
+            id, name, description, state, language, organisation, major, revision,
+            status, source, entrypoint
+        ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+        )`,
+		worker.ID, worker.Name, worker.Description, worker.State, worker.Language, worker.Organisation,
+		worker.Major, worker.Revision, worker.Status, worker.Source, worker.Entrypoint,
+	); err != nil {
+		return fmt.Errorf("could not create worker in store: %w", err)
+	}
+	return nil
 }
