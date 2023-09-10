@@ -1,0 +1,41 @@
+{% import "sensorbucket.nl/sensorbucket/pkg/api" %}
+
+{% func (p *WorkerEditorPage) Header() %}
+    <link rel="stylesheet" href="https://unpkg.com/monaco-editor@0.41.0/dev/vs/editor/editor.main.css"
+        data-name="vs/editor/editor.main"
+        crossorigin="" />
+    <script>
+        var require = { paths: { vs: 'https://unpkg.com/monaco-editor/dev/vs' } };
+    </script>
+    <script src="https://unpkg.com/monaco-editor/dev/vs/loader.js"></script>
+    <script src="https://unpkg.com/monaco-editor/dev/vs/editor/editor.main.nls.js"></script>
+    <script src="https://unpkg.com/monaco-editor/dev/vs/editor/editor.main.js"></script>
+{% endfunc %}
+
+{% func (p *WorkerEditorPage) Body() %}
+<div 
+    class="w-full xl:w-2/3 mx-auto bg-white border rounded-md"
+>
+    <header class="border-b py-2 px-4 text-sm text-slate-700">
+        SensorBucket Worker List
+    </header>
+    <div id="monaco-container" class="min-h-[500px]">
+    </div>
+    <script>
+        (() => {
+			var editor = monaco.editor.create(document.getElementById('monaco-container'), {
+				value: '{%s p.UserCode %}', 
+				language: 'python'
+			});
+        })()
+    </script>
+</div>
+{% endfunc %}
+
+{% code
+type WorkerEditorPage struct {
+    BasePage
+    Worker api.UserWorker
+    UserCode string
+}
+%}

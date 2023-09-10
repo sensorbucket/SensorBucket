@@ -37,7 +37,7 @@ type UserWorker struct {
 	// if this is true, then the revision should increase on save
 	dirty bool
 
-	ID           uuid.UUID    `json:"uuid"`
+	ID           uuid.UUID    `json:"id"`
 	Name         string       `json:"name"`
 	Description  string       `json:"description"`
 	State        WorkerState  `json:"state"`

@@ -5,6 +5,7 @@ api_measurements.go
 api_pipelines.go
 api_tracing.go
 api_uplink.go
+api_workers.go
 client.go
 configuration.go
 model_add_sensor_to_sensor_group_201_response.go
@@ -41,6 +42,8 @@ model_list_sensor_groups_200_response.go
 model_list_sensor_groups_200_response_all_of.go
 model_list_traces_200_response.go
 model_list_traces_200_response_all_of.go
+model_list_workers_200_response.go
+model_list_workers_200_response_all_of.go
 model_measurement.go
 model_paginated_response.go
 model_paginated_response_links.go
@@ -57,5 +60,6 @@ model_update_pipeline_200_response.go
 model_update_pipeline_request.go
 model_update_sensor_group_200_response.go
 model_update_sensor_group_request.go
+model_user_worker.go
 response.go
 utils.go

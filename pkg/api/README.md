@@ -113,6 +113,7 @@ Class | Method | HTTP request | Description
 *PipelinesApi* | [**UpdatePipeline**](docs/PipelinesApi.md#updatepipeline) | **Patch** /pipelines/{id} | Update pipeline
 *TracingApi* | [**ListTraces**](docs/TracingApi.md#listtraces) | **Get** /tracing | List traces
 *UplinkApi* | [**ProcessUplinkData**](docs/UplinkApi.md#processuplinkdata) | **Post** /uplinks/{pipeline_id} | Process uplink message
+*WorkersApi* | [**ListWorkers**](docs/WorkersApi.md#listworkers) | **Get** /workers | List workers
 
 
 ## Documentation For Models
@@ -151,6 +152,8 @@ Class | Method | HTTP request | Description
  - [ListSensorGroups200ResponseAllOf](docs/ListSensorGroups200ResponseAllOf.md)
  - [ListTraces200Response](docs/ListTraces200Response.md)
  - [ListTraces200ResponseAllOf](docs/ListTraces200ResponseAllOf.md)
+ - [ListWorkers200Response](docs/ListWorkers200Response.md)
+ - [ListWorkers200ResponseAllOf](docs/ListWorkers200ResponseAllOf.md)
  - [Measurement](docs/Measurement.md)
  - [PaginatedResponse](docs/PaginatedResponse.md)
  - [PaginatedResponseLinks](docs/PaginatedResponseLinks.md)
@@ -167,6 +170,7 @@ Class | Method | HTTP request | Description
  - [UpdatePipelineRequest](docs/UpdatePipelineRequest.md)
  - [UpdateSensorGroup200Response](docs/UpdateSensorGroup200Response.md)
  - [UpdateSensorGroupRequest](docs/UpdateSensorGroupRequest.md)
+ - [UserWorker](docs/UserWorker.md)
 
 
 ## Documentation For Authorization
