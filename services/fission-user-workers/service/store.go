@@ -55,7 +55,10 @@ func (s *PSQLStore) ListUserWorkers(req pagination.Request) (*pagination.Page[Us
 	).
 		From("user_workers").Where(sq.Eq{"state": StateEnabled})
 
-	cursor := pagination.GetCursor[UserWorkerPaginationQuery](req)
+	cursor, err := pagination.GetCursor[UserWorkerPaginationQuery](req)
+	if err != nil {
+		return nil, fmt.Errorf("could not get pagination cursor: %w", err)
+	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, fmt.Errorf("could not apply pagination: %w", err)
