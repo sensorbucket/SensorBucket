@@ -56,6 +56,22 @@ services:
     - AMQP_XCHG_INGRESS=ingress
     - AMQP_XCHG_INGRESS_TOPIC=ingress.#
 
+  userworkers:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - .:/workspace:cached
+    environment:
+      - APP_NAME=fission-user-workers
+      - APP_TYPE=service
+      - HTTP_ADDR=:3000
+      - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/userworkers?sslmode=disable
+      - WORKER_NAMESPACE=""
+      - CTRL_TYPE=none
+                  
+            
   httpimporter:
     build: 
       context: .

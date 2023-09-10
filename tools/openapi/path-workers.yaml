@@ -1,0 +1,39 @@
+get:
+  x-is-paginated: true
+  operationId: ListWorkers
+  summary: List workers
+  description: |
+    Lists traces that match the provided filter.
+  tags: [Workers]
+  parameters:
+    - in: query
+      name: cursor
+      description: The cursor for the current page
+      schema:
+        type: string
+    - in: query
+      name: limit
+      description: |
+        The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+      schema:
+        type: number
+  responses:
+    "200":
+      description: Fetched workers
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "./schemas.yaml#/paginatedResponse"
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "schemas.yaml#/userWorker"
+    "400":
+      $ref: "./responses.yaml#/400"
+    "401":
+      $ref: "./responses.yaml#/401"
+    "403":
+      $ref: "./responses.yaml#/403"

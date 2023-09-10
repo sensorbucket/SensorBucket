@@ -66,7 +66,8 @@ endif
 golib: golib-clean
 	@docker run --rm -v $(CURDIR):/sensorbucket --user `id -u` \
 		openapitools/openapi-generator-cli:v6.2.1 generate -i /sensorbucket/tools/openapi/api.yaml \
-		-g go -o /sensorbucket/pkg/api -t /sensorbucket/tools/openapi-templates/go \
+		-g go -o /sensorbucket/pkg/api \
 		--git-host=sensorbucket.nl --git-repo-id=api \
 		--enable-post-process-file \
 		--additional-properties=packageName=api,packageUrl='https://sensorbucket.nl'
+#-t /sensorbucket/tools/openapi-templates/go 

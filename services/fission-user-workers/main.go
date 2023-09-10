@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -19,6 +20,7 @@ import (
 var (
 	HTTP_ADDR        = env.Could("HTTP_ADDR", ":3000")
 	WORKER_NAMESPACE = env.Could("WORKER_NAMESPACE", "default")
+	CTRL_TYPE        = env.Could("CTRL_TYPE", "k8s")
 	DB_DSN           = env.Must("DB_DSN")
 )
 
@@ -28,7 +30,19 @@ func main() {
 	}
 }
 
+type Controller interface {
+	Reconcile(context.Context) error
+}
+type StubController struct{}
+
+func (c *StubController) Reconcile(context.Context) error {
+	log.Println("WARNING, reconciling with stub controller, nothing will happen")
+	return nil
+}
+
 func Run() error {
+	var err error
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
@@ -39,13 +53,22 @@ func Run() error {
 	}
 
 	app := userworkers.NewApplication(store)
-
 	srv := userworkers.NewHTTPTransport(app, HTTP_ADDR)
 	go srv.Start()
 
-	ctrl, err := userworkers.CreateKubernetesController(store, WORKER_NAMESPACE)
-	if err != nil {
-		return err
+	var ctrl Controller
+
+	switch CTRL_TYPE {
+	case "k8s":
+		ctrl, err = userworkers.CreateKubernetesController(store, WORKER_NAMESPACE)
+		if err != nil {
+			return err
+		}
+	case "docker":
+		return errors.New("docker controller not yet implemented")
+	default:
+		log.Println("WARNING, no controller selected, defaulting to none meaning only the API will be accessible and no workers will be create")
+		ctrl = &StubController{}
 	}
 
 	// Start reconcile loop

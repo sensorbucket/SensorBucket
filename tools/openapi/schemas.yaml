@@ -438,3 +438,40 @@ updateSensorGroupRequest:
       type: string
     description:
       type: string
+userWorker:
+  type: object
+  required:
+    - id
+    - name
+    - description
+    - state
+    - language
+    - organisation
+    - major
+    - revision
+    - status
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    description:
+      type: string
+    state:
+      type: integer
+      enum: [0, 1]
+    language:
+      type: integer
+      enum: [1]
+    organisation:
+      type: integer
+      format: int64
+    major:
+      type: integer
+    revision:
+      type: integer
+    status:
+      type: integer
+      enum: [0,1,2]
+

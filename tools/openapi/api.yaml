@@ -57,6 +57,8 @@ paths:
     $ref: 'path-uplinks-by-pipeline.yaml'
   /tracing:
     $ref: 'path-tracing.yaml'
+  /workers:
+    $ref: 'path-workers.yaml'
 components:
   securitySchemes:
     basicAuth:    
@@ -72,3 +74,4 @@ tags:
   - name: Measurements
   - name: Uplink
   - name: Tracing
+  - name: Workers
