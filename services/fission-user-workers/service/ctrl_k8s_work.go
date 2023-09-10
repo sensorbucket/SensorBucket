@@ -14,14 +14,14 @@ import (
 
 type WorkSet[T any] struct {
 	Delete []string
-	Update map[string]T
+	Update []T
 	Create []T
 }
 
 func createWorkSet[T any]() WorkSet[T] {
 	return WorkSet[T]{
 		Delete: make([]string, 0),
-		Update: make(map[string]T, 0),
+		Update: make([]T, 0),
 		Create: make([]T, 0),
 	}
 }
@@ -80,12 +80,11 @@ func (w *ControllerWork) applyPackages(ctx context.Context) error {
 			))
 		}
 	}
-	for name, pkg := range w.Packages.Update {
-		pkg.Name = name
+	for _, pkg := range w.Packages.Update {
 		_, err := w.fission.CoreV1().Packages(w.namespace).Update(ctx, &pkg, metav1.UpdateOptions{})
 		if err != nil {
 			errs = append(errs, fmt.Errorf(
-				"error updating Package %s in cluster: %w", name, err,
+				"error updating Package %s in cluster: %w", pkg.Name, err,
 			))
 		}
 	}
@@ -118,12 +117,11 @@ func (w *ControllerWork) applyMessageQueueTriggers(ctx context.Context) error {
 			))
 		}
 	}
-	for name, pkg := range w.MessageQueueTriggers.Update {
-		pkg.Name = name
+	for _, pkg := range w.MessageQueueTriggers.Update {
 		_, err := w.fission.CoreV1().MessageQueueTriggers(w.namespace).Update(ctx, &pkg, metav1.UpdateOptions{})
 		if err != nil {
 			errs = append(errs, fmt.Errorf(
-				"error updating MessageQueueTrigger %s in cluster: %w", name, err,
+				"error updating MessageQueueTrigger %s in cluster: %w", pkg.Name, err,
 			))
 		}
 	}
@@ -156,12 +154,11 @@ func (w *ControllerWork) applyFunctions(ctx context.Context) error {
 			))
 		}
 	}
-	for name, pkg := range w.Functions.Update {
-		pkg.Name = name
+	for _, pkg := range w.Functions.Update {
 		_, err := w.fission.CoreV1().Functions(w.namespace).Update(ctx, &pkg, metav1.UpdateOptions{})
 		if err != nil {
 			errs = append(errs, fmt.Errorf(
-				"error updating Function %s in cluster: %w", name, err,
+				"error updating Function %s in cluster: %w", pkg.Name, err,
 			))
 		}
 	}
@@ -184,8 +181,8 @@ func (w *ControllerWork) CreateFunction(fn fissionV1.Function) {
 	w.Functions.Create = append(w.Functions.Create, fn)
 }
 
-func (w *ControllerWork) UpdateFunction(name string, fn fissionV1.Function) {
-	w.Functions.Update[name] = fn
+func (w *ControllerWork) UpdateFunction(fn fissionV1.Function) {
+	w.Functions.Update = append(w.Functions.Update, fn)
 }
 
 func (w *ControllerWork) DeleteFunction(name string) {
@@ -196,8 +193,8 @@ func (w *ControllerWork) CreatePackage(pkg fissionV1.Package) {
 	w.Packages.Create = append(w.Packages.Create, pkg)
 }
 
-func (w *ControllerWork) UpdatePackage(name string, pkg fissionV1.Package) {
-	w.Packages.Update[name] = pkg
+func (w *ControllerWork) UpdatePackage(pkg fissionV1.Package) {
+	w.Packages.Update = append(w.Packages.Update, pkg)
 }
 
 func (w *ControllerWork) DeletePackage(name string) {
@@ -208,8 +205,8 @@ func (w *ControllerWork) CreateMessageQueueTrigger(mqt fissionV1.MessageQueueTri
 	w.MessageQueueTriggers.Create = append(w.MessageQueueTriggers.Create, mqt)
 }
 
-func (w *ControllerWork) UpdateMessageQueueTrigger(name string, mqt fissionV1.MessageQueueTrigger) {
-	w.MessageQueueTriggers.Update[name] = mqt
+func (w *ControllerWork) UpdateMessageQueueTrigger(mqt fissionV1.MessageQueueTrigger) {
+	w.MessageQueueTriggers.Update = append(w.MessageQueueTriggers.Update, mqt)
 }
 
 func (w *ControllerWork) DeleteMessageQueueTrigger(name string) {

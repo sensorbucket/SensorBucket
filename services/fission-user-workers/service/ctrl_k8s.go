@@ -56,7 +56,7 @@ func CreateKubernetesController(store Store, workerNamespace string) (*Kubernete
 		fission:            fission,
 		workerNamespace:    workerNamespace,
 		prefix:             "worker",
-		mqtImage:           "ghcr.io/sensorbucket/fission-rmq-connector@sha256:eb18f1cc28566b8204165c35826f0e739903ee3e28413180dd56c7a3a3117ef3",
+		mqtImage:           "ghcr.io/sensorbucket/fission-rmq-connector@sha256:fae07ff8e726dd622ef3078163d6eca2cca94a42e3348fd5f2ca5596e69ca721",
 		mqtImagePullSecret: "regcred",
 		mqtSecret:          "keda-rmq-secret",
 		mqtExchange:        "pipeline.messages",
@@ -270,7 +270,7 @@ func (ctrl *KubernetesController) workerToMessageQueueTrigger(worker UserWorker)
 					Type: fissionV1.FunctionReferenceTypeFunctionName,
 				},
 				MessageQueueType: "rabbitmq",
-				Topic:            worker.ID.String(),
+				Topic:            ctrl.resourceName(worker.ID),
 				MaxRetries:       3,
 				MinReplicaCount:  lo.ToPtr(int32(0)),
 				MaxReplicaCount:  lo.ToPtr(int32(10)),
@@ -430,8 +430,9 @@ func (ctrl *KubernetesController) calculateFunctionChanges(ctx context.Context, 
 		current, exists := currentMap[desired.ID]
 		if !exists {
 			work.CreateFunction(desired.Resource)
-		} else if current.Revision < desired.Revision {
-			work.UpdateFunction(current.Resource.Name, desired.Resource)
+		} else if IsFunctionOutdated(current, desired) {
+			updated := updateFunction(current, desired)
+			work.UpdateFunction(updated.Resource)
 		}
 	}
 	return work
@@ -445,8 +446,9 @@ func (ctrl *KubernetesController) calculatePackageChanges(ctx context.Context, w
 		current, exists := currentMap[desired.ID]
 		if !exists {
 			work.CreatePackage(desired.Resource)
-		} else if current.Revision < desired.Revision {
-			work.UpdatePackage(current.Resource.Name, desired.Resource)
+		} else if IsPackageOutdated(current, desired) {
+			updated := updatePackage(current, desired)
+			work.UpdatePackage(updated.Resource)
 		}
 	}
 	return work
@@ -460,11 +462,30 @@ func (ctrl *KubernetesController) calculateMessageQueueTriggerChanges(ctx contex
 		current, exists := currentMap[desired.ID]
 		if !exists {
 			work.CreateMessageQueueTrigger(desired.Resource)
-		} else if current.Revision < desired.Revision {
-			work.UpdateMessageQueueTrigger(current.Resource.Name, desired.Resource)
+		} else if IsMessageQueueTriggerOutdated(current, desired) {
+			updated := updateMessageQueueTrigger(current, desired)
+			work.UpdateMessageQueueTrigger(updated.Resource)
 		}
 	}
 	return work
+}
+
+func updateFunction(current, desired Function) Function {
+	current.Resource.ObjectMeta.Labels["worker-revision"] = desired.Resource.Labels["worker-revision"]
+	current.Resource.Spec = desired.Resource.Spec
+	return current
+}
+
+func updatePackage(current, desired Package) Package {
+	current.Resource.ObjectMeta.Labels["worker-revision"] = desired.Resource.Labels["worker-revision"]
+	current.Resource.Spec = desired.Resource.Spec
+	return current
+}
+
+func updateMessageQueueTrigger(current, desired MessageQueueTrigger) MessageQueueTrigger {
+	current.Resource.ObjectMeta.Labels["worker-revision"] = desired.Resource.Labels["worker-revision"]
+	current.Resource.Spec = desired.Resource.Spec
+	return current
 }
 
 func (ctrl *KubernetesController) environmentForLanguage(lang Language) Environmment {
