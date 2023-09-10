@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
@@ -89,9 +91,15 @@ func (s *PSQLStore) ListPipelines(filter processing.PipelinesFilter, p paginatio
 		pipelineIDsThatHaveSteps := pq.Select("pipeline_id").Prefix("id IN (").Suffix(")").Distinct().From("pipeline_steps").Where(sq.Eq{"image": filter.Step})
 		q = q.Where(pipelineIDsThatHaveSteps)
 	}
+	if len(filter.ID) > 0 {
+		q = q.Where(sq.Eq{"id": filter.ID})
+	}
 
 	// Pagination
-	cursor := pagination.GetCursor[pipelinePaginationQuery](p)
+	cursor, err := pagination.GetCursor[pipelinePaginationQuery](p)
+	if err != nil {
+		return page, fmt.Errorf("list pipelines, error getting pagination cursor: %w", err)
+	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return page, err

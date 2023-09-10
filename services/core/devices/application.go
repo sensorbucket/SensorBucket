@@ -43,6 +43,7 @@ func New(store DeviceStore, sensorGroupStore SensorGroupStore) *Service {
 type DeviceFilter struct {
 	BoundingBoxFilter
 	RangeFilter
+	ID         []int64
 	Sensor     []int64
 	Properties json.RawMessage `json:"properties"`
 }

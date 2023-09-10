@@ -12,6 +12,7 @@ func Could(key, value string) string {
 	}
 	return v
 }
+
 func Must(key string) string {
 	v := os.Getenv(key)
 	if v == "" {

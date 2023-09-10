@@ -38,7 +38,7 @@ type Request struct {
 	Limit  uint64 `json:"limit"`
 }
 
-func GetCursor[T any](r Request) Cursor[T] {
+func GetCursor[T any](r Request) (Cursor[T], error) {
 	// Normalize request limit size
 	if r.Limit == 0 {
 		r.Limit = DEFAULT_LIMIT
@@ -48,11 +48,14 @@ func GetCursor[T any](r Request) Cursor[T] {
 
 	// Case 1: New request, cursor empty
 	if r.Cursor == "" {
-		return Cursor[T]{Columns: *new(T), Limit: r.Limit}
+		return Cursor[T]{Columns: *new(T), Limit: r.Limit}, nil
 	}
 
 	// Case 2: Cursor given,
-	c := DecodeCursor[T](r.Cursor)
+	c, err := DecodeCursor[T](r.Cursor)
+	if err != nil {
+		return c, err
+	}
 	// Normalize cursor limit size
 	if c.Limit == 0 {
 		c.Limit = DEFAULT_LIMIT
@@ -60,7 +63,7 @@ func GetCursor[T any](r Request) Cursor[T] {
 		c.Limit = MAX_LIMIT
 	}
 
-	return c
+	return c, nil
 }
 
 type Cursor[T any] struct {
@@ -70,7 +73,9 @@ type Cursor[T any] struct {
 
 func CreatePageT[T1 any, T2 any](data []T1, cursor Cursor[T2]) Page[T1] {
 	var cursorString string
-	if len(data) == int(cursor.Limit) {
+
+	// TODO: comment
+	if len(data) >= int(cursor.Limit) {
 		cursorString = EncodeCursor(cursor)
 	}
 	page := Page[T1]{
@@ -92,16 +97,20 @@ func EncodeCursor[T any](f Cursor[T]) string {
 	return base64.RawURLEncoding.EncodeToString(data)
 }
 
-func DecodeCursor[T any](cursor string) Cursor[T] {
-	data, _ := base64.RawURLEncoding.DecodeString(cursor)
+func DecodeCursor[T any](cursor string) (Cursor[T], error) {
 	var t Cursor[T]
+
+	data, err := base64.RawURLEncoding.DecodeString(cursor)
+	if err != nil {
+		return t, err
+	}
 	if cursor == "" {
-		return t
+		return t, nil
 	}
 	if err := cbor.Unmarshal(data, &t); err != nil {
-		panic(err)
+		return t, err
 	}
-	return t
+	return t, nil
 }
 
 type whereCol struct {

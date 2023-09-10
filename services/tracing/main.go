@@ -4,12 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
@@ -20,6 +24,8 @@ import (
 )
 
 var (
+	HTTP_ADDR                   = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE                   = env.Could("HTTP_BASE", "http://localhost:3000/api")
 	DB_DSN                      = env.Must("DB_DSN")
 	AMQP_HOST                   = env.Must("AMQP_HOST")
 	AMQP_QUEUE_PIPELINEMESSAGES = env.Must("AMQP_QUEUE_PIPELINEMESSAGES")
@@ -39,28 +45,39 @@ func main() {
 		panic(fmt.Sprintf("could not create database connection: %v\n", err))
 	}
 
-	archiverConn := mq.NewConnection(AMQP_HOST)
-	tracingConn := mq.NewConnection(AMQP_HOST)
+	mqConn := mq.NewConnection(AMQP_HOST)
+	go mqConn.Start()
 
-	go archiverConn.Start()
-	go tracingConn.Start()
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 
 	// Setup the ingress-archiver service
-	go func() {
+	{
 		store := ingressarchiver.NewStorePSQL(db)
 		svc := ingressarchiver.New(store)
-		ingressarchiver.StartIngressDTOConsumer(
-			archiverConn, svc,
+		go ingressarchiver.StartIngressDTOConsumer(
+			mqConn, svc,
 			AMQP_QUEUE_INGRESS, AMQP_XCHG_INGRESS, AMQP_XCHG_INGRESS_TOPIC,
 		)
-	}()
+		ingressarchiver.CreateHTTPTransport(r, svc)
+	}
 
 	// Setup the tracing service
 	go func() {
 		tracingStepStore := tracinginfra.NewStorePSQL(db)
 		tracingService := tracing.New(tracingStepStore)
-		tracingtransport.StartMQ(tracingService, tracingConn, AMQP_QUEUE_ERRORS, AMQP_QUEUE_PIPELINEMESSAGES)
+		go tracingtransport.StartMQ(tracingService, mqConn, AMQP_QUEUE_ERRORS, AMQP_QUEUE_PIPELINEMESSAGES)
+		tracinghttp := tracingtransport.NewHTTP(tracingService, HTTP_BASE)
+		tracinghttp.SetupRoutes(r)
 	}()
+
+	srv := &http.Server{
+		Addr:         HTTP_ADDR,
+		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  5 * time.Second,
+		Handler:      r,
+	}
+	go srv.ListenAndServe()
 
 	log.Println("Server running, send interrupt (i.e. CTRL+C) to initiate shutdown")
 	<-ctx.Done()
@@ -71,8 +88,7 @@ func main() {
 	defer cancelTO()
 
 	// Shutdown transports
-	archiverConn.Shutdown()
-	tracingConn.Shutdown()
+	mqConn.Shutdown()
 
 	log.Println("Shutdown complete")
 }

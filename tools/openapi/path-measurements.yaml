@@ -19,14 +19,14 @@ get:
       required: true
       schema:
         type: string
-        format: iso8601
+        format: date-time
         example: "2022-01-01T00:00:00Z"
     - in: query
       name: end
       required: true
       schema:
         type: string
-        format: iso8601
+        format: date-time
         example: "2022-12-31T23:59:59Z"
     - in: query
       name: device_id

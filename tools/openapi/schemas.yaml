@@ -71,6 +71,10 @@ updateDeviceRequest:
 
 device:
   type: object
+  required:
+    - id
+    - code
+    - organisation
   properties:
     id:
       type: number
@@ -155,8 +159,64 @@ sensor:
         mount_height: 15cm
     created_at:
       type: string
-      format: iso8601
+      format: date-time
       example: 2023-05-17T15:00:00Z
+
+trace:
+  type: object
+  required:
+    - tracing_id
+    - device_id
+    - start_time
+    - steps
+    - status
+    - status_string
+  properties:
+    tracing_id:
+      type: string
+      example: "a59d28c8-2a0f-4e89-9f49-6942f1c04342"
+    device_id:
+      type: integer
+      format: int64
+      example: 37
+      description: id is 0 if not defined
+    start_time:
+      type: string
+      format: date-time
+    status:
+      type: integer
+      example: 2
+    status_string:
+      type: string
+      example: "succes"
+    steps:
+      type: array
+      items:
+        $ref: '#/trace_step'
+
+trace_step:
+  type: object
+  required:
+    - status
+    - status_string
+    - duration
+  properties:
+    start_time:
+      type: string
+      format: date-time
+    status:
+      type: integer
+      example: 2
+    status_string:
+      type: string
+      example: "succes"
+    duration:
+      type: number
+      format: float
+      description: Duration in seconds
+      example: 5.321
+    error:
+      type: string
 
 measurement:
   type: object
@@ -242,7 +302,7 @@ measurement:
       example: "ug/cm3"
     measurement_timestamp:
       type: string
-      format: iso8601
+      format: date-time
       example: "2022-01-01T00:00:00Z"
     measurement_value:
       type: number
@@ -260,11 +320,11 @@ measurement:
       type: object
     measurement_expiration:
       type: string
-      format: iso8601
+      format: date-time
       example: "2022-01-01T00:00:00Z"
     created_at:
       type: string
-      format: iso8601
+      format: date-time
       example: 2022-01-01T00:00:00Z
 
 pipeline:
@@ -285,17 +345,15 @@ pipeline:
         - "MFMGroundwater@1.0.0"
     status:
       type: string
-      oneOf:
-        - active
-        - inactive
+      description: either active or inactive
       example: active
     last_status_change:
       type: string
-      format: iso8601
+      format: date-time
       example: 2022-01-01T00:00:00Z
     created_at:
       type: string
-      format: iso8601
+      format: date-time
       example: 2022-01-01T00:00:00Z
 
 
@@ -350,8 +408,8 @@ datastream:
       format: ucum
     created_at:
       type: string
-      format: iso8601
-      example: 2022-01-01T00:00:00Z
+      #format: date-time
+      example: "2022-01-01T00:00:00Z"
 
 sensorGroup:
   type: object

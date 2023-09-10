@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	chimw "github.com/go-chi/chi/v5/middleware"
 
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
@@ -37,6 +38,7 @@ func NewHTTPTransport(svc *devices.Service, baseURL string) *HTTPTransport {
 		baseURL: baseURL,
 	}
 
+	transport.router.Use(chimw.Logger)
 	// Register endpoints
 	transport.SetupRoutes(transport.router)
 
@@ -64,6 +66,7 @@ func (t *HTTPTransport) SetupRoutes(r chi.Router) {
 		})
 	})
 	r.Get("/sensors", t.httpListSensors())
+	r.Get("/sensors/{id}", t.httpGetSensor())
 	// TODO: Should we be able to fetch sensor by global unique ID?
 	r.Route("/sensor-groups", func(r chi.Router) {
 		r.Post("/", t.httpCreateSensorGroup())
@@ -81,6 +84,7 @@ func (t *HTTPTransport) SetupRoutes(r chi.Router) {
 type HTTPDeviceFilters struct {
 	devices.DeviceFilter
 	pagination.Request
+	SensorGroup int64 `schema:"sensor_group"`
 }
 
 func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
@@ -89,6 +93,19 @@ func (t *HTTPTransport) httpListDevices() http.HandlerFunc {
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
+		}
+
+		if filter.SensorGroup != 0 {
+			sg, err := t.svc.GetSensorGroup(r.Context(), filter.SensorGroup)
+			if err != nil {
+				web.HTTPError(rw, err)
+				return
+			}
+			filter.Sensor = append(filter.Sensor, sg.Sensors...)
+			// If sensorgroup sensors is empty it would not filter on anything and return everything
+			// we want atleast one filter such that nothing is returned
+			// as nothing can have id 0 this filter will match nothing.
+			filter.Sensor = append(filter.Sensor, 0)
 		}
 
 		page, err := t.svc.ListDevices(r.Context(), filter.DeviceFilter, filter.Request)
@@ -234,6 +251,28 @@ func (t *HTTPTransport) httpListSensors() http.HandlerFunc {
 			return
 		}
 		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
+	}
+}
+
+func (t *HTTPTransport) httpGetSensor() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sensorIDQ := chi.URLParam(r, "id")
+		sensorID, err := strconv.ParseInt(sensorIDQ, 10, 64)
+		if err != nil {
+			web.HTTPError(w, web.NewError(http.StatusBadRequest, "invalid sensor id", ""))
+			return
+		}
+
+		sensor, err := t.svc.GetSensor(r.Context(), sensorID)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+			Message: "Fetched sensor",
+			Data:    sensor,
+		})
 	}
 }
 
