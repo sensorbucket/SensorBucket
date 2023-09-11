@@ -61,7 +61,7 @@ func Run() error {
 	cfg := api.NewConfiguration()
 	cfg.Scheme = "http"
 	cfg.Host = "caddy"
-	cfg.Debug = true
+	// cfg.Debug = true
 	apiClient := api.NewAPIClient(cfg)
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/overview", http.StatusFound) })

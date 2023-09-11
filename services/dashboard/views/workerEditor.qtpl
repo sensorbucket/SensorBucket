@@ -33,7 +33,7 @@
                     <button 
                         class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
                         hx-post="/workers/create"
-                        hx-vals='js:{userCode: btoa(window.monacoeditor.getValue())}'
+                        hx-vals='js:{userCode: currentUserCode()}'
                         hx-swap="none"
                     >
                     Create
@@ -42,7 +42,7 @@
                     <button 
                         class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
                         hx-patch="/workers/{%s p.Worker.Id %}"
-                        hx-vals='js:{userCode: btoa(window.monacoeditor.getValue())}'
+                        hx-vals='js:{userCode: currentUserCode()}'
                         hx-swap="none"
                     >
                     Save
@@ -57,64 +57,18 @@
         <header class="border-b py-2 px-4 text-sm text-slate-700">
             Processing Code
         </header>
-        <div id="monaco-container" class="min-h-[500px]">
+        <div id="editor-container" class="min-h-[500px]">
         </div>
-        <script>
-            function loadMonacoEditorResources() {
-                return new Promise((resolve, reject) => {
-                    if (window.monaco) {
-                        return resolve();
-                    }
-                    // Function to load a single script and return a promise
-                    function loadScript(url) {
-                        return new Promise((resolve, reject) => {
-                            const script = document.createElement('script');
-                            script.src = url;
-                            script.addEventListener('load', resolve);
-                            script.addEventListener('error', reject);
-                            document.head.appendChild(script);
-                        });
-                    }
+        <script type="module">
+            import {createEditor} from '/static/codemirror.js';
+            const usercode = atob('{%s p.UserCode %}');
+            const editor = createEditor(document.getElementById("editor-container"), usercode);
+            window.editor = editor;
 
-                    // Load the stylesheet
-                    const link = document.createElement('link');
-                    link.rel = 'stylesheet';
-                    link.href = 'https://unpkg.com/monaco-editor@0.41.0/dev/vs/editor/editor.main.css';
-                    link.setAttribute('data-name', 'vs/editor/editor.main');
-                    link.crossOrigin = '';
-                    link.addEventListener('load', () => {
-                        // Create and append the 'require' script
-                        const requireScript = document.createElement('script');
-                        requireScript.textContent = 'var require = { paths: { vs: "https://unpkg.com/monaco-editor/dev/vs" } };';
-                        document.head.appendChild(requireScript);
-
-                        // List of script URLs to load
-                        const scriptUrls = [
-                            'https://unpkg.com/monaco-editor/dev/vs/loader.js',
-                            'https://unpkg.com/monaco-editor/dev/vs/editor/editor.main.nls.js',
-                            'https://unpkg.com/monaco-editor/dev/vs/editor/editor.main.js'
-                        ];
-
-                        // Load each script one by one, in order
-                        loadScript(scriptUrls[0])
-                            .then(() => loadScript(scriptUrls[1]))
-                            .then(() => loadScript(scriptUrls[2]))
-                            .then(resolve)
-                            .catch(reject);
-                    });
-                    link.addEventListener('error', reject);
-                    document.head.appendChild(link);
-                });
+            function currentUserCode() {
+                return btoa(editor.state.doc.toString())
             }
-            (() => {
-                loadMonacoEditorResources().then(() => {
-                    let usercode = '{%s p.UserCode %}';
-                    window.monacoeditor = monaco.editor.create(document.getElementById('monaco-container'), {
-                        value: atob(usercode), 
-                        language: 'python'
-                    });
-                })
-            })()
+            window.currentUserCode = currentUserCode;
         </script>
     </div>
 </div>

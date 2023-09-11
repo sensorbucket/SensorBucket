@@ -3,6 +3,7 @@ WORKDIR /workspace
 
 RUN go install github.com/cespare/reflex@latest
 RUN go install github.com/valyala/quicktemplate/qtc@latest
+RUN go install github.com/evanw/esbuild/cmd/esbuild@latest
 RUN apk add make curl
 RUN curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/download/v3.3.3/tailwindcss-linux-x64 \
     && chmod +x tailwindcss-linux-x64 \
