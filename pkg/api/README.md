@@ -113,7 +113,11 @@ Class | Method | HTTP request | Description
 *PipelinesApi* | [**UpdatePipeline**](docs/PipelinesApi.md#updatepipeline) | **Patch** /pipelines/{id} | Update pipeline
 *TracingApi* | [**ListTraces**](docs/TracingApi.md#listtraces) | **Get** /tracing | List traces
 *UplinkApi* | [**ProcessUplinkData**](docs/UplinkApi.md#processuplinkdata) | **Post** /uplinks/{pipeline_id} | Process uplink message
+*WorkersApi* | [**CreateWorker**](docs/WorkersApi.md#createworker) | **Post** /workers | Create Worker
+*WorkersApi* | [**GetWorker**](docs/WorkersApi.md#getworker) | **Get** /workers/{id} | Get worker
+*WorkersApi* | [**GetWorkerUserCode**](docs/WorkersApi.md#getworkerusercode) | **Get** /workers/{id}/usercode | Get the User Code for a Worker
 *WorkersApi* | [**ListWorkers**](docs/WorkersApi.md#listworkers) | **Get** /workers | List workers
+*WorkersApi* | [**UpdateWorker**](docs/WorkersApi.md#updateworker) | **Patch** /workers/{id} | Update worker properties
 
 
 ## Documentation For Models
@@ -128,6 +132,8 @@ Class | Method | HTTP request | Description
  - [CreateSensorGroup201Response](docs/CreateSensorGroup201Response.md)
  - [CreateSensorGroupRequest](docs/CreateSensorGroupRequest.md)
  - [CreateSensorRequest](docs/CreateSensorRequest.md)
+ - [CreateUserWorkerRequest](docs/CreateUserWorkerRequest.md)
+ - [CreateWorker201Response](docs/CreateWorker201Response.md)
  - [Datastream](docs/Datastream.md)
  - [DeleteDeviceSensor200Response](docs/DeleteDeviceSensor200Response.md)
  - [DeleteSensorFromSensorGroup200Response](docs/DeleteSensorFromSensorGroup200Response.md)
@@ -140,6 +146,8 @@ Class | Method | HTTP request | Description
  - [GetDevice200Response](docs/GetDevice200Response.md)
  - [GetPipeline200Response](docs/GetPipeline200Response.md)
  - [GetSensorGroup200Response](docs/GetSensorGroup200Response.md)
+ - [GetWorker200Response](docs/GetWorker200Response.md)
+ - [GetWorkerUserCode200Response](docs/GetWorkerUserCode200Response.md)
  - [ListDatastreams200Response](docs/ListDatastreams200Response.md)
  - [ListDatastreams200ResponseAllOf](docs/ListDatastreams200ResponseAllOf.md)
  - [ListDeviceSensors200Response](docs/ListDeviceSensors200Response.md)
@@ -170,6 +178,8 @@ Class | Method | HTTP request | Description
  - [UpdatePipelineRequest](docs/UpdatePipelineRequest.md)
  - [UpdateSensorGroup200Response](docs/UpdateSensorGroup200Response.md)
  - [UpdateSensorGroupRequest](docs/UpdateSensorGroupRequest.md)
+ - [UpdateWorker200Response](docs/UpdateWorker200Response.md)
+ - [UpdateWorkerRequest](docs/UpdateWorkerRequest.md)
  - [UserWorker](docs/UserWorker.md)
 
 

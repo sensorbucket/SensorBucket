@@ -474,4 +474,29 @@ userWorker:
     status:
       type: integer
       enum: [0,1,2]
-
+updateWorkerRequest:
+  type: object
+  properties:
+    description:
+      type: string
+    state:
+      type: integer
+      enum: [0, 1]
+    user_code:
+      type: string
+      format: base64
+      description: base64 encoded user code
+createUserWorkerRequest:
+  type: object
+  required:
+    - name
+    - source
+  properties:
+    name:
+      type: string
+    description:
+      type: string
+    user_code:
+      type: string
+      format: base64
+      description: base64 encoded user code

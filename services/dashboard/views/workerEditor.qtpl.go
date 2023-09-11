@@ -21,106 +21,203 @@ var (
 )
 
 //line services/dashboard/views/workerEditor.qtpl:3
-func (p *WorkerEditorPage) StreamHeader(qw422016 *qt422016.Writer) {
+func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
 //line services/dashboard/views/workerEditor.qtpl:3
 	qw422016.N().S(`
-    <link rel="stylesheet" href="https://unpkg.com/monaco-editor@0.41.0/dev/vs/editor/editor.main.css"
-        data-name="vs/editor/editor.main"
-        crossorigin="" />
-    <script>
-        var require = { paths: { vs: 'https://unpkg.com/monaco-editor/dev/vs' } };
-    </script>
-    <script src="https://unpkg.com/monaco-editor/dev/vs/loader.js"></script>
-    <script src="https://unpkg.com/monaco-editor/dev/vs/editor/editor.main.nls.js"></script>
-    <script src="https://unpkg.com/monaco-editor/dev/vs/editor/editor.main.js"></script>
-`)
-//line services/dashboard/views/workerEditor.qtpl:13
-}
-
-//line services/dashboard/views/workerEditor.qtpl:13
-func (p *WorkerEditorPage) WriteHeader(qq422016 qtio422016.Writer) {
-//line services/dashboard/views/workerEditor.qtpl:13
-	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/workerEditor.qtpl:13
-	p.StreamHeader(qw422016)
-//line services/dashboard/views/workerEditor.qtpl:13
-	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/workerEditor.qtpl:13
-}
-
-//line services/dashboard/views/workerEditor.qtpl:13
-func (p *WorkerEditorPage) Header() string {
-//line services/dashboard/views/workerEditor.qtpl:13
-	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/workerEditor.qtpl:13
-	p.WriteHeader(qb422016)
-//line services/dashboard/views/workerEditor.qtpl:13
-	qs422016 := string(qb422016.B)
-//line services/dashboard/views/workerEditor.qtpl:13
-	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/workerEditor.qtpl:13
-	return qs422016
-//line services/dashboard/views/workerEditor.qtpl:13
-}
-
-//line services/dashboard/views/workerEditor.qtpl:15
-func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
-//line services/dashboard/views/workerEditor.qtpl:15
+<div class="flex flex-col gap-6 w-full xl:w-2/3 mx-auto">
+    <div 
+        class="bg-white border rounded-md"
+    >
+        <header class="border-b py-2 px-4 text-sm text-slate-700">
+            Worker Details
+        </header>
+        <form class="p-4 gap-4 grid lg:grid-cols-2">
+            <fieldset>
+                <label for="worker-name" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Worker name</small></label>
+                <input
+                    type="text" name="name" id="worker-name"
+                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600
+                    `)
+//line services/dashboard/views/workerEditor.qtpl:17
+	if p.Worker != nil {
+//line services/dashboard/views/workerEditor.qtpl:17
+		qw422016.N().S(`
+                        text-slate-500
+                        bg-slate-50
+                    `)
+//line services/dashboard/views/workerEditor.qtpl:20
+	} else {
+//line services/dashboard/views/workerEditor.qtpl:20
+		qw422016.N().S(`
+                        text-slate-700
+                    `)
+//line services/dashboard/views/workerEditor.qtpl:22
+	}
+//line services/dashboard/views/workerEditor.qtpl:22
 	qw422016.N().S(`
-<div 
-    class="w-full xl:w-2/3 mx-auto bg-white border rounded-md"
->
-    <header class="border-b py-2 px-4 text-sm text-slate-700">
-        SensorBucket Worker List
-    </header>
-    <div id="monaco-container" class="min-h-[500px]">
+                    "
+
+                    `)
+//line services/dashboard/views/workerEditor.qtpl:25
+	if p.Worker != nil {
+//line services/dashboard/views/workerEditor.qtpl:25
+		qw422016.N().S(`
+                    disabled
+                    value="`)
+//line services/dashboard/views/workerEditor.qtpl:27
+		qw422016.E().S(p.Worker.Name)
+//line services/dashboard/views/workerEditor.qtpl:27
+		qw422016.N().S(`"
+                    `)
+//line services/dashboard/views/workerEditor.qtpl:28
+	}
+//line services/dashboard/views/workerEditor.qtpl:28
+	qw422016.N().S(`
+                />
+            </fieldset>
+            <div class="col-span-full">
+                `)
+//line services/dashboard/views/workerEditor.qtpl:32
+	if p.Worker == nil {
+//line services/dashboard/views/workerEditor.qtpl:32
+		qw422016.N().S(`
+                    <button 
+                        class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                        hx-post="/workers/create"
+                        hx-vals='js:{userCode: btoa(window.monacoeditor.getValue())}'
+                        hx-swap="none"
+                    >
+                    Create
+                    </button>
+                `)
+//line services/dashboard/views/workerEditor.qtpl:41
+	} else {
+//line services/dashboard/views/workerEditor.qtpl:41
+		qw422016.N().S(`
+                    <button 
+                        class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                        hx-patch="/workers/`)
+//line services/dashboard/views/workerEditor.qtpl:44
+		qw422016.E().S(p.Worker.Id)
+//line services/dashboard/views/workerEditor.qtpl:44
+		qw422016.N().S(`"
+                        hx-vals='js:{userCode: btoa(window.monacoeditor.getValue())}'
+                        hx-swap="none"
+                    >
+                    Save
+                    </button>
+                `)
+//line services/dashboard/views/workerEditor.qtpl:50
+	}
+//line services/dashboard/views/workerEditor.qtpl:50
+	qw422016.N().S(`
+            </div>
+        </form>
     </div>
-    <script>
-        (() => {
-			var editor = monaco.editor.create(document.getElementById('monaco-container'), {
-				value: '`)
-//line services/dashboard/views/workerEditor.qtpl:27
+    <div 
+        class="bg-white border rounded-md"
+    >
+        <header class="border-b py-2 px-4 text-sm text-slate-700">
+            Processing Code
+        </header>
+        <div id="monaco-container" class="min-h-[500px]">
+        </div>
+        <script>
+            function loadMonacoEditorResources() {
+                return new Promise((resolve, reject) => {
+                    if (window.monaco) {
+                        return resolve();
+                    }
+                    // Function to load a single script and return a promise
+                    function loadScript(url) {
+                        return new Promise((resolve, reject) => {
+                            const script = document.createElement('script');
+                            script.src = url;
+                            script.addEventListener('load', resolve);
+                            script.addEventListener('error', reject);
+                            document.head.appendChild(script);
+                        });
+                    }
+
+                    // Load the stylesheet
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.href = 'https://unpkg.com/monaco-editor@0.41.0/dev/vs/editor/editor.main.css';
+                    link.setAttribute('data-name', 'vs/editor/editor.main');
+                    link.crossOrigin = '';
+                    link.addEventListener('load', () => {
+                        // Create and append the 'require' script
+                        const requireScript = document.createElement('script');
+                        requireScript.textContent = 'var require = { paths: { vs: "https://unpkg.com/monaco-editor/dev/vs" } };';
+                        document.head.appendChild(requireScript);
+
+                        // List of script URLs to load
+                        const scriptUrls = [
+                            'https://unpkg.com/monaco-editor/dev/vs/loader.js',
+                            'https://unpkg.com/monaco-editor/dev/vs/editor/editor.main.nls.js',
+                            'https://unpkg.com/monaco-editor/dev/vs/editor/editor.main.js'
+                        ];
+
+                        // Load each script one by one, in order
+                        loadScript(scriptUrls[0])
+                            .then(() => loadScript(scriptUrls[1]))
+                            .then(() => loadScript(scriptUrls[2]))
+                            .then(resolve)
+                            .catch(reject);
+                    });
+                    link.addEventListener('error', reject);
+                    document.head.appendChild(link);
+                });
+            }
+            (() => {
+                loadMonacoEditorResources().then(() => {
+                    let usercode = '`)
+//line services/dashboard/views/workerEditor.qtpl:111
 	qw422016.E().S(p.UserCode)
-//line services/dashboard/views/workerEditor.qtpl:27
-	qw422016.N().S(`', 
-				language: 'python'
-			});
-        })()
-    </script>
+//line services/dashboard/views/workerEditor.qtpl:111
+	qw422016.N().S(`';
+                    window.monacoeditor = monaco.editor.create(document.getElementById('monaco-container'), {
+                        value: atob(usercode), 
+                        language: 'python'
+                    });
+                })
+            })()
+        </script>
+    </div>
 </div>
 `)
-//line services/dashboard/views/workerEditor.qtpl:33
+//line services/dashboard/views/workerEditor.qtpl:121
 }
 
-//line services/dashboard/views/workerEditor.qtpl:33
+//line services/dashboard/views/workerEditor.qtpl:121
 func (p *WorkerEditorPage) WriteBody(qq422016 qtio422016.Writer) {
-//line services/dashboard/views/workerEditor.qtpl:33
+//line services/dashboard/views/workerEditor.qtpl:121
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/workerEditor.qtpl:33
+//line services/dashboard/views/workerEditor.qtpl:121
 	p.StreamBody(qw422016)
-//line services/dashboard/views/workerEditor.qtpl:33
+//line services/dashboard/views/workerEditor.qtpl:121
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/workerEditor.qtpl:33
+//line services/dashboard/views/workerEditor.qtpl:121
 }
 
-//line services/dashboard/views/workerEditor.qtpl:33
+//line services/dashboard/views/workerEditor.qtpl:121
 func (p *WorkerEditorPage) Body() string {
-//line services/dashboard/views/workerEditor.qtpl:33
+//line services/dashboard/views/workerEditor.qtpl:121
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/workerEditor.qtpl:33
+//line services/dashboard/views/workerEditor.qtpl:121
 	p.WriteBody(qb422016)
-//line services/dashboard/views/workerEditor.qtpl:33
+//line services/dashboard/views/workerEditor.qtpl:121
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/workerEditor.qtpl:33
+//line services/dashboard/views/workerEditor.qtpl:121
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/workerEditor.qtpl:33
+//line services/dashboard/views/workerEditor.qtpl:121
 	return qs422016
-//line services/dashboard/views/workerEditor.qtpl:33
+//line services/dashboard/views/workerEditor.qtpl:121
 }
 
-//line services/dashboard/views/workerEditor.qtpl:36
+//line services/dashboard/views/workerEditor.qtpl:124
 type WorkerEditorPage struct {
 	BasePage
-	Worker   api.UserWorker
+	Worker   *api.UserWorker
 	UserCode string
 }

@@ -27,50 +27,62 @@ func (p *WorkerListPage) StreamBody(qw422016 *qt422016.Writer) {
     <div 
         class="w-full xl:w-2/3 mx-auto bg-white border rounded-md"
     >
-        <header class="border-b py-2 px-4 text-sm text-slate-700">
-            SensorBucket Worker List
+        <header class="w-full flex items-center justify-between border-b py-2 px-4 text-sm text-slate-700">
+            <section>
+                SensorBucket Worker List
+            </section>
+            <section class="flex gap-2">
+                <button 
+                    class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                    hx-get="/workers/create"
+                    hx-target="main"
+                    hx-push-url="true"
+                >
+                Create
+                </button>
+            </section>
         </header>
         <div>
             `)
-//line services/dashboard/views/workersPage.qtpl:11
+//line services/dashboard/views/workersPage.qtpl:23
 	StreamRenderWorkerTable(qw422016, p.Workers)
-//line services/dashboard/views/workersPage.qtpl:11
+//line services/dashboard/views/workersPage.qtpl:23
 	qw422016.N().S(`
         </div>
     </div>
 `)
-//line services/dashboard/views/workersPage.qtpl:14
+//line services/dashboard/views/workersPage.qtpl:26
 }
 
-//line services/dashboard/views/workersPage.qtpl:14
+//line services/dashboard/views/workersPage.qtpl:26
 func (p *WorkerListPage) WriteBody(qq422016 qtio422016.Writer) {
-//line services/dashboard/views/workersPage.qtpl:14
+//line services/dashboard/views/workersPage.qtpl:26
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/workersPage.qtpl:14
+//line services/dashboard/views/workersPage.qtpl:26
 	p.StreamBody(qw422016)
-//line services/dashboard/views/workersPage.qtpl:14
+//line services/dashboard/views/workersPage.qtpl:26
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/workersPage.qtpl:14
+//line services/dashboard/views/workersPage.qtpl:26
 }
 
-//line services/dashboard/views/workersPage.qtpl:14
+//line services/dashboard/views/workersPage.qtpl:26
 func (p *WorkerListPage) Body() string {
-//line services/dashboard/views/workersPage.qtpl:14
+//line services/dashboard/views/workersPage.qtpl:26
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/workersPage.qtpl:14
+//line services/dashboard/views/workersPage.qtpl:26
 	p.WriteBody(qb422016)
-//line services/dashboard/views/workersPage.qtpl:14
+//line services/dashboard/views/workersPage.qtpl:26
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/workersPage.qtpl:14
+//line services/dashboard/views/workersPage.qtpl:26
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/workersPage.qtpl:14
+//line services/dashboard/views/workersPage.qtpl:26
 	return qs422016
-//line services/dashboard/views/workersPage.qtpl:14
+//line services/dashboard/views/workersPage.qtpl:26
 }
 
-//line services/dashboard/views/workersPage.qtpl:16
+//line services/dashboard/views/workersPage.qtpl:28
 func StreamRenderWorkerTable(qw422016 *qt422016.Writer, workers []api.UserWorker) {
-//line services/dashboard/views/workersPage.qtpl:16
+//line services/dashboard/views/workersPage.qtpl:28
 	qw422016.N().S(`
     <table class="w-full text-sm border-separate border-spacing-0" id="device-table">
         <thead class="text-left text-slate-500 sticky top-0 bg-white">
@@ -97,143 +109,143 @@ func StreamRenderWorkerTable(qw422016 *qt422016.Writer, workers []api.UserWorker
         </thead>
         <tbody>
             `)
-//line services/dashboard/views/workersPage.qtpl:41
+//line services/dashboard/views/workersPage.qtpl:53
 	StreamRenderWorkerTableRows(qw422016, workers, "")
-//line services/dashboard/views/workersPage.qtpl:41
+//line services/dashboard/views/workersPage.qtpl:53
 	qw422016.N().S(`
         </tbody>
     </table>
 `)
-//line services/dashboard/views/workersPage.qtpl:44
+//line services/dashboard/views/workersPage.qtpl:56
 }
 
-//line services/dashboard/views/workersPage.qtpl:44
+//line services/dashboard/views/workersPage.qtpl:56
 func WriteRenderWorkerTable(qq422016 qtio422016.Writer, workers []api.UserWorker) {
-//line services/dashboard/views/workersPage.qtpl:44
+//line services/dashboard/views/workersPage.qtpl:56
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/workersPage.qtpl:44
+//line services/dashboard/views/workersPage.qtpl:56
 	StreamRenderWorkerTable(qw422016, workers)
-//line services/dashboard/views/workersPage.qtpl:44
+//line services/dashboard/views/workersPage.qtpl:56
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/workersPage.qtpl:44
+//line services/dashboard/views/workersPage.qtpl:56
 }
 
-//line services/dashboard/views/workersPage.qtpl:44
+//line services/dashboard/views/workersPage.qtpl:56
 func RenderWorkerTable(workers []api.UserWorker) string {
-//line services/dashboard/views/workersPage.qtpl:44
+//line services/dashboard/views/workersPage.qtpl:56
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/workersPage.qtpl:44
+//line services/dashboard/views/workersPage.qtpl:56
 	WriteRenderWorkerTable(qb422016, workers)
-//line services/dashboard/views/workersPage.qtpl:44
+//line services/dashboard/views/workersPage.qtpl:56
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/workersPage.qtpl:44
+//line services/dashboard/views/workersPage.qtpl:56
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/workersPage.qtpl:44
+//line services/dashboard/views/workersPage.qtpl:56
 	return qs422016
-//line services/dashboard/views/workersPage.qtpl:44
+//line services/dashboard/views/workersPage.qtpl:56
 }
 
-//line services/dashboard/views/workersPage.qtpl:46
+//line services/dashboard/views/workersPage.qtpl:58
 func StreamRenderWorkerTableRows(qw422016 *qt422016.Writer, workers []api.UserWorker, nextPage string) {
-//line services/dashboard/views/workersPage.qtpl:46
+//line services/dashboard/views/workersPage.qtpl:58
 	qw422016.N().S(`
     `)
-//line services/dashboard/views/workersPage.qtpl:47
+//line services/dashboard/views/workersPage.qtpl:59
 	for ix, worker := range workers {
-//line services/dashboard/views/workersPage.qtpl:47
+//line services/dashboard/views/workersPage.qtpl:59
 		qw422016.N().S(`
     <tr
         class="hover:bg-slate-50 group"
         `)
-//line services/dashboard/views/workersPage.qtpl:50
+//line services/dashboard/views/workersPage.qtpl:62
 		if nextPage != "" && ix == len(workers)-1 {
-//line services/dashboard/views/workersPage.qtpl:50
+//line services/dashboard/views/workersPage.qtpl:62
 			qw422016.N().S(`
         hx-trigger="revealed"
         hx-target="this"
         hx-swap="afterend"
         hx-get="`)
-//line services/dashboard/views/workersPage.qtpl:54
+//line services/dashboard/views/workersPage.qtpl:66
 			qw422016.E().S(nextPage)
-//line services/dashboard/views/workersPage.qtpl:54
+//line services/dashboard/views/workersPage.qtpl:66
 			qw422016.N().S(`"
         `)
-//line services/dashboard/views/workersPage.qtpl:55
+//line services/dashboard/views/workersPage.qtpl:67
 		}
-//line services/dashboard/views/workersPage.qtpl:55
+//line services/dashboard/views/workersPage.qtpl:67
 		qw422016.N().S(`
     >
         <td class="border-b"><a
             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
             href="/workers/`)
-//line services/dashboard/views/workersPage.qtpl:59
+//line services/dashboard/views/workersPage.qtpl:71
 		qw422016.E().S(worker.Id)
-//line services/dashboard/views/workersPage.qtpl:59
+//line services/dashboard/views/workersPage.qtpl:71
 		qw422016.N().S(`"
             hx-target="main"
         >`)
-//line services/dashboard/views/workersPage.qtpl:61
+//line services/dashboard/views/workersPage.qtpl:73
 		qw422016.E().S(worker.Name)
-//line services/dashboard/views/workersPage.qtpl:61
+//line services/dashboard/views/workersPage.qtpl:73
 		qw422016.N().S(`</a></td>
         <td class="px-4 h-10 border-b">`)
-//line services/dashboard/views/workersPage.qtpl:62
+//line services/dashboard/views/workersPage.qtpl:74
 		qw422016.N().D(int(worker.Major))
-//line services/dashboard/views/workersPage.qtpl:62
+//line services/dashboard/views/workersPage.qtpl:74
 		qw422016.N().S(`</td>
         <td class="px-4 h-10 border-b">`)
-//line services/dashboard/views/workersPage.qtpl:63
+//line services/dashboard/views/workersPage.qtpl:75
 		qw422016.N().D(int(worker.Revision))
-//line services/dashboard/views/workersPage.qtpl:63
+//line services/dashboard/views/workersPage.qtpl:75
 		qw422016.N().S(`</td>
         <td class="px-4 h-10 border-b">`)
-//line services/dashboard/views/workersPage.qtpl:64
+//line services/dashboard/views/workersPage.qtpl:76
 		qw422016.E().S(worker.Id)
-//line services/dashboard/views/workersPage.qtpl:64
+//line services/dashboard/views/workersPage.qtpl:76
 		qw422016.N().S(`</td>
         <td class="px-4 h-10 border-b">`)
-//line services/dashboard/views/workersPage.qtpl:65
+//line services/dashboard/views/workersPage.qtpl:77
 		qw422016.E().S(worker.Description)
-//line services/dashboard/views/workersPage.qtpl:65
+//line services/dashboard/views/workersPage.qtpl:77
 		qw422016.N().S(`</td>
         <td class="px-4 h-10 border-b">Python</td>
     </tr>
     `)
-//line services/dashboard/views/workersPage.qtpl:68
+//line services/dashboard/views/workersPage.qtpl:80
 	}
-//line services/dashboard/views/workersPage.qtpl:68
+//line services/dashboard/views/workersPage.qtpl:80
 	qw422016.N().S(`
 `)
-//line services/dashboard/views/workersPage.qtpl:69
+//line services/dashboard/views/workersPage.qtpl:81
 }
 
-//line services/dashboard/views/workersPage.qtpl:69
+//line services/dashboard/views/workersPage.qtpl:81
 func WriteRenderWorkerTableRows(qq422016 qtio422016.Writer, workers []api.UserWorker, nextPage string) {
-//line services/dashboard/views/workersPage.qtpl:69
+//line services/dashboard/views/workersPage.qtpl:81
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line services/dashboard/views/workersPage.qtpl:69
+//line services/dashboard/views/workersPage.qtpl:81
 	StreamRenderWorkerTableRows(qw422016, workers, nextPage)
-//line services/dashboard/views/workersPage.qtpl:69
+//line services/dashboard/views/workersPage.qtpl:81
 	qt422016.ReleaseWriter(qw422016)
-//line services/dashboard/views/workersPage.qtpl:69
+//line services/dashboard/views/workersPage.qtpl:81
 }
 
-//line services/dashboard/views/workersPage.qtpl:69
+//line services/dashboard/views/workersPage.qtpl:81
 func RenderWorkerTableRows(workers []api.UserWorker, nextPage string) string {
-//line services/dashboard/views/workersPage.qtpl:69
+//line services/dashboard/views/workersPage.qtpl:81
 	qb422016 := qt422016.AcquireByteBuffer()
-//line services/dashboard/views/workersPage.qtpl:69
+//line services/dashboard/views/workersPage.qtpl:81
 	WriteRenderWorkerTableRows(qb422016, workers, nextPage)
-//line services/dashboard/views/workersPage.qtpl:69
+//line services/dashboard/views/workersPage.qtpl:81
 	qs422016 := string(qb422016.B)
-//line services/dashboard/views/workersPage.qtpl:69
+//line services/dashboard/views/workersPage.qtpl:81
 	qt422016.ReleaseByteBuffer(qb422016)
-//line services/dashboard/views/workersPage.qtpl:69
+//line services/dashboard/views/workersPage.qtpl:81
 	return qs422016
-//line services/dashboard/views/workersPage.qtpl:69
+//line services/dashboard/views/workersPage.qtpl:81
 }
 
-//line services/dashboard/views/workersPage.qtpl:72
+//line services/dashboard/views/workersPage.qtpl:84
 type WorkerListPage struct {
 	BasePage
 	Workers []api.UserWorker

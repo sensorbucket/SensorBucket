@@ -59,6 +59,10 @@ paths:
     $ref: 'path-tracing.yaml'
   /workers:
     $ref: 'path-workers.yaml'
+  /workers/{id}:
+    $ref: 'path-workers-by-id.yaml'
+  /workers/{id}/usercode:
+    $ref: 'path-workers-usercode.yaml'
 components:
   securitySchemes:
     basicAuth:    

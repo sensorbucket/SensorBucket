@@ -36,7 +36,7 @@ func NewApplication(store Store) *Application {
 type CreateWorkerOpts struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Source      []byte `json:"source"`
+	UserCode    []byte `json:"user_code"`
 }
 
 func (app *Application) GetWorker(ctx context.Context, id uuid.UUID) (*UserWorker, error) {
@@ -44,7 +44,7 @@ func (app *Application) GetWorker(ctx context.Context, id uuid.UUID) (*UserWorke
 }
 
 func (app *Application) CreateWorker(ctx context.Context, opts CreateWorkerOpts) (*UserWorker, error) {
-	worker, err := CreateWorker(opts.Name, opts.Description, opts.Source)
+	worker, err := CreateWorker(opts.Name, opts.Description, opts.UserCode)
 	if err != nil {
 		return nil, err
 	}

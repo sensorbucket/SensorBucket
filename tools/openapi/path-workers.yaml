@@ -37,3 +37,27 @@ get:
       $ref: "./responses.yaml#/401"
     "403":
       $ref: "./responses.yaml#/403"
+post:
+  operationId: CreateWorker
+  summary: Create Worker
+  description: |
+    Create a new worker
+  tags: [Workers]
+  requestBody: 
+    content:
+      application/json:
+        schema: 
+          $ref: 'schemas.yaml#/createUserWorkerRequest'
+  responses:
+    "201":
+      description: Created worker
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: created user worker
+              data:
+                $ref: "schemas.yaml#/userWorker"

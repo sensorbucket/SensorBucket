@@ -18,6 +18,8 @@ model_create_pipeline_request.go
 model_create_sensor_group_201_response.go
 model_create_sensor_group_request.go
 model_create_sensor_request.go
+model_create_user_worker_request.go
+model_create_worker_201_response.go
 model_datastream.go
 model_delete_device_sensor_200_response.go
 model_delete_sensor_from_sensor_group_200_response.go
@@ -30,6 +32,8 @@ model_get_datastream_200_response_data_all_of.go
 model_get_device_200_response.go
 model_get_pipeline_200_response.go
 model_get_sensor_group_200_response.go
+model_get_worker_200_response.go
+model_get_worker_user_code_200_response.go
 model_list_datastreams_200_response.go
 model_list_datastreams_200_response_all_of.go
 model_list_device_sensors_200_response.go
@@ -60,6 +64,8 @@ model_update_pipeline_200_response.go
 model_update_pipeline_request.go
 model_update_sensor_group_200_response.go
 model_update_sensor_group_request.go
+model_update_worker_200_response.go
+model_update_worker_request.go
 model_user_worker.go
 response.go
 utils.go

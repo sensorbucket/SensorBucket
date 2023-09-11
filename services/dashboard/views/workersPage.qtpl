@@ -4,8 +4,20 @@
     <div 
         class="w-full xl:w-2/3 mx-auto bg-white border rounded-md"
     >
-        <header class="border-b py-2 px-4 text-sm text-slate-700">
-            SensorBucket Worker List
+        <header class="w-full flex items-center justify-between border-b py-2 px-4 text-sm text-slate-700">
+            <section>
+                SensorBucket Worker List
+            </section>
+            <section class="flex gap-2">
+                <button 
+                    class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                    hx-get="/workers/create"
+                    hx-target="main"
+                    hx-push-url="true"
+                >
+                Create
+                </button>
+            </section>
         </header>
         <div>
             {%= RenderWorkerTable(p.Workers) %}

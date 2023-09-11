@@ -853,6 +853,11 @@ video {
   border-color: rgb(241 245 249 / var(--tw-border-opacity));
 }
 
+.bg-emerald-400 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(52 211 153 / var(--tw-bg-opacity));
+}
+
 .bg-gray-800 {
   --tw-bg-opacity: 1;
   background-color: rgb(31 41 55 / var(--tw-bg-opacity));
@@ -1145,6 +1150,11 @@ video {
 
 .hover\:border-transparent:hover {
   border-color: transparent;
+}
+
+.hover\:bg-emerald-500:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(16 185 129 / var(--tw-bg-opacity));
 }
 
 .hover\:bg-gray-500:hover {
