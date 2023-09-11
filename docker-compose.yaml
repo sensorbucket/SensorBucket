@@ -68,8 +68,9 @@ services:
       - APP_TYPE=service
       - HTTP_ADDR=:3000
       - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/userworkers?sslmode=disable
-      - WORKER_NAMESPACE=""
-      - CTRL_TYPE=none
+      - WORKER_NAMESPACE=default
+      - CTRL_TYPE=k8s
+      - CTRL_K8S_CONFIG=/workspace/tools/kube/config
                   
             
   httpimporter:

@@ -3,14 +3,16 @@ package userworkers
 import (
 	"archive/zip"
 	"bytes"
+	"embed"
 	_ "embed"
 	"io"
+	"io/fs"
 
 	"github.com/google/uuid"
 )
 
-//go:embed python_base.py
-var PythonBase []byte
+//go:embed python/*
+var PythonFiles embed.FS
 
 type Language uint
 
@@ -74,12 +76,13 @@ func (w *UserWorker) SetUserCode(usercode []byte) error {
 	sourceZip := bytes.NewBuffer(make([]byte, 0))
 	zipWriter := zip.NewWriter(sourceZip)
 
-	// Write "main.py"
-	mainPY, err := zipWriter.Create("main.py")
-	if err != nil {
+	if err := writeToZip(PythonFiles, "python/base.py", zipWriter, "main.py"); err != nil {
 		return err
 	}
-	if _, err := mainPY.Write(PythonBase); err != nil {
+	if err := writeToZip(PythonFiles, "python/requirements.txt", zipWriter, "requirements.txt"); err != nil {
+		return err
+	}
+	if err := writeToZip(PythonFiles, "python/build.sh", zipWriter, "build.sh"); err != nil {
 		return err
 	}
 	// Write "usercode.py"
@@ -130,4 +133,25 @@ func (w *UserWorker) Commit() {
 	}
 	w.Revision++
 	w.dirty = false
+}
+
+func writeToZip(f fs.FS, from string, writer *zip.Writer, to string) error {
+	file, err := f.Open(from)
+	if err != nil {
+		return err
+	}
+	contents, err := io.ReadAll(file)
+	if err != nil {
+		return err
+	}
+	file.Close()
+	zipFile, err := writer.Create(to)
+	if err != nil {
+		return err
+	}
+	_, err = zipFile.Write(contents)
+	if err != nil {
+		return err
+	}
+	return nil
 }

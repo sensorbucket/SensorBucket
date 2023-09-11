@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 )
 
@@ -39,10 +40,12 @@ type KubernetesController struct {
 	mqtImagePullSecret string
 	mqtSecret          string
 	mqtExchange        string
+	endpointDevices    string
 }
 
 func CreateKubernetesController(store Store, workerNamespace string) (*KubernetesController, error) {
-	cfg, err := clientcmd.BuildConfigFromFlags("", "/home/timvosch/.kube/config")
+	kubeconfig := env.Must("CTRL_K8S_CONFIG")
+	cfg, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	// cfg, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, fmt.Errorf("error getting kubernetes in-cluster configuration: %w", err)
@@ -60,6 +63,7 @@ func CreateKubernetesController(store Store, workerNamespace string) (*Kubernete
 		mqtImagePullSecret: "regcred",
 		mqtSecret:          "keda-rmq-secret",
 		mqtExchange:        "pipeline.messages",
+		endpointDevices:    "https://sensorbucket.nl/api/devices",
 	}, nil
 }
 
@@ -206,9 +210,10 @@ func (ctrl *KubernetesController) workerToFunction(worker UserWorker) Function {
 				InvokeStrategy: fissionV1.InvokeStrategy{
 					StrategyType: "execution",
 					ExecutionStrategy: fissionV1.ExecutionStrategy{
-						ExecutorType: fissionV1.ExecutorTypePoolmgr,
-						MinScale:     0,
-						MaxScale:     100,
+						ExecutorType:          fissionV1.ExecutorTypePoolmgr,
+						MinScale:              0,
+						MaxScale:              100,
+						SpecializationTimeout: 120,
 					},
 				},
 				Environment: fissionV1.EnvironmentReference{
@@ -248,6 +253,10 @@ func (ctrl *KubernetesController) workerToPackage(worker UserWorker) Package {
 					Type:    fissionV1.ArchiveTypeLiteral,
 					Literal: worker.ZipSource,
 				},
+			},
+			Status: fissionV1.PackageStatus{
+				BuildStatus:         "pending",
+				LastUpdateTimestamp: metav1.Now(),
 			},
 		},
 	}
@@ -479,6 +488,7 @@ func updateFunction(current, desired Function) Function {
 func updatePackage(current, desired Package) Package {
 	current.Resource.ObjectMeta.Labels["worker-revision"] = desired.Resource.Labels["worker-revision"]
 	current.Resource.Spec = desired.Resource.Spec
+	current.Resource.Status = desired.Resource.Status
 	return current
 }
 
