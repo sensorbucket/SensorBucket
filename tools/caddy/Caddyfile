@@ -1,36 +1,36 @@
-*:80
-
-handle_path /api/* {
-	handle_path /uplinks* {
-        reverse_proxy httpimporter:3000
+:80 {
+    handle_path /api/* {
+        handle_path /uplinks* {
+            reverse_proxy httpimporter:3000
+        }
+        reverse_proxy /ingresses* tracing:3000
+        reverse_proxy /tracing* tracing:3000
+        reverse_proxy /workers* userworkers:3000
+        reverse_proxy core:3000
     }
-    reverse_proxy /ingresses* tracing:3000
-    reverse_proxy /tracing* tracing:3000
-    reverse_proxy /workers* userworkers:3000
-    reverse_proxy core:3000
-}
 
-redir /dev/mq /dev/mq/
-handle_path /dev/mq/* {
-    reverse_proxy mq:15672
-}
+    redir /dev/mq /dev/mq/
+    handle_path /dev/mq/* {
+        reverse_proxy mq:15672
+    }
 
-redir /dev/db /dev/db/
-handle_path /dev/db/* {
-    reverse_proxy dbweb:80
-}
+    redir /dev/db /dev/db/
+    handle_path /dev/db/* {
+        reverse_proxy dbweb:80
+    }
 
-redir /dev/api /dev/api/
-handle_path /dev/api/* {
-    reverse_proxy openapi:8080
-}
+    redir /dev/api /dev/api/
+    handle_path /dev/api/* {
+        reverse_proxy openapi:8080
+    }
 
-redir /dev/mail /dev/mail/
-handle_path /dev/mail/* {
-    reverse_proxy mail-server:8025
-}
+    redir /dev/mail /dev/mail/
+    handle_path /dev/mail/* {
+        reverse_proxy mail-server:8025
+    }
 
-handle {
-    reverse_proxy /* dashboard:3000
+    handle {
+        reverse_proxy dashboard:3000
+    }
 }
 
