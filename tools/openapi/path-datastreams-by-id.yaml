@@ -34,6 +34,12 @@ get:
                         $ref: 'schemas.yaml#/device'
                       sensor:
                         $ref: 'schemas.yaml#/sensor'
+                      measurement_value:
+                        type: number
+                        format: float64
+                      measurement_timestamp:
+                        type: string
+                        format: date-time
     '401':
       $ref: './responses.yaml#/401'
     '403':
