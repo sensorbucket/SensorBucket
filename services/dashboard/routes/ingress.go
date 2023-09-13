@@ -7,45 +7,12 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
-	"sensorbucket.nl/sensorbucket/services/core/devices"
-	"sensorbucket.nl/sensorbucket/services/core/processing"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
-	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
 )
-
-type IngressStore interface {
-	ListIngresses() ([]ingressarchiver.ArchivedIngressDTO, error)
-}
-
-type TraceDTO struct {
-	TracingId string    `json:"tracing_id"`
-	DeviceID  int64     `json:"device_id"`
-	Status    int       `json:"status"`
-	Steps     []StepDTO `json:"steps"`
-}
-
-type StepDTO struct {
-	Status   int           `json:"status"`
-	Duration time.Duration `json:"duration"`
-	Error    string        `json:"error"`
-}
-
-type TracesStore interface {
-	ListTraces(tracingIDS []uuid.UUID) ([]TraceDTO, error)
-}
-
-type PipelineStore interface {
-	ListPipelines(ids []uuid.UUID) ([]processing.Pipeline, error)
-}
-
-type DeviceStore interface {
-	ListDevices(ids []int64) ([]devices.Device, error)
-}
 
 type IngressPageHandler struct {
 	router chi.Router
@@ -98,7 +65,7 @@ func (h *IngressPageHandler) createViewIngresses(ctx context.Context) ([]views.I
 	deviceIDs := lo.FilterMap(resLogs.Data, func(traceLog api.Trace, _ int) (int64, bool) {
 		return traceLog.DeviceId, traceLog.DeviceId > 0
 	})
-	resDevices, _, err := h.client.DevicesApi.ListDevices(ctx).Id(deviceIDs).Execute()
+	resDevices, _, err := h.client.DevicesApi.ListDevices(ctx).Id(lo.Uniq(deviceIDs)).Execute()
 	if err != nil {
 		return nil, err
 	}

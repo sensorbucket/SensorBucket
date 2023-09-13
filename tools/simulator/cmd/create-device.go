@@ -4,6 +4,7 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -25,15 +26,19 @@ var deviceCmd = &cobra.Command{
 		dLat, _ := cmd.Flags().GetFloat64("latitude")
 		dLng, _ := cmd.Flags().GetFloat64("longitude")
 		dLDesc, _ := cmd.Flags().GetString("locationdescription")
+		dProp, _ := cmd.Flags().GetString("properties")
 
 		req.SetCode(dCode)
 		req.SetDescription(dDesc)
 		if dLat != 0 && dLng != 0 {
-			req.SetLatitude(float32(dLat))
-			req.SetLongitude(float32(dLng))
+			req.SetLatitude(dLat)
+			req.SetLongitude(dLng)
 		}
 		if dLDesc != "" {
 			req.SetLocationDescription(dLDesc)
+		}
+		if dProp != "" {
+			json.Unmarshal([]byte(dProp), &req.Properties)
 		}
 
 		res, _, err := client.DevicesApi.CreateDevice(cmd.Context()).CreateDeviceRequest(req).Execute()

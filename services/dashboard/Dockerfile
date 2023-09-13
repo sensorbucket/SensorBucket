@@ -19,9 +19,9 @@ FROM dev AS build
 WORKDIR /workspace
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/dashboard ./services/dashboard
+RUN GOOS=linux go build -o /app/dashboard ./services/dashboard
 
-FROM scratch AS production
+FROM alpine AS production
 COPY --from=build /app/dashboard /app/dashboard
 ENTRYPOINT ["/app/dashboard"]
 

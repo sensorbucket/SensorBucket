@@ -555,7 +555,7 @@ createUserWorkerRequest:
   type: object
   required:
     - name
-    - source
+    - user_code
   properties:
     name:
       type: string

@@ -37,7 +37,7 @@ var sensorCmd = &cobra.Command{
 		req.SetDescription(sDesc)
 		req.SetBrand(sBrand)
 
-		_, _, err = client.DevicesApi.CreateDeviceSensor(cmd.Context(), float32(deviceID)).CreateSensorRequest(req).Execute()
+		_, _, err = client.DevicesApi.CreateDeviceSensor(cmd.Context(), int32(deviceID)).CreateSensorRequest(req).Execute()
 		if err != nil {
 			return err
 		}

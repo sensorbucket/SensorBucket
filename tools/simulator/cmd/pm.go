@@ -62,14 +62,14 @@ var pmCmd = &cobra.Command{
 		if len(flagDevices) == 0 {
 			return errors.New("must define atleast one device")
 		}
-		ids := make([]int32, 0, len(flagDevices))
+		ids := make([]int64, 0, len(flagDevices))
 		for _, idString := range flagDevices {
 			devID, err := strconv.ParseInt(idString, 10, 64)
 			if err != nil {
 				fmt.Printf("Could not use device ID: %s as it is not a number\n", idString)
 				continue
 			}
-			ids = append(ids, int32(devID))
+			ids = append(ids, devID)
 		}
 
 		client := CreateAPIClient(cmd)

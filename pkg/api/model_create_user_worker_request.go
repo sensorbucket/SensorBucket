@@ -20,16 +20,17 @@ type CreateUserWorkerRequest struct {
 	Name string `json:"name"`
 	Description *string `json:"description,omitempty"`
 	// base64 encoded user code
-	UserCode *string `json:"user_code,omitempty"`
+	UserCode string `json:"user_code"`
 }
 
 // NewCreateUserWorkerRequest instantiates a new CreateUserWorkerRequest object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCreateUserWorkerRequest(name string) *CreateUserWorkerRequest {
+func NewCreateUserWorkerRequest(name string, userCode string) *CreateUserWorkerRequest {
 	this := CreateUserWorkerRequest{}
 	this.Name = name
+	this.UserCode = userCode
 	return &this
 }
 
@@ -97,36 +98,28 @@ func (o *CreateUserWorkerRequest) SetDescription(v string) {
 	o.Description = &v
 }
 
-// GetUserCode returns the UserCode field value if set, zero value otherwise.
+// GetUserCode returns the UserCode field value
 func (o *CreateUserWorkerRequest) GetUserCode() string {
-	if o == nil || isNil(o.UserCode) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.UserCode
+
+	return o.UserCode
 }
 
-// GetUserCodeOk returns a tuple with the UserCode field value if set, nil otherwise
+// GetUserCodeOk returns a tuple with the UserCode field value
 // and a boolean to check if the value has been set.
 func (o *CreateUserWorkerRequest) GetUserCodeOk() (*string, bool) {
-	if o == nil || isNil(o.UserCode) {
+	if o == nil {
     return nil, false
 	}
-	return o.UserCode, true
+	return &o.UserCode, true
 }
 
-// HasUserCode returns a boolean if a field has been set.
-func (o *CreateUserWorkerRequest) HasUserCode() bool {
-	if o != nil && !isNil(o.UserCode) {
-		return true
-	}
-
-	return false
-}
-
-// SetUserCode gets a reference to the given string and assigns it to the UserCode field.
+// SetUserCode sets field value
 func (o *CreateUserWorkerRequest) SetUserCode(v string) {
-	o.UserCode = &v
+	o.UserCode = v
 }
 
 func (o CreateUserWorkerRequest) MarshalJSON() ([]byte, error) {
@@ -137,7 +130,7 @@ func (o CreateUserWorkerRequest) MarshalJSON() ([]byte, error) {
 	if !isNil(o.Description) {
 		toSerialize["description"] = o.Description
 	}
-	if !isNil(o.UserCode) {
+	if true {
 		toSerialize["user_code"] = o.UserCode
 	}
 	return json.Marshal(toSerialize)

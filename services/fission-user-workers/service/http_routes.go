@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
@@ -20,6 +21,7 @@ type HTTPTransport struct {
 
 func NewHTTPTransport(app *Application, addr string) *HTTPTransport {
 	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 	createRoutes(app, r)
 	srv := &http.Server{
 		Addr:         addr,

@@ -59,7 +59,7 @@ class Measurement:
 
 class Message:
     def __init__(self,
-                 tracing_id: str,
+                 id: str,
                  owner_id: int,
                  received_at: int,
                  pipeline_id: str,
@@ -70,7 +70,7 @@ class Message:
                  measurements: Optional[List[Measurement]] = None,
                  payload: Optional[bytes] = None,
                  metadata: Optional[Dict[str, Any]] = None):
-        self.tracing_id = tracing_id
+        self.id = id
         self.owner_id = owner_id
         self.received_at = received_at
         self.pipeline_id = pipeline_id
@@ -84,7 +84,7 @@ class Message:
 
     def match_device(self, properties: Dict[str, Any]):
         res = r.get(DEVICES_EP, params={
-            "properties": properties,
+            "properties": json.dumps(properties),
         })
         res.raise_for_status()
         data = res.json()
@@ -115,7 +115,7 @@ class Message:
     @classmethod
     def from_json(cls, json_str: str):
         data = json.loads(json_str)
-        required_fields = ['tracing_id', 'owner_id', 'received_at',
+        required_fields = ['id', 'owner_id', 'received_at',
                            'pipeline_id', 'step_index', 'pipeline_steps', 'timestamp']
         if not all(field in data for field in required_fields):
             missing = [field for field in required_fields if field not in data]
@@ -131,12 +131,11 @@ class Message:
         return cls(**data)
 
     def set_time(self, dt: datetime):
-        self.timestamp = int(dt.timestamp())
+        self.timestamp = int(dt.timestamp())*1000
         return self
 
     def json_dict(self):
         d = self.__dict__
-        d["id"] = d["tracing_id"]
         return d
 
 
@@ -157,7 +156,7 @@ class MeasurementBuilder:
         return self
 
     def set_time(self, dt: datetime):
-        self.measurement.timestamp = int(dt.timestamp())
+        self.measurement.timestamp = int(dt.timestamp())*1000
         return self
 
     def set_sensor(self, eid: str):

@@ -35,8 +35,8 @@ get:
                   sensor:
                     $ref: 'schemas.yaml#/sensor'
                   measurement_value:
-                    type: integer
-                    format: float64
+                    type: number
+                    format: double
                   measurement_timestamp:
                     type: string
                     format: date-time

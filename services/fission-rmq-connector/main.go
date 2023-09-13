@@ -65,11 +65,19 @@ func Run() error {
 	log.Printf("Consuming from queue: %s and producing to exchange: %s\n", AMQP_QUEUE, AMQP_XCHG)
 	conn := mq.NewConnection(AMQP_HOST)
 	successChan := conn.Publisher(AMQP_XCHG, func(c *amqp091.Channel) error {
-		return c.ExchangeDeclare(AMQP_XCHG, "topic", true, false, false, false, nil)
+		return nil
 	})
 	consumeChan := conn.Consume(AMQP_QUEUE, func(c *amqp091.Channel) error {
 		// Cannot set autodelete because KEDA can't scale if the queue does not exist at all
 		_, err := c.QueueDeclare(AMQP_QUEUE, true, false, false, false, nil)
+		if err != nil {
+			return err
+		}
+		err = c.ExchangeDeclare(AMQP_XCHG, "topic", true, false, false, false, nil)
+		if err != nil {
+			return err
+		}
+		err = c.QueueBind(AMQP_QUEUE, AMQP_QUEUE, AMQP_XCHG, false, nil)
 		if err != nil {
 			return err
 		}

@@ -21,7 +21,7 @@ type GetDatastream200ResponseData struct {
 	Datastream *Datastream `json:"datastream,omitempty"`
 	Device *Device `json:"device,omitempty"`
 	Sensor *Sensor `json:"sensor,omitempty"`
-	MeasurementValue *int32 `json:"measurement_value,omitempty"`
+	MeasurementValue *float64 `json:"measurement_value,omitempty"`
 	MeasurementTimestamp *time.Time `json:"measurement_timestamp,omitempty"`
 }
 
@@ -139,9 +139,9 @@ func (o *GetDatastream200ResponseData) SetSensor(v Sensor) {
 }
 
 // GetMeasurementValue returns the MeasurementValue field value if set, zero value otherwise.
-func (o *GetDatastream200ResponseData) GetMeasurementValue() int32 {
+func (o *GetDatastream200ResponseData) GetMeasurementValue() float64 {
 	if o == nil || isNil(o.MeasurementValue) {
-		var ret int32
+		var ret float64
 		return ret
 	}
 	return *o.MeasurementValue
@@ -149,7 +149,7 @@ func (o *GetDatastream200ResponseData) GetMeasurementValue() int32 {
 
 // GetMeasurementValueOk returns a tuple with the MeasurementValue field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetDatastream200ResponseData) GetMeasurementValueOk() (*int32, bool) {
+func (o *GetDatastream200ResponseData) GetMeasurementValueOk() (*float64, bool) {
 	if o == nil || isNil(o.MeasurementValue) {
     return nil, false
 	}
@@ -165,8 +165,8 @@ func (o *GetDatastream200ResponseData) HasMeasurementValue() bool {
 	return false
 }
 
-// SetMeasurementValue gets a reference to the given int32 and assigns it to the MeasurementValue field.
-func (o *GetDatastream200ResponseData) SetMeasurementValue(v int32) {
+// SetMeasurementValue gets a reference to the given float64 and assigns it to the MeasurementValue field.
+func (o *GetDatastream200ResponseData) SetMeasurementValue(v float64) {
 	o.MeasurementValue = &v
 }
 
