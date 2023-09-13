@@ -8,7 +8,7 @@ package views
 import "time"
 
 //line views/ingressPage.qtpl:2
-import "sensorbucket.nl/sensorbucket/services/core/devices"
+import "sensorbucket.nl/sensorbucket/pkg/api"
 
 //line views/ingressPage.qtpl:3
 import (
@@ -275,5 +275,5 @@ type Ingress struct {
 	TracingID string
 	CreatedAt time.Time
 	Steps     []IngressStep
-	Device    devices.Device
+	Device    api.Device
 }

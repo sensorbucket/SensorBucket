@@ -13,12 +13,15 @@ package api
 
 import (
 	"encoding/json"
+	"time"
 )
 
 // GetDatastream200ResponseDataAllOf struct for GetDatastream200ResponseDataAllOf
 type GetDatastream200ResponseDataAllOf struct {
 	Device *Device `json:"device,omitempty"`
 	Sensor *Sensor `json:"sensor,omitempty"`
+	MeasurementValue *float32 `json:"measurement_value,omitempty"`
+	MeasurementTimestamp *time.Time `json:"measurement_timestamp,omitempty"`
 }
 
 // NewGetDatastream200ResponseDataAllOf instantiates a new GetDatastream200ResponseDataAllOf object
@@ -102,6 +105,70 @@ func (o *GetDatastream200ResponseDataAllOf) SetSensor(v Sensor) {
 	o.Sensor = &v
 }
 
+// GetMeasurementValue returns the MeasurementValue field value if set, zero value otherwise.
+func (o *GetDatastream200ResponseDataAllOf) GetMeasurementValue() float32 {
+	if o == nil || isNil(o.MeasurementValue) {
+		var ret float32
+		return ret
+	}
+	return *o.MeasurementValue
+}
+
+// GetMeasurementValueOk returns a tuple with the MeasurementValue field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetDatastream200ResponseDataAllOf) GetMeasurementValueOk() (*float32, bool) {
+	if o == nil || isNil(o.MeasurementValue) {
+    return nil, false
+	}
+	return o.MeasurementValue, true
+}
+
+// HasMeasurementValue returns a boolean if a field has been set.
+func (o *GetDatastream200ResponseDataAllOf) HasMeasurementValue() bool {
+	if o != nil && !isNil(o.MeasurementValue) {
+		return true
+	}
+
+	return false
+}
+
+// SetMeasurementValue gets a reference to the given float32 and assigns it to the MeasurementValue field.
+func (o *GetDatastream200ResponseDataAllOf) SetMeasurementValue(v float32) {
+	o.MeasurementValue = &v
+}
+
+// GetMeasurementTimestamp returns the MeasurementTimestamp field value if set, zero value otherwise.
+func (o *GetDatastream200ResponseDataAllOf) GetMeasurementTimestamp() time.Time {
+	if o == nil || isNil(o.MeasurementTimestamp) {
+		var ret time.Time
+		return ret
+	}
+	return *o.MeasurementTimestamp
+}
+
+// GetMeasurementTimestampOk returns a tuple with the MeasurementTimestamp field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetDatastream200ResponseDataAllOf) GetMeasurementTimestampOk() (*time.Time, bool) {
+	if o == nil || isNil(o.MeasurementTimestamp) {
+    return nil, false
+	}
+	return o.MeasurementTimestamp, true
+}
+
+// HasMeasurementTimestamp returns a boolean if a field has been set.
+func (o *GetDatastream200ResponseDataAllOf) HasMeasurementTimestamp() bool {
+	if o != nil && !isNil(o.MeasurementTimestamp) {
+		return true
+	}
+
+	return false
+}
+
+// SetMeasurementTimestamp gets a reference to the given time.Time and assigns it to the MeasurementTimestamp field.
+func (o *GetDatastream200ResponseDataAllOf) SetMeasurementTimestamp(v time.Time) {
+	o.MeasurementTimestamp = &v
+}
+
 func (o GetDatastream200ResponseDataAllOf) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
 	if !isNil(o.Device) {
@@ -109,6 +176,12 @@ func (o GetDatastream200ResponseDataAllOf) MarshalJSON() ([]byte, error) {
 	}
 	if !isNil(o.Sensor) {
 		toSerialize["sensor"] = o.Sensor
+	}
+	if !isNil(o.MeasurementValue) {
+		toSerialize["measurement_value"] = o.MeasurementValue
+	}
+	if !isNil(o.MeasurementTimestamp) {
+		toSerialize["measurement_timestamp"] = o.MeasurementTimestamp
 	}
 	return json.Marshal(toSerialize)
 }

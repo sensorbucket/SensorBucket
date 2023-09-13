@@ -22,6 +22,8 @@ var (
 	WORKER_NAMESPACE = env.Could("WORKER_NAMESPACE", "default")
 	CTRL_TYPE        = env.Could("CTRL_TYPE", "k8s")
 	DB_DSN           = env.Must("DB_DSN")
+	// The exchange to which workers will bind to
+	AMQP_XCHG = env.Could("AMQP_XCHG", "pipeline.messages")
 )
 
 func main() {
@@ -60,7 +62,7 @@ func Run() error {
 
 	switch CTRL_TYPE {
 	case "k8s":
-		ctrl, err = userworkers.CreateKubernetesController(store, WORKER_NAMESPACE)
+		ctrl, err = userworkers.CreateKubernetesController(store, WORKER_NAMESPACE, AMQP_XCHG)
 		if err != nil {
 			return err
 		}

@@ -1,4 +1,4 @@
-{% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
+{% import "sensorbucket.nl/sensorbucket/pkg/api" %}
 
 {% func (p *DeviceListPage) Body() %}
     <div class="mx-auto w-full xl:w-2/3 flex flex-col gap-6">
@@ -16,7 +16,7 @@
     </div>
 {% endfunc %}
 
-{% func RenderFilters(sensorGroup *devices.SensorGroup, oob bool) %}
+{% func RenderFilters(sensorGroup *api.SensorGroup, oob bool) %}
     <fieldset
         id="filters"
         class="relative col-span-2"
@@ -53,7 +53,7 @@
     </fieldset>
 {% endfunc %}
 
-{% func SensorGroupSearch(sgs []devices.SensorGroup) %}
+{% func SensorGroupSearch(sgs []api.SensorGroup) %}
     {% for _, sg := range sgs %}
         <li>
             <a
@@ -66,7 +66,7 @@
     {% endfor %}
 {% endfunc %}
 
-{% func RenderDeviceTable(devices []devices.Device, nextPage string) %}
+{% func RenderDeviceTable(devices []api.Device, nextPage string) %}
     <table class="w-full text-sm border-separate border-spacing-0" id="device-table">
         <thead class="text-left text-slate-500 sticky top-0 bg-white">
             <tr class="h-10">
@@ -90,7 +90,7 @@
     </table>
 {% endfunc %}
 
-{% func RenderDeviceTableRows(devices []devices.Device, nextPage string) %}
+{% func RenderDeviceTableRows(devices []api.Device, nextPage string) %}
     {% for ix, dev := range devices %}
     <tr
         class="hover:bg-slate-50 group"
@@ -113,7 +113,7 @@
     {% endfor %}
 {% endfunc %}
 
-{% func RenderMap(sensorGroup *devices.SensorGroup) %}
+{% func RenderMap(sensorGroup *api.SensorGroup) %}
     <div 
         hx-ext="leaflet"
         class="w-full h-96"
@@ -184,8 +184,8 @@
 {% code
 type DeviceListPage struct {
     BasePage
-    Devices []devices.Device
+    Devices []api.Device
     DevicesNextPage string
-    SensorGroup *devices.SensorGroup
+    SensorGroup *api.SensorGroup
 }
 %}

@@ -74,6 +74,26 @@ get:
         The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
       schema:
         type: number
+    - name: id
+      description: |
+        Filter by Device IDs
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: integer
+    - name: sensor_group
+      description: |
+        Filter by device group
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: integer
   responses:
     '200':
       description: OK

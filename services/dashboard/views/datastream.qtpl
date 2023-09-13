@@ -1,5 +1,4 @@
-{% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
-{% import "sensorbucket.nl/sensorbucket/services/core/measurements" %}
+{% import "sensorbucket.nl/sensorbucket/pkg/api" %}
 {% import "time" %}
 
 {% func (p *DatastreamPage) Body() %}
@@ -7,9 +6,9 @@
     <div class="flex gap-3 text-sm my-4 italic items-center" hx-target="main">
         <a href="/overview" class="hover:underline text-sky-600">Devices</a>
         <span>/</span>
-        <a href="/overview/devices/{%dl p.Device.ID%}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
+        <a href="/overview/devices/{%dl p.Device.GetId()%}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
         <span>/</span>
-        <a href="/overview/devices/{%dl p.Device.ID%}/sensors/{%s p.Sensor.Code %}" class="hover:underline text-sky-600">{%s p.Sensor.Code %}</a>
+        <a href="/overview/devices/{%dl p.Device.GetId()%}/sensors/{%s p.Sensor.Code %}" class="hover:underline text-sky-600">{%s p.Sensor.Code %}</a>
         <span>/</span>
         <span>{%s p.Datastream.ID.String() %}</span>
     </div>
@@ -115,7 +114,7 @@
 </div>
 {% endfunc %}
 
-{% func renderDataStream(ds measurements.Datastream, start, end time.Time) %}
+{% func renderDataStream(ds api.Datastream, start, end time.Time) %}
     <div id="chart" class="w-full h-full">
     </div>
     <script type="text/javascript">
@@ -228,9 +227,9 @@
 {% code
 type DatastreamPage struct {
     BasePage
-    Device devices.Device
-    Sensor devices.Sensor
-    Datastream measurements.Datastream
+    Device api.Device
+    Sensor api.Sensor
+    Datastream api.Datastream
     Start time.Time
     End time.Time
 }

@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
@@ -40,15 +41,19 @@ type KubernetesController struct {
 	mqtImagePullSecret string
 	mqtSecret          string
 	mqtExchange        string
-	endpointDevices    string
 }
 
-func CreateKubernetesController(store Store, workerNamespace string) (*KubernetesController, error) {
-	kubeconfig := env.Must("CTRL_K8S_CONFIG")
-	cfg, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	// cfg, err := rest.InClusterConfig()
+func CreateKubernetesController(store Store, workerNamespace, xchg string) (*KubernetesController, error) {
+	var cfg *rest.Config
+	var err error
+	kcfg := env.Could("CTRL_K8S_CONFIG", "")
+	if kcfg != "" {
+		cfg, err = clientcmd.BuildConfigFromFlags("", kcfg)
+	} else {
+		cfg, err = rest.InClusterConfig()
+	}
 	if err != nil {
-		return nil, fmt.Errorf("error getting kubernetes in-cluster configuration: %w", err)
+		return nil, fmt.Errorf("error getting kubernetes configuration: %w", err)
 	}
 	fission, err := crd.NewClientGeneratorWithRestConfig(cfg).GetFissionClient()
 	if err != nil {
@@ -59,11 +64,10 @@ func CreateKubernetesController(store Store, workerNamespace string) (*Kubernete
 		fission:            fission,
 		workerNamespace:    workerNamespace,
 		prefix:             "worker",
-		mqtImage:           "ghcr.io/sensorbucket/fission-rmq-connector@sha256:fae07ff8e726dd622ef3078163d6eca2cca94a42e3348fd5f2ca5596e69ca721",
-		mqtImagePullSecret: "regcred",
-		mqtSecret:          "keda-rmq-secret",
-		mqtExchange:        "pipeline.messages",
-		endpointDevices:    "https://sensorbucket.nl/api/devices",
+		mqtImage:           env.Must("CTRL_K8S_MQT_IMAGE"),
+		mqtImagePullSecret: env.Must("CTRL_K8S_PULL_SECRET"),
+		mqtSecret:          env.Must("CTRL_K8S_MQT_SECRET"),
+		mqtExchange:        xchg,
 	}, nil
 }
 

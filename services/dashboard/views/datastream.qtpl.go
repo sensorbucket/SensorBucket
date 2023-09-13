@@ -5,63 +5,60 @@
 package views
 
 //line views/datastream.qtpl:1
-import "sensorbucket.nl/sensorbucket/services/core/devices"
+import "sensorbucket.nl/sensorbucket/pkg/api"
 
 //line views/datastream.qtpl:2
-import "sensorbucket.nl/sensorbucket/services/core/measurements"
-
-//line views/datastream.qtpl:3
 import "time"
 
-//line views/datastream.qtpl:5
+//line views/datastream.qtpl:4
 import (
 	qtio422016 "io"
 
 	qt422016 "github.com/valyala/quicktemplate"
 )
 
-//line views/datastream.qtpl:5
+//line views/datastream.qtpl:4
 var (
 	_ = qtio422016.Copy
 	_ = qt422016.AcquireByteBuffer
 )
 
-//line views/datastream.qtpl:5
+//line views/datastream.qtpl:4
 func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
-//line views/datastream.qtpl:5
+//line views/datastream.qtpl:4
 	qw422016.N().S(`
 <header class="flex justify-between items-center">
     <div class="flex gap-3 text-sm my-4 italic items-center" hx-target="main">
         <a href="/overview" class="hover:underline text-sky-600">Devices</a>
         <span>/</span>
         <a href="/overview/devices/`)
-//line views/datastream.qtpl:10
-	qw422016.N().DL(p.Device.ID)
-//line views/datastream.qtpl:10
+//line views/datastream.qtpl:9
+	qw422016.N().DL(p.Device.GetId())
+//line views/datastream.qtpl:9
 	qw422016.N().S(`" class="hover:underline text-sky-600">`)
-//line views/datastream.qtpl:10
+//line views/datastream.qtpl:9
 	qw422016.E().S(p.Device.Code)
-//line views/datastream.qtpl:10
+//line views/datastream.qtpl:9
 	qw422016.N().S(`</a>
         <span>/</span>
         <a href="/overview/devices/`)
-//line views/datastream.qtpl:12
-	qw422016.N().DL(p.Device.ID)
-//line views/datastream.qtpl:12
+//line views/datastream.qtpl:11
+	qw422016.N().DL(p.Device.GetId())
+//line views/datastream.qtpl:11
 	qw422016.N().S(`/sensors/`)
-//line views/datastream.qtpl:12
+//line views/datastream.qtpl:11
 	qw422016.E().S(p.Sensor.Code)
-//line views/datastream.qtpl:12
+//line views/datastream.qtpl:11
 	qw422016.N().S(`" class="hover:underline text-sky-600">`)
-//line views/datastream.qtpl:12
+//line views/datastream.qtpl:11
 	qw422016.E().S(p.Sensor.Code)
-//line views/datastream.qtpl:12
+//line views/datastream.qtpl:11
 	qw422016.N().S(`</a>
         <span>/</span>
         <span>`)
-//line views/datastream.qtpl:14
+//line views/datastream.qtpl:13
 	qw422016.E().S(p.Datastream.ID.String())
-//line views/datastream.qtpl:14
+//line views/datastream.qtpl:13
 	qw422016.N().S(`</span>
     </div>
 
@@ -96,9 +93,9 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
 
             // Create the csv with download
             const csvContent = "Time(Epoch UTC),Time(Local),`)
-//line views/datastream.qtpl:47
+//line views/datastream.qtpl:46
 	qw422016.E().S(p.Datastream.UnitOfMeasurement)
-//line views/datastream.qtpl:47
+//line views/datastream.qtpl:46
 	qw422016.N().S(`\n" + rows.map(row => row.join(",")).join("\n");
             const blob = new Blob([csvContent], { type: "text/csv" });
 
@@ -106,26 +103,26 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
             downloadLink.href = URL.createObjectURL(blob);
 
             const summary = ('`)
-//line views/datastream.qtpl:53
+//line views/datastream.qtpl:52
 	qw422016.E().S(p.Device.Code)
-//line views/datastream.qtpl:53
+//line views/datastream.qtpl:52
 	qw422016.N().S(`-`)
-//line views/datastream.qtpl:53
+//line views/datastream.qtpl:52
 	qw422016.E().S(p.Sensor.Code)
-//line views/datastream.qtpl:53
+//line views/datastream.qtpl:52
 	qw422016.N().S(`-`)
-//line views/datastream.qtpl:53
+//line views/datastream.qtpl:52
 	qw422016.E().S(p.Datastream.ObservedProperty)
-//line views/datastream.qtpl:53
+//line views/datastream.qtpl:52
 	qw422016.N().S(`').replace(/\s/g, '').toLowerCase();
             const title = summary + '-`)
-//line views/datastream.qtpl:54
+//line views/datastream.qtpl:53
 	qw422016.E().S(p.Start.Format("02-01-2006"))
-//line views/datastream.qtpl:54
+//line views/datastream.qtpl:53
 	qw422016.N().S(`-`)
-//line views/datastream.qtpl:54
+//line views/datastream.qtpl:53
 	qw422016.E().S(p.End.Format("02-01-2006"))
-//line views/datastream.qtpl:54
+//line views/datastream.qtpl:53
 	qw422016.N().S(`.csv';
 
             downloadLink.download = title;
@@ -141,9 +138,9 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
             <fieldset class="relative col-span-2">
                 <label for="start" class="absolute bottom-full ml-1 -mb-1 block"><small class="text-xs text-slate-500">Start</small></label>
                 <input type="date" name="start" value="`)
-//line views/datastream.qtpl:68
+//line views/datastream.qtpl:67
 	qw422016.E().S(p.Start.Format("2006-01-02"))
-//line views/datastream.qtpl:68
+//line views/datastream.qtpl:67
 	qw422016.N().S(`" 
                     class="border px-2 py-1 rounded-md bg-white text-slate-700"
                     _="on change debounced at 500ms call updateQueryParam(me.name, me.value) then trigger updateDatastream on body"
@@ -152,9 +149,9 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
             <fieldset class="relative col-span-2">
                 <label for="end" class="absolute bottom-full ml-1 -mb-1 block"><small class="text-xs text-slate-500">End</small></label>
                 <input type="date" name="end" value="`)
-//line views/datastream.qtpl:75
+//line views/datastream.qtpl:74
 	qw422016.E().S(p.End.Format("2006-01-02"))
-//line views/datastream.qtpl:75
+//line views/datastream.qtpl:74
 	qw422016.N().S(`" 
                     class="border px-2 py-1 rounded-md bg-white text-slate-700"
                     _="on change debounced at 500ms call updateQueryParam(me.name, me.value) then trigger updateDatastream on body"
@@ -170,41 +167,41 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
         <div class="h-96 p-4">
             <header class="flex justify-between text-sm text-slate-600">
                 <small>`)
-//line views/datastream.qtpl:89
+//line views/datastream.qtpl:88
 	qw422016.E().S(p.Device.Code)
-//line views/datastream.qtpl:89
+//line views/datastream.qtpl:88
 	qw422016.N().S(` - `)
-//line views/datastream.qtpl:89
+//line views/datastream.qtpl:88
 	qw422016.E().S(p.Sensor.Code)
-//line views/datastream.qtpl:89
+//line views/datastream.qtpl:88
 	qw422016.N().S(` - `)
-//line views/datastream.qtpl:89
+//line views/datastream.qtpl:88
 	qw422016.E().S(p.Datastream.ObservedProperty)
+//line views/datastream.qtpl:88
+	qw422016.N().S(`</small>
+                <small>`)
+//line views/datastream.qtpl:89
+	qw422016.E().S(p.Datastream.Description)
 //line views/datastream.qtpl:89
 	qw422016.N().S(`</small>
                 <small>`)
 //line views/datastream.qtpl:90
-	qw422016.E().S(p.Datastream.Description)
-//line views/datastream.qtpl:90
-	qw422016.N().S(`</small>
-                <small>`)
-//line views/datastream.qtpl:91
 	qw422016.E().S(p.Datastream.ID.String())
-//line views/datastream.qtpl:91
+//line views/datastream.qtpl:90
 	qw422016.N().S(`</small>
             </header>
             `)
-//line views/datastream.qtpl:93
+//line views/datastream.qtpl:92
 	streamrenderDataStream(qw422016, p.Datastream, p.Start, p.End)
-//line views/datastream.qtpl:93
+//line views/datastream.qtpl:92
 	qw422016.N().S(`
         </div>
     </div>
     <div class="bg-white rounded-md border" id="map">
         `)
-//line views/datastream.qtpl:97
+//line views/datastream.qtpl:96
 	streamrenderDeviceMap(qw422016, p.Device)
-//line views/datastream.qtpl:97
+//line views/datastream.qtpl:96
 	qw422016.N().S(`
     </div>
     <div class="bg-white rounded-md border" id="device">
@@ -213,9 +210,9 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
         </header>
         <div class="p-4">
             `)
-//line views/datastream.qtpl:104
+//line views/datastream.qtpl:103
 	StreamDeviceDetailBlock(qw422016, p.Device)
-//line views/datastream.qtpl:104
+//line views/datastream.qtpl:103
 	qw422016.N().S(`
         </div>
     </div>
@@ -225,46 +222,46 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
         </header>
         <div class="p-4">
             `)
-//line views/datastream.qtpl:112
+//line views/datastream.qtpl:111
 	StreamSensorDetailBlock(qw422016, p.Sensor)
-//line views/datastream.qtpl:112
+//line views/datastream.qtpl:111
 	qw422016.N().S(`
         </div>
     </div>
 </div>
 `)
-//line views/datastream.qtpl:116
+//line views/datastream.qtpl:115
 }
 
-//line views/datastream.qtpl:116
+//line views/datastream.qtpl:115
 func (p *DatastreamPage) WriteBody(qq422016 qtio422016.Writer) {
-//line views/datastream.qtpl:116
+//line views/datastream.qtpl:115
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/datastream.qtpl:116
+//line views/datastream.qtpl:115
 	p.StreamBody(qw422016)
-//line views/datastream.qtpl:116
+//line views/datastream.qtpl:115
 	qt422016.ReleaseWriter(qw422016)
-//line views/datastream.qtpl:116
+//line views/datastream.qtpl:115
 }
 
-//line views/datastream.qtpl:116
+//line views/datastream.qtpl:115
 func (p *DatastreamPage) Body() string {
-//line views/datastream.qtpl:116
+//line views/datastream.qtpl:115
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/datastream.qtpl:116
+//line views/datastream.qtpl:115
 	p.WriteBody(qb422016)
-//line views/datastream.qtpl:116
+//line views/datastream.qtpl:115
 	qs422016 := string(qb422016.B)
-//line views/datastream.qtpl:116
+//line views/datastream.qtpl:115
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/datastream.qtpl:116
+//line views/datastream.qtpl:115
 	return qs422016
-//line views/datastream.qtpl:116
+//line views/datastream.qtpl:115
 }
 
-//line views/datastream.qtpl:118
-func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastream, start, end time.Time) {
-//line views/datastream.qtpl:118
+//line views/datastream.qtpl:117
+func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start, end time.Time) {
+//line views/datastream.qtpl:117
 	qw422016.N().S(`
     <div id="chart" class="w-full h-full">
     </div>
@@ -294,17 +291,17 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
             let max = end.getTime()/1000
             plot.setScale('x', {min, max})
             const ws = new WebSocket(getWebSocketURL(`)
-//line views/datastream.qtpl:118
+//line views/datastream.qtpl:117
 	qw422016.N().S("`")
-//line views/datastream.qtpl:118
+//line views/datastream.qtpl:117
 	qw422016.N().S(`/overview/datastreams/`)
-//line views/datastream.qtpl:146
+//line views/datastream.qtpl:145
 	qw422016.E().S(ds.ID.String())
-//line views/datastream.qtpl:146
+//line views/datastream.qtpl:145
 	qw422016.N().S(`/stream?start=${start.toISOString()}&end=${end.toISOString()}`)
-//line views/datastream.qtpl:146
+//line views/datastream.qtpl:145
 	qw422016.N().S("`")
-//line views/datastream.qtpl:146
+//line views/datastream.qtpl:145
 	qw422016.N().S(`))
             ws.onmessage = (event) => {
                 const reader = new FileReader();
@@ -370,13 +367,13 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
                     {
                         stroke: "red",
                         label: "`)
-//line views/datastream.qtpl:210
+//line views/datastream.qtpl:209
 	qw422016.E().S(ds.ObservedProperty)
-//line views/datastream.qtpl:210
+//line views/datastream.qtpl:209
 	qw422016.N().S(` (`)
-//line views/datastream.qtpl:210
+//line views/datastream.qtpl:209
 	qw422016.E().S(ds.UnitOfMeasurement)
-//line views/datastream.qtpl:210
+//line views/datastream.qtpl:209
 	qw422016.N().S(`)"
                     }
                 ]
@@ -394,41 +391,41 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds measurements.Datastrea
     }
     </script>
 `)
-//line views/datastream.qtpl:226
+//line views/datastream.qtpl:225
 }
 
-//line views/datastream.qtpl:226
-func writerenderDataStream(qq422016 qtio422016.Writer, ds measurements.Datastream, start, end time.Time) {
-//line views/datastream.qtpl:226
+//line views/datastream.qtpl:225
+func writerenderDataStream(qq422016 qtio422016.Writer, ds api.Datastream, start, end time.Time) {
+//line views/datastream.qtpl:225
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/datastream.qtpl:226
+//line views/datastream.qtpl:225
 	streamrenderDataStream(qw422016, ds, start, end)
-//line views/datastream.qtpl:226
+//line views/datastream.qtpl:225
 	qt422016.ReleaseWriter(qw422016)
-//line views/datastream.qtpl:226
+//line views/datastream.qtpl:225
 }
 
-//line views/datastream.qtpl:226
-func renderDataStream(ds measurements.Datastream, start, end time.Time) string {
-//line views/datastream.qtpl:226
+//line views/datastream.qtpl:225
+func renderDataStream(ds api.Datastream, start, end time.Time) string {
+//line views/datastream.qtpl:225
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/datastream.qtpl:226
+//line views/datastream.qtpl:225
 	writerenderDataStream(qb422016, ds, start, end)
-//line views/datastream.qtpl:226
+//line views/datastream.qtpl:225
 	qs422016 := string(qb422016.B)
-//line views/datastream.qtpl:226
+//line views/datastream.qtpl:225
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/datastream.qtpl:226
+//line views/datastream.qtpl:225
 	return qs422016
-//line views/datastream.qtpl:226
+//line views/datastream.qtpl:225
 }
 
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:228
 type DatastreamPage struct {
 	BasePage
-	Device     devices.Device
-	Sensor     devices.Sensor
-	Datastream measurements.Datastream
+	Device     api.Device
+	Sensor     api.Sensor
+	Datastream api.Datastream
 	Start      time.Time
 	End        time.Time
 }

@@ -5,7 +5,7 @@
 package views
 
 //line views/deviceListPage.qtpl:1
-import "sensorbucket.nl/sensorbucket/services/core/devices"
+import "sensorbucket.nl/sensorbucket/pkg/api"
 
 //line views/deviceListPage.qtpl:3
 import (
@@ -80,7 +80,7 @@ func (p *DeviceListPage) Body() string {
 }
 
 //line views/deviceListPage.qtpl:19
-func StreamRenderFilters(qw422016 *qt422016.Writer, sensorGroup *devices.SensorGroup, oob bool) {
+func StreamRenderFilters(qw422016 *qt422016.Writer, sensorGroup *api.SensorGroup, oob bool) {
 //line views/deviceListPage.qtpl:19
 	qw422016.N().S(`
     <fieldset
@@ -146,7 +146,7 @@ func StreamRenderFilters(qw422016 *qt422016.Writer, sensorGroup *devices.SensorG
 }
 
 //line views/deviceListPage.qtpl:54
-func WriteRenderFilters(qq422016 qtio422016.Writer, sensorGroup *devices.SensorGroup, oob bool) {
+func WriteRenderFilters(qq422016 qtio422016.Writer, sensorGroup *api.SensorGroup, oob bool) {
 //line views/deviceListPage.qtpl:54
 	qw422016 := qt422016.AcquireWriter(qq422016)
 //line views/deviceListPage.qtpl:54
@@ -157,7 +157,7 @@ func WriteRenderFilters(qq422016 qtio422016.Writer, sensorGroup *devices.SensorG
 }
 
 //line views/deviceListPage.qtpl:54
-func RenderFilters(sensorGroup *devices.SensorGroup, oob bool) string {
+func RenderFilters(sensorGroup *api.SensorGroup, oob bool) string {
 //line views/deviceListPage.qtpl:54
 	qb422016 := qt422016.AcquireByteBuffer()
 //line views/deviceListPage.qtpl:54
@@ -172,7 +172,7 @@ func RenderFilters(sensorGroup *devices.SensorGroup, oob bool) string {
 }
 
 //line views/deviceListPage.qtpl:56
-func StreamSensorGroupSearch(qw422016 *qt422016.Writer, sgs []devices.SensorGroup) {
+func StreamSensorGroupSearch(qw422016 *qt422016.Writer, sgs []api.SensorGroup) {
 //line views/deviceListPage.qtpl:56
 	qw422016.N().S(`
     `)
@@ -210,7 +210,7 @@ func StreamSensorGroupSearch(qw422016 *qt422016.Writer, sgs []devices.SensorGrou
 }
 
 //line views/deviceListPage.qtpl:67
-func WriteSensorGroupSearch(qq422016 qtio422016.Writer, sgs []devices.SensorGroup) {
+func WriteSensorGroupSearch(qq422016 qtio422016.Writer, sgs []api.SensorGroup) {
 //line views/deviceListPage.qtpl:67
 	qw422016 := qt422016.AcquireWriter(qq422016)
 //line views/deviceListPage.qtpl:67
@@ -221,7 +221,7 @@ func WriteSensorGroupSearch(qq422016 qtio422016.Writer, sgs []devices.SensorGrou
 }
 
 //line views/deviceListPage.qtpl:67
-func SensorGroupSearch(sgs []devices.SensorGroup) string {
+func SensorGroupSearch(sgs []api.SensorGroup) string {
 //line views/deviceListPage.qtpl:67
 	qb422016 := qt422016.AcquireByteBuffer()
 //line views/deviceListPage.qtpl:67
@@ -236,7 +236,7 @@ func SensorGroupSearch(sgs []devices.SensorGroup) string {
 }
 
 //line views/deviceListPage.qtpl:69
-func StreamRenderDeviceTable(qw422016 *qt422016.Writer, devices []devices.Device, nextPage string) {
+func StreamRenderDeviceTable(qw422016 *qt422016.Writer, devices []api.Device, nextPage string) {
 //line views/deviceListPage.qtpl:69
 	qw422016.N().S(`
     <table class="w-full text-sm border-separate border-spacing-0" id="device-table">
@@ -269,7 +269,7 @@ func StreamRenderDeviceTable(qw422016 *qt422016.Writer, devices []devices.Device
 }
 
 //line views/deviceListPage.qtpl:91
-func WriteRenderDeviceTable(qq422016 qtio422016.Writer, devices []devices.Device, nextPage string) {
+func WriteRenderDeviceTable(qq422016 qtio422016.Writer, devices []api.Device, nextPage string) {
 //line views/deviceListPage.qtpl:91
 	qw422016 := qt422016.AcquireWriter(qq422016)
 //line views/deviceListPage.qtpl:91
@@ -280,7 +280,7 @@ func WriteRenderDeviceTable(qq422016 qtio422016.Writer, devices []devices.Device
 }
 
 //line views/deviceListPage.qtpl:91
-func RenderDeviceTable(devices []devices.Device, nextPage string) string {
+func RenderDeviceTable(devices []api.Device, nextPage string) string {
 //line views/deviceListPage.qtpl:91
 	qb422016 := qt422016.AcquireByteBuffer()
 //line views/deviceListPage.qtpl:91
@@ -295,7 +295,7 @@ func RenderDeviceTable(devices []devices.Device, nextPage string) string {
 }
 
 //line views/deviceListPage.qtpl:93
-func StreamRenderDeviceTableRows(qw422016 *qt422016.Writer, devices []devices.Device, nextPage string) {
+func StreamRenderDeviceTableRows(qw422016 *qt422016.Writer, devices []api.Device, nextPage string) {
 //line views/deviceListPage.qtpl:93
 	qw422016.N().S(`
     `)
@@ -363,7 +363,7 @@ func StreamRenderDeviceTableRows(qw422016 *qt422016.Writer, devices []devices.De
 }
 
 //line views/deviceListPage.qtpl:114
-func WriteRenderDeviceTableRows(qq422016 qtio422016.Writer, devices []devices.Device, nextPage string) {
+func WriteRenderDeviceTableRows(qq422016 qtio422016.Writer, devices []api.Device, nextPage string) {
 //line views/deviceListPage.qtpl:114
 	qw422016 := qt422016.AcquireWriter(qq422016)
 //line views/deviceListPage.qtpl:114
@@ -374,7 +374,7 @@ func WriteRenderDeviceTableRows(qq422016 qtio422016.Writer, devices []devices.De
 }
 
 //line views/deviceListPage.qtpl:114
-func RenderDeviceTableRows(devices []devices.Device, nextPage string) string {
+func RenderDeviceTableRows(devices []api.Device, nextPage string) string {
 //line views/deviceListPage.qtpl:114
 	qb422016 := qt422016.AcquireByteBuffer()
 //line views/deviceListPage.qtpl:114
@@ -389,7 +389,7 @@ func RenderDeviceTableRows(devices []devices.Device, nextPage string) string {
 }
 
 //line views/deviceListPage.qtpl:116
-func StreamRenderMap(qw422016 *qt422016.Writer, sensorGroup *devices.SensorGroup) {
+func StreamRenderMap(qw422016 *qt422016.Writer, sensorGroup *api.SensorGroup) {
 //line views/deviceListPage.qtpl:116
 	qw422016.N().S(`
     <div 
@@ -462,7 +462,7 @@ func StreamRenderMap(qw422016 *qt422016.Writer, sensorGroup *devices.SensorGroup
 }
 
 //line views/deviceListPage.qtpl:182
-func WriteRenderMap(qq422016 qtio422016.Writer, sensorGroup *devices.SensorGroup) {
+func WriteRenderMap(qq422016 qtio422016.Writer, sensorGroup *api.SensorGroup) {
 //line views/deviceListPage.qtpl:182
 	qw422016 := qt422016.AcquireWriter(qq422016)
 //line views/deviceListPage.qtpl:182
@@ -473,7 +473,7 @@ func WriteRenderMap(qq422016 qtio422016.Writer, sensorGroup *devices.SensorGroup
 }
 
 //line views/deviceListPage.qtpl:182
-func RenderMap(sensorGroup *devices.SensorGroup) string {
+func RenderMap(sensorGroup *api.SensorGroup) string {
 //line views/deviceListPage.qtpl:182
 	qb422016 := qt422016.AcquireByteBuffer()
 //line views/deviceListPage.qtpl:182
@@ -490,7 +490,7 @@ func RenderMap(sensorGroup *devices.SensorGroup) string {
 //line views/deviceListPage.qtpl:185
 type DeviceListPage struct {
 	BasePage
-	Devices         []devices.Device
+	Devices         []api.Device
 	DevicesNextPage string
-	SensorGroup     *devices.SensorGroup
+	SensorGroup     *api.SensorGroup
 }

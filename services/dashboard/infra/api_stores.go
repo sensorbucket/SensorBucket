@@ -29,12 +29,9 @@ type SensorBucketAPI struct {
 	devicesEndpoint   string
 }
 
-func NewSensorBucketAPI(ingressEndpoint, pipelinesEndpoint, tracesEndpoint, devicesEndpoint string) *SensorBucketAPI {
-	cfg := api.NewConfiguration()
-	cfg.Scheme = "http"
-	cfg.Host = "caddy"
+func NewSensorBucketAPI(client *api.APIClient, ingressEndpoint, pipelinesEndpoint, tracesEndpoint, devicesEndpoint string) *SensorBucketAPI {
 	return &SensorBucketAPI{
-		api:               api.NewAPIClient(cfg),
+		api:               client,
 		ingressEndpoint:   ingressEndpoint,
 		pipelinesEndpoint: pipelinesEndpoint,
 		tracesEndpoint:    tracesEndpoint,

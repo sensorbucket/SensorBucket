@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"time"
@@ -27,12 +29,16 @@ func main() {
 var (
 	startTS      = time.Now()
 	HTTP_ADDR    = env.Could("HTTP_ADDR", ":3000")
-	STATIC_PATH  = env.Must("STATIC_PATH")
 	EP_INGRESSES = env.Must("EP_INGRESSES")
 	EP_TRACES    = env.Must("EP_TRACES")
 	EP_PIPELINES = env.Must("EP_PIPELINES")
 	EP_DEVICES   = env.Must("EP_DEVICES")
+	EP_CORE      = env.Must("EP_CORE")
+	SB_API       = env.Must("SB_API")
 )
+
+//go:embed static/*
+var staticFS embed.FS
 
 func Run() error {
 	errC := make(chan error, 1)
@@ -44,6 +50,7 @@ func Run() error {
 
 	// Serve static files
 	if os.Getenv("GO_ENV") != "production" {
+		staticPath := env.Could("STATIC_PATH", "")
 		fmt.Println("Serving static files...")
 		router.Use(func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -52,20 +59,26 @@ func Run() error {
 			})
 		})
 		router.Use(middleware.GetHead)
-		fileServer := http.FileServer(http.Dir(STATIC_PATH))
+		fileServer := http.FileServer(http.Dir(staticPath))
 		router.Handle("/static/*", http.StripPrefix("/static", fileServer))
+	} else {
+		fileServer := http.FileServer(http.FS(staticFS))
+		router.Handle("/static/*", fileServer)
 	}
 
+	sbURL, err := url.Parse(SB_API)
+	if err != nil {
+		return fmt.Errorf("could not parse SB_API url: %w", err)
+	}
 	// TODO: Merge this infra with the generated api client
-	sbAPI := dashboardinfra.NewSensorBucketAPI(EP_INGRESSES, EP_PIPELINES, EP_TRACES, EP_DEVICES)
 	cfg := api.NewConfiguration()
-	cfg.Scheme = "http"
-	cfg.Host = "caddy"
-	// cfg.Debug = true
+	cfg.Scheme = sbURL.Scheme
+	cfg.Host = sbURL.Host
 	apiClient := api.NewAPIClient(cfg)
+	sbAPI := dashboardinfra.NewSensorBucketAPI(apiClient, EP_INGRESSES, EP_PIPELINES, EP_TRACES, EP_DEVICES)
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/overview", http.StatusFound) })
-	router.Mount("/overview", routes.CreateOverviewPageHandler())
+	router.Mount("/overview", routes.CreateOverviewPageHandler(apiClient))
 	router.Mount("/ingress", routes.CreateIngressPageHandler(sbAPI, sbAPI, sbAPI, sbAPI))
 	router.Mount("/workers", routes.CreateWorkerPageHandler(apiClient))
 	srv := &http.Server{
@@ -83,7 +96,6 @@ func Run() error {
 	fmt.Printf("HTTP Server listening on: %s\n", srv.Addr)
 
 	// Wait for fatal error or interrupt signal
-	var err error
 	select {
 	case <-ctx.Done():
 	case err = <-errC:

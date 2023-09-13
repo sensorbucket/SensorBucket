@@ -23,5 +23,5 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/dashboard ./
 
 FROM scratch AS production
 COPY --from=build /app/dashboard /app/dashboard
-ENTRYPOINT /app/dashboard
+ENTRYPOINT ["/app/dashboard"]
 

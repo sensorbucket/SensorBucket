@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"reflect"
 )
 
 
@@ -1139,6 +1140,8 @@ type ApiListDevicesRequest struct {
 	distance *float32
 	cursor *string
 	limit *float32
+	id *[]int32
+	sensorGroup *[]int32
 }
 
 // Used to filter devices by its properties. This filters devices on whether their property contains the provided value. The value must be a JSON string and depending on your client should be URL Escaped
@@ -1198,6 +1201,18 @@ func (r ApiListDevicesRequest) Cursor(cursor string) ApiListDevicesRequest {
 // The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
 func (r ApiListDevicesRequest) Limit(limit float32) ApiListDevicesRequest {
 	r.limit = &limit
+	return r
+}
+
+// Filter by Device IDs 
+func (r ApiListDevicesRequest) Id(id []int32) ApiListDevicesRequest {
+	r.id = &id
+	return r
+}
+
+// Filter by device group 
+func (r ApiListDevicesRequest) SensorGroup(sensorGroup []int32) ApiListDevicesRequest {
+	r.sensorGroup = &sensorGroup
 	return r
 }
 
@@ -1278,6 +1293,28 @@ func (a *DevicesApiService) ListDevicesExecute(r ApiListDevicesRequest) (*ListDe
 	}
 	if r.limit != nil {
 		localVarQueryParams.Add("limit", parameterToString(*r.limit, ""))
+	}
+	if r.id != nil {
+		t := *r.id
+		if reflect.TypeOf(t).Kind() == reflect.Slice {
+			s := reflect.ValueOf(t)
+			for i := 0; i < s.Len(); i++ {
+				localVarQueryParams.Add("id", parameterToString(s.Index(i), "multi"))
+			}
+		} else {
+			localVarQueryParams.Add("id", parameterToString(t, "multi"))
+		}
+	}
+	if r.sensorGroup != nil {
+		t := *r.sensorGroup
+		if reflect.TypeOf(t).Kind() == reflect.Slice {
+			s := reflect.ValueOf(t)
+			for i := 0; i < s.Len(); i++ {
+				localVarQueryParams.Add("sensor_group", parameterToString(s.Index(i), "multi"))
+			}
+		} else {
+			localVarQueryParams.Add("sensor_group", parameterToString(t, "multi"))
+		}
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}

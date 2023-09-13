@@ -1,13 +1,13 @@
-FROM golang:1.18-alpine AS dev
-WORKDIR /workspace
-COPY go.mod go.sum ./
+FROM golang:1.18 AS builder
+WORKDIR /sensorbucket
+
+COPY go.mod .
+COPY go.sum .
 RUN go mod download
 
-FROM dev AS build
-WORKDIR /workspace
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/fission-rmq-connector /workspace/services/fission-rmq-connector/
+RUN CGO_ENABLED=0 go build -ldflags '-extldflags "-static"' -tags timetzdata -o /fission-rmq-connector services/fission-rmq-connector/main.go
 
 FROM scratch AS production
-COPY --from=build /app/fission-rmq-connector /fission-rmq-connector
+COPY --from=builder /fission-rmq-connector /fission-rmq-connector
 ENTRYPOINT ["/fission-rmq-connector"]

@@ -1,7 +1,7 @@
 /*
 Sensorbucket API
 
-SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex 
+SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex
 
 API version: 1.0
 Contact: info@pollex.nl
@@ -13,18 +13,21 @@ package api
 
 import (
 	"encoding/json"
+	"time"
 )
 
 // GetDatastream200ResponseData struct for GetDatastream200ResponseData
 type GetDatastream200ResponseData struct {
-	Id *string `json:"id,omitempty"`
-	Description *string `json:"description,omitempty"`
-	SensorId *float32 `json:"sensor_id,omitempty"`
-	ObservedProperty *string `json:"observed_property,omitempty"`
-	UnitOfMeasurement *string `json:"unit_of_measurement,omitempty"`
-	CreatedAt *string `json:"created_at,omitempty"`
-	Device *Device `json:"device,omitempty"`
-	Sensor *Sensor `json:"sensor,omitempty"`
+	Id                   *string    `json:"id,omitempty"`
+	Description          *string    `json:"description,omitempty"`
+	SensorId             *float32   `json:"sensor_id,omitempty"`
+	ObservedProperty     *string    `json:"observed_property,omitempty"`
+	UnitOfMeasurement    *string    `json:"unit_of_measurement,omitempty"`
+	CreatedAt            *string    `json:"created_at,omitempty"`
+	Device               *Device    `json:"device,omitempty"`
+	Sensor               *Sensor    `json:"sensor,omitempty"`
+	MeasurementValue     *float32   `json:"measurement_value,omitempty"`
+	MeasurementTimestamp *time.Time `json:"measurement_timestamp,omitempty"`
 }
 
 // NewGetDatastream200ResponseData instantiates a new GetDatastream200ResponseData object
@@ -57,7 +60,7 @@ func (o *GetDatastream200ResponseData) GetId() string {
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetIdOk() (*string, bool) {
 	if o == nil || isNil(o.Id) {
-    return nil, false
+		return nil, false
 	}
 	return o.Id, true
 }
@@ -89,7 +92,7 @@ func (o *GetDatastream200ResponseData) GetDescription() string {
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetDescriptionOk() (*string, bool) {
 	if o == nil || isNil(o.Description) {
-    return nil, false
+		return nil, false
 	}
 	return o.Description, true
 }
@@ -121,7 +124,7 @@ func (o *GetDatastream200ResponseData) GetSensorId() float32 {
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetSensorIdOk() (*float32, bool) {
 	if o == nil || isNil(o.SensorId) {
-    return nil, false
+		return nil, false
 	}
 	return o.SensorId, true
 }
@@ -153,7 +156,7 @@ func (o *GetDatastream200ResponseData) GetObservedProperty() string {
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetObservedPropertyOk() (*string, bool) {
 	if o == nil || isNil(o.ObservedProperty) {
-    return nil, false
+		return nil, false
 	}
 	return o.ObservedProperty, true
 }
@@ -185,7 +188,7 @@ func (o *GetDatastream200ResponseData) GetUnitOfMeasurement() string {
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetUnitOfMeasurementOk() (*string, bool) {
 	if o == nil || isNil(o.UnitOfMeasurement) {
-    return nil, false
+		return nil, false
 	}
 	return o.UnitOfMeasurement, true
 }
@@ -217,7 +220,7 @@ func (o *GetDatastream200ResponseData) GetCreatedAt() string {
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetCreatedAtOk() (*string, bool) {
 	if o == nil || isNil(o.CreatedAt) {
-    return nil, false
+		return nil, false
 	}
 	return o.CreatedAt, true
 }
@@ -249,7 +252,7 @@ func (o *GetDatastream200ResponseData) GetDevice() Device {
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetDeviceOk() (*Device, bool) {
 	if o == nil || isNil(o.Device) {
-    return nil, false
+		return nil, false
 	}
 	return o.Device, true
 }
@@ -281,7 +284,7 @@ func (o *GetDatastream200ResponseData) GetSensor() Sensor {
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetSensorOk() (*Sensor, bool) {
 	if o == nil || isNil(o.Sensor) {
-    return nil, false
+		return nil, false
 	}
 	return o.Sensor, true
 }
@@ -298,6 +301,70 @@ func (o *GetDatastream200ResponseData) HasSensor() bool {
 // SetSensor gets a reference to the given Sensor and assigns it to the Sensor field.
 func (o *GetDatastream200ResponseData) SetSensor(v Sensor) {
 	o.Sensor = &v
+}
+
+// GetMeasurementValue returns the MeasurementValue field value if set, zero value otherwise.
+func (o *GetDatastream200ResponseData) GetMeasurementValue() float32 {
+	if o == nil || isNil(o.MeasurementValue) {
+		var ret float32
+		return ret
+	}
+	return *o.MeasurementValue
+}
+
+// GetMeasurementValueOk returns a tuple with the MeasurementValue field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetDatastream200ResponseData) GetMeasurementValueOk() (*float32, bool) {
+	if o == nil || isNil(o.MeasurementValue) {
+		return nil, false
+	}
+	return o.MeasurementValue, true
+}
+
+// HasMeasurementValue returns a boolean if a field has been set.
+func (o *GetDatastream200ResponseData) HasMeasurementValue() bool {
+	if o != nil && !isNil(o.MeasurementValue) {
+		return true
+	}
+
+	return false
+}
+
+// SetMeasurementValue gets a reference to the given float32 and assigns it to the MeasurementValue field.
+func (o *GetDatastream200ResponseData) SetMeasurementValue(v float32) {
+	o.MeasurementValue = &v
+}
+
+// GetMeasurementTimestamp returns the MeasurementTimestamp field value if set, zero value otherwise.
+func (o *GetDatastream200ResponseData) GetMeasurementTimestamp() time.Time {
+	if o == nil || isNil(o.MeasurementTimestamp) {
+		var ret time.Time
+		return ret
+	}
+	return *o.MeasurementTimestamp
+}
+
+// GetMeasurementTimestampOk returns a tuple with the MeasurementTimestamp field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetDatastream200ResponseData) GetMeasurementTimestampOk() (*time.Time, bool) {
+	if o == nil || isNil(o.MeasurementTimestamp) {
+		return nil, false
+	}
+	return o.MeasurementTimestamp, true
+}
+
+// HasMeasurementTimestamp returns a boolean if a field has been set.
+func (o *GetDatastream200ResponseData) HasMeasurementTimestamp() bool {
+	if o != nil && !isNil(o.MeasurementTimestamp) {
+		return true
+	}
+
+	return false
+}
+
+// SetMeasurementTimestamp gets a reference to the given time.Time and assigns it to the MeasurementTimestamp field.
+func (o *GetDatastream200ResponseData) SetMeasurementTimestamp(v time.Time) {
+	o.MeasurementTimestamp = &v
 }
 
 func (o GetDatastream200ResponseData) MarshalJSON() ([]byte, error) {
@@ -325,6 +392,12 @@ func (o GetDatastream200ResponseData) MarshalJSON() ([]byte, error) {
 	}
 	if !isNil(o.Sensor) {
 		toSerialize["sensor"] = o.Sensor
+	}
+	if !isNil(o.MeasurementValue) {
+		toSerialize["measurement_value"] = o.MeasurementValue
+	}
+	if !isNil(o.MeasurementTimestamp) {
+		toSerialize["measurement_timestamp"] = o.MeasurementTimestamp
 	}
 	return json.Marshal(toSerialize)
 }
@@ -364,5 +437,3 @@ func (v *NullableGetDatastream200ResponseData) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

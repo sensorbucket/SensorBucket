@@ -1,5 +1,4 @@
-{% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
-{% import "sensorbucket.nl/sensorbucket/services/core/measurements" %}
+{% import "sensorbucket.nl/sensorbucket/pkg/api" %}
 
 {% func (p *SensorDetailPage) Body() %}
     <div class="flex gap-3 text-sm my-4 italic items-center" hx-target="main">
@@ -69,8 +68,8 @@
 {% code
 type SensorDetailPage struct {
     BasePage
-    Device devices.Device
-    Sensor devices.Sensor
-    Datastreams []measurements.Datastream
+    Device api.Device
+    Sensor api.Sensor
+    Datastreams []api.Datastream
 }
 %}

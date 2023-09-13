@@ -1,5 +1,5 @@
 {% import "time" %}
-{% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
+{% import "sensorbucket.nl/sensorbucket/pkg/api" %}
 {% func (p *IngressPage) Body() %}
     <div 
         class="w-full xl:w-2/3 mx-auto bg-white border rounded-md"
@@ -88,6 +88,6 @@ type Ingress struct {
     TracingID string
     CreatedAt time.Time
     Steps []IngressStep
-    Device devices.Device
+    Device api.Device
 }
 %}

@@ -5,7 +5,7 @@
 package views
 
 //line views/deviceDetailPage.qtpl:1
-import "sensorbucket.nl/sensorbucket/services/core/devices"
+import "sensorbucket.nl/sensorbucket/pkg/api"
 
 //line views/deviceDetailPage.qtpl:3
 import (
@@ -153,5 +153,5 @@ func (p *DeviceDetailPage) Body() string {
 //line views/deviceDetailPage.qtpl:59
 type DeviceDetailPage struct {
 	BasePage
-	Device devices.Device
+	Device api.Device
 }

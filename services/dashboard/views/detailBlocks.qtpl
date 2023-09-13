@@ -1,7 +1,8 @@
+{% import "sensorbucket.nl/sensorbucket/pkg/api" %}
 {% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
 {% import "fmt" %}
 
-{% func DeviceDetailBlock(device devices.Device) %}
+{% func DeviceDetailBlock(device api.Device) %}
     <div class="grid grid-cols-3 gap-x-8 gap-y-3 [&>*]:min-h-[2rem] text-sm">
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Device Code</small>
@@ -63,7 +64,7 @@
     </div>
 {% endfunc %}
 
-{% func SensorDetailBlock(sensor devices.Sensor) %}
+{% func SensorDetailBlock(sensor api.Sensor) %}
     <div class="grid grid-cols-3 gap-x-8 gap-y-3 [&>*]:min-h-[2rem] text-sm">
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Sensor ID</small>
@@ -102,7 +103,7 @@
     </div>
 {% endfunc %}
 
-{% func renderDeviceMap(device devices.Device) %}
+{% func renderDeviceMap(device api.Device) %}
     {% if device.Latitude != nil && device.Longitude != nil %}
         <div
             class="w-full h-96" 
