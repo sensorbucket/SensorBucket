@@ -25,6 +25,7 @@
 
         const m = L.map(mapEl).setView([latitude, longitude], 9)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>',
             maxZoom: 19,
         }).addTo(m);
         target.leaflet = m
