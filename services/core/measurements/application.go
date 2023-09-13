@@ -175,7 +175,8 @@ func (s *Service) QueryMeasurements(f Filter, r pagination.Request) (*pagination
 }
 
 type DatastreamFilter struct {
-	Sensor []int
+	Sensor           []int
+	ObservedProperty []string
 }
 
 func (s *Service) ListDatastreams(ctx context.Context, filter DatastreamFilter, r pagination.Request) (*pagination.Page[Datastream], error) {
