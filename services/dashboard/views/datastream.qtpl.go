@@ -57,7 +57,7 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
         <span>/</span>
         <span>`)
 //line views/datastream.qtpl:13
-	qw422016.E().S(p.Datastream.ID.String())
+	qw422016.E().S(p.Datastream.Id)
 //line views/datastream.qtpl:13
 	qw422016.N().S(`</span>
     </div>
@@ -186,7 +186,7 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
 	qw422016.N().S(`</small>
                 <small>`)
 //line views/datastream.qtpl:90
-	qw422016.E().S(p.Datastream.ID.String())
+	qw422016.E().S(p.Datastream.Id)
 //line views/datastream.qtpl:90
 	qw422016.N().S(`</small>
             </header>
@@ -296,7 +296,7 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start,
 //line views/datastream.qtpl:117
 	qw422016.N().S(`/overview/datastreams/`)
 //line views/datastream.qtpl:145
-	qw422016.E().S(ds.ID.String())
+	qw422016.E().S(ds.Id)
 //line views/datastream.qtpl:145
 	qw422016.N().S(`/stream?start=${start.toISOString()}&end=${end.toISOString()}`)
 //line views/datastream.qtpl:145

@@ -24,36 +24,42 @@ get:
       description: Used to filter devices within a bounding box
       schema:
         type: number
+        format: double
         example: 3.6175560329103202
     - in: query
       name: west
       description: Used to filter devices within a bounding box
       schema:
         type: number
+        format: double
         example: 51.518796779610035
     - in: query
       name: east
       description: Used to filter devices within a bounding box
       schema:
         type: number
+        format: double
         example: 51.47912508218688
     - in: query
       name: south
       description: Used to filter devices within a bounding box
       schema:
         type: number
+        format: double
         example: 3.655955445579366
     - in: query
       name: latitude
       description: Used to filter devices within a distance from a point
       schema:
         type: number
+        format: double
         example: 51.496227862014685
     - in: query
       name: longitude
       description: Used to filter devices within a distance from a point
       schema:
         type: number
+        format: double
         example: 3.615071953647924
     - in: query
       name: distance
@@ -61,7 +67,7 @@ get:
         Used to filter devices within a distance from a point. 
         The distance is given in meters.
       schema:
-        type: number
+        type: integer
         example: 1000
     - in: query
       name: cursor
@@ -73,7 +79,7 @@ get:
       description: |
         The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
       schema:
-        type: number
+        type: integer
     - name: id
       description: |
         Filter by Device IDs
@@ -84,6 +90,7 @@ get:
         type: array
         items:
           type: integer
+          format: int64
     - name: sensor_group
       description: |
         Filter by device group
@@ -94,6 +101,7 @@ get:
         type: array
         items:
           type: integer
+          format: int64
   responses:
     '200':
       description: OK

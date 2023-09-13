@@ -28,7 +28,7 @@ type DevicesApiService service
 type ApiAddSensorToSensorGroupRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
-	id float32
+	id int32
 	addSensorToSensorGroupRequest *AddSensorToSensorGroupRequest
 }
 
@@ -51,7 +51,7 @@ Add a sensor by its ID to a sensor group by its ID
  @param id The identifier of the Sensor Group
  @return ApiAddSensorToSensorGroupRequest
 */
-func (a *DevicesApiService) AddSensorToSensorGroup(ctx context.Context, id float32) ApiAddSensorToSensorGroupRequest {
+func (a *DevicesApiService) AddSensorToSensorGroup(ctx context.Context, id int32) ApiAddSensorToSensorGroupRequest {
 	return ApiAddSensorToSensorGroupRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -251,7 +251,7 @@ func (a *DevicesApiService) CreateDeviceExecute(r ApiCreateDeviceRequest) (*Crea
 type ApiCreateDeviceSensorRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
-	deviceId float32
+	deviceId int32
 	createSensorRequest *CreateSensorRequest
 }
 
@@ -277,7 +277,7 @@ As this would result in conflicts while matching incoming messages to devices an
  @param deviceId The identifier of the device
  @return ApiCreateDeviceSensorRequest
 */
-func (a *DevicesApiService) CreateDeviceSensor(ctx context.Context, deviceId float32) ApiCreateDeviceSensorRequest {
+func (a *DevicesApiService) CreateDeviceSensor(ctx context.Context, deviceId int32) ApiCreateDeviceSensorRequest {
 	return ApiCreateDeviceSensorRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -474,7 +474,7 @@ func (a *DevicesApiService) CreateSensorGroupExecute(r ApiCreateSensorGroupReque
 type ApiDeleteDeviceSensorRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
-	deviceId float32
+	deviceId int32
 	sensorCode string
 }
 
@@ -495,7 +495,7 @@ Since a sensor can only be related to one and only one device at a time, the sen
  @param sensorCode The code of the sensor
  @return ApiDeleteDeviceSensorRequest
 */
-func (a *DevicesApiService) DeleteDeviceSensor(ctx context.Context, deviceId float32, sensorCode string) ApiDeleteDeviceSensorRequest {
+func (a *DevicesApiService) DeleteDeviceSensor(ctx context.Context, deviceId int32, sensorCode string) ApiDeleteDeviceSensorRequest {
 	return ApiDeleteDeviceSensorRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -584,8 +584,8 @@ func (a *DevicesApiService) DeleteDeviceSensorExecute(r ApiDeleteDeviceSensorReq
 type ApiDeleteSensorFromSensorGroupRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
-	id float32
-	sensorId float32
+	id int32
+	sensorId int32
 }
 
 func (r ApiDeleteSensorFromSensorGroupRequest) Execute() (*DeleteSensorFromSensorGroup200Response, *http.Response, error) {
@@ -603,7 +603,7 @@ Delete a sensor from a sensor group
  @param sensorId The id of the sensor
  @return ApiDeleteSensorFromSensorGroupRequest
 */
-func (a *DevicesApiService) DeleteSensorFromSensorGroup(ctx context.Context, id float32, sensorId float32) ApiDeleteSensorFromSensorGroupRequest {
+func (a *DevicesApiService) DeleteSensorFromSensorGroup(ctx context.Context, id int32, sensorId int32) ApiDeleteSensorFromSensorGroupRequest {
 	return ApiDeleteSensorFromSensorGroupRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -692,7 +692,7 @@ func (a *DevicesApiService) DeleteSensorFromSensorGroupExecute(r ApiDeleteSensor
 type ApiDeleteSensorGroupRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
-	id float32
+	id int32
 }
 
 func (r ApiDeleteSensorGroupRequest) Execute() (*DeleteSensorGroup200Response, *http.Response, error) {
@@ -709,7 +709,7 @@ Delete a sensor group
  @param id The id of the sensor group
  @return ApiDeleteSensorGroupRequest
 */
-func (a *DevicesApiService) DeleteSensorGroup(ctx context.Context, id float32) ApiDeleteSensorGroupRequest {
+func (a *DevicesApiService) DeleteSensorGroup(ctx context.Context, id int32) ApiDeleteSensorGroupRequest {
 	return ApiDeleteSensorGroupRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -796,7 +796,7 @@ func (a *DevicesApiService) DeleteSensorGroupExecute(r ApiDeleteSensorGroupReque
 type ApiGetDeviceRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
-	id float32
+	id int64
 }
 
 func (r ApiGetDeviceRequest) Execute() (*GetDevice200Response, *http.Response, error) {
@@ -815,7 +815,7 @@ The returned device will also include the full model of the sensors attached to 
  @param id The numeric ID of the device
  @return ApiGetDeviceRequest
 */
-func (a *DevicesApiService) GetDevice(ctx context.Context, id float32) ApiGetDeviceRequest {
+func (a *DevicesApiService) GetDevice(ctx context.Context, id int64) ApiGetDeviceRequest {
 	return ApiGetDeviceRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -902,7 +902,7 @@ func (a *DevicesApiService) GetDeviceExecute(r ApiGetDeviceRequest) (*GetDevice2
 type ApiGetSensorGroupRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
-	id float32
+	id int64
 }
 
 func (r ApiGetSensorGroupRequest) Execute() (*GetSensorGroup200Response, *http.Response, error) {
@@ -919,7 +919,7 @@ Get the sensor group with the given identifier.
  @param id The numeric ID of the sensor group
  @return ApiGetSensorGroupRequest
 */
-func (a *DevicesApiService) GetSensorGroup(ctx context.Context, id float32) ApiGetSensorGroupRequest {
+func (a *DevicesApiService) GetSensorGroup(ctx context.Context, id int64) ApiGetSensorGroupRequest {
 	return ApiGetSensorGroupRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1006,9 +1006,9 @@ func (a *DevicesApiService) GetSensorGroupExecute(r ApiGetSensorGroupRequest) (*
 type ApiListDeviceSensorsRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
-	deviceId float32
+	deviceId int32
 	cursor *string
-	limit *float32
+	limit *int32
 }
 
 // The cursor for the current page
@@ -1018,7 +1018,7 @@ func (r ApiListDeviceSensorsRequest) Cursor(cursor string) ApiListDeviceSensorsR
 }
 
 // The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
-func (r ApiListDeviceSensorsRequest) Limit(limit float32) ApiListDeviceSensorsRequest {
+func (r ApiListDeviceSensorsRequest) Limit(limit int32) ApiListDeviceSensorsRequest {
 	r.limit = &limit
 	return r
 }
@@ -1037,7 +1037,7 @@ List all sensors related to the device with the provided identifier
  @param deviceId The identifier of the device
  @return ApiListDeviceSensorsRequest
 */
-func (a *DevicesApiService) ListDeviceSensors(ctx context.Context, deviceId float32) ApiListDeviceSensorsRequest {
+func (a *DevicesApiService) ListDeviceSensors(ctx context.Context, deviceId int32) ApiListDeviceSensorsRequest {
 	return ApiListDeviceSensorsRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1131,17 +1131,17 @@ type ApiListDevicesRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
 	properties *string
-	north *float32
-	west *float32
-	east *float32
-	south *float32
-	latitude *float32
-	longitude *float32
-	distance *float32
+	north *float64
+	west *float64
+	east *float64
+	south *float64
+	latitude *float64
+	longitude *float64
+	distance *int32
 	cursor *string
-	limit *float32
-	id *[]int32
-	sensorGroup *[]int32
+	limit *int32
+	id *[]int64
+	sensorGroup *[]int64
 }
 
 // Used to filter devices by its properties. This filters devices on whether their property contains the provided value. The value must be a JSON string and depending on your client should be URL Escaped
@@ -1151,43 +1151,43 @@ func (r ApiListDevicesRequest) Properties(properties string) ApiListDevicesReque
 }
 
 // Used to filter devices within a bounding box
-func (r ApiListDevicesRequest) North(north float32) ApiListDevicesRequest {
+func (r ApiListDevicesRequest) North(north float64) ApiListDevicesRequest {
 	r.north = &north
 	return r
 }
 
 // Used to filter devices within a bounding box
-func (r ApiListDevicesRequest) West(west float32) ApiListDevicesRequest {
+func (r ApiListDevicesRequest) West(west float64) ApiListDevicesRequest {
 	r.west = &west
 	return r
 }
 
 // Used to filter devices within a bounding box
-func (r ApiListDevicesRequest) East(east float32) ApiListDevicesRequest {
+func (r ApiListDevicesRequest) East(east float64) ApiListDevicesRequest {
 	r.east = &east
 	return r
 }
 
 // Used to filter devices within a bounding box
-func (r ApiListDevicesRequest) South(south float32) ApiListDevicesRequest {
+func (r ApiListDevicesRequest) South(south float64) ApiListDevicesRequest {
 	r.south = &south
 	return r
 }
 
 // Used to filter devices within a distance from a point
-func (r ApiListDevicesRequest) Latitude(latitude float32) ApiListDevicesRequest {
+func (r ApiListDevicesRequest) Latitude(latitude float64) ApiListDevicesRequest {
 	r.latitude = &latitude
 	return r
 }
 
 // Used to filter devices within a distance from a point
-func (r ApiListDevicesRequest) Longitude(longitude float32) ApiListDevicesRequest {
+func (r ApiListDevicesRequest) Longitude(longitude float64) ApiListDevicesRequest {
 	r.longitude = &longitude
 	return r
 }
 
 // Used to filter devices within a distance from a point.  The distance is given in meters. 
-func (r ApiListDevicesRequest) Distance(distance float32) ApiListDevicesRequest {
+func (r ApiListDevicesRequest) Distance(distance int32) ApiListDevicesRequest {
 	r.distance = &distance
 	return r
 }
@@ -1199,19 +1199,19 @@ func (r ApiListDevicesRequest) Cursor(cursor string) ApiListDevicesRequest {
 }
 
 // The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
-func (r ApiListDevicesRequest) Limit(limit float32) ApiListDevicesRequest {
+func (r ApiListDevicesRequest) Limit(limit int32) ApiListDevicesRequest {
 	r.limit = &limit
 	return r
 }
 
 // Filter by Device IDs 
-func (r ApiListDevicesRequest) Id(id []int32) ApiListDevicesRequest {
+func (r ApiListDevicesRequest) Id(id []int64) ApiListDevicesRequest {
 	r.id = &id
 	return r
 }
 
 // Filter by device group 
-func (r ApiListDevicesRequest) SensorGroup(sensorGroup []int32) ApiListDevicesRequest {
+func (r ApiListDevicesRequest) SensorGroup(sensorGroup []int64) ApiListDevicesRequest {
 	r.sensorGroup = &sensorGroup
 	return r
 }
@@ -1374,7 +1374,7 @@ type ApiListSensorGroupsRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
 	cursor *string
-	limit *float32
+	limit *int32
 }
 
 // The cursor for the current page
@@ -1384,7 +1384,7 @@ func (r ApiListSensorGroupsRequest) Cursor(cursor string) ApiListSensorGroupsReq
 }
 
 // The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
-func (r ApiListSensorGroupsRequest) Limit(limit float32) ApiListSensorGroupsRequest {
+func (r ApiListSensorGroupsRequest) Limit(limit int32) ApiListSensorGroupsRequest {
 	r.limit = &limit
 	return r
 }
@@ -1494,7 +1494,7 @@ type ApiListSensorsRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
 	cursor *string
-	limit *float32
+	limit *int32
 }
 
 // The cursor for the current page
@@ -1504,7 +1504,7 @@ func (r ApiListSensorsRequest) Cursor(cursor string) ApiListSensorsRequest {
 }
 
 // The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
-func (r ApiListSensorsRequest) Limit(limit float32) ApiListSensorsRequest {
+func (r ApiListSensorsRequest) Limit(limit int32) ApiListSensorsRequest {
 	r.limit = &limit
 	return r
 }
@@ -1613,7 +1613,7 @@ func (a *DevicesApiService) ListSensorsExecute(r ApiListSensorsRequest) (*ListDe
 type ApiUpdateDeviceRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
-	id float32
+	id int64
 	updateDeviceRequest *UpdateDeviceRequest
 }
 
@@ -1638,7 +1638,7 @@ The request body should contain one or more modifiable properties of the Device.
  @param id The numeric ID of the device
  @return ApiUpdateDeviceRequest
 */
-func (a *DevicesApiService) UpdateDevice(ctx context.Context, id float32) ApiUpdateDeviceRequest {
+func (a *DevicesApiService) UpdateDevice(ctx context.Context, id int64) ApiUpdateDeviceRequest {
 	return ApiUpdateDeviceRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1727,7 +1727,7 @@ func (a *DevicesApiService) UpdateDeviceExecute(r ApiUpdateDeviceRequest) (*Upda
 type ApiUpdateSensorGroupRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
-	id float32
+	id int32
 	updateSensorGroupRequest *UpdateSensorGroupRequest
 }
 
@@ -1752,7 +1752,7 @@ The request body should contain one or more modifiable properties of the sensor 
  @param id The numeric ID of the sensor group
  @return ApiUpdateSensorGroupRequest
 */
-func (a *DevicesApiService) UpdateSensorGroup(ctx context.Context, id float32) ApiUpdateSensorGroupRequest {
+func (a *DevicesApiService) UpdateSensorGroup(ctx context.Context, id int32) ApiUpdateSensorGroupRequest {
 	return ApiUpdateSensorGroupRequest{
 		ApiService: a,
 		ctx: ctx,

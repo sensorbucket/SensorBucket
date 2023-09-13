@@ -10,7 +10,7 @@
         <span>/</span>
         <a href="/overview/devices/{%dl p.Device.GetId()%}/sensors/{%s p.Sensor.Code %}" class="hover:underline text-sky-600">{%s p.Sensor.Code %}</a>
         <span>/</span>
-        <span>{%s p.Datastream.ID.String() %}</span>
+        <span>{%s p.Datastream.Id %}</span>
     </div>
 
     <script type="text/javascript">
@@ -87,7 +87,7 @@
             <header class="flex justify-between text-sm text-slate-600">
                 <small>{%s p.Device.Code %} - {%s p.Sensor.Code %} - {%s p.Datastream.ObservedProperty %}</small>
                 <small>{%s p.Datastream.Description %}</small>
-                <small>{%s p.Datastream.ID.String() %}</small>
+                <small>{%s p.Datastream.Id %}</small>
             </header>
             {%= renderDataStream(p.Datastream, p.Start, p.End) %}
         </div>
@@ -142,7 +142,7 @@
             let min = start.getTime()/1000
             let max = end.getTime()/1000
             plot.setScale('x', {min, max})
-            const ws = new WebSocket(getWebSocketURL(`/overview/datastreams/{%s ds.ID.String() %}/stream?start=${start.toISOString()}&end=${end.toISOString()}`))
+            const ws = new WebSocket(getWebSocketURL(`/overview/datastreams/{%s ds.Id %}/stream?start=${start.toISOString()}&end=${end.toISOString()}`))
             ws.onmessage = (event) => {
                 const reader = new FileReader();
                 reader.onload = function() {

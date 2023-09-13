@@ -80,7 +80,7 @@ func (p *DeviceDetailPage) StreamBody(qw422016 *qt422016.Writer) {
                     <tr class="hover:bg-slate-50 group">
                         <td class="px-4 h-10 border-b">`)
 //line views/deviceDetailPage.qtpl:42
-		qw422016.N().DL(sensor.ID)
+		qw422016.N().DL(sensor.Id)
 //line views/deviceDetailPage.qtpl:42
 		qw422016.N().S(`</td>
                         <td class="border-b"><a
@@ -88,7 +88,7 @@ func (p *DeviceDetailPage) StreamBody(qw422016 *qt422016.Writer) {
                             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
                             href="/overview/devices/`)
 //line views/deviceDetailPage.qtpl:46
-		qw422016.N().DL(p.Device.ID)
+		qw422016.N().DL(p.Device.Id)
 //line views/deviceDetailPage.qtpl:46
 		qw422016.N().S(`/sensors/`)
 //line views/deviceDetailPage.qtpl:46

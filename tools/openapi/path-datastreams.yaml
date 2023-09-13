@@ -24,6 +24,7 @@ get:
         type: array
         items:
           type: integer
+          format: int64
     - in: query
       name: cursor
       description: The cursor for the current page
@@ -34,7 +35,8 @@ get:
       description: |
         The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
       schema:
-        type: number
+        type: integer
+        format: int64
   responses:
     '200':
       description: Fetched datastreams

@@ -344,7 +344,7 @@ type ApiListWorkersRequest struct {
 	ctx context.Context
 	ApiService *WorkersApiService
 	cursor *string
-	limit *float32
+	limit *int32
 }
 
 // The cursor for the current page
@@ -354,7 +354,7 @@ func (r ApiListWorkersRequest) Cursor(cursor string) ApiListWorkersRequest {
 }
 
 // The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
-func (r ApiListWorkersRequest) Limit(limit float32) ApiListWorkersRequest {
+func (r ApiListWorkersRequest) Limit(limit int32) ApiListWorkersRequest {
 	r.limit = &limit
 	return r
 }

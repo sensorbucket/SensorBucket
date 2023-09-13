@@ -135,13 +135,13 @@ func (a *MeasurementsApiService) GetDatastreamExecute(r ApiGetDatastreamRequest)
 type ApiListDatastreamsRequest struct {
 	ctx context.Context
 	ApiService *MeasurementsApiService
-	sensor *[]int32
+	sensor *[]int64
 	cursor *string
-	limit *float32
+	limit *int64
 }
 
 // only return datastreams that are produced by the given sensor identifier
-func (r ApiListDatastreamsRequest) Sensor(sensor []int32) ApiListDatastreamsRequest {
+func (r ApiListDatastreamsRequest) Sensor(sensor []int64) ApiListDatastreamsRequest {
 	r.sensor = &sensor
 	return r
 }
@@ -153,7 +153,7 @@ func (r ApiListDatastreamsRequest) Cursor(cursor string) ApiListDatastreamsReque
 }
 
 // The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
-func (r ApiListDatastreamsRequest) Limit(limit float32) ApiListDatastreamsRequest {
+func (r ApiListDatastreamsRequest) Limit(limit int64) ApiListDatastreamsRequest {
 	r.limit = &limit
 	return r
 }
@@ -288,7 +288,7 @@ type ApiQueryMeasurementsRequest struct {
 	datastream *string
 	sensorCode *string
 	cursor *string
-	limit *float32
+	limit *int32
 }
 
 func (r ApiQueryMeasurementsRequest) Start(start time.Time) ApiQueryMeasurementsRequest {
@@ -323,7 +323,7 @@ func (r ApiQueryMeasurementsRequest) Cursor(cursor string) ApiQueryMeasurementsR
 }
 
 // The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
-func (r ApiQueryMeasurementsRequest) Limit(limit float32) ApiQueryMeasurementsRequest {
+func (r ApiQueryMeasurementsRequest) Limit(limit int32) ApiQueryMeasurementsRequest {
 	r.limit = &limit
 	return r
 }

@@ -19,11 +19,11 @@ func Create(r chi.Router, measurementService *measurements.Service, deviceServic
 }
 
 type GetDatastreamResponse struct {
-	*measurements.Datastream
-	Device               *devices.Device `json:"device"`
-	Sensor               *devices.Sensor `json:"sensor"`
-	MeasurementValue     float64         `json:"measurement_value"`
-	MeasurementTimestamp time.Time       `json:"measurement_timestamp"`
+	Datastream           *measurements.Datastream `json:"datastream"`
+	Device               *devices.Device          `json:"device"`
+	Sensor               *devices.Sensor          `json:"sensor"`
+	MeasurementValue     float64                  `json:"measurement_value"`
+	MeasurementTimestamp time.Time                `json:"measurement_timestamp"`
 }
 
 func getDatastreams(measurementService *measurements.Service, deviceService *devices.Service) http.HandlerFunc {

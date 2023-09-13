@@ -23,8 +23,8 @@
             <span>{%s ingress.TracingID %}</span>
             <div class="text-slate-500 text-xs">
                 <span>{%s ingress.CreatedAt.Format("15:04:05 2006-01-02") %}</span>
-                {% if ingress.Device.ID != 0 %}
-                    <a hx-target="main" href="/overview/devices/{%dl ingress.Device.ID %}" class="ml-3 text-sky-600 hover:underline">{%s ingress.Device.Code %}</a>
+                {% if ingress.Device.Id != 0 %}
+                    <a hx-target="main" href="/overview/devices/{%dl ingress.Device.Id %}" class="ml-3 text-sky-600 hover:underline">{%s ingress.Device.Code %}</a>
                 {% endif %}
             </div>
         </section>

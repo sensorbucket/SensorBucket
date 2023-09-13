@@ -29,7 +29,7 @@ func (p *SensorDetailPage) StreamBody(qw422016 *qt422016.Writer) {
         <span>/</span>
         <a href="/overview/devices/`)
 //line views/sensorDetailPage.qtpl:7
-	qw422016.N().DL(p.Device.ID)
+	qw422016.N().DL(p.Device.Id)
 //line views/sensorDetailPage.qtpl:7
 	qw422016.N().S(`" class="hover:underline text-sky-600">`)
 //line views/sensorDetailPage.qtpl:7
@@ -105,12 +105,12 @@ func (p *SensorDetailPage) StreamBody(qw422016 *qt422016.Writer) {
                             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
                             href="/overview/datastreams/`)
 //line views/sensorDetailPage.qtpl:55
-		qw422016.E().S(datastream.ID.String())
+		qw422016.E().S(datastream.Id)
 //line views/sensorDetailPage.qtpl:55
 		qw422016.N().S(`"
                         >`)
 //line views/sensorDetailPage.qtpl:56
-		qw422016.E().S(datastream.ID.String())
+		qw422016.E().S(datastream.Id)
 //line views/sensorDetailPage.qtpl:56
 		qw422016.N().S(`</a></td>
                         <td class="px-4 h-10 border-b">`)

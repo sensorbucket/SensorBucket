@@ -98,12 +98,12 @@ func StreamRenderIngressList(qw422016 *qt422016.Writer, ingresses []Ingress) {
 		qw422016.N().S(`</span>
                 `)
 //line views/ingressPage.qtpl:26
-		if ingress.Device.ID != 0 {
+		if ingress.Device.Id != 0 {
 //line views/ingressPage.qtpl:26
 			qw422016.N().S(`
                     <a hx-target="main" href="/overview/devices/`)
 //line views/ingressPage.qtpl:27
-			qw422016.N().DL(ingress.Device.ID)
+			qw422016.N().DL(ingress.Device.Id)
 //line views/ingressPage.qtpl:27
 			qw422016.N().S(`" class="ml-3 text-sky-600 hover:underline">`)
 //line views/ingressPage.qtpl:27

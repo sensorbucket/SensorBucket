@@ -22,7 +22,7 @@ import (
 )
 
 type SensorBucketAPI struct {
-	api               *api.APIClient
+	client            *api.APIClient
 	ingressEndpoint   string
 	pipelinesEndpoint string
 	tracesEndpoint    string
@@ -31,7 +31,7 @@ type SensorBucketAPI struct {
 
 func NewSensorBucketAPI(client *api.APIClient, ingressEndpoint, pipelinesEndpoint, tracesEndpoint, devicesEndpoint string) *SensorBucketAPI {
 	return &SensorBucketAPI{
-		api:               client,
+		client:            client,
 		ingressEndpoint:   ingressEndpoint,
 		pipelinesEndpoint: pipelinesEndpoint,
 		tracesEndpoint:    tracesEndpoint,
@@ -82,7 +82,7 @@ func (s *SensorBucketAPI) ListPipelines(ids []uuid.UUID) ([]processing.Pipeline,
 
 func (s *SensorBucketAPI) ListTraces(ids []uuid.UUID) ([]routes.TraceDTO, error) {
 	idStrings := lo.Map(ids, func(id uuid.UUID, _ int) string { return id.String() })
-	res, _, err := s.api.TracingApi.ListTraces(context.Background()).TracingId(idStrings).Execute()
+	res, _, err := s.client.TracingApi.ListTraces(context.Background()).TracingId(idStrings).Execute()
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (s *SensorBucketAPI) ListTraces(ids []uuid.UUID) ([]routes.TraceDTO, error)
 	return traces, nil
 }
 
-func (s *SensorBucketAPI) ListDevices(ids []int64) ([]devices.Device, error) {
+func (s *SensorBucketAPI) ListDevices(ctx context.Context, ids []int64) ([]devices.Device, error) {
 	q := url.Values{}
 	q["id"] = lo.Map(ids, func(id int64, _ int) string { return strconv.FormatInt(id, 10) })
 	url := s.devicesEndpoint + "?" + q.Encode()

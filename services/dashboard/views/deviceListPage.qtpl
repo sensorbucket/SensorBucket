@@ -57,8 +57,8 @@
     {% for _, sg := range sgs %}
         <li>
             <a
-                href="?sensor_group={%dl sg.ID %}"
-                hx-post="/overview/sensor-groups?sensor_group={%dl sg.ID %}"
+                href="?sensor_group={%dl sg.Id %}"
+                hx-post="/overview/sensor-groups?sensor_group={%dl sg.Id %}"
                 hx-target="#device-table"
                 class="block hover:bg-primary-100 p-2"
             >{%s sg.Name %}</a>
@@ -101,14 +101,14 @@
         hx-get="{%s nextPage %}"
         {% endif %}
     >
-        <td class="px-4 h-10 border-b">{%dl dev.ID %}</td>
+        <td class="px-4 h-10 border-b">{%dl dev.Id %}</td>
         <td class="border-b"><a
             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-            href="/overview/devices/{%dl dev.ID %}"
+            href="/overview/devices/{%dl dev.Id %}"
             hx-target="main"
         >{%s dev.Code %}</a></td>
         <td class="px-4 h-10 border-b">{%s dev.Description %}</td>
-        <td class="px-4 h-10 border-b">{%s dev.LocationDescription %}</td>
+        <td class="px-4 h-10 border-b">{%s dev.GetLocationDescription() %}</td>
     </tr>
     {% endfor %}
 {% endfunc %}

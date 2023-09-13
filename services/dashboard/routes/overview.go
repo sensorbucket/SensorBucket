@@ -3,7 +3,6 @@ package routes
 import (
 	"context"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -17,11 +16,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/samber/lo"
 
-	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
-	"sensorbucket.nl/sensorbucket/services/core/devices"
-	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
 )
 
@@ -51,7 +47,7 @@ func (t *OverviewRoute) SetupRoutes(r chi.Router) {
 	r.Get("/devices/stream-map", t.devicesStreamMap())
 	r.Get("/devices/table", t.getDevicesTable())
 	r.With(t.resolveDevice).Get("/devices/{device_id}", t.deviceDetailPage())
-	r.With(t.resolveDevice).With(t.resolveSensor).Get("/devices/{device_id}/sensors/{sensor_code}", t.sensorDetailPage())
+	r.With(t.resolveDevice, t.resolveSensor).Get("/devices/{device_id}/sensors/{sensor_code}", t.sensorDetailPage())
 
 	r.Get("/sensor-groups", t.searchSensorGroups())
 	r.Post("/sensor-groups", t.createSensorGroup())
@@ -81,7 +77,7 @@ func (t *OverviewRoute) createSensorGroup() http.HandlerFunc {
 				web.HTTPError(w, err)
 				return
 			}
-			res, _, err := t.client.DevicesApi.GetSensorGroup(r.Context(), float32(sgID)).Execute()
+			res, _, err := t.client.DevicesApi.GetSensorGroup(r.Context(), sgID).Execute()
 			if err != nil {
 				web.HTTPError(w, err)
 				return
@@ -90,7 +86,7 @@ func (t *OverviewRoute) createSensorGroup() http.HandlerFunc {
 		}
 		req := t.client.DevicesApi.ListDevices(r.Context())
 		if sg != nil {
-			req = req.SensorGroup([]int32{int32(sg.GetId())})
+			req = req.SensorGroup([]int64{sg.GetId()})
 		}
 		res, _, err := req.Execute()
 		if err != nil {
@@ -127,9 +123,13 @@ func (t *OverviewRoute) getDevicesTable() http.HandlerFunc {
 				web.HTTPError(w, err)
 				return
 			}
-			req = req.SensorGroup([]int32{int32(sgID)})
+			req = req.SensorGroup([]int64{sgID})
 		}
 		res, _, err := req.Execute()
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
 
 		nextCursor := ""
 		if res.Links.GetNext() != "" {
@@ -157,15 +157,18 @@ func (t *OverviewRoute) deviceListPage() http.HandlerFunc {
 		sensorGroupIDStr := r.URL.Query().Get("sensor_group")
 		if sensorGroupIDStr != "" {
 			sensorGroupID, err := strconv.ParseInt(sensorGroupIDStr, 10, 64)
-			res, _, err := t.client.DevicesApi.GetSensorGroup(r.Context(), float32(sensorGroupID)).Execute()
+			res, _, err := t.client.DevicesApi.GetSensorGroup(r.Context(), sensorGroupID).Execute()
 			if err != nil {
 				web.HTTPError(w, err)
 				return
 			}
 			page.SensorGroup = res.Data
 		}
-
-		res, _, err := t.client.DevicesApi.ListDevices(r.Context()).Execute()
+		req := t.client.DevicesApi.ListDevices(r.Context())
+		if page.SensorGroup != nil {
+			req = req.SensorGroup([]int64{page.SensorGroup.GetId()})
+		}
+		res, _, err := req.Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -189,7 +192,7 @@ func (t *OverviewRoute) deviceListPage() http.HandlerFunc {
 
 func (t *OverviewRoute) deviceDetailPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		device := r.Context().Value("device").(*devices.Device)
+		device, _ := getDevice(r.Context())
 		page := &views.DeviceDetailPage{
 			Device: *device,
 		}
@@ -206,7 +209,7 @@ func (t *OverviewRoute) sensorDetailPage() http.HandlerFunc {
 		device, _ := getDevice(r.Context())
 		sensor, _ := getSensor(r.Context())
 
-		res, _, err := t.client.MeasurementsApi.ListDatastreams(r.Context()).Sensor([]int32{int32(sensor.GetId())}).Execute()
+		res, _, err := t.client.MeasurementsApi.ListDatastreams(r.Context()).Sensor([]int64{sensor.Id}).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -237,7 +240,16 @@ func (t *OverviewRoute) devicesStreamMap() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		sensorGroupID := r.URL.Query().Get("sensor_group")
+		var sgID int64 = 0
+		if r.URL.Query().Has("sensor_group") {
+			id, err := strconv.ParseInt(r.URL.Query().Get("sensor_group"), 10, 64)
+			if err != nil {
+				web.HTTPError(w, err)
+				return
+			}
+			sgID = id
+		}
+
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			web.HTTPError(w, err)
@@ -245,11 +257,13 @@ func (t *OverviewRoute) devicesStreamMap() http.HandlerFunc {
 		}
 
 		go func() {
+			ctx, cancel := context.WithCancel(context.TODO())
+			defer cancel()
 			defer ws.Close()
 			var nextCursor string
 			for {
 				// Start fetching pages of devices and stream them to the client
-				res, _, err := t.client.DevicesApi.ListDevices(r.Context()).Cursor(nextCursor).SensorGroup([]int32(sensorGroupID)).Execute()
+				res, _, err := t.client.DevicesApi.ListDevices(ctx).Cursor(nextCursor).SensorGroup([]int64{sgID}).Execute()
 				if err != nil {
 					log.Printf("Failed to fetch devices for client: %v\n", err)
 					return
@@ -314,7 +328,7 @@ func (t *OverviewRoute) overviewDatastream() http.HandlerFunc {
 		}
 
 		page := &views.DatastreamPage{
-			Datastream: *res.Data,
+			Datastream: *res.Data.Datastream,
 			Device:     *res.Data.Device,
 			Sensor:     *res.Data.Sensor,
 			Start:      start,
@@ -352,11 +366,13 @@ func (t *OverviewRoute) overviewDatastreamStream() http.HandlerFunc {
 		}
 
 		go func() {
+			ctx, cancel := context.WithCancel(context.TODO())
+			defer cancel()
 			var nextCursor string
 			defer ws.Close()
 			for {
 				// Start fetching pages of measurements and stream them to the client
-				res, _, err := t.client.MeasurementsApi.QueryMeasurements(r.Context()).
+				res, _, err := t.client.MeasurementsApi.QueryMeasurements(ctx).
 					Cursor(nextCursor).
 					Datastream(datastreamID).
 					Start(start).
@@ -401,51 +417,6 @@ func getCursor(next string) string {
 	return u.Query().Get("cursor")
 }
 
-func (t *OverviewRoute) getDevices(coreSVC, cursor, sensorGroupID string) ([]devices.Device, string, error) {
-	q := url.Values{}
-	q.Set("cursor", cursor)
-	if sensorGroupID != "" {
-		q.Set("sensor_group", sensorGroupID)
-	}
-	res, err := http.Get(coreSVC + "/devices?" + q.Encode())
-	if err != nil {
-		return nil, "", err
-	}
-	var resBody pagination.APIResponse[devices.Device]
-	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
-		return nil, "", err
-	}
-	nextCursor := getCursor(resBody)
-	return resBody.Data, nextCursor, nil
-}
-
-func (t *OverviewRoute) getMeasurementsPage(coreSVC, dsID string, start, end time.Time, cursor string) ([]measurements.Measurement, string, error) {
-	q := url.Values{}
-	q.Set("datastream", dsID)
-	q.Set("start", start.Format(time.RFC3339))
-	q.Set("end", end.Format(time.RFC3339))
-	q.Set("cursor", cursor)
-	res, err := http.Get(coreSVC + "/measurements?" + q.Encode())
-	if err != nil {
-		return nil, "", err
-	}
-	if res.StatusCode != http.StatusOK {
-		var apiError web.APIError
-		if err := json.NewDecoder(res.Body).Decode(&apiError); err != nil {
-			return nil, "", err
-		}
-		apiError.HTTPStatus = res.StatusCode
-		return nil, "", &apiError
-	}
-	var resBody pagination.APIResponse[measurements.Measurement]
-	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
-		return nil, "", err
-	}
-
-	nextCursor := getCursor(resBody)
-	return resBody.Data, nextCursor, nil
-}
-
 func (t *OverviewRoute) resolveDevice(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		deviceID, err := URLParamInt(r, "device_id")
@@ -453,7 +424,7 @@ func (t *OverviewRoute) resolveDevice(next http.Handler) http.Handler {
 			web.HTTPError(w, err)
 			return
 		}
-		res, _, err := t.client.DevicesApi.GetDevice(r.Context(), float32(deviceID)).Execute()
+		res, _, err := t.client.DevicesApi.GetDevice(r.Context(), deviceID).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -498,7 +469,7 @@ func (t *OverviewRoute) resolveSensor(next http.Handler) http.Handler {
 			context.WithValue(
 				r.Context(),
 				"sensor",
-				sensor,
+				&sensor,
 			),
 		)
 		next.ServeHTTP(w, r)

@@ -1,7 +1,7 @@
 /*
 Sensorbucket API
 
-SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex
+SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex 
 
 API version: 1.0
 Contact: info@pollex.nl
@@ -18,15 +18,10 @@ import (
 
 // GetDatastream200ResponseData struct for GetDatastream200ResponseData
 type GetDatastream200ResponseData struct {
-	Id                   *string    `json:"id,omitempty"`
-	Description          *string    `json:"description,omitempty"`
-	SensorId             *float32   `json:"sensor_id,omitempty"`
-	ObservedProperty     *string    `json:"observed_property,omitempty"`
-	UnitOfMeasurement    *string    `json:"unit_of_measurement,omitempty"`
-	CreatedAt            *string    `json:"created_at,omitempty"`
-	Device               *Device    `json:"device,omitempty"`
-	Sensor               *Sensor    `json:"sensor,omitempty"`
-	MeasurementValue     *float32   `json:"measurement_value,omitempty"`
+	Datastream *Datastream `json:"datastream,omitempty"`
+	Device *Device `json:"device,omitempty"`
+	Sensor *Sensor `json:"sensor,omitempty"`
+	MeasurementValue *int32 `json:"measurement_value,omitempty"`
 	MeasurementTimestamp *time.Time `json:"measurement_timestamp,omitempty"`
 }
 
@@ -47,196 +42,36 @@ func NewGetDatastream200ResponseDataWithDefaults() *GetDatastream200ResponseData
 	return &this
 }
 
-// GetId returns the Id field value if set, zero value otherwise.
-func (o *GetDatastream200ResponseData) GetId() string {
-	if o == nil || isNil(o.Id) {
-		var ret string
+// GetDatastream returns the Datastream field value if set, zero value otherwise.
+func (o *GetDatastream200ResponseData) GetDatastream() Datastream {
+	if o == nil || isNil(o.Datastream) {
+		var ret Datastream
 		return ret
 	}
-	return *o.Id
+	return *o.Datastream
 }
 
-// GetIdOk returns a tuple with the Id field value if set, nil otherwise
+// GetDatastreamOk returns a tuple with the Datastream field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetDatastream200ResponseData) GetIdOk() (*string, bool) {
-	if o == nil || isNil(o.Id) {
-		return nil, false
+func (o *GetDatastream200ResponseData) GetDatastreamOk() (*Datastream, bool) {
+	if o == nil || isNil(o.Datastream) {
+    return nil, false
 	}
-	return o.Id, true
+	return o.Datastream, true
 }
 
-// HasId returns a boolean if a field has been set.
-func (o *GetDatastream200ResponseData) HasId() bool {
-	if o != nil && !isNil(o.Id) {
+// HasDatastream returns a boolean if a field has been set.
+func (o *GetDatastream200ResponseData) HasDatastream() bool {
+	if o != nil && !isNil(o.Datastream) {
 		return true
 	}
 
 	return false
 }
 
-// SetId gets a reference to the given string and assigns it to the Id field.
-func (o *GetDatastream200ResponseData) SetId(v string) {
-	o.Id = &v
-}
-
-// GetDescription returns the Description field value if set, zero value otherwise.
-func (o *GetDatastream200ResponseData) GetDescription() string {
-	if o == nil || isNil(o.Description) {
-		var ret string
-		return ret
-	}
-	return *o.Description
-}
-
-// GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *GetDatastream200ResponseData) GetDescriptionOk() (*string, bool) {
-	if o == nil || isNil(o.Description) {
-		return nil, false
-	}
-	return o.Description, true
-}
-
-// HasDescription returns a boolean if a field has been set.
-func (o *GetDatastream200ResponseData) HasDescription() bool {
-	if o != nil && !isNil(o.Description) {
-		return true
-	}
-
-	return false
-}
-
-// SetDescription gets a reference to the given string and assigns it to the Description field.
-func (o *GetDatastream200ResponseData) SetDescription(v string) {
-	o.Description = &v
-}
-
-// GetSensorId returns the SensorId field value if set, zero value otherwise.
-func (o *GetDatastream200ResponseData) GetSensorId() float32 {
-	if o == nil || isNil(o.SensorId) {
-		var ret float32
-		return ret
-	}
-	return *o.SensorId
-}
-
-// GetSensorIdOk returns a tuple with the SensorId field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *GetDatastream200ResponseData) GetSensorIdOk() (*float32, bool) {
-	if o == nil || isNil(o.SensorId) {
-		return nil, false
-	}
-	return o.SensorId, true
-}
-
-// HasSensorId returns a boolean if a field has been set.
-func (o *GetDatastream200ResponseData) HasSensorId() bool {
-	if o != nil && !isNil(o.SensorId) {
-		return true
-	}
-
-	return false
-}
-
-// SetSensorId gets a reference to the given float32 and assigns it to the SensorId field.
-func (o *GetDatastream200ResponseData) SetSensorId(v float32) {
-	o.SensorId = &v
-}
-
-// GetObservedProperty returns the ObservedProperty field value if set, zero value otherwise.
-func (o *GetDatastream200ResponseData) GetObservedProperty() string {
-	if o == nil || isNil(o.ObservedProperty) {
-		var ret string
-		return ret
-	}
-	return *o.ObservedProperty
-}
-
-// GetObservedPropertyOk returns a tuple with the ObservedProperty field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *GetDatastream200ResponseData) GetObservedPropertyOk() (*string, bool) {
-	if o == nil || isNil(o.ObservedProperty) {
-		return nil, false
-	}
-	return o.ObservedProperty, true
-}
-
-// HasObservedProperty returns a boolean if a field has been set.
-func (o *GetDatastream200ResponseData) HasObservedProperty() bool {
-	if o != nil && !isNil(o.ObservedProperty) {
-		return true
-	}
-
-	return false
-}
-
-// SetObservedProperty gets a reference to the given string and assigns it to the ObservedProperty field.
-func (o *GetDatastream200ResponseData) SetObservedProperty(v string) {
-	o.ObservedProperty = &v
-}
-
-// GetUnitOfMeasurement returns the UnitOfMeasurement field value if set, zero value otherwise.
-func (o *GetDatastream200ResponseData) GetUnitOfMeasurement() string {
-	if o == nil || isNil(o.UnitOfMeasurement) {
-		var ret string
-		return ret
-	}
-	return *o.UnitOfMeasurement
-}
-
-// GetUnitOfMeasurementOk returns a tuple with the UnitOfMeasurement field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *GetDatastream200ResponseData) GetUnitOfMeasurementOk() (*string, bool) {
-	if o == nil || isNil(o.UnitOfMeasurement) {
-		return nil, false
-	}
-	return o.UnitOfMeasurement, true
-}
-
-// HasUnitOfMeasurement returns a boolean if a field has been set.
-func (o *GetDatastream200ResponseData) HasUnitOfMeasurement() bool {
-	if o != nil && !isNil(o.UnitOfMeasurement) {
-		return true
-	}
-
-	return false
-}
-
-// SetUnitOfMeasurement gets a reference to the given string and assigns it to the UnitOfMeasurement field.
-func (o *GetDatastream200ResponseData) SetUnitOfMeasurement(v string) {
-	o.UnitOfMeasurement = &v
-}
-
-// GetCreatedAt returns the CreatedAt field value if set, zero value otherwise.
-func (o *GetDatastream200ResponseData) GetCreatedAt() string {
-	if o == nil || isNil(o.CreatedAt) {
-		var ret string
-		return ret
-	}
-	return *o.CreatedAt
-}
-
-// GetCreatedAtOk returns a tuple with the CreatedAt field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *GetDatastream200ResponseData) GetCreatedAtOk() (*string, bool) {
-	if o == nil || isNil(o.CreatedAt) {
-		return nil, false
-	}
-	return o.CreatedAt, true
-}
-
-// HasCreatedAt returns a boolean if a field has been set.
-func (o *GetDatastream200ResponseData) HasCreatedAt() bool {
-	if o != nil && !isNil(o.CreatedAt) {
-		return true
-	}
-
-	return false
-}
-
-// SetCreatedAt gets a reference to the given string and assigns it to the CreatedAt field.
-func (o *GetDatastream200ResponseData) SetCreatedAt(v string) {
-	o.CreatedAt = &v
+// SetDatastream gets a reference to the given Datastream and assigns it to the Datastream field.
+func (o *GetDatastream200ResponseData) SetDatastream(v Datastream) {
+	o.Datastream = &v
 }
 
 // GetDevice returns the Device field value if set, zero value otherwise.
@@ -252,7 +87,7 @@ func (o *GetDatastream200ResponseData) GetDevice() Device {
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetDeviceOk() (*Device, bool) {
 	if o == nil || isNil(o.Device) {
-		return nil, false
+    return nil, false
 	}
 	return o.Device, true
 }
@@ -284,7 +119,7 @@ func (o *GetDatastream200ResponseData) GetSensor() Sensor {
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetSensorOk() (*Sensor, bool) {
 	if o == nil || isNil(o.Sensor) {
-		return nil, false
+    return nil, false
 	}
 	return o.Sensor, true
 }
@@ -304,9 +139,9 @@ func (o *GetDatastream200ResponseData) SetSensor(v Sensor) {
 }
 
 // GetMeasurementValue returns the MeasurementValue field value if set, zero value otherwise.
-func (o *GetDatastream200ResponseData) GetMeasurementValue() float32 {
+func (o *GetDatastream200ResponseData) GetMeasurementValue() int32 {
 	if o == nil || isNil(o.MeasurementValue) {
-		var ret float32
+		var ret int32
 		return ret
 	}
 	return *o.MeasurementValue
@@ -314,9 +149,9 @@ func (o *GetDatastream200ResponseData) GetMeasurementValue() float32 {
 
 // GetMeasurementValueOk returns a tuple with the MeasurementValue field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetDatastream200ResponseData) GetMeasurementValueOk() (*float32, bool) {
+func (o *GetDatastream200ResponseData) GetMeasurementValueOk() (*int32, bool) {
 	if o == nil || isNil(o.MeasurementValue) {
-		return nil, false
+    return nil, false
 	}
 	return o.MeasurementValue, true
 }
@@ -330,8 +165,8 @@ func (o *GetDatastream200ResponseData) HasMeasurementValue() bool {
 	return false
 }
 
-// SetMeasurementValue gets a reference to the given float32 and assigns it to the MeasurementValue field.
-func (o *GetDatastream200ResponseData) SetMeasurementValue(v float32) {
+// SetMeasurementValue gets a reference to the given int32 and assigns it to the MeasurementValue field.
+func (o *GetDatastream200ResponseData) SetMeasurementValue(v int32) {
 	o.MeasurementValue = &v
 }
 
@@ -348,7 +183,7 @@ func (o *GetDatastream200ResponseData) GetMeasurementTimestamp() time.Time {
 // and a boolean to check if the value has been set.
 func (o *GetDatastream200ResponseData) GetMeasurementTimestampOk() (*time.Time, bool) {
 	if o == nil || isNil(o.MeasurementTimestamp) {
-		return nil, false
+    return nil, false
 	}
 	return o.MeasurementTimestamp, true
 }
@@ -369,23 +204,8 @@ func (o *GetDatastream200ResponseData) SetMeasurementTimestamp(v time.Time) {
 
 func (o GetDatastream200ResponseData) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.Id) {
-		toSerialize["id"] = o.Id
-	}
-	if !isNil(o.Description) {
-		toSerialize["description"] = o.Description
-	}
-	if !isNil(o.SensorId) {
-		toSerialize["sensor_id"] = o.SensorId
-	}
-	if !isNil(o.ObservedProperty) {
-		toSerialize["observed_property"] = o.ObservedProperty
-	}
-	if !isNil(o.UnitOfMeasurement) {
-		toSerialize["unit_of_measurement"] = o.UnitOfMeasurement
-	}
-	if !isNil(o.CreatedAt) {
-		toSerialize["created_at"] = o.CreatedAt
+	if !isNil(o.Datastream) {
+		toSerialize["datastream"] = o.Datastream
 	}
 	if !isNil(o.Device) {
 		toSerialize["device"] = o.Device
@@ -437,3 +257,5 @@ func (v *NullableGetDatastream200ResponseData) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

@@ -16,6 +16,6 @@
           code:
             type: string
           http_status:
-            type: number
+            type: integer
 '400':
   description: The request failed because of a malformed or invalid request

@@ -184,12 +184,12 @@ func StreamSensorGroupSearch(qw422016 *qt422016.Writer, sgs []api.SensorGroup) {
             <a
                 href="?sensor_group=`)
 //line views/deviceListPage.qtpl:60
-		qw422016.N().DL(sg.ID)
+		qw422016.N().DL(sg.Id)
 //line views/deviceListPage.qtpl:60
 		qw422016.N().S(`"
                 hx-post="/overview/sensor-groups?sensor_group=`)
 //line views/deviceListPage.qtpl:61
-		qw422016.N().DL(sg.ID)
+		qw422016.N().DL(sg.Id)
 //line views/deviceListPage.qtpl:61
 		qw422016.N().S(`"
                 hx-target="#device-table"
@@ -326,14 +326,14 @@ func StreamRenderDeviceTableRows(qw422016 *qt422016.Writer, devices []api.Device
     >
         <td class="px-4 h-10 border-b">`)
 //line views/deviceListPage.qtpl:104
-		qw422016.N().DL(dev.ID)
+		qw422016.N().DL(dev.Id)
 //line views/deviceListPage.qtpl:104
 		qw422016.N().S(`</td>
         <td class="border-b"><a
             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
             href="/overview/devices/`)
 //line views/deviceListPage.qtpl:107
-		qw422016.N().DL(dev.ID)
+		qw422016.N().DL(dev.Id)
 //line views/deviceListPage.qtpl:107
 		qw422016.N().S(`"
             hx-target="main"
@@ -349,7 +349,7 @@ func StreamRenderDeviceTableRows(qw422016 *qt422016.Writer, devices []api.Device
 		qw422016.N().S(`</td>
         <td class="px-4 h-10 border-b">`)
 //line views/deviceListPage.qtpl:111
-		qw422016.E().S(dev.LocationDescription)
+		qw422016.E().S(dev.GetLocationDescription())
 //line views/deviceListPage.qtpl:111
 		qw422016.N().S(`</td>
     </tr>

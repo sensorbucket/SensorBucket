@@ -16,7 +16,6 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/api"
-	dashboardinfra "sensorbucket.nl/sensorbucket/services/dashboard/infra"
 	"sensorbucket.nl/sensorbucket/services/dashboard/routes"
 )
 
@@ -27,14 +26,9 @@ func main() {
 }
 
 var (
-	startTS      = time.Now()
-	HTTP_ADDR    = env.Could("HTTP_ADDR", ":3000")
-	EP_INGRESSES = env.Must("EP_INGRESSES")
-	EP_TRACES    = env.Must("EP_TRACES")
-	EP_PIPELINES = env.Must("EP_PIPELINES")
-	EP_DEVICES   = env.Must("EP_DEVICES")
-	EP_CORE      = env.Must("EP_CORE")
-	SB_API       = env.Must("SB_API")
+	startTS   = time.Now()
+	HTTP_ADDR = env.Could("HTTP_ADDR", ":3000")
+	SB_API    = env.Must("SB_API")
 )
 
 //go:embed static/*
@@ -70,16 +64,14 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("could not parse SB_API url: %w", err)
 	}
-	// TODO: Merge this infra with the generated api client
 	cfg := api.NewConfiguration()
 	cfg.Scheme = sbURL.Scheme
 	cfg.Host = sbURL.Host
 	apiClient := api.NewAPIClient(cfg)
-	sbAPI := dashboardinfra.NewSensorBucketAPI(apiClient, EP_INGRESSES, EP_PIPELINES, EP_TRACES, EP_DEVICES)
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/overview", http.StatusFound) })
 	router.Mount("/overview", routes.CreateOverviewPageHandler(apiClient))
-	router.Mount("/ingress", routes.CreateIngressPageHandler(sbAPI, sbAPI, sbAPI, sbAPI))
+	router.Mount("/ingress", routes.CreateIngressPageHandler(apiClient))
 	router.Mount("/workers", routes.CreateWorkerPageHandler(apiClient))
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,

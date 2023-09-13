@@ -57,6 +57,8 @@ paths:
     $ref: 'path-uplinks-by-pipeline.yaml'
   /tracing:
     $ref: 'path-tracing.yaml'
+  /ingresses:
+    $ref: 'path-ingresses.yaml'
   /workers:
     $ref: 'path-workers.yaml'
   /workers/{id}:
