@@ -2,6 +2,7 @@ package userworkers
 
 import (
 	"context"
+	"encoding/base64"
 	"log"
 	"net/http"
 	"time"
@@ -91,6 +92,13 @@ func createRoutes(app *Application, r chi.Router) {
 		}
 		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
 			Data: userCode,
+		})
+	})
+	r.With(resolveWorker(app)).Get("/workers/{id}/source", func(w http.ResponseWriter, r *http.Request) {
+		worker := r.Context().Value("worker").(*UserWorker)
+		src := base64.StdEncoding.EncodeToString(worker.ZipSource)
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+			Data: src,
 		})
 	})
 	r.With(resolveWorker(app)).Patch("/workers/{id}", func(w http.ResponseWriter, r *http.Request) {

@@ -1,0 +1,4 @@
+requests==2.*
+pika==1.*
+flask==2.*
+python-dateutil==2.8.2

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -67,7 +66,10 @@ func Run() error {
 			return err
 		}
 	case "docker":
-		return errors.New("docker controller not yet implemented")
+		ctrl, err = userworkers.CreateDockerController(store)
+		if err != nil {
+			return err
+		}
 	default:
 		log.Println("WARNING, no controller selected, defaulting to none meaning only the API will be accessible and no workers will be create")
 		ctrl = &StubController{}
@@ -84,6 +86,8 @@ func Run() error {
 				return
 			case <-ticker:
 				{
+					ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+					defer cancel()
 					if err := ctrl.Reconcile(ctx); err != nil {
 						log.Printf("Error reconciliating: %s\n", err.Error())
 					}
