@@ -20,3 +20,4 @@ The Core service performs multiple core functions in SensorBucket:
 | HTTP_ADDR                   | HTTP Address on which to bind the devices, measurements and pipeline APIs                             | no       | :3000                     |
 | HTTP_BASE                   | HTTP Base Address after which to append the endpoints for the devices, measurements and pipeline APIs | no       | http://localhost:3000/api |
 | SYS_ARCHIVE_TIME            | Determines in days how long a measurement should be stored before deletion                            | no       | 30                        |
+
