@@ -48,4 +48,10 @@ nav:
   - Development:
     - Architecture: development/architecture.md
     - Data Model: development/data-model.md
+    - Services:
+      - Core: development/core.md
+      - Dashboard: development/dashboard.md
+      - HTTP Ingress: development/http-importer.md
+      - Tracing: development/tracing.md
+      - Workers: development/workers.md
   - API Reference: ./api/index.html
