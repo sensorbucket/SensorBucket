@@ -7,7 +7,6 @@ CREATE TABLE user_workers (
     state INT NOT NULL DEFAULT(0),
     language INT NOT NULL,
     organisation BIGINT NOT NULL,
-    major INT NOT NULL,
     revision INT NOT NULL,
     status INT NOT NULL,
     status_info TEXT NOT NULL DEFAULT(''),

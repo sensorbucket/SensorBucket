@@ -110,7 +110,7 @@ func (ctrl *KubernetesController) Reconcile(ctx context.Context) error {
 	}
 
 	// TODO: Limit?
-	pages, err := ctrl.store.ListUserWorkers(ListWorkerFilters{}, pagination.Request{Limit: 10})
+	pages, err := ctrl.store.ListUserWorkers(ListWorkerFilters{State: StateEnabled}, pagination.Request{Limit: 10})
 	if err != nil {
 		return fmt.Errorf("error listing user workers from database: %w", err)
 	}
@@ -139,7 +139,7 @@ func (ctrl *KubernetesController) Reconcile(ctx context.Context) error {
 		if pages.Cursor == "" {
 			break
 		}
-		pages, err = ctrl.store.ListUserWorkers(ListWorkerFilters{}, pagination.Request{Cursor: pages.Cursor})
+		pages, err = ctrl.store.ListUserWorkers(ListWorkerFilters{State: StateEnabled}, pagination.Request{Cursor: pages.Cursor})
 		if err != nil {
 			return fmt.Errorf("error listing user workers from database: %w", err)
 		}

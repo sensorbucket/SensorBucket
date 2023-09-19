@@ -75,42 +75,58 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
 	qw422016.N().S(`
                 />
             </fieldset>
-            <div class="col-span-full">
-                `)
-//line views/workerEditor.qtpl:32
-	if p.Worker == nil {
-//line views/workerEditor.qtpl:32
-		qw422016.N().S(`
-                    <button 
-                        class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                        hx-post="/workers/create"
-                        hx-vals='js:{userCode: currentUserCode()}'
-                        hx-swap="none"
-                    >
-                    Create
-                    </button>
-                `)
-//line views/workerEditor.qtpl:41
-	} else {
-//line views/workerEditor.qtpl:41
-		qw422016.N().S(`
-                    <button 
-                        class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                        hx-patch="/workers/`)
-//line views/workerEditor.qtpl:44
-		qw422016.E().S(p.Worker.Id)
-//line views/workerEditor.qtpl:44
-		qw422016.N().S(`"
-                        hx-vals='js:{userCode: currentUserCode()}'
-                        hx-swap="none"
-                    >
-                    Save
-                    </button>
-                `)
-//line views/workerEditor.qtpl:50
+            <fieldset class="flex flex-col items-center">
+                <label for="worker-state" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Worker Enabled</small></label>
+                <input
+                    type="checkbox" name="state" id="worker-state" `)
+//line views/workerEditor.qtpl:34
+	if p.Worker.State == 2 {
+//line views/workerEditor.qtpl:34
+		qw422016.N().S(` checked `)
+//line views/workerEditor.qtpl:34
 	}
-//line views/workerEditor.qtpl:50
+//line views/workerEditor.qtpl:34
+	qw422016.N().S(` class="m-2 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                />
+            </fieldset>
+            <div class="col-span-full flex justify-between">
+                <section>
+                    `)
+//line views/workerEditor.qtpl:39
+	if p.Worker == nil {
+//line views/workerEditor.qtpl:39
+		qw422016.N().S(`
+                        <button 
+                            class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                            hx-post="/workers/create"
+                            hx-vals='js:{userCode: currentUserCode()}'
+                            hx-swap="none"
+                        >
+                        Create
+                        </button>
+                    `)
+//line views/workerEditor.qtpl:48
+	} else {
+//line views/workerEditor.qtpl:48
+		qw422016.N().S(`
+                        <button 
+                            class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                            hx-patch="/workers/`)
+//line views/workerEditor.qtpl:51
+		qw422016.E().S(p.Worker.Id)
+//line views/workerEditor.qtpl:51
+		qw422016.N().S(`"
+                            hx-vals='js:{userCode: currentUserCode()}'
+                            hx-swap="none"
+                        >
+                        Save
+                        </button>
+                    `)
+//line views/workerEditor.qtpl:57
+	}
+//line views/workerEditor.qtpl:57
 	qw422016.N().S(`
+                </section>
             </div>
         </form>
     </div>
@@ -125,9 +141,9 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
         <script type="module">
             import {createEditor} from '/static/codemirror.js';
             const usercode = atob('`)
-//line views/workerEditor.qtpl:64
+//line views/workerEditor.qtpl:72
 	qw422016.E().S(p.UserCode)
-//line views/workerEditor.qtpl:64
+//line views/workerEditor.qtpl:72
 	qw422016.N().S(`');
             const editor = createEditor(document.getElementById("editor-container"), usercode);
             window.editor = editor;
@@ -140,36 +156,36 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
     </div>
 </div>
 `)
-//line views/workerEditor.qtpl:75
+//line views/workerEditor.qtpl:83
 }
 
-//line views/workerEditor.qtpl:75
+//line views/workerEditor.qtpl:83
 func (p *WorkerEditorPage) WriteBody(qq422016 qtio422016.Writer) {
-//line views/workerEditor.qtpl:75
+//line views/workerEditor.qtpl:83
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/workerEditor.qtpl:75
+//line views/workerEditor.qtpl:83
 	p.StreamBody(qw422016)
-//line views/workerEditor.qtpl:75
+//line views/workerEditor.qtpl:83
 	qt422016.ReleaseWriter(qw422016)
-//line views/workerEditor.qtpl:75
+//line views/workerEditor.qtpl:83
 }
 
-//line views/workerEditor.qtpl:75
+//line views/workerEditor.qtpl:83
 func (p *WorkerEditorPage) Body() string {
-//line views/workerEditor.qtpl:75
+//line views/workerEditor.qtpl:83
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/workerEditor.qtpl:75
+//line views/workerEditor.qtpl:83
 	p.WriteBody(qb422016)
-//line views/workerEditor.qtpl:75
+//line views/workerEditor.qtpl:83
 	qs422016 := string(qb422016.B)
-//line views/workerEditor.qtpl:75
+//line views/workerEditor.qtpl:83
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/workerEditor.qtpl:75
+//line views/workerEditor.qtpl:83
 	return qs422016
-//line views/workerEditor.qtpl:75
+//line views/workerEditor.qtpl:83
 }
 
-//line views/workerEditor.qtpl:78
+//line views/workerEditor.qtpl:86
 type WorkerEditorPage struct {
 	BasePage
 	Worker   *api.UserWorker

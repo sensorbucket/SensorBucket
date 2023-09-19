@@ -1,6 +1,7 @@
 package tracing
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,6 +10,8 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
+
+var ErrInvalidStepsRemaining = errors.New("steps remaining invalid")
 
 type StepStore interface {
 	UpsertStep(step Step, withError bool) error
@@ -28,7 +31,8 @@ type Service struct {
 
 func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message, time time.Time) error {
 	if len(pipelineMessage.PipelineSteps)-(int(pipelineMessage.StepIndex+1)) < 0 {
-		return fmt.Errorf("steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d) for id %s",
+		return fmt.Errorf("%w: steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d) for id %s",
+			ErrInvalidStepsRemaining,
 			len(pipelineMessage.PipelineSteps),
 			pipelineMessage.StepIndex,
 			pipelineMessage.TracingID,
@@ -56,7 +60,8 @@ func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message, time t
 
 func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError, time time.Time) error {
 	if len(errorMessage.ReceivedByWorker.PipelineSteps)-(int(errorMessage.ReceivedByWorker.StepIndex+1)) < 0 {
-		return fmt.Errorf("steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d) for id: %s",
+		return fmt.Errorf("%w: steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d) for id: %s",
+			ErrInvalidStepsRemaining,
 			len(errorMessage.ReceivedByWorker.PipelineSteps),
 			errorMessage.ReceivedByWorker.StepIndex,
 			errorMessage.ReceivedByWorker.TracingID,

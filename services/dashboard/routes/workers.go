@@ -3,7 +3,6 @@ package routes
 import (
 	"encoding/base64"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
@@ -93,13 +92,11 @@ func (h *WorkerPageHandler) updateWorker() http.HandlerFunc {
 		if desc := r.FormValue("description"); desc != "" {
 			dto.Description = &desc
 		}
-		if stateStr := r.FormValue("state"); stateStr != "" {
-			state, err := strconv.ParseInt(stateStr, 10, 32)
-			if err != nil {
-				web.HTTPError(w, web.NewError(http.StatusBadRequest, "Bad request", ""))
-				return
-			}
-			dto.SetState(int32(state))
+		switch r.FormValue("state") {
+		case "on":
+			dto.SetState(2)
+		default:
+			dto.SetState(1)
 		}
 		if userCode := r.FormValue("userCode"); userCode != "" {
 			dto.UserCode = &userCode

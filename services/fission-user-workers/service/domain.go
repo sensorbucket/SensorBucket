@@ -31,7 +31,8 @@ const (
 type WorkerState uint
 
 const (
-	StateDisabled WorkerState = iota
+	StateUnknown WorkerState = iota
+	StateDisabled
 	StateEnabled
 )
 
@@ -45,7 +46,6 @@ type UserWorker struct {
 	State        WorkerState  `json:"state"`
 	Language     Language     `json:"language"`
 	Organisation int64        `json:"organisation"`
-	Major        uint         `json:"major"`
 	Revision     uint         `json:"revision"`
 	Status       WorkerStatus `json:"status"`
 	StatusInfo   string       `json:"status_info" db:"status_info"`
@@ -61,7 +61,6 @@ func CreateWorker(name, description string, userCode []byte) (*UserWorker, error
 		State:        StateEnabled,
 		Language:     LanguagePython,
 		Organisation: 0,
-		Major:        1,
 		Revision:     1,
 		Status:       StatusUnknown,
 		Entrypoint:   "main.main",

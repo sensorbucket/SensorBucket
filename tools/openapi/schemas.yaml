@@ -532,8 +532,6 @@ userWorker:
     organisation:
       type: integer
       format: int64
-    major:
-      type: integer
     revision:
       type: integer
     status:

@@ -28,26 +28,34 @@
                     {% endif %}
                 />
             </fieldset>
-            <div class="col-span-full">
-                {% if p.Worker == nil %}
-                    <button 
-                        class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                        hx-post="/workers/create"
-                        hx-vals='js:{userCode: currentUserCode()}'
-                        hx-swap="none"
-                    >
-                    Create
-                    </button>
-                {% else %}
-                    <button 
-                        class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                        hx-patch="/workers/{%s p.Worker.Id %}"
-                        hx-vals='js:{userCode: currentUserCode()}'
-                        hx-swap="none"
-                    >
-                    Save
-                    </button>
-                {% endif %}
+            <fieldset class="flex flex-col items-center">
+                <label for="worker-state" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Worker Enabled</small></label>
+                <input
+                    type="checkbox" name="state" id="worker-state" {% if p.Worker.State == 2 %} checked {% endif %} class="m-2 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                />
+            </fieldset>
+            <div class="col-span-full flex justify-between">
+                <section>
+                    {% if p.Worker == nil %}
+                        <button 
+                            class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                            hx-post="/workers/create"
+                            hx-vals='js:{userCode: currentUserCode()}'
+                            hx-swap="none"
+                        >
+                        Create
+                        </button>
+                    {% else %}
+                        <button 
+                            class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                            hx-patch="/workers/{%s p.Worker.Id %}"
+                            hx-vals='js:{userCode: currentUserCode()}'
+                            hx-swap="none"
+                        >
+                        Save
+                        </button>
+                    {% endif %}
+                </section>
             </div>
         </form>
     </div>

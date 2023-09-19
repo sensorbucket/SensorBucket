@@ -91,7 +91,7 @@ func (ctrl *DockerController) Reconcile(ctx context.Context) error {
 		containerWorkerIDMap[workerID] = c
 		containerWorkerIDs = append(containerWorkerIDs, workerID)
 	}
-	existingIDs, err := ctrl.store.WorkersExists(containerWorkerIDs)
+	existingIDs, err := ctrl.store.WorkersExists(containerWorkerIDs, ListWorkerFilters{State: StateEnabled})
 	if err != nil {
 		return fmt.Errorf("error fetching which workers exist from store: %w", err)
 	}
@@ -107,7 +107,7 @@ func (ctrl *DockerController) Reconcile(ctx context.Context) error {
 	}
 
 	// Iterate over workers in Database
-	pages, err := ctrl.store.ListUserWorkers(ListWorkerFilters{}, pagination.Request{Limit: 10})
+	pages, err := ctrl.store.ListUserWorkers(ListWorkerFilters{State: StateEnabled}, pagination.Request{Limit: 10})
 	if err != nil {
 		return fmt.Errorf("error listing user workers from database: %w", err)
 	}
@@ -180,7 +180,7 @@ func (ctrl *DockerController) Reconcile(ctx context.Context) error {
 		if pages.Cursor == "" {
 			break
 		}
-		pages, err = ctrl.store.ListUserWorkers(ListWorkerFilters{}, pagination.Request{Cursor: pages.Cursor})
+		pages, err = ctrl.store.ListUserWorkers(ListWorkerFilters{State: StateEnabled}, pagination.Request{Cursor: pages.Cursor})
 		if err != nil {
 			return fmt.Errorf("error listing user workers from database: %w", err)
 		}
