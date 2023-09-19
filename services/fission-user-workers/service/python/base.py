@@ -7,11 +7,7 @@ import os
 import requests as r
 from datetime import datetime
 from typing import List, Dict, Optional, Any, Union
-
-
-if "ENDPOINT_DEVICES" not in os.environ:
-    raise "Environment variable: ENDPOINT_DEVICES must be set"
-DEVICES_EP = os.environ["ENDPOINT_DEVICES"]
+from copy import deepcopy
 
 
 class ErrMessageNoSteps(Exception):
@@ -20,6 +16,19 @@ class ErrMessageNoSteps(Exception):
 
 class MissingRequiredProperties(Exception):
     pass
+
+
+class MissingRequiredEnvironmentVariable(Exception):
+    pass
+
+
+class PropertiesMatchedNotExactlyOneDevice(Exception):
+    pass
+
+
+if "ENDPOINT_DEVICES" not in os.environ:
+    raise MissingRequiredEnvironmentVariable("Environment variable: ENDPOINT_DEVICES must be set")
+DEVICES_EP = os.environ["ENDPOINT_DEVICES"]
 
 
 class Serializer(json.JSONEncoder):
@@ -59,7 +68,7 @@ class Measurement:
 
 class Message:
     def __init__(self,
-                 id: str,
+                 tracing_id: str,
                  owner_id: int,
                  received_at: int,
                  pipeline_id: str,
@@ -70,7 +79,7 @@ class Message:
                  measurements: Optional[List[Measurement]] = None,
                  payload: Optional[bytes] = None,
                  metadata: Optional[Dict[str, Any]] = None):
-        self.id = id
+        self.tracing_id = tracing_id
         self.owner_id = owner_id
         self.received_at = received_at
         self.pipeline_id = pipeline_id
@@ -90,9 +99,11 @@ class Message:
         data = res.json()
         devices = data["data"]
         if len(devices) == 0:
-            raise f"error matching device: device not found for filter: {properties}"
+            raise PropertiesMatchedNotExactlyOneDevice(
+                f"can't find device with properties: {properties}")
         if len(devices) > 1:
-            raise f"error matching device: filter returned too many devices, for filter: {properties}"
+            raise PropertiesMatchedNotExactlyOneDevice(
+                f"too many devices match properties: {properties}")
         self.device = devices[0]
 
     def create_measurement(self, value: float, obs: str, uom: str):
@@ -112,17 +123,19 @@ class Message:
         except IndexError:
             raise ErrMessageNoSteps("pipeline message has no steps remaining")
 
-    @classmethod
+    @ classmethod
     def from_json(cls, json_str: str):
         data = json.loads(json_str)
-        required_fields = ['id', 'owner_id', 'received_at',
+        required_fields = ['tracing_id', 'owner_id', 'received_at',
                            'pipeline_id', 'step_index', 'pipeline_steps', 'timestamp']
         if not all(field in data for field in required_fields):
             missing = [field for field in required_fields if field not in data]
             raise MissingRequiredProperties(f"Missing required properties in JSON: {','.join(missing)}")
 
         payload = data.get('payload') or None
-        if isinstance(payload, str):
+        if payload is None:
+            payload = b''
+        elif isinstance(payload, str):
             payload = base64.b64decode(payload)
         elif not isinstance(payload, bytes):
             raise TypeError("Payload must be a base64 encoded string or a bytestring")
@@ -206,7 +219,8 @@ class PipelineError:
 def main():
     message: Message = None
     try:
-        message = Message.from_json(request.get_data(as_text=True))
+        original_message = Message.from_json(request.get_data(as_text=True))
+        message = deepcopy(original_message)
         new_payload = usercode.process(message.payload, message)
         message.payload = new_payload
         next_step = message.next_step()
@@ -214,10 +228,11 @@ def main():
         res = flask.Response(json.dumps(message, cls=Serializer), content_type="application/json")
         res.headers["X-AMQP-Topic"] = next_step
         return res
-    except Exception as e:
+    except BaseException as e:
+        print(f"exception occured for id: {message.tracing_id}:\n {e}")
         pipeline_error = PipelineError(
-            received_by_worker=message,
-            processing_attempt=None,
+            received_by_worker=original_message,
+            processing_attempt=message,
             worker="your_worker_name",
             queue="your_queue_name",
             timestamp=int(datetime.now().timestamp()),

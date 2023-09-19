@@ -2,6 +2,7 @@ package routes
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -38,9 +39,9 @@ func (h *IngressPageHandler) SetupRoutes(r chi.Router) {
 }
 
 func (h *IngressPageHandler) createViewIngresses(ctx context.Context) ([]views.Ingress, error) {
-	resIngresses, _, err := h.client.TracingApi.ListIngresses(ctx).Execute()
+	resIngresses, _, err := h.client.TracingApi.ListIngresses(ctx).Limit(30).Execute()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error listing ingresses: %w", err)
 	}
 	pipelineIDs := lo.FilterMap(resIngresses.Data, func(ingr api.ArchivedIngress, _ int) (string, bool) {
 		if ingr.IngressDto == nil {
@@ -51,12 +52,24 @@ func (h *IngressPageHandler) createViewIngresses(ctx context.Context) ([]views.I
 	pipelineIDs = lo.Uniq(pipelineIDs)
 	resPipelines, _, err := h.client.PipelinesApi.ListPipelines(ctx).Execute()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error listing pipelines: %w", err)
 	}
 
-	resLogs, _, err := h.client.TracingApi.ListTraces(ctx).TracingId(lo.Map(resIngresses.Data, func(ing api.ArchivedIngress, _ int) string { return ing.GetTracingId() })).Execute()
+	plSteps := lo.FlatMap(resPipelines.Data, func(p api.Pipeline, _ int) []string { return p.Steps })
+	plSteps = lo.Uniq(plSteps)
+	resWorkers, _, err := h.client.WorkersApi.ListWorkers(ctx).Id(plSteps).Execute()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error listing workers: %w", err)
+	}
+	workerNames := lo.SliceToMap(resWorkers.Data, func(w api.UserWorker) (string, string) {
+		return w.GetId(), w.GetName()
+	})
+
+	traceIDs := lo.Map(resIngresses.Data, func(ing api.ArchivedIngress, _ int) string { return ing.GetTracingId() })
+	traceIDs = lo.Uniq(traceIDs)
+	resLogs, _, err := h.client.TracingApi.ListTraces(ctx).TracingId(traceIDs).Execute()
+	if err != nil {
+		return nil, fmt.Errorf("error listing traces: %w", err)
 	}
 	traceMap := lo.SliceToMap(resLogs.Data, func(steplog api.Trace) (string, api.Trace) {
 		return steplog.TracingId, steplog
@@ -67,7 +80,7 @@ func (h *IngressPageHandler) createViewIngresses(ctx context.Context) ([]views.I
 	})
 	resDevices, _, err := h.client.DevicesApi.ListDevices(ctx).Id(lo.Uniq(deviceIDs)).Execute()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error listing devices: %w", err)
 	}
 	deviceMap := lo.SliceToMap(resDevices.Data, func(device api.Device) (int64, api.Device) {
 		return device.Id, device
@@ -92,18 +105,22 @@ func (h *IngressPageHandler) createViewIngresses(ctx context.Context) ([]views.I
 		ingress := views.Ingress{
 			TracingID: ingress.TracingId,
 			CreatedAt: ingress.IngressDto.CreatedAt,
-			Steps: lo.Map(pl.Steps, func(stepLabel string, ix int) views.IngressStep {
+			Steps: lo.Map(pl.Steps, func(stepKey string, ix int) views.IngressStep {
 				// TODO: This currently requires that there are an equal number of StepDTO's and Pipeline Steps
 				// In the future pipelines will have revisions and are not directly mutable, thus this should always be equal
 				step := traceLog.Steps[ix]
+				stepName := stepKey
+				if workerName, ok := workerNames[stepName]; ok {
+					stepName = workerName
+				}
 				viewStep := views.IngressStep{
-					Label:  stepLabel,
+					Label:  stepName,
 					Status: int(step.Status),
 				}
 				if step.Error != "" {
 					viewStep.Tooltip = step.Error
 				} else if step.Duration != 0 {
-					viewStep.Tooltip = time.Duration(step.Duration * int32(time.Second)).String()
+					viewStep.Tooltip = time.Duration(step.Duration * float64(time.Second)).String()
 				} else if step.Status == 3 || viewStep.Status == 4 {
 					viewStep.Tooltip = "<1s"
 				}

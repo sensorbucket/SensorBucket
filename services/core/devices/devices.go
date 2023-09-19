@@ -2,6 +2,7 @@ package devices
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"regexp"
 	"time"
@@ -210,7 +211,7 @@ func (d *Device) GetSensorByExternalID(eid string) (*Sensor, error) {
 		}
 	}
 
-	return nil, ErrSensorNotFound
+	return nil, fmt.Errorf("%w: for id '%s'", ErrSensorNotFound, eid)
 }
 
 func (d *Device) GetFallbackSensor() (*Sensor, error) {

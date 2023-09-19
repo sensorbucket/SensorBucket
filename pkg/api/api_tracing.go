@@ -152,8 +152,8 @@ type ApiListTracesRequest struct {
 	tracingId *[]string
 	deviceId *int64
 	status *int32
-	durationGreaterThan *string
-	durationSmallerThan *string
+	durationGreaterThan *int32
+	durationSmallerThan *int32
 }
 
 // The cursor for the current page
@@ -183,12 +183,12 @@ func (r ApiListTracesRequest) Status(status int32) ApiListTracesRequest {
 	return r
 }
 
-func (r ApiListTracesRequest) DurationGreaterThan(durationGreaterThan string) ApiListTracesRequest {
+func (r ApiListTracesRequest) DurationGreaterThan(durationGreaterThan int32) ApiListTracesRequest {
 	r.durationGreaterThan = &durationGreaterThan
 	return r
 }
 
-func (r ApiListTracesRequest) DurationSmallerThan(durationSmallerThan string) ApiListTracesRequest {
+func (r ApiListTracesRequest) DurationSmallerThan(durationSmallerThan int32) ApiListTracesRequest {
 	r.durationSmallerThan = &durationSmallerThan
 	return r
 }

@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -20,7 +20,7 @@ import (
 
 // ttnCmd represents the ttn command
 var ttnCmd = &cobra.Command{
-	Use:   "ttn",
+	Use:   "ttn <pipeline_id> <dataset_file>",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -28,11 +28,12 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	Args: cobra.MatchAll(cobra.ExactArgs(3), cobra.OnlyValidArgs),
+	Args: cobra.MatchAll(cobra.ExactArgs(2), cobra.OnlyValidArgs),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		url := args[0]
-		pipelineId := args[1]
-		dataSet := args[2]
+		host, _ := cmd.Flags().GetString("host")
+		pipelineId := args[0]
+		dataSet := args[1]
+		interval, _ := cmd.Flags().GetInt64("interval")
 
 		jsonFile, err := os.Open(dataSet)
 		if err != nil {
@@ -50,7 +51,7 @@ to quickly create a Cobra application.`,
 			randomIndex := rand.Intn(len(data))
 			el := data[randomIndex]
 			fmt.Println("sending", string(el))
-			req, err := http.NewRequest("POST", fmt.Sprintf("%s/%s", url, pipelineId), bytes.NewBuffer(el))
+			req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/uplinks/%s", host, pipelineId), bytes.NewBuffer(el))
 			if err != nil {
 				fmt.Println("Error creating request:", err)
 				continue
@@ -62,18 +63,19 @@ to quickly create a Cobra application.`,
 				fmt.Println("Error sending request:", err)
 				continue
 			}
-			respBody, err := ioutil.ReadAll(resp.Body)
+			respBody, err := io.ReadAll(resp.Body)
 			if err != nil {
 				fmt.Println("Error sending request:", err)
 				continue
 			}
 			fmt.Println("Response Status:", resp.Status)
 			fmt.Println("Response Body:", string(respBody))
-			time.Sleep(time.Millisecond * 3000)
+			time.Sleep(time.Duration(interval) * time.Millisecond)
 		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(ttnCmd)
+	ttnCmd.Flags().Int64P("interval", "i", 3000, "The interval between sent uplinks")
 }

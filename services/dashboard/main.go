@@ -46,12 +46,6 @@ func Run() error {
 	if os.Getenv("GO_ENV") != "production" {
 		staticPath := env.Could("STATIC_PATH", "")
 		fmt.Println("Serving static files...")
-		router.Use(func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Last-Modified", startTS.Format("Monday, 02 January 2006 15:04:05 MST"))
-				next.ServeHTTP(w, r)
-			})
-		})
 		router.Use(middleware.GetHead)
 		fileServer := http.FileServer(http.Dir(staticPath))
 		router.Handle("/static/*", http.StripPrefix("/static", fileServer))

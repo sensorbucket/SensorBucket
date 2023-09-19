@@ -6,6 +6,7 @@ from zipfile import ZipFile
 from base64 import b64decode
 import pika
 import flask
+import time
 
 app = flask.Flask("dockerworker")
 
@@ -70,7 +71,10 @@ def main():
         response_topic = response.headers["X-AMQP-Topic"]
         response_data = response.data
         channel.basic_ack(delivery_tag=method_frame.delivery_tag)
-        channel.basic_publish(amqp_xchg, response_topic, response_data, pika.BasicProperties())
+        channel.basic_publish(amqp_xchg, response_topic, response_data, pika.BasicProperties(
+            message_id=header_frame.message_id,
+            headers={"timestamp": int(time.time() * 1000)}
+        ))
         print(f"Message processed and published at {amqp_xchg}/{response_topic}")
 
     # Load AMQP connection

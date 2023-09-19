@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"reflect"
 )
 
 
@@ -345,6 +346,7 @@ type ApiListWorkersRequest struct {
 	ApiService *WorkersApiService
 	cursor *string
 	limit *int32
+	id *[]string
 }
 
 // The cursor for the current page
@@ -356,6 +358,12 @@ func (r ApiListWorkersRequest) Cursor(cursor string) ApiListWorkersRequest {
 // The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
 func (r ApiListWorkersRequest) Limit(limit int32) ApiListWorkersRequest {
 	r.limit = &limit
+	return r
+}
+
+// Filter by Pipeline IDs 
+func (r ApiListWorkersRequest) Id(id []string) ApiListWorkersRequest {
+	r.id = &id
 	return r
 }
 
@@ -405,6 +413,17 @@ func (a *WorkersApiService) ListWorkersExecute(r ApiListWorkersRequest) (*ListWo
 	}
 	if r.limit != nil {
 		localVarQueryParams.Add("limit", parameterToString(*r.limit, ""))
+	}
+	if r.id != nil {
+		t := *r.id
+		if reflect.TypeOf(t).Kind() == reflect.Slice {
+			s := reflect.ValueOf(t)
+			for i := 0; i < s.Len(); i++ {
+				localVarQueryParams.Add("id", parameterToString(s.Index(i), "multi"))
+			}
+		} else {
+			localVarQueryParams.Add("id", parameterToString(t, "multi"))
+		}
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}

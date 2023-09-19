@@ -22,7 +22,7 @@ type TraceStep struct {
 	Status int32 `json:"status"`
 	StatusString string `json:"status_string"`
 	// Duration in seconds
-	Duration int32 `json:"duration"`
+	Duration float64 `json:"duration"`
 	Error string `json:"error"`
 }
 
@@ -30,7 +30,7 @@ type TraceStep struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewTraceStep(status int32, statusString string, duration int32, error_ string) *TraceStep {
+func NewTraceStep(status int32, statusString string, duration float64, error_ string) *TraceStep {
 	this := TraceStep{}
 	this.Status = status
 	this.StatusString = statusString
@@ -128,9 +128,9 @@ func (o *TraceStep) SetStatusString(v string) {
 }
 
 // GetDuration returns the Duration field value
-func (o *TraceStep) GetDuration() int32 {
+func (o *TraceStep) GetDuration() float64 {
 	if o == nil {
-		var ret int32
+		var ret float64
 		return ret
 	}
 
@@ -139,7 +139,7 @@ func (o *TraceStep) GetDuration() int32 {
 
 // GetDurationOk returns a tuple with the Duration field value
 // and a boolean to check if the value has been set.
-func (o *TraceStep) GetDurationOk() (*int32, bool) {
+func (o *TraceStep) GetDurationOk() (*float64, bool) {
 	if o == nil {
     return nil, false
 	}
@@ -147,7 +147,7 @@ func (o *TraceStep) GetDurationOk() (*int32, bool) {
 }
 
 // SetDuration sets field value
-func (o *TraceStep) SetDuration(v int32) {
+func (o *TraceStep) SetDuration(v float64) {
 	o.Duration = v
 }
 

@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"regexp"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 )
@@ -47,13 +49,23 @@ type UserWorkerPaginationQuery struct {
 	ID uuid.UUID `pagination:"id,ASC"`
 }
 
-func (s *PSQLStore) ListUserWorkers(req pagination.Request) (*pagination.Page[UserWorker], error) {
+var R_UUID = regexp.MustCompile("^[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}$")
+
+func (s *PSQLStore) ListUserWorkers(filters ListWorkerFilters, req pagination.Request) (*pagination.Page[UserWorker], error) {
 	var err error
 	q := sq.Select(
 		"id", "name", "description", "state", "language", "organisation", "major", "revision",
 		"status", "status_info", "source", "entrypoint",
 	).
 		From("user_workers").Where(sq.Eq{"state": StateEnabled})
+
+	if len(filters.ID) > 0 {
+		ids := lo.Filter(filters.ID, func(id string, _ int) bool {
+			return R_UUID.MatchString(id)
+		})
+		fmt.Printf("ids: %v\n", ids)
+		q = q.Where(sq.Eq{"id": ids})
+	}
 
 	cursor, err := pagination.GetCursor[UserWorkerPaginationQuery](req)
 	if err != nil {

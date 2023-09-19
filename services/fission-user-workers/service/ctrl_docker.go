@@ -99,7 +99,7 @@ func (ctrl *DockerController) Reconcile(ctx context.Context) error {
 	log.Printf("Removing %d wandering containers\n", len(wandering))
 	for _, id := range wandering {
 		c := containerWorkerIDMap[id]
-		err := ctrl.docker.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{})
+		err := ctrl.docker.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{Force: true})
 		if err != nil {
 			log.Printf("Error removing container: %s: %v\n", c.ID, err)
 			continue
@@ -107,7 +107,7 @@ func (ctrl *DockerController) Reconcile(ctx context.Context) error {
 	}
 
 	// Iterate over workers in Database
-	pages, err := ctrl.store.ListUserWorkers(pagination.Request{Limit: 10})
+	pages, err := ctrl.store.ListUserWorkers(ListWorkerFilters{}, pagination.Request{Limit: 10})
 	if err != nil {
 		return fmt.Errorf("error listing user workers from database: %w", err)
 	}
@@ -180,7 +180,7 @@ func (ctrl *DockerController) Reconcile(ctx context.Context) error {
 		if pages.Cursor == "" {
 			break
 		}
-		pages, err = ctrl.store.ListUserWorkers(pagination.Request{Cursor: pages.Cursor})
+		pages, err = ctrl.store.ListUserWorkers(ListWorkerFilters{}, pagination.Request{Cursor: pages.Cursor})
 		if err != nil {
 			return fmt.Errorf("error listing user workers from database: %w", err)
 		}

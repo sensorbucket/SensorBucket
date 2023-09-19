@@ -45,17 +45,22 @@ func (t *HTTPTransport) Stop(ctx context.Context) {
 	t.server.Shutdown(ctx)
 }
 
+type WorkersHTTPFilters struct {
+	pagination.Request
+	ListWorkerFilters
+}
+
 func createRoutes(app *Application, r chi.Router) {
 	r.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello"))
 	})
 	r.Get("/workers", func(w http.ResponseWriter, r *http.Request) {
-		params, err := httpfilter.Parse[pagination.Request](r)
+		params, err := httpfilter.Parse[WorkersHTTPFilters](r)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
-		page, err := app.ListWorkers(r.Context(), params)
+		page, err := app.ListWorkers(r.Context(), params.ListWorkerFilters, params.Request)
 		if err != nil {
 			web.HTTPError(w, err)
 			return

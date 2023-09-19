@@ -247,8 +247,8 @@ trace_step:
       type: string
       example: "succes"
     duration:
-      type: integer
-      format: float
+      type: number
+      format: double
       description: Duration in seconds
       example: 5.321
     error:

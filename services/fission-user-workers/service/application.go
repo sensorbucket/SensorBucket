@@ -19,7 +19,7 @@ var (
 
 type Store interface {
 	WorkersExists([]uuid.UUID) ([]uuid.UUID, error)
-	ListUserWorkers(req pagination.Request) (*pagination.Page[UserWorker], error)
+	ListUserWorkers(ListWorkerFilters, pagination.Request) (*pagination.Page[UserWorker], error)
 	CreateWorker(*UserWorker) error
 	GetWorkerByID(uuid.UUID) (*UserWorker, error)
 	UpdateWorker(*UserWorker) error
@@ -88,6 +88,10 @@ func (app *Application) UpdateWorker(ctx context.Context, worker *UserWorker, op
 	return nil
 }
 
-func (app *Application) ListWorkers(ctx context.Context, req pagination.Request) (*pagination.Page[UserWorker], error) {
-	return app.store.ListUserWorkers(req)
+type ListWorkerFilters struct {
+	ID []string
+}
+
+func (app *Application) ListWorkers(ctx context.Context, filters ListWorkerFilters, req pagination.Request) (*pagination.Page[UserWorker], error) {
+	return app.store.ListUserWorkers(filters, req)
 }
