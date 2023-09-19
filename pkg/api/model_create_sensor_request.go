@@ -22,7 +22,7 @@ type CreateSensorRequest struct {
 	ExternalId string `json:"external_id"`
 	Brand *string `json:"brand,omitempty"`
 	Properties map[string]interface{} `json:"properties,omitempty"`
-	ArchiveTime *float32 `json:"archive_time,omitempty"`
+	ArchiveTime *int32 `json:"archive_time,omitempty"`
 }
 
 // NewCreateSensorRequest instantiates a new CreateSensorRequest object
@@ -189,9 +189,9 @@ func (o *CreateSensorRequest) SetProperties(v map[string]interface{}) {
 }
 
 // GetArchiveTime returns the ArchiveTime field value if set, zero value otherwise.
-func (o *CreateSensorRequest) GetArchiveTime() float32 {
+func (o *CreateSensorRequest) GetArchiveTime() int32 {
 	if o == nil || isNil(o.ArchiveTime) {
-		var ret float32
+		var ret int32
 		return ret
 	}
 	return *o.ArchiveTime
@@ -199,7 +199,7 @@ func (o *CreateSensorRequest) GetArchiveTime() float32 {
 
 // GetArchiveTimeOk returns a tuple with the ArchiveTime field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *CreateSensorRequest) GetArchiveTimeOk() (*float32, bool) {
+func (o *CreateSensorRequest) GetArchiveTimeOk() (*int32, bool) {
 	if o == nil || isNil(o.ArchiveTime) {
     return nil, false
 	}
@@ -215,8 +215,8 @@ func (o *CreateSensorRequest) HasArchiveTime() bool {
 	return false
 }
 
-// SetArchiveTime gets a reference to the given float32 and assigns it to the ArchiveTime field.
-func (o *CreateSensorRequest) SetArchiveTime(v float32) {
+// SetArchiveTime gets a reference to the given int32 and assigns it to the ArchiveTime field.
+func (o *CreateSensorRequest) SetArchiveTime(v int32) {
 	o.ArchiveTime = &v
 }
 

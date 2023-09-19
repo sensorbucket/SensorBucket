@@ -91,7 +91,7 @@ func Run() error {
 	log.Printf("HTTP Listening: %s\n", httpsrv.Addr)
 
 	// Setup MQ Transports
-	measurementtransport.StartMQ(measurementservice, amqpConn, AMQP_QUEUE_MEASUREMENTS)
+	measurementtransport.StartMQ(measurementservice, amqpConn, AMQP_QUEUE_MEASUREMENTS, AMQP_XCHG_PIPELINE_MESSAGES)
 	go processingtransport.StartIngressDTOConsumer(
 		amqpConn,
 		processingservice,

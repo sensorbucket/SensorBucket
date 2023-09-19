@@ -18,7 +18,7 @@ import (
 // AddSensorToSensorGroupRequest struct for AddSensorToSensorGroupRequest
 type AddSensorToSensorGroupRequest struct {
 	// id of the sensor to add
-	SensorId *float32 `json:"sensor_id,omitempty"`
+	SensorId *int32 `json:"sensor_id,omitempty"`
 }
 
 // NewAddSensorToSensorGroupRequest instantiates a new AddSensorToSensorGroupRequest object
@@ -39,9 +39,9 @@ func NewAddSensorToSensorGroupRequestWithDefaults() *AddSensorToSensorGroupReque
 }
 
 // GetSensorId returns the SensorId field value if set, zero value otherwise.
-func (o *AddSensorToSensorGroupRequest) GetSensorId() float32 {
+func (o *AddSensorToSensorGroupRequest) GetSensorId() int32 {
 	if o == nil || isNil(o.SensorId) {
-		var ret float32
+		var ret int32
 		return ret
 	}
 	return *o.SensorId
@@ -49,7 +49,7 @@ func (o *AddSensorToSensorGroupRequest) GetSensorId() float32 {
 
 // GetSensorIdOk returns a tuple with the SensorId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *AddSensorToSensorGroupRequest) GetSensorIdOk() (*float32, bool) {
+func (o *AddSensorToSensorGroupRequest) GetSensorIdOk() (*int32, bool) {
 	if o == nil || isNil(o.SensorId) {
     return nil, false
 	}
@@ -65,8 +65,8 @@ func (o *AddSensorToSensorGroupRequest) HasSensorId() bool {
 	return false
 }
 
-// SetSensorId gets a reference to the given float32 and assigns it to the SensorId field.
-func (o *AddSensorToSensorGroupRequest) SetSensorId(v float32) {
+// SetSensorId gets a reference to the given int32 and assigns it to the SensorId field.
+func (o *AddSensorToSensorGroupRequest) SetSensorId(v int32) {
 	o.SensorId = &v
 }
 

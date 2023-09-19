@@ -24,11 +24,11 @@ type (
 )
 
 type Message struct {
-	ID            string         `json:"id"`
+	TracingID     string         `json:"tracing_id"`
 	OwnerID       int64          `json:"owner_id"`
 	ReceivedAt    int64          `json:"received_at"`
 	PipelineID    string         `json:"pipeline_id"`
-	StepIndex     uint64         `json:"stepIndex"`
+	StepIndex     uint64         `json:"step_index"`
 	PipelineSteps []string       `json:"pipeline_steps"`
 	Timestamp     int64          `json:"timestamp"`
 	Device        *Device        `json:"device"`

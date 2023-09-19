@@ -1,0 +1,83 @@
+{% import "sensorbucket.nl/sensorbucket/pkg/api" %}
+
+{% func (p *WorkerEditorPage) Body() %}
+<div class="flex flex-col gap-6 w-full xl:w-2/3 mx-auto">
+    <div 
+        class="bg-white border rounded-md"
+    >
+        <header class="border-b py-2 px-4 text-sm text-slate-700">
+            Worker Details
+        </header>
+        <form class="p-4 gap-4 grid lg:grid-cols-2">
+            <fieldset>
+                <label for="worker-name" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Worker name</small></label>
+                <input
+                    type="text" name="name" id="worker-name"
+                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600
+                    {% if p.Worker != nil %}
+                        text-slate-500
+                        bg-slate-50
+                    {% else %}
+                        text-slate-700
+                    {% endif %}
+                    "
+
+                    {% if p.Worker != nil %}
+                    disabled
+                    value="{%s p.Worker.Name %}"
+                    {% endif %}
+                />
+            </fieldset>
+            <div class="col-span-full">
+                {% if p.Worker == nil %}
+                    <button 
+                        class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                        hx-post="/workers/create"
+                        hx-vals='js:{userCode: currentUserCode()}'
+                        hx-swap="none"
+                    >
+                    Create
+                    </button>
+                {% else %}
+                    <button 
+                        class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                        hx-patch="/workers/{%s p.Worker.Id %}"
+                        hx-vals='js:{userCode: currentUserCode()}'
+                        hx-swap="none"
+                    >
+                    Save
+                    </button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    <div 
+        class="bg-white border rounded-md"
+    >
+        <header class="border-b py-2 px-4 text-sm text-slate-700">
+            Processing Code
+        </header>
+        <div id="editor-container" class="min-h-[500px]">
+        </div>
+        <script type="module">
+            import {createEditor} from '/static/codemirror.js';
+            const usercode = atob('{%s p.UserCode %}');
+            const editor = createEditor(document.getElementById("editor-container"), usercode);
+            window.editor = editor;
+
+            function currentUserCode() {
+                return btoa(editor.state.doc.toString())
+            }
+            window.currentUserCode = currentUserCode;
+        </script>
+    </div>
+</div>
+{% endfunc %}
+
+{% code
+type WorkerEditorPage struct {
+    BasePage
+    Worker *api.UserWorker
+    UserCode string
+}
+%}

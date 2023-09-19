@@ -33,7 +33,7 @@ func NewPipelineMessagePublisher(conn *mq.AMQPConnection, xchg string) processin
 			publisher <- mq.PublishMessage{
 				Topic: topic,
 				Publishing: amqp091.Publishing{
-					MessageId: msg.ID,
+					MessageId: msg.TracingID,
 					Body:      jsonData,
 				},
 			}

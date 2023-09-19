@@ -1,7 +1,6 @@
 package tracinginfra
 
 import (
-	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -125,6 +124,7 @@ func (s *stepStore) GetStepsByTracingIDs(tracingIds []string) ([]tracing.Enriche
 	list := []tracing.EnrichedStep{}
 	for rows.Next() {
 		var t tracing.EnrichedStep
+		var durationMS int64
 		err = rows.Scan(
 			&t.Step.TracingID,
 			&t.Step.DeviceID,
@@ -133,13 +133,13 @@ func (s *stepStore) GetStepsByTracingIDs(tracingIds []string) ([]tracing.Enriche
 			&t.Step.StartTime,
 			&t.Step.Error,
 			&t.Status,
-			&t.Duration,
+			&durationMS,
 			&t.HighestCollectiveStatus,
 		)
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("t.Duration: %v\n", t.Duration)
+		t.Duration = time.Duration(durationMS * int64(time.Millisecond))
 		list = append(list, t)
 	}
 	return list, nil

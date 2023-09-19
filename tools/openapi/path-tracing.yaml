@@ -16,7 +16,7 @@ get:
       description: |
         The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
       schema:
-        type: number
+        type: integer
     - in: query
       name: tracing_id
       style: form
@@ -41,13 +41,13 @@ get:
     - in: query
       name: duration_greater_than
       schema:
-        type: string
-        example: "5s"
+        type: integer
+        example: 5 
     - in: query
       name: duration_smaller_than
       schema:
-        type: string
-        example: "250ms"
+        type: integer
+        example: 10
 
   responses:
     "200":

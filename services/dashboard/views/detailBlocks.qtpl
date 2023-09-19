@@ -1,6 +1,8 @@
+{% import "sensorbucket.nl/sensorbucket/pkg/api" %}
 {% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
 {% import "sensorbucket.nl/sensorbucket/services/core/processing" %}
 {% import "fmt" %}
+{% import "encoding/json" %}
 
 {% func PipelineDetailBlock(pipeline processing.Pipeline) %}
 <div class="grid grid-cols-3 gap-x-8 gap-y-3 [&>*]:min-h-[2rem] text-sm">
@@ -15,7 +17,7 @@
 </div>
 {% endfunc %}
 
-{% func DeviceDetailBlock(device devices.Device) %}
+{% func DeviceDetailBlock(device api.Device) %}
     <div class="grid grid-cols-3 gap-x-8 gap-y-3 [&>*]:min-h-[2rem] text-sm">
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Device Code</small>
@@ -23,7 +25,7 @@
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Device ID</small>
-            <span>{%dl device.ID %}</span>
+            <span>{%dl device.Id%}</span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Organisation</small>
@@ -36,7 +38,7 @@
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">State</small>
             <span>
-            {% switch device.State %}
+            {% switch devices.DeviceState(device.State) %}
             {% case devices.DeviceStateUnknown %}
             Unknown
             {% case devices.DeviceEnabled %}
@@ -58,30 +60,33 @@
             <small class="text-xs font-semibold text-slate-500">Location (Latitude, Longitude, Altitude)</small>
             <div class="grid grid-cols-3 items-center">
                 {% if device.Latitude != nil && device.Longitude != nil %}
-                <span>{%f.3 *device.Latitude %}</span>
-                <span>{%f.3 *device.Longitude %}</span>
+                <span>{%f.3 float64(device.GetLatitude()) %}</span>
+                <span>{%f.3 float64(device.GetLongitude()) %}</span>
                 {% else %}
                 <span>No latitude</span>
                 <span>No longitude</span>
                 {% endif %}
                 {% if device.Altitude != nil %}
-                <span>{%f.3 *device.Altitude %}</span>
+                <span>{%f.3 float64(device.GetAltitude()) %}</span>
                 {% endif %}
-                <span class="col-span-full">{%s device.LocationDescription %}</span>
+                <span class="col-span-full">{%s device.GetLocationDescription() %}</span>
             </div>
         </div>
         <div class="flex flex-col col-span-full">
             <small class="text-xs font-semibold text-slate-500">Properties</small>
-            <span>{%s string(device.Properties) %}</span>
+            {% code
+                deviceProps, _ := json.Marshal(device.Properties)
+            %}
+            <span>{%s string(deviceProps) %}</span>
         </div>
     </div>
 {% endfunc %}
 
-{% func SensorDetailBlock(sensor devices.Sensor) %}
+{% func SensorDetailBlock(sensor api.Sensor) %}
     <div class="grid grid-cols-3 gap-x-8 gap-y-3 [&>*]:min-h-[2rem] text-sm">
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Sensor ID</small>
-            <span>{%dl sensor.ID %}</span>
+            <span>{%dl sensor.Id%}</span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Sensor Code</small>
@@ -95,7 +100,7 @@
             <small class="text-xs font-semibold text-slate-500">Archive Time</small>
             <span>
             {% if sensor.ArchiveTime != nil %}
-                {%d *sensor.ArchiveTime %} days
+                {%d int(sensor.GetArchiveTime()) %} days
             {% else %}
                 Not set
             {% endif %}
@@ -103,20 +108,23 @@
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Parent Device ID</small>
-            <span>{%dl sensor.DeviceID %}</span>
+            <span>{%dl sensor.DeviceId %}</span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">External ID</small>
-            <span>{%s sensor.ExternalID %}</span>
+            <span>{%s sensor.ExternalId %}</span>
         </div>
         <div class="flex flex-col col-span-full">
             <small class="text-xs font-semibold text-slate-500">Properties</small>
-            <span>{%s string(sensor.Properties) %}</span>
+            {% code
+                sensorProps, _ := json.Marshal(sensor.Properties)
+            %}
+            <span>{%s string(sensorProps) %}</span>
         </div>
     </div>
 {% endfunc %}
 
-{% func renderDeviceMap(device devices.Device) %}
+{% func renderDeviceMap(device api.Device) %}
     {% if device.Latitude != nil && device.Longitude != nil %}
         <div
             class="w-full h-96" 

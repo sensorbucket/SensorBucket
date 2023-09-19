@@ -48,7 +48,7 @@ func TestProcess(t *testing.T) {
 		data, err := hex.DecodeString(tC.data)
 		require.NoError(t, err)
 		msg := pipeline.Message{
-			ID:            uuid.NewString(),
+			TracingID:            uuid.NewString(),
 			ReceivedAt:    time.Now().UnixMilli(),
 			PipelineID:    uuid.NewString(),
 			Measurements:  []pipeline.Measurement{},

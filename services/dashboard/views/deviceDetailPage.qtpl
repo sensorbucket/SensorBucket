@@ -1,4 +1,4 @@
-{% import "sensorbucket.nl/sensorbucket/services/core/devices" %}
+{% import "sensorbucket.nl/sensorbucket/pkg/api" %}
 
 {% func (p *DeviceDetailPage) Body() %}
     <div class="flex gap-3 text-sm my-4 italic items-center">
@@ -39,11 +39,11 @@
                 <tbody>
                     {% for _, sensor := range p.Device.Sensors %}
                     <tr class="hover:bg-slate-50 group">
-                        <td class="px-4 h-10 border-b">{%dl sensor.ID %}</td>
+                        <td class="px-4 h-10 border-b">{%dl sensor.Id %}</td>
                         <td class="border-b"><a
                             hx-target="main"
                             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-                            href="/overview/devices/{%dl p.Device.ID %}/sensors/{%s sensor.Code %}"
+                            href="/overview/devices/{%dl p.Device.Id %}/sensors/{%s sensor.Code %}"
                         >{%s sensor.Code %}</a></td>
                         <td class="px-4 h-10 border-b">{%s sensor.Brand %}</td>
                         <td class="px-4 h-10 border-b">{%s sensor.Description %}</td>
@@ -58,6 +58,6 @@
 {% code
 type DeviceDetailPage struct {
     BasePage
-    Device devices.Device
+    Device api.Device
 }
 %}
