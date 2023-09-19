@@ -8,6 +8,7 @@ type NavItem struct {
 var navItems = []NavItem{
     {Label: "Overview", URL: "/", Icon: "material-symbols:home-outline-rounded" },
     {Label: "Ingress", URL: "/ingress", Icon: "mdi:latest" },
+    {Label: "Pipelines", URL: "/pipelines", Icon:"mdi:latest"},
 }
 %}
 
@@ -51,6 +52,7 @@ type BasePage struct {
     <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
     <script type="text/javascript" src="/static/uplot.htmx.js"></script>
     <script type="text/javascript" src="/static/leaflet.htmx.js"></script>
+    <script src="http://SortableJS.github.io/Sortable/Sortable.js"></script>
     {%= page.Header() %}
 </head>
 

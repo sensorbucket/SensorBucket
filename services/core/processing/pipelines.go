@@ -38,7 +38,10 @@ func StrToStatus(str string) (PipelineStatus, error) {
 }
 
 type Pipeline struct {
-	ID               string         `json:"id"`
+	ID string `json:"id"`
+
+	// TODO: current migration won't work with this setup because name can be null.
+	Name             string         `json:"name"`
 	Description      string         `json:"description"`
 	Status           PipelineStatus `json:"status"`
 	Steps            []string       `json:"steps"`

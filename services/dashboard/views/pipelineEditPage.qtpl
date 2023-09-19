@@ -1,0 +1,128 @@
+<!-- 
+    Pipeline model
+    Workers with pagination
+ -->
+
+{% import "sensorbucket.nl/sensorbucket/services/core/processing" %}
+{% func (p *PipelineEditPage) Body() %}
+<div class="w-full grid grid-rows-3 grid-cols-5 gap-6">
+    <div class="row-span-2 col-span-2 bg-white border rounded-md">
+        <header class="border-b py-2 px-4 text-sm text-slate-700">
+            Pipeline details
+        </header>
+        <div class="p-4">
+            {%= PipelineDetailBlock(p.Pipeline) %}
+        </div>
+    </div>
+    <div class="row-span-2 col-span-3 bg-white border rounded-md">
+        <div class="row-span-2 col-span-2 bg-white border rounded-md">
+            <header class="border-b py-2 px-4 text-sm text-slate-700">
+                Pipeline steps
+            </header>
+            <div class="p-4">
+                {%= RenderPipelineSteps(p.Pipeline) %}
+            </div>
+        </div>
+    </div>
+    <div class="row-span-1 col-span-5 bg-white border rounded-md">
+        {%= RenderWorkerTable(p.Workers, p.WorkersNextPage) %}
+    </div>
+</div>
+{% endfunc %}
+
+{% func RenderWorkerTable(workers []string, nextPage string) %}
+    <table class="w-full text-sm border-separate border-spacing-0" id="worker-table">
+        <thead class="text-left text-slate-500 sticky top-0 bg-white">
+            <tr class="h-10">
+                <th class="font-normal border-b align-middle px-4">
+                    Worker ID
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Worker Name
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {%= RenderWorkerTableRows(workers, nextPage) %}
+        </tbody>
+    </table>
+{% endfunc %}
+
+{% func RenderPipelineSteps(pipeline processing.Pipeline) %}
+    <script>
+        htmx.onLoad(function(content) {
+        let sortables = content.querySelectorAll(".sortable");
+        const ghostStyles = ['border-dashed', 'border-2', 'border-sky-500', 'bg-white', 'shadow-lg', 'shadow-cyan-500/50'];
+        for (var i = 0; i < sortables.length; i++) {
+                let sortable = sortables[i];
+                let sort = new Sortable(sortable, {
+                    animation: 150,
+
+                    // Unfortunately the Sortable JS library does not offer support for multiple classes as the ghost class.
+                    // To style it using Tailwind a small hack is required
+                    onStart: function(evt) {
+                        ghostStyles.forEach((item) => evt.item.classList.add(item));
+                    },
+                    onEnd: function(evt) {
+                        ghostStyles.forEach((item) => evt.item.classList.remove(item));
+
+                        // Update the index for each input item
+                        let inputs = sortable.querySelectorAll("input");
+                        inputs.forEach((ix, input) => input.value = "stuyffff");
+                        for (let i = 0; i < inputs.length; i++) {
+                            inputs[i].value = i;
+                        }
+
+                        // Now fire the event triggering HTMX to update the pipeline in the backend
+                        sortable.dispatchEvent(new Event("steps-updated"));
+                    }
+                });
+            }
+        })
+    </script>
+    <form class="sortable" hx-post="/pipelines/{%s pipeline.ID %}/steps" hx-trigger="steps-updated">
+        <div class="htmx-indicator">Updating...</div>
+        {%= RenderPipelineStepsSortable(pipeline.Steps) %}
+    </form>
+{% endfunc %}
+
+{% func RenderPipelineStepsSortable(steps []string) %}
+    {% for ix, step := range steps %}
+        <div class="p-4 w-2/4 mt-1.5 text-center mx-auto text-white bg-secondary-600 rounded-lg flex justify-start">
+            <input type="hidden" name="{%s step %}" value="{%d ix %}" />
+            <p>{%s step %}</p>
+        </div>
+    {% endfor %}
+{% endfunc %}
+
+{% func RenderWorkerTableRows(workers []string, nextPage string) %}
+    {% for ix, worker := range workers %}
+    <tr
+        class="hover:bg-slate-50 group"
+        {% if nextPage != "" && ix == len(workers)-1 %}
+        hx-trigger="revealed"
+        hx-target="this"
+        hx-swap="afterend"
+        hx-get="{%s nextPage %}"
+        {% endif %}
+    >
+        <td class="px-4 h-10 border-b">{%s worker %}</td>
+        <td class="border-b"><a
+            class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
+            href="/overview/devices/{%s worker %}"
+            hx-target="main"
+        >{%s worker %}</a></td>
+        <td class="px-4 h-10 border-b">{%s worker %}</td>
+        <td class="px-4 h-10 border-b">{%s worker %}</td>
+    </tr>
+    {% endfor %}
+{% endfunc %}
+
+{% code
+type PipelineEditPage struct {
+BasePage
+Pipeline processing.Pipeline
+Workers []string
+WorkersNextPage string
+}
+%}
