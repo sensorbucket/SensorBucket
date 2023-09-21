@@ -24,53 +24,61 @@ var (
 func (p *PipelinePage) StreamBody(qw422016 *qt422016.Writer) {
 //line views/pipelinePage.qtpl:2
 	qw422016.N().S(`
-<fieldset class="relative col-span-2">
-    <button
-        class="bg-transparent hover:bg-gray-500 text-gray-700 font-normal hover:text-white py-1 px-2 border border-gray-600 hover:border-transparent rounded">
-        Create
-    </button>
-</fieldset>
 <div class="w-full xl:w-2/3 mx-auto bg-white border rounded-md">
-
+    <header class="w-full flex items-center justify-between border-b py-2 px-4 text-sm text-slate-700">
+        <section>
+            Pipelines
+        </section>
+        <section class="flex gap-2">
+            <button 
+                class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                hx-get="/pipelines/create"
+                hx-target="main"
+                hx-push-url="true"
+            >
+            Create
+            </button>
+        </section>
+    </header>
     <div> `)
-//line views/pipelinePage.qtpl:11
+//line views/pipelinePage.qtpl:19
 	StreamRenderPipelineTable(qw422016, p.Pipelines, p.PipelinesNextPage)
-//line views/pipelinePage.qtpl:11
+//line views/pipelinePage.qtpl:19
 	qw422016.N().S(`</div>
 </div>
 `)
-//line views/pipelinePage.qtpl:13
+//line views/pipelinePage.qtpl:21
 }
 
-//line views/pipelinePage.qtpl:13
+//line views/pipelinePage.qtpl:21
 func (p *PipelinePage) WriteBody(qq422016 qtio422016.Writer) {
-//line views/pipelinePage.qtpl:13
+//line views/pipelinePage.qtpl:21
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/pipelinePage.qtpl:13
+//line views/pipelinePage.qtpl:21
 	p.StreamBody(qw422016)
-//line views/pipelinePage.qtpl:13
+//line views/pipelinePage.qtpl:21
 	qt422016.ReleaseWriter(qw422016)
-//line views/pipelinePage.qtpl:13
+//line views/pipelinePage.qtpl:21
 }
 
-//line views/pipelinePage.qtpl:13
+//line views/pipelinePage.qtpl:21
 func (p *PipelinePage) Body() string {
-//line views/pipelinePage.qtpl:13
+//line views/pipelinePage.qtpl:21
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/pipelinePage.qtpl:13
+//line views/pipelinePage.qtpl:21
 	p.WriteBody(qb422016)
-//line views/pipelinePage.qtpl:13
+//line views/pipelinePage.qtpl:21
 	qs422016 := string(qb422016.B)
-//line views/pipelinePage.qtpl:13
+//line views/pipelinePage.qtpl:21
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/pipelinePage.qtpl:13
+//line views/pipelinePage.qtpl:21
 	return qs422016
-//line views/pipelinePage.qtpl:13
+//line views/pipelinePage.qtpl:21
 }
 
-//line views/pipelinePage.qtpl:15
+//line views/pipelinePage.qtpl:23
 func StreamRenderPipelineTable(qw422016 *qt422016.Writer, pipelines []api.Pipeline, nextPage string) {
-//line views/pipelinePage.qtpl:15
+//line views/pipelinePage.qtpl:23
 	qw422016.N().S(`
 <table class="w-full text-sm border-separate border-spacing-0" id="device-table">
     <thead class="text-left text-slate-500 sticky top-0 bg-white">
@@ -88,122 +96,122 @@ func StreamRenderPipelineTable(qw422016 *qt422016.Writer, pipelines []api.Pipeli
     </thead>
     <tbody>
         `)
-//line views/pipelinePage.qtpl:31
+//line views/pipelinePage.qtpl:39
 	StreamRenderPipelineTableRows(qw422016, pipelines, nextPage)
-//line views/pipelinePage.qtpl:31
+//line views/pipelinePage.qtpl:39
 	qw422016.N().S(`
     </tbody>
 </table>
 `)
-//line views/pipelinePage.qtpl:34
+//line views/pipelinePage.qtpl:42
 }
 
-//line views/pipelinePage.qtpl:34
+//line views/pipelinePage.qtpl:42
 func WriteRenderPipelineTable(qq422016 qtio422016.Writer, pipelines []api.Pipeline, nextPage string) {
-//line views/pipelinePage.qtpl:34
+//line views/pipelinePage.qtpl:42
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/pipelinePage.qtpl:34
+//line views/pipelinePage.qtpl:42
 	StreamRenderPipelineTable(qw422016, pipelines, nextPage)
-//line views/pipelinePage.qtpl:34
+//line views/pipelinePage.qtpl:42
 	qt422016.ReleaseWriter(qw422016)
-//line views/pipelinePage.qtpl:34
+//line views/pipelinePage.qtpl:42
 }
 
-//line views/pipelinePage.qtpl:34
+//line views/pipelinePage.qtpl:42
 func RenderPipelineTable(pipelines []api.Pipeline, nextPage string) string {
-//line views/pipelinePage.qtpl:34
+//line views/pipelinePage.qtpl:42
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/pipelinePage.qtpl:34
+//line views/pipelinePage.qtpl:42
 	WriteRenderPipelineTable(qb422016, pipelines, nextPage)
-//line views/pipelinePage.qtpl:34
+//line views/pipelinePage.qtpl:42
 	qs422016 := string(qb422016.B)
-//line views/pipelinePage.qtpl:34
+//line views/pipelinePage.qtpl:42
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/pipelinePage.qtpl:34
+//line views/pipelinePage.qtpl:42
 	return qs422016
-//line views/pipelinePage.qtpl:34
+//line views/pipelinePage.qtpl:42
 }
 
-//line views/pipelinePage.qtpl:36
+//line views/pipelinePage.qtpl:44
 func StreamRenderPipelineTableRows(qw422016 *qt422016.Writer, pipelines []api.Pipeline, nextPage string) {
-//line views/pipelinePage.qtpl:36
+//line views/pipelinePage.qtpl:44
 	qw422016.N().S(`
 `)
-//line views/pipelinePage.qtpl:37
+//line views/pipelinePage.qtpl:45
 	for ix, pl := range pipelines {
-//line views/pipelinePage.qtpl:37
+//line views/pipelinePage.qtpl:45
 		qw422016.N().S(`
 <tr class="hover:bg-slate-50 group" `)
-//line views/pipelinePage.qtpl:38
+//line views/pipelinePage.qtpl:46
 		if nextPage != "" && ix == len(pipelines)-1 {
-//line views/pipelinePage.qtpl:38
+//line views/pipelinePage.qtpl:46
 			qw422016.N().S(` hx-trigger="revealed"
     hx-target="this" hx-swap="afterend" hx-get="`)
-//line views/pipelinePage.qtpl:39
+//line views/pipelinePage.qtpl:47
 			qw422016.E().S(nextPage)
-//line views/pipelinePage.qtpl:39
+//line views/pipelinePage.qtpl:47
 			qw422016.N().S(`" `)
-//line views/pipelinePage.qtpl:39
+//line views/pipelinePage.qtpl:47
 		}
-//line views/pipelinePage.qtpl:39
+//line views/pipelinePage.qtpl:47
 		qw422016.N().S(`>
     <td class="px-4 h-10 border-b">`)
-//line views/pipelinePage.qtpl:40
+//line views/pipelinePage.qtpl:48
 		qw422016.E().S(pl.Id)
-//line views/pipelinePage.qtpl:40
+//line views/pipelinePage.qtpl:48
 		qw422016.N().S(`</td>
     <td class="border-b"><a class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
             href="/pipelines/edit/`)
-//line views/pipelinePage.qtpl:42
+//line views/pipelinePage.qtpl:50
 		qw422016.E().S(pl.Id)
-//line views/pipelinePage.qtpl:42
+//line views/pipelinePage.qtpl:50
 		qw422016.N().S(`" hx-target="main">`)
-//line views/pipelinePage.qtpl:42
+//line views/pipelinePage.qtpl:50
 		qw422016.E().S(pl.Id)
-//line views/pipelinePage.qtpl:42
+//line views/pipelinePage.qtpl:50
 		qw422016.N().S(`</a></td>
     <td class="px-4 h-10 border-b">`)
-//line views/pipelinePage.qtpl:43
+//line views/pipelinePage.qtpl:51
 		qw422016.E().S(pl.Description)
-//line views/pipelinePage.qtpl:43
+//line views/pipelinePage.qtpl:51
 		qw422016.N().S(`</td>
 </tr>
 `)
-//line views/pipelinePage.qtpl:45
+//line views/pipelinePage.qtpl:53
 	}
-//line views/pipelinePage.qtpl:45
+//line views/pipelinePage.qtpl:53
 	qw422016.N().S(`
 `)
-//line views/pipelinePage.qtpl:46
+//line views/pipelinePage.qtpl:54
 }
 
-//line views/pipelinePage.qtpl:46
+//line views/pipelinePage.qtpl:54
 func WriteRenderPipelineTableRows(qq422016 qtio422016.Writer, pipelines []api.Pipeline, nextPage string) {
-//line views/pipelinePage.qtpl:46
+//line views/pipelinePage.qtpl:54
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/pipelinePage.qtpl:46
+//line views/pipelinePage.qtpl:54
 	StreamRenderPipelineTableRows(qw422016, pipelines, nextPage)
-//line views/pipelinePage.qtpl:46
+//line views/pipelinePage.qtpl:54
 	qt422016.ReleaseWriter(qw422016)
-//line views/pipelinePage.qtpl:46
+//line views/pipelinePage.qtpl:54
 }
 
-//line views/pipelinePage.qtpl:46
+//line views/pipelinePage.qtpl:54
 func RenderPipelineTableRows(pipelines []api.Pipeline, nextPage string) string {
-//line views/pipelinePage.qtpl:46
+//line views/pipelinePage.qtpl:54
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/pipelinePage.qtpl:46
+//line views/pipelinePage.qtpl:54
 	WriteRenderPipelineTableRows(qb422016, pipelines, nextPage)
-//line views/pipelinePage.qtpl:46
+//line views/pipelinePage.qtpl:54
 	qs422016 := string(qb422016.B)
-//line views/pipelinePage.qtpl:46
+//line views/pipelinePage.qtpl:54
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/pipelinePage.qtpl:46
+//line views/pipelinePage.qtpl:54
 	return qs422016
-//line views/pipelinePage.qtpl:46
+//line views/pipelinePage.qtpl:54
 }
 
-//line views/pipelinePage.qtpl:49
+//line views/pipelinePage.qtpl:57
 type PipelinePage struct {
 	BasePage
 	Pipelines         []api.Pipeline
