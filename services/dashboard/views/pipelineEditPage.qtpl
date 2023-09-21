@@ -6,7 +6,7 @@
 {% import "sensorbucket.nl/sensorbucket/pkg/api" %}
 {% func (p *PipelineEditPage) Body() %}
 <div class="w-full grid grid-rows-3 grid-cols-5 gap-6">
-    <div class="row-span-2 col-span-2 bg-white border rounded-md">
+    <div class="row-span-1 col-span-2 bg-white border rounded-md">
         <header class="border-b py-2 px-4 text-sm text-slate-700">
             Pipeline details
         </header>
@@ -14,68 +14,179 @@
             {%= PipelineDetailBlock(p.Pipeline) %}
         </div>
     </div>
-    <div class="row-span-2 col-span-3 bg-white border rounded-md">
+    <div class="row-span-1 col-span-3 bg-white">
         <div class="row-span-2 col-span-2 bg-white border rounded-md">
             <header class="border-b py-2 px-4 text-sm text-slate-700">
                 Pipeline steps
             </header>
             <div class="p-4">
-                {%= RenderPipelineSteps(p.Pipeline) %}
+                {%= RenderPipelineSteps(p.Pipeline, p.WorkersInPipeline) %}
             </div>
         </div>
     </div>
-    <div class="row-span-1 col-span-5 bg-white border rounded-md">
-        {%= RenderWorkerTable(p.Workers, p.WorkersNextPage) %}
+    <div id="workerTable" class="row-span-1 col-span-5 bg-white border rounded-md">
+        {%= RenderPipelineEditWorkerTable(p.Workers, p.WorkersNextPage) %}
     </div>
 </div>
 {% endfunc %}
 
-{% func RenderPipelineSteps(pipeline api.Pipeline) %}
+{% func RenderPipelineSteps(pipeline api.Pipeline, workers []api.UserWorker) %}
     <script>
+        let lastOrder = [];
+
         htmx.onLoad(function(content) {
-        let sortables = content.querySelectorAll(".sortable");
-        const ghostStyles = ['border-dashed', 'border-2', 'border-sky-500', 'bg-white', 'shadow-lg', 'shadow-cyan-500/50'];
-        for (var i = 0; i < sortables.length; i++) {
-                let sortable = sortables[i];
-                let sort = new Sortable(sortable, {
-                    animation: 150,
+            // Make the steps list sortable
+            let sortables = content.querySelectorAll(".sortable");
+           
+            const ghostStyles = ['border-dashed', 'border-2', 'border-sky-500', 'bg-white', 'shadow-lg', 'shadow-cyan-500/50'];
+            for (var i = 0; i < sortables.length; i++) {
+                    let sortable = sortables[i];
+                    let sort = new Sortable(sortable, {
+                        animation: 150,
 
-                    // Unfortunately the Sortable JS library does not offer support for multiple classes as the ghost class.
-                    // To style it using Tailwind a small hack is required
-                    onStart: function(evt) {
-                        ghostStyles.forEach((item) => evt.item.classList.add(item));
-                    },
-                    onEnd: function(evt) {
-                        ghostStyles.forEach((item) => evt.item.classList.remove(item));
+                        // Unfortunately the Sortable JS library does not offer support for multiple classes as the ghost class.
+                        // To style it using Tailwind a small hack is required
+                        onStart: function(evt) {
+                            ghostStyles.forEach((item) => evt.item.classList.add(item));
+                        },
+                        onEnd: function(evt) {
+                            ghostStyles.forEach((item) => evt.item.classList.remove(item));
 
-                        // Update the index for each input item
-                        let inputs = sortable.querySelectorAll("input");
-                        inputs.forEach((ix, input) => input.value = "stuyffff");
-                        for (let i = 0; i < inputs.length; i++) {
-                            inputs[i].value = i;
+                            reorderSortables();
                         }
-
-                        // Now fire the event triggering HTMX to update the pipeline in the backend
-                        sortable.dispatchEvent(new Event("steps-updated"));
-                    }
-                });
-            }
+                    });
+                }
         })
+
+        function reorderSortables() {
+            let sortables = document.querySelectorAll(".sortable");
+            for (var i = 0; i < sortables.length; i++) {
+                // Update the index for each input item
+                let values = [];
+                let inputs = sortable.querySelectorAll("input");
+                for (let i = 0; i < inputs.length; i++) {
+                    inputs[i].value = i;
+                    values.push(inputs[i].name);
+                }
+
+                if (lastOrder != values) {
+                    // Now fire the event triggering HTMX to update the pipeline in the backend
+                    sortable.dispatchEvent(new Event("steps-updated"));
+                    lastOrder = values;
+                }
+            }
+        }
+
+        function addSortable(workerId) {
+            const form = document.getElementById("sortableForm");
+            let newInput = document.createElement("input");
+            newInput.name = workerId;
+            newInput.setAttribute('type', 'hidden');
+            newInput.setAttribute('value', document.getElementById("sortableForm").elements.length);
+            form.appendChild(newInput);
+            lastOrder.push(workerId);
+
+            // Now fire the event triggering HTMX to update the pipeline in the backend
+            sortable.dispatchEvent(new Event("steps-updated"));
+        }
+
+        function removeFromSortable(name) {
+            const el = document.getElementById("sortable-item-" + name);
+            el.remove();
+            
+            reorderSortables();
+            
+            // Now fire the event triggering HTMX to update the pipeline in the backend
+            sortable.dispatchEvent(new Event("steps-updated"));
+        }
     </script>
      <div id="stepsIndicator" class="htmx-indicator w-full h-full flex justify-center">
         <iconify-icon icon="eos-icons:loading" width="15" class="text-secondary-600"></iconify-icon>
     </div>
-    <form class="sortable" hx-indicator="#stepsIndicator" hx-post="/pipelines/{%s pipeline.Id %}/steps" hx-trigger="steps-updated">
-        {%= RenderPipelineStepsSortable(pipeline.Steps) %}
+    <form id="sortableForm" name="sortable" class="sortable" hx-indicator="#stepsIndicator" hx-post="/pipelines/{%s pipeline.Id %}/steps" hx-trigger="steps-updated">
+        {%= RenderPipelineStepsSortable(workers) %}
     </form>
 {% endfunc %}
 
-{% func RenderPipelineStepsSortable(steps []string) %}
+{% func RenderPipelineStepsSortable(steps []api.UserWorker) %}
     {% for ix, step := range steps %}
-        <div class="p-4 w-2/4 mt-1.5 text-center mx-auto text-white bg-secondary-600 rounded-lg flex justify-start">
-            <input type="hidden" name="{%s step %}" value="{%d ix %}" />
-            <p>{%s step %}</p>
+        <div id="sortable-item-{%s step.Id %}" class="p-2 w-2/4 mt-1.5 mx-auto text-white bg-secondary-600 rounded-lg flex justify-between items-center">
+            <input type="hidden" name="{%s step.Id %}" value="{%d ix %}" />
+            <div>
+                <p class="text-lg">{%s step.Name %} v{%v step.Major %}.{%v step.Revision %}</p>
+                <p class="text-sm font-thin">{%s step.Description %}</p>
+            </div>
+            <div class="cursor-pointer h-full w-1/12" onclick="removeFromSortable('{%s step.Id %}')">
+                <iconify-icon icon="basil:trash-solid" width="100%" height="100%" class="text-white"></iconify-icon>
+            </div>
         </div>
+    {% endfor %}
+{% endfunc %}
+
+{% func RenderPipelineDetailEditor() %}
+ // TODO
+{% endfunc %}
+
+{% func RenderPipelineEditWorkerTable(workers []api.UserWorker, nextPage string) %}
+    <table class="w-full text-sm border-separate border-spacing-0" id="device-table">
+        <thead class="text-left text-slate-500 sticky top-0 bg-white">
+            <tr class="h-10">
+                <th class="font-normal border-b align-middle px-4">
+                    Name
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Major version
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Revision
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    ID
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Description
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Language
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Action
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {%= RenderPipelineEditWorkerTableRows(workers, nextPage) %}
+        </tbody>
+    </table>
+{% endfunc %}
+
+{% func RenderPipelineEditWorkerTableRows(workers []api.UserWorker, nextPage string) %}
+    {% for ix, worker := range workers %}
+    <tr
+        class="hover:bg-slate-50 group"
+        {% if nextPage != "" && ix == len(workers)-1 %}
+        hx-trigger="revealed"
+        hx-target="this"
+        hx-swap="afterend"
+        hx-get="{%s nextPage %}"
+        {% endif %}
+    >
+        <td class="border-b"><a
+            class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
+            href="/workers/{%s worker.Id %}"
+            hx-target="main"
+        >{%s worker.Name %}</a></td>
+        <td class="px-4 h-10 border-b">{%d int(worker.Major) %}</td>
+        <td class="px-4 h-10 border-b">{%d int(worker.Revision) %}</td>
+        <td class="px-4 h-10 border-b">{%s worker.Id %}</td>
+        <td class="px-4 h-10 border-b">{%s worker.Description %}</td>
+        <td class="px-4 h-10 border-b">Python</td>
+        <td class="px-4 h-10 border-b">
+            <button onclick="addSortable('{%s worker.Id %}')" class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1">
+                Add
+            </button>              
+        </td>
+    </tr>
     {% endfor %}
 {% endfunc %}
 
@@ -83,6 +194,7 @@
 type PipelineEditPage struct {
 BasePage
 Pipeline api.Pipeline
+WorkersInPipeline []api.UserWorker
 Workers []api.UserWorker
 WorkersNextPage string
 }

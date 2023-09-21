@@ -3,6 +3,7 @@ package routes
 import (
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -474,4 +475,66 @@ func (t *OverviewRoute) resolveSensor(next http.Handler) http.Handler {
 		)
 		next.ServeHTTP(w, r)
 	})
+}
+
+type SnackbarType int
+
+const (
+	Unknown SnackbarType = iota
+	Success
+	Error
+)
+
+func SnackbarSaveSuccessful(w http.ResponseWriter) http.ResponseWriter {
+	return WithSnackbarSuccess(w, "Save successful")
+}
+
+func SnackbarSomethingWentWrong(w http.ResponseWriter) http.ResponseWriter {
+	return WithSnackbarError(w, "Something went wrong")
+}
+
+func WithSnackbarError(w http.ResponseWriter, message string) http.ResponseWriter {
+	return withSnackbarMessage(w, snackbarDetails{
+		Message: message,
+		Type:    Error,
+	})
+}
+
+func WithSnackbarSuccess(w http.ResponseWriter, message string) http.ResponseWriter {
+	return withSnackbarMessage(w, snackbarDetails{
+		Message: message,
+		Type:    Success,
+	})
+}
+
+type snackbarEvent struct {
+	Details snackbarDetails `json:"showSnackbar"`
+}
+
+type snackbarDetails struct {
+	Message string       `json:"message"`
+	Type    SnackbarType `json:"type"`
+}
+
+func withSnackbarMessage(w http.ResponseWriter, details snackbarDetails) http.ResponseWriter {
+	b, err := json.Marshal(snackbarEvent{
+		Details: details,
+	})
+	if err != nil {
+		log.Printf("[Warning] couldn't process snackbar message")
+		b = snackbarGenericError()
+	}
+	w.Header().Set("hx-trigger", string(b))
+	return w
+}
+
+func snackbarGenericError() []byte {
+	ev := snackbarEvent{
+		Details: snackbarDetails{
+			Message: "Something went wrong",
+			Type:    Error,
+		},
+	}
+	b, _ := json.Marshal(ev)
+	return b
 }

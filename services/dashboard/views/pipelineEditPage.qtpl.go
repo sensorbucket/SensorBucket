@@ -31,7 +31,7 @@ func (p *PipelineEditPage) StreamBody(qw422016 *qt422016.Writer) {
 //line views/pipelineEditPage.qtpl:7
 	qw422016.N().S(`
 <div class="w-full grid grid-rows-3 grid-cols-5 gap-6">
-    <div class="row-span-2 col-span-2 bg-white border rounded-md">
+    <div class="row-span-1 col-span-2 bg-white border rounded-md">
         <header class="border-b py-2 px-4 text-sm text-slate-700">
             Pipeline details
         </header>
@@ -43,7 +43,7 @@ func (p *PipelineEditPage) StreamBody(qw422016 *qt422016.Writer) {
 	qw422016.N().S(`
         </div>
     </div>
-    <div class="row-span-2 col-span-3 bg-white border rounded-md">
+    <div class="row-span-1 col-span-3 bg-white">
         <div class="row-span-2 col-span-2 bg-white border rounded-md">
             <header class="border-b py-2 px-4 text-sm text-slate-700">
                 Pipeline steps
@@ -51,16 +51,16 @@ func (p *PipelineEditPage) StreamBody(qw422016 *qt422016.Writer) {
             <div class="p-4">
                 `)
 //line views/pipelineEditPage.qtpl:23
-	StreamRenderPipelineSteps(qw422016, p.Pipeline)
+	StreamRenderPipelineSteps(qw422016, p.Pipeline, p.WorkersInPipeline)
 //line views/pipelineEditPage.qtpl:23
 	qw422016.N().S(`
             </div>
         </div>
     </div>
-    <div class="row-span-1 col-span-5 bg-white border rounded-md">
+    <div id="workerTable" class="row-span-1 col-span-5 bg-white border rounded-md">
         `)
 //line views/pipelineEditPage.qtpl:28
-	StreamRenderWorkerTable(qw422016, p.Workers, p.WorkersNextPage)
+	StreamRenderPipelineEditWorkerTable(qw422016, p.Workers, p.WorkersNextPage)
 //line views/pipelineEditPage.qtpl:28
 	qw422016.N().S(`
     </div>
@@ -96,148 +96,425 @@ func (p *PipelineEditPage) Body() string {
 }
 
 //line views/pipelineEditPage.qtpl:33
-func StreamRenderPipelineSteps(qw422016 *qt422016.Writer, pipeline api.Pipeline) {
+func StreamRenderPipelineSteps(qw422016 *qt422016.Writer, pipeline api.Pipeline, workers []api.UserWorker) {
 //line views/pipelineEditPage.qtpl:33
 	qw422016.N().S(`
     <script>
+        let lastOrder = [];
+
         htmx.onLoad(function(content) {
-        let sortables = content.querySelectorAll(".sortable");
-        const ghostStyles = ['border-dashed', 'border-2', 'border-sky-500', 'bg-white', 'shadow-lg', 'shadow-cyan-500/50'];
-        for (var i = 0; i < sortables.length; i++) {
-                let sortable = sortables[i];
-                let sort = new Sortable(sortable, {
-                    animation: 150,
+            // Make the steps list sortable
+            let sortables = content.querySelectorAll(".sortable");
+           
+            const ghostStyles = ['border-dashed', 'border-2', 'border-sky-500', 'bg-white', 'shadow-lg', 'shadow-cyan-500/50'];
+            for (var i = 0; i < sortables.length; i++) {
+                    let sortable = sortables[i];
+                    let sort = new Sortable(sortable, {
+                        animation: 150,
 
-                    // Unfortunately the Sortable JS library does not offer support for multiple classes as the ghost class.
-                    // To style it using Tailwind a small hack is required
-                    onStart: function(evt) {
-                        ghostStyles.forEach((item) => evt.item.classList.add(item));
-                    },
-                    onEnd: function(evt) {
-                        ghostStyles.forEach((item) => evt.item.classList.remove(item));
+                        // Unfortunately the Sortable JS library does not offer support for multiple classes as the ghost class.
+                        // To style it using Tailwind a small hack is required
+                        onStart: function(evt) {
+                            ghostStyles.forEach((item) => evt.item.classList.add(item));
+                        },
+                        onEnd: function(evt) {
+                            ghostStyles.forEach((item) => evt.item.classList.remove(item));
 
-                        // Update the index for each input item
-                        let inputs = sortable.querySelectorAll("input");
-                        inputs.forEach((ix, input) => input.value = "stuyffff");
-                        for (let i = 0; i < inputs.length; i++) {
-                            inputs[i].value = i;
+                            reorderSortables();
                         }
-
-                        // Now fire the event triggering HTMX to update the pipeline in the backend
-                        sortable.dispatchEvent(new Event("steps-updated"));
-                    }
-                });
-            }
+                    });
+                }
         })
+
+        function reorderSortables() {
+            let sortables = document.querySelectorAll(".sortable");
+            for (var i = 0; i < sortables.length; i++) {
+                // Update the index for each input item
+                let values = [];
+                let inputs = sortable.querySelectorAll("input");
+                for (let i = 0; i < inputs.length; i++) {
+                    inputs[i].value = i;
+                    values.push(inputs[i].name);
+                }
+
+                if (lastOrder != values) {
+                    // Now fire the event triggering HTMX to update the pipeline in the backend
+                    sortable.dispatchEvent(new Event("steps-updated"));
+                    lastOrder = values;
+                }
+            }
+        }
+
+        function addSortable(workerId) {
+            const form = document.getElementById("sortableForm");
+            let newInput = document.createElement("input");
+            newInput.name = workerId;
+            newInput.setAttribute('type', 'hidden');
+            newInput.setAttribute('value', document.getElementById("sortableForm").elements.length);
+            form.appendChild(newInput);
+            lastOrder.push(workerId);
+
+            // Now fire the event triggering HTMX to update the pipeline in the backend
+            sortable.dispatchEvent(new Event("steps-updated"));
+        }
+
+        function removeFromSortable(name) {
+            const el = document.getElementById("sortable-item-" + name);
+            el.remove();
+            
+            reorderSortables();
+            
+            // Now fire the event triggering HTMX to update the pipeline in the backend
+            sortable.dispatchEvent(new Event("steps-updated"));
+        }
     </script>
      <div id="stepsIndicator" class="htmx-indicator w-full h-full flex justify-center">
         <iconify-icon icon="eos-icons:loading" width="15" class="text-secondary-600"></iconify-icon>
     </div>
-    <form class="sortable" hx-indicator="#stepsIndicator" hx-post="/pipelines/`)
-//line views/pipelineEditPage.qtpl:68
+    <form id="sortableForm" name="sortable" class="sortable" hx-indicator="#stepsIndicator" hx-post="/pipelines/`)
+//line views/pipelineEditPage.qtpl:106
 	qw422016.E().S(pipeline.Id)
-//line views/pipelineEditPage.qtpl:68
+//line views/pipelineEditPage.qtpl:106
 	qw422016.N().S(`/steps" hx-trigger="steps-updated">
         `)
-//line views/pipelineEditPage.qtpl:69
-	StreamRenderPipelineStepsSortable(qw422016, pipeline.Steps)
-//line views/pipelineEditPage.qtpl:69
+//line views/pipelineEditPage.qtpl:107
+	StreamRenderPipelineStepsSortable(qw422016, workers)
+//line views/pipelineEditPage.qtpl:107
 	qw422016.N().S(`
     </form>
 `)
-//line views/pipelineEditPage.qtpl:71
+//line views/pipelineEditPage.qtpl:109
 }
 
-//line views/pipelineEditPage.qtpl:71
-func WriteRenderPipelineSteps(qq422016 qtio422016.Writer, pipeline api.Pipeline) {
-//line views/pipelineEditPage.qtpl:71
+//line views/pipelineEditPage.qtpl:109
+func WriteRenderPipelineSteps(qq422016 qtio422016.Writer, pipeline api.Pipeline, workers []api.UserWorker) {
+//line views/pipelineEditPage.qtpl:109
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/pipelineEditPage.qtpl:71
-	StreamRenderPipelineSteps(qw422016, pipeline)
-//line views/pipelineEditPage.qtpl:71
+//line views/pipelineEditPage.qtpl:109
+	StreamRenderPipelineSteps(qw422016, pipeline, workers)
+//line views/pipelineEditPage.qtpl:109
 	qt422016.ReleaseWriter(qw422016)
-//line views/pipelineEditPage.qtpl:71
+//line views/pipelineEditPage.qtpl:109
 }
 
-//line views/pipelineEditPage.qtpl:71
-func RenderPipelineSteps(pipeline api.Pipeline) string {
-//line views/pipelineEditPage.qtpl:71
+//line views/pipelineEditPage.qtpl:109
+func RenderPipelineSteps(pipeline api.Pipeline, workers []api.UserWorker) string {
+//line views/pipelineEditPage.qtpl:109
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/pipelineEditPage.qtpl:71
-	WriteRenderPipelineSteps(qb422016, pipeline)
-//line views/pipelineEditPage.qtpl:71
+//line views/pipelineEditPage.qtpl:109
+	WriteRenderPipelineSteps(qb422016, pipeline, workers)
+//line views/pipelineEditPage.qtpl:109
 	qs422016 := string(qb422016.B)
-//line views/pipelineEditPage.qtpl:71
+//line views/pipelineEditPage.qtpl:109
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/pipelineEditPage.qtpl:71
+//line views/pipelineEditPage.qtpl:109
 	return qs422016
-//line views/pipelineEditPage.qtpl:71
+//line views/pipelineEditPage.qtpl:109
 }
 
-//line views/pipelineEditPage.qtpl:73
-func StreamRenderPipelineStepsSortable(qw422016 *qt422016.Writer, steps []string) {
-//line views/pipelineEditPage.qtpl:73
+//line views/pipelineEditPage.qtpl:111
+func StreamRenderPipelineStepsSortable(qw422016 *qt422016.Writer, steps []api.UserWorker) {
+//line views/pipelineEditPage.qtpl:111
 	qw422016.N().S(`
     `)
-//line views/pipelineEditPage.qtpl:74
+//line views/pipelineEditPage.qtpl:112
 	for ix, step := range steps {
-//line views/pipelineEditPage.qtpl:74
+//line views/pipelineEditPage.qtpl:112
 		qw422016.N().S(`
-        <div class="p-4 w-2/4 mt-1.5 text-center mx-auto text-white bg-secondary-600 rounded-lg flex justify-start">
+        <div id="sortable-item-`)
+//line views/pipelineEditPage.qtpl:113
+		qw422016.E().S(step.Id)
+//line views/pipelineEditPage.qtpl:113
+		qw422016.N().S(`" class="p-2 w-2/4 mt-1.5 mx-auto text-white bg-secondary-600 rounded-lg flex justify-between items-center">
             <input type="hidden" name="`)
-//line views/pipelineEditPage.qtpl:76
-		qw422016.E().S(step)
-//line views/pipelineEditPage.qtpl:76
+//line views/pipelineEditPage.qtpl:114
+		qw422016.E().S(step.Id)
+//line views/pipelineEditPage.qtpl:114
 		qw422016.N().S(`" value="`)
-//line views/pipelineEditPage.qtpl:76
+//line views/pipelineEditPage.qtpl:114
 		qw422016.N().D(ix)
-//line views/pipelineEditPage.qtpl:76
+//line views/pipelineEditPage.qtpl:114
 		qw422016.N().S(`" />
-            <p>`)
-//line views/pipelineEditPage.qtpl:77
-		qw422016.E().S(step)
-//line views/pipelineEditPage.qtpl:77
+            <div>
+                <p class="text-lg">`)
+//line views/pipelineEditPage.qtpl:116
+		qw422016.E().S(step.Name)
+//line views/pipelineEditPage.qtpl:116
+		qw422016.N().S(` v`)
+//line views/pipelineEditPage.qtpl:116
+		qw422016.E().V(step.Major)
+//line views/pipelineEditPage.qtpl:116
+		qw422016.N().S(`.`)
+//line views/pipelineEditPage.qtpl:116
+		qw422016.E().V(step.Revision)
+//line views/pipelineEditPage.qtpl:116
 		qw422016.N().S(`</p>
+                <p class="text-sm font-thin">`)
+//line views/pipelineEditPage.qtpl:117
+		qw422016.E().S(step.Description)
+//line views/pipelineEditPage.qtpl:117
+		qw422016.N().S(`</p>
+            </div>
+            <div class="cursor-pointer h-full w-1/12" onclick="removeFromSortable('`)
+//line views/pipelineEditPage.qtpl:119
+		qw422016.E().S(step.Id)
+//line views/pipelineEditPage.qtpl:119
+		qw422016.N().S(`')">
+                <iconify-icon icon="basil:trash-solid" width="100%" height="100%" class="text-white"></iconify-icon>
+            </div>
         </div>
     `)
-//line views/pipelineEditPage.qtpl:79
+//line views/pipelineEditPage.qtpl:123
 	}
-//line views/pipelineEditPage.qtpl:79
+//line views/pipelineEditPage.qtpl:123
 	qw422016.N().S(`
 `)
-//line views/pipelineEditPage.qtpl:80
+//line views/pipelineEditPage.qtpl:124
 }
 
-//line views/pipelineEditPage.qtpl:80
-func WriteRenderPipelineStepsSortable(qq422016 qtio422016.Writer, steps []string) {
-//line views/pipelineEditPage.qtpl:80
+//line views/pipelineEditPage.qtpl:124
+func WriteRenderPipelineStepsSortable(qq422016 qtio422016.Writer, steps []api.UserWorker) {
+//line views/pipelineEditPage.qtpl:124
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/pipelineEditPage.qtpl:80
+//line views/pipelineEditPage.qtpl:124
 	StreamRenderPipelineStepsSortable(qw422016, steps)
-//line views/pipelineEditPage.qtpl:80
+//line views/pipelineEditPage.qtpl:124
 	qt422016.ReleaseWriter(qw422016)
-//line views/pipelineEditPage.qtpl:80
+//line views/pipelineEditPage.qtpl:124
 }
 
-//line views/pipelineEditPage.qtpl:80
-func RenderPipelineStepsSortable(steps []string) string {
-//line views/pipelineEditPage.qtpl:80
+//line views/pipelineEditPage.qtpl:124
+func RenderPipelineStepsSortable(steps []api.UserWorker) string {
+//line views/pipelineEditPage.qtpl:124
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/pipelineEditPage.qtpl:80
+//line views/pipelineEditPage.qtpl:124
 	WriteRenderPipelineStepsSortable(qb422016, steps)
-//line views/pipelineEditPage.qtpl:80
+//line views/pipelineEditPage.qtpl:124
 	qs422016 := string(qb422016.B)
-//line views/pipelineEditPage.qtpl:80
+//line views/pipelineEditPage.qtpl:124
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/pipelineEditPage.qtpl:80
+//line views/pipelineEditPage.qtpl:124
 	return qs422016
-//line views/pipelineEditPage.qtpl:80
+//line views/pipelineEditPage.qtpl:124
 }
 
-//line views/pipelineEditPage.qtpl:83
+//line views/pipelineEditPage.qtpl:126
+func StreamRenderPipelineDetailEditor(qw422016 *qt422016.Writer) {
+//line views/pipelineEditPage.qtpl:126
+	qw422016.N().S(`
+ // TODO
+`)
+//line views/pipelineEditPage.qtpl:128
+}
+
+//line views/pipelineEditPage.qtpl:128
+func WriteRenderPipelineDetailEditor(qq422016 qtio422016.Writer) {
+//line views/pipelineEditPage.qtpl:128
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line views/pipelineEditPage.qtpl:128
+	StreamRenderPipelineDetailEditor(qw422016)
+//line views/pipelineEditPage.qtpl:128
+	qt422016.ReleaseWriter(qw422016)
+//line views/pipelineEditPage.qtpl:128
+}
+
+//line views/pipelineEditPage.qtpl:128
+func RenderPipelineDetailEditor() string {
+//line views/pipelineEditPage.qtpl:128
+	qb422016 := qt422016.AcquireByteBuffer()
+//line views/pipelineEditPage.qtpl:128
+	WriteRenderPipelineDetailEditor(qb422016)
+//line views/pipelineEditPage.qtpl:128
+	qs422016 := string(qb422016.B)
+//line views/pipelineEditPage.qtpl:128
+	qt422016.ReleaseByteBuffer(qb422016)
+//line views/pipelineEditPage.qtpl:128
+	return qs422016
+//line views/pipelineEditPage.qtpl:128
+}
+
+//line views/pipelineEditPage.qtpl:130
+func StreamRenderPipelineEditWorkerTable(qw422016 *qt422016.Writer, workers []api.UserWorker, nextPage string) {
+//line views/pipelineEditPage.qtpl:130
+	qw422016.N().S(`
+    <table class="w-full text-sm border-separate border-spacing-0" id="device-table">
+        <thead class="text-left text-slate-500 sticky top-0 bg-white">
+            <tr class="h-10">
+                <th class="font-normal border-b align-middle px-4">
+                    Name
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Major version
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Revision
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    ID
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Description
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Language
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Action
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            `)
+//line views/pipelineEditPage.qtpl:158
+	StreamRenderPipelineEditWorkerTableRows(qw422016, workers, nextPage)
+//line views/pipelineEditPage.qtpl:158
+	qw422016.N().S(`
+        </tbody>
+    </table>
+`)
+//line views/pipelineEditPage.qtpl:161
+}
+
+//line views/pipelineEditPage.qtpl:161
+func WriteRenderPipelineEditWorkerTable(qq422016 qtio422016.Writer, workers []api.UserWorker, nextPage string) {
+//line views/pipelineEditPage.qtpl:161
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line views/pipelineEditPage.qtpl:161
+	StreamRenderPipelineEditWorkerTable(qw422016, workers, nextPage)
+//line views/pipelineEditPage.qtpl:161
+	qt422016.ReleaseWriter(qw422016)
+//line views/pipelineEditPage.qtpl:161
+}
+
+//line views/pipelineEditPage.qtpl:161
+func RenderPipelineEditWorkerTable(workers []api.UserWorker, nextPage string) string {
+//line views/pipelineEditPage.qtpl:161
+	qb422016 := qt422016.AcquireByteBuffer()
+//line views/pipelineEditPage.qtpl:161
+	WriteRenderPipelineEditWorkerTable(qb422016, workers, nextPage)
+//line views/pipelineEditPage.qtpl:161
+	qs422016 := string(qb422016.B)
+//line views/pipelineEditPage.qtpl:161
+	qt422016.ReleaseByteBuffer(qb422016)
+//line views/pipelineEditPage.qtpl:161
+	return qs422016
+//line views/pipelineEditPage.qtpl:161
+}
+
+//line views/pipelineEditPage.qtpl:163
+func StreamRenderPipelineEditWorkerTableRows(qw422016 *qt422016.Writer, workers []api.UserWorker, nextPage string) {
+//line views/pipelineEditPage.qtpl:163
+	qw422016.N().S(`
+    `)
+//line views/pipelineEditPage.qtpl:164
+	for ix, worker := range workers {
+//line views/pipelineEditPage.qtpl:164
+		qw422016.N().S(`
+    <tr
+        class="hover:bg-slate-50 group"
+        `)
+//line views/pipelineEditPage.qtpl:167
+		if nextPage != "" && ix == len(workers)-1 {
+//line views/pipelineEditPage.qtpl:167
+			qw422016.N().S(`
+        hx-trigger="revealed"
+        hx-target="this"
+        hx-swap="afterend"
+        hx-get="`)
+//line views/pipelineEditPage.qtpl:171
+			qw422016.E().S(nextPage)
+//line views/pipelineEditPage.qtpl:171
+			qw422016.N().S(`"
+        `)
+//line views/pipelineEditPage.qtpl:172
+		}
+//line views/pipelineEditPage.qtpl:172
+		qw422016.N().S(`
+    >
+        <td class="border-b"><a
+            class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
+            href="/workers/`)
+//line views/pipelineEditPage.qtpl:176
+		qw422016.E().S(worker.Id)
+//line views/pipelineEditPage.qtpl:176
+		qw422016.N().S(`"
+            hx-target="main"
+        >`)
+//line views/pipelineEditPage.qtpl:178
+		qw422016.E().S(worker.Name)
+//line views/pipelineEditPage.qtpl:178
+		qw422016.N().S(`</a></td>
+        <td class="px-4 h-10 border-b">`)
+//line views/pipelineEditPage.qtpl:179
+		qw422016.N().D(int(worker.Major))
+//line views/pipelineEditPage.qtpl:179
+		qw422016.N().S(`</td>
+        <td class="px-4 h-10 border-b">`)
+//line views/pipelineEditPage.qtpl:180
+		qw422016.N().D(int(worker.Revision))
+//line views/pipelineEditPage.qtpl:180
+		qw422016.N().S(`</td>
+        <td class="px-4 h-10 border-b">`)
+//line views/pipelineEditPage.qtpl:181
+		qw422016.E().S(worker.Id)
+//line views/pipelineEditPage.qtpl:181
+		qw422016.N().S(`</td>
+        <td class="px-4 h-10 border-b">`)
+//line views/pipelineEditPage.qtpl:182
+		qw422016.E().S(worker.Description)
+//line views/pipelineEditPage.qtpl:182
+		qw422016.N().S(`</td>
+        <td class="px-4 h-10 border-b">Python</td>
+        <td class="px-4 h-10 border-b">
+            <button onclick="addSortable('`)
+//line views/pipelineEditPage.qtpl:185
+		qw422016.E().S(worker.Id)
+//line views/pipelineEditPage.qtpl:185
+		qw422016.N().S(`')" class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1">
+                Add
+            </button>              
+        </td>
+    </tr>
+    `)
+//line views/pipelineEditPage.qtpl:190
+	}
+//line views/pipelineEditPage.qtpl:190
+	qw422016.N().S(`
+`)
+//line views/pipelineEditPage.qtpl:191
+}
+
+//line views/pipelineEditPage.qtpl:191
+func WriteRenderPipelineEditWorkerTableRows(qq422016 qtio422016.Writer, workers []api.UserWorker, nextPage string) {
+//line views/pipelineEditPage.qtpl:191
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line views/pipelineEditPage.qtpl:191
+	StreamRenderPipelineEditWorkerTableRows(qw422016, workers, nextPage)
+//line views/pipelineEditPage.qtpl:191
+	qt422016.ReleaseWriter(qw422016)
+//line views/pipelineEditPage.qtpl:191
+}
+
+//line views/pipelineEditPage.qtpl:191
+func RenderPipelineEditWorkerTableRows(workers []api.UserWorker, nextPage string) string {
+//line views/pipelineEditPage.qtpl:191
+	qb422016 := qt422016.AcquireByteBuffer()
+//line views/pipelineEditPage.qtpl:191
+	WriteRenderPipelineEditWorkerTableRows(qb422016, workers, nextPage)
+//line views/pipelineEditPage.qtpl:191
+	qs422016 := string(qb422016.B)
+//line views/pipelineEditPage.qtpl:191
+	qt422016.ReleaseByteBuffer(qb422016)
+//line views/pipelineEditPage.qtpl:191
+	return qs422016
+//line views/pipelineEditPage.qtpl:191
+}
+
+//line views/pipelineEditPage.qtpl:194
 type PipelineEditPage struct {
 	BasePage
-	Pipeline        api.Pipeline
-	Workers         []api.UserWorker
-	WorkersNextPage string
+	Pipeline          api.Pipeline
+	WorkersInPipeline []api.UserWorker
+	Workers           []api.UserWorker
+	WorkersNextPage   string
 }
