@@ -45,7 +45,7 @@ func (p *WorkerListPage) StreamBody(qw422016 *qt422016.Writer) {
         <div>
             `)
 //line views/workersPage.qtpl:23
-	StreamRenderWorkerTable(qw422016, p.Workers)
+	StreamRenderWorkerTable(qw422016, p.Workers, p.WorkersNextPage)
 //line views/workersPage.qtpl:23
 	qw422016.N().S(`
         </div>
@@ -81,7 +81,7 @@ func (p *WorkerListPage) Body() string {
 }
 
 //line views/workersPage.qtpl:28
-func StreamRenderWorkerTable(qw422016 *qt422016.Writer, workers []api.UserWorker) {
+func StreamRenderWorkerTable(qw422016 *qt422016.Writer, workers []api.UserWorker, nextPage string) {
 //line views/workersPage.qtpl:28
 	qw422016.N().S(`
     <table class="w-full text-sm border-separate border-spacing-0" id="device-table">
@@ -110,7 +110,7 @@ func StreamRenderWorkerTable(qw422016 *qt422016.Writer, workers []api.UserWorker
         <tbody>
             `)
 //line views/workersPage.qtpl:53
-	StreamRenderWorkerTableRows(qw422016, workers, "")
+	StreamRenderWorkerTableRows(qw422016, workers, nextPage)
 //line views/workersPage.qtpl:53
 	qw422016.N().S(`
         </tbody>
@@ -120,22 +120,22 @@ func StreamRenderWorkerTable(qw422016 *qt422016.Writer, workers []api.UserWorker
 }
 
 //line views/workersPage.qtpl:56
-func WriteRenderWorkerTable(qq422016 qtio422016.Writer, workers []api.UserWorker) {
+func WriteRenderWorkerTable(qq422016 qtio422016.Writer, workers []api.UserWorker, nextPage string) {
 //line views/workersPage.qtpl:56
 	qw422016 := qt422016.AcquireWriter(qq422016)
 //line views/workersPage.qtpl:56
-	StreamRenderWorkerTable(qw422016, workers)
+	StreamRenderWorkerTable(qw422016, workers, nextPage)
 //line views/workersPage.qtpl:56
 	qt422016.ReleaseWriter(qw422016)
 //line views/workersPage.qtpl:56
 }
 
 //line views/workersPage.qtpl:56
-func RenderWorkerTable(workers []api.UserWorker) string {
+func RenderWorkerTable(workers []api.UserWorker, nextPage string) string {
 //line views/workersPage.qtpl:56
 	qb422016 := qt422016.AcquireByteBuffer()
 //line views/workersPage.qtpl:56
-	WriteRenderWorkerTable(qb422016, workers)
+	WriteRenderWorkerTable(qb422016, workers, nextPage)
 //line views/workersPage.qtpl:56
 	qs422016 := string(qb422016.B)
 //line views/workersPage.qtpl:56
@@ -248,5 +248,6 @@ func RenderWorkerTableRows(workers []api.UserWorker, nextPage string) string {
 //line views/workersPage.qtpl:84
 type WorkerListPage struct {
 	BasePage
-	Workers []api.UserWorker
+	Workers         []api.UserWorker
+	WorkersNextPage string
 }

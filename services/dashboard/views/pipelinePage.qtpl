@@ -1,4 +1,4 @@
-{% import "sensorbucket.nl/sensorbucket/services/core/processing" %}
+{% import "sensorbucket.nl/sensorbucket/pkg/api" %}
 {% func (p *PipelinePage) Body() %}
 <fieldset class="relative col-span-2">
     <button
@@ -12,7 +12,7 @@
 </div>
 {% endfunc %}
 
-{% func RenderPipelineTable(pipelines []processing.Pipeline, nextPage string) %}
+{% func RenderPipelineTable(pipelines []api.Pipeline, nextPage string) %}
 <table class="w-full text-sm border-separate border-spacing-0" id="device-table">
     <thead class="text-left text-slate-500 sticky top-0 bg-white">
         <tr class="h-10">
@@ -33,13 +33,13 @@
 </table>
 {% endfunc %}
 
-{% func RenderPipelineTableRows(pipelines []processing.Pipeline, nextPage string) %}
+{% func RenderPipelineTableRows(pipelines []api.Pipeline, nextPage string) %}
 {% for ix, pl := range pipelines %}
 <tr class="hover:bg-slate-50 group" {% if nextPage !="" && ix==len(pipelines)-1 %} hx-trigger="revealed"
     hx-target="this" hx-swap="afterend" hx-get="{%s nextPage %}" {% endif %}>
-    <td class="px-4 h-10 border-b">{%s pl.ID %}</td>
+    <td class="px-4 h-10 border-b">{%s pl.Id %}</td>
     <td class="border-b"><a class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-            href="/pipelines/edit/{%s pl.ID %}" hx-target="main">{%s pl.Name %}</a></td>
+            href="/pipelines/edit/{%s pl.Id %}" hx-target="main">{%s pl.Id %}</a></td>
     <td class="px-4 h-10 border-b">{%s pl.Description %}</td>
 </tr>
 {% endfor %}
@@ -48,7 +48,7 @@
 {% code
 type PipelinePage struct {
 BasePage
-Pipelines []processing.Pipeline
+Pipelines []api.Pipeline
 PipelinesNextPage string
 }
 %}

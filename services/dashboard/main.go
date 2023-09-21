@@ -67,6 +67,7 @@ func Run() error {
 	router.Mount("/overview", routes.CreateOverviewPageHandler(apiClient))
 	router.Mount("/ingress", routes.CreateIngressPageHandler(apiClient))
 	router.Mount("/workers", routes.CreateWorkerPageHandler(apiClient))
+	router.Mount("/pipelines", routes.CreatePipelinePageHandler(apiClient))
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
 		WriteTimeout: 5 * time.Second,
