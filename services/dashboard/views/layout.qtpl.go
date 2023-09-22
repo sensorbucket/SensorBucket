@@ -224,7 +224,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     <script src="http://SortableJS.github.io/Sortable/Sortable.js"></script>
     <script type="text/javascript">
 
-        htmx.onLoad(function(content) {
+        window.addEventListener("DOMContentLoaded", function(){
             document.body.addEventListener("showSnackbar", function(evt) {
                 showSnackbar(evt.detail.message, evt.detail.type);
             });

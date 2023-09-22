@@ -43,8 +43,13 @@
 
 {% func RenderPipelineTableRows(pipelines []api.Pipeline, nextPage string) %}
 {% for ix, pl := range pipelines %}
-<tr class="hover:bg-slate-50 group" {% if nextPage !="" && ix==len(pipelines)-1 %} hx-trigger="revealed"
-    hx-target="this" hx-swap="afterend" hx-get="{%s nextPage %}" {% endif %}>
+<tr class="hover:bg-slate-50 group" 
+    {% if nextPage != "" && ix == len(pipelines)-1 %}
+    hx-trigger="revealed"
+    hx-target="this"
+    hx-swap="afterend"
+    hx-get="{%s nextPage %}"
+    {% endif %}>
     <td class="px-4 h-10 border-b">{%s pl.Id %}</td>
     <td class="border-b"><a class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
             href="/pipelines/edit/{%s pl.Id %}" hx-target="main">{%s pl.Id %}</a></td>

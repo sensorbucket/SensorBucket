@@ -5,17 +5,42 @@
 
 {% import "sensorbucket.nl/sensorbucket/pkg/api" %}
 {% func (p *PipelineEditPage) Body() %}
-<div class="w-full grid grid-rows-3 grid-cols-5 gap-6">
-    <div class="row-span-1 col-span-2 bg-white border rounded-md">
+<div class="mx-auto flex flex-col lg:grid lg:grid-cols-3 xl:grid-cols-3 gap-6">
+    <div class="bg-white border rounded-md lg:col-span-3 xl:col-span-1">
         <header class="border-b py-2 px-4 text-sm text-slate-700">
             Pipeline details
         </header>
-        <div class="p-4">
-            {%= PipelineDetailBlock(p.Pipeline) %}
-        </div>
+        <form class="p-4 gap-4 grid lg:grid-cols-1">
+            <fieldset>
+                <label for="pipeline-descr" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Pipeline ID</small></label>
+                <input
+                    type="text" name="pipeline-id" id="pipeline-id"
+                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600"
+                    value="{%s p.Pipeline.Id %}"
+                    disabled
+                />
+            </fieldset>
+            <fieldset>
+                <label for="pipeline-descr" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Pipeline Description</small></label>
+                <input
+                    type="text" name="pipeline-descr" id="pipeline-descr"
+                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600"
+                    value="{%s p.Pipeline.Description %}"
+                />
+            </fieldset>
+            <div class="col-span-full">
+                <button
+                        class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                        hx-patch="/pipelines/{%s p.Pipeline.Id %}/details"
+                        hx-swap="none"
+                    >
+                    Save
+                    </button>
+            </div>
+        </form>
     </div>
-    <div class="row-span-1 col-span-3 bg-white">
-        <div class="row-span-2 col-span-2 bg-white border rounded-md">
+    <div class="bg-white lg:col-span-3 xl:col-span-2">
+        <div class="bg-white border rounded-md">
             <header class="border-b py-2 px-4 text-sm text-slate-700">
                 Pipeline steps
             </header>
@@ -24,16 +49,24 @@
             </div>
         </div>
     </div>
-    <div id="workerTable" class="row-span-1 col-span-5 bg-white border rounded-md">
+    <div id="workerTable" class="bg-white border rounded-md lg:col-span-3 xl:col-span-3">
         {%= RenderPipelineEditWorkerTable(p.Workers, p.WorkersNextPage) %}
+    </div>
+    <div id="sortable-item-staging-template" class="hidden p-2 w-2/4 mt-1.5 mx-auto text-white bg-orange-400 rounded-lg flex justify-between items-center">
+        <input type="hidden"/>
+        <div>
+            <p class="sortable-title text-lg"></p>
+            <p class="sortable-descr text-sm font-thin"></p>
+        </div>
+        <div class="trash-can cursor-pointer h-full w-1/12">
+            <iconify-icon icon="basil:trash-solid" width="100%" height="100%" class="text-white"></iconify-icon>
+        </div>
     </div>
 </div>
 {% endfunc %}
 
 {% func RenderPipelineSteps(pipeline api.Pipeline, workers []api.UserWorker) %}
     <script>
-        let lastOrder = [];
-
         htmx.onLoad(function(content) {
             // Make the steps list sortable
             let sortables = content.querySelectorAll(".sortable");
@@ -68,23 +101,31 @@
                     inputs[i].value = i;
                     values.push(inputs[i].name);
                 }
-
-                if (lastOrder != values) {
-                    // Now fire the event triggering HTMX to update the pipeline in the backend
-                    sortable.dispatchEvent(new Event("steps-updated"));
-                    lastOrder = values;
-                }
             }
+
+            // Now fire the event triggering HTMX to update the pipeline in the backend
+            sortable.dispatchEvent(new Event("steps-updated"));
         }
 
-        function addSortable(workerId) {
-            const form = document.getElementById("sortableForm");
-            let newInput = document.createElement("input");
-            newInput.name = workerId;
-            newInput.setAttribute('type', 'hidden');
-            newInput.setAttribute('value', document.getElementById("sortableForm").elements.length);
-            form.appendChild(newInput);
-            lastOrder.push(workerId);
+        function addSortable(workerName, workerId) {
+            // Clone the template element and remove the 'hidden' class
+            const template = document.getElementById("sortable-item-staging-template");
+            const newItem = template.cloneNode(true);
+            newItem.classList.remove("hidden");
+            newItem.id = "sortable-item-" + workerId;
+
+            const titleElement = newItem.querySelector(".sortable-title");
+            titleElement.textContent = workerName;
+
+            const trashCanElement = newItem.querySelector(".trash-can");
+            trashCanElement.onclick = function(){ removeFromSortable(workerId); };
+
+            const sortableForm = document.getElementById("sortableForm");
+            const inputElement = newItem.querySelector("input[type='hidden']");
+            inputElement.value = sortableForm.querySelectorAll("input").length;
+            inputElement.name = workerId;
+
+            sortableForm.appendChild(newItem);
 
             // Now fire the event triggering HTMX to update the pipeline in the backend
             sortable.dispatchEvent(new Event("steps-updated"));
@@ -103,7 +144,7 @@
      <div id="stepsIndicator" class="htmx-indicator w-full h-full flex justify-center">
         <iconify-icon icon="eos-icons:loading" width="15" class="text-secondary-600"></iconify-icon>
     </div>
-    <form id="sortableForm" name="sortable" class="sortable" hx-indicator="#stepsIndicator" hx-post="/pipelines/{%s pipeline.Id %}/steps" hx-trigger="steps-updated">
+    <form id="sortableForm" name="sortable" class="sortable" hx-indicator="#stepsIndicator" hx-patch="/pipelines/{%s pipeline.Id %}/steps" hx-trigger="steps-updated">
         {%= RenderPipelineStepsSortable(workers) %}
     </form>
 {% endfunc %}
@@ -182,10 +223,11 @@
         <td class="px-4 h-10 border-b">{%s worker.Description %}</td>
         <td class="px-4 h-10 border-b">Python</td>
         <td class="px-4 h-10 border-b">
-            <button onclick="addSortable('{%s worker.Id %}')" class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1">
+            <button onclick="addSortable('{%s worker.Name %}', '{%s worker.Id %}')" class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1">
                 Add
             </button>              
         </td>
+        <!-- opacity-50 cursor-not-allowed pointer-events-none  -->
     </tr>
     {% endfor %}
 {% endfunc %}

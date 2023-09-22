@@ -126,6 +126,9 @@ func (t *OverviewRoute) getDevicesTable() http.HandlerFunc {
 			}
 			req = req.SensorGroup([]int64{sgID})
 		}
+		if r.URL.Query().Has("cursor") {
+			req = req.Cursor(r.URL.Query().Get("cursor"))
+		}
 		res, _, err := req.Execute()
 		if err != nil {
 			web.HTTPError(w, err)
@@ -136,7 +139,7 @@ func (t *OverviewRoute) getDevicesTable() http.HandlerFunc {
 		if res.Links.GetNext() != "" {
 			nextCursor = "/overview/devices/table?cursor=" + getCursor(res.Links.GetNext())
 		}
-		views.WriteRenderDeviceTable(w, res.Data, nextCursor)
+		views.WriteRenderDeviceTableRows(w, res.Data, nextCursor)
 	}
 }
 
@@ -490,21 +493,21 @@ func SnackbarSaveSuccessful(w http.ResponseWriter) http.ResponseWriter {
 }
 
 func SnackbarSomethingWentWrong(w http.ResponseWriter) http.ResponseWriter {
-	return WithSnackbarError(w, "Something went wrong")
+	return WithSnackbarError(w, "Something went wrong", http.StatusInternalServerError)
 }
 
-func WithSnackbarError(w http.ResponseWriter, message string) http.ResponseWriter {
+func WithSnackbarError(w http.ResponseWriter, message string, statusCode int) http.ResponseWriter {
 	return withSnackbarMessage(w, snackbarDetails{
 		Message: message,
 		Type:    Error,
-	})
+	}, statusCode)
 }
 
 func WithSnackbarSuccess(w http.ResponseWriter, message string) http.ResponseWriter {
 	return withSnackbarMessage(w, snackbarDetails{
 		Message: message,
 		Type:    Success,
-	})
+	}, http.StatusOK)
 }
 
 type snackbarEvent struct {
@@ -516,7 +519,7 @@ type snackbarDetails struct {
 	Type    SnackbarType `json:"type"`
 }
 
-func withSnackbarMessage(w http.ResponseWriter, details snackbarDetails) http.ResponseWriter {
+func withSnackbarMessage(w http.ResponseWriter, details snackbarDetails, statusCode int) http.ResponseWriter {
 	b, err := json.Marshal(snackbarEvent{
 		Details: details,
 	})
@@ -525,6 +528,7 @@ func withSnackbarMessage(w http.ResponseWriter, details snackbarDetails) http.Re
 		b = snackbarGenericError()
 	}
 	w.Header().Set("hx-trigger", string(b))
+	w.WriteHeader(statusCode)
 	return w
 }
 
@@ -533,8 +537,7 @@ func snackbarGenericError() []byte {
 		Details: snackbarDetails{
 			Message: "Something went wrong",
 			Type:    Error,
-		},
-	}
+		}}
 	b, _ := json.Marshal(ev)
 	return b
 }
