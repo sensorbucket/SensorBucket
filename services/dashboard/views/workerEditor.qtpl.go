@@ -81,7 +81,7 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
 	if p.Worker == nil {
 //line views/workerEditor.qtpl:32
 		qw422016.N().S(`
-                    <button 
+                    <button
                         class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
                         hx-post="/workers/create"
                         hx-vals='js:{userCode: currentUserCode()}'

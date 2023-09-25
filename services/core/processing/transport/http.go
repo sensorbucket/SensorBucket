@@ -77,8 +77,15 @@ func (t *Transport) httpUpdatePipeline() http.HandlerFunc {
 			return
 		}
 
-		if len(lo.FindDuplicates(dto.Steps)) != 0 {
-			log.Printf("Invalid update dto, duplicate workers not allowed")
+		if lo.ContainsBy(dto.Steps, func(item string) bool {
+			return item == ""
+		}) {
+			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponseAny{Message: "Worker with empty ID not allowed"})
+			return
+		}
+
+		dup := lo.FindDuplicates(dto.Steps)
+		if len(dup) != 0 {
 			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponseAny{Message: "Duplicate workers not allowed"})
 			return
 		}
