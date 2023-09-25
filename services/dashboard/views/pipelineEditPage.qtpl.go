@@ -41,11 +41,11 @@ func (p *PipelineEditPage) StreamBody(qw422016 *qt422016.Writer) {
 	if p.Pipeline != nil {
 //line views/pipelineEditPage.qtpl:14
 		qw422016.N().S(`
-                    hx-patch="/pipelines/`)
+                    hx-patch="/pipelines/edit/`)
 //line views/pipelineEditPage.qtpl:15
 		qw422016.E().S(p.Pipeline.Id)
 //line views/pipelineEditPage.qtpl:15
-		qw422016.N().S(`/edit" hx-trigger="form-updated"
+		qw422016.N().S(`" hx-trigger="form-updated"
                 `)
 //line views/pipelineEditPage.qtpl:16
 	} else {
