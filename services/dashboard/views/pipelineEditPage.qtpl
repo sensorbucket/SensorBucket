@@ -12,7 +12,7 @@
         </header>
         <form id="pipelineEditForm" class="p-4 gap-4 grid lg:grid-cols-1"
                 {% if p.Pipeline != nil %}
-                    hx-patch="/pipelines/{%s p.Pipeline.Id %}/edit" hx-trigger="form-updated"
+                    hx-patch="/pipelines/edit/{%s p.Pipeline.Id %}" hx-trigger="form-updated"
                 {% else %}
                     hx-post="/pipelines/create"
                 {% endif %}

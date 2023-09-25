@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/samber/lo"
+	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
@@ -32,7 +33,7 @@ func CreatePipelinePageHandler(client *api.APIClient) http.Handler {
 	handler.router.
 		With(handler.validatePipelineSteps).
 		With(handler.updatePipeline).
-		Patch("/{pipeline_id}/edit", handler.pipelineStepsView())
+		Patch("/edit/{pipeline_id}", handler.pipelineStepsView())
 
 	handler.router.
 		With(handler.resolveWorkers).
@@ -92,8 +93,16 @@ func (h *PipelinePageHandler) createPipeline() http.HandlerFunc {
 			web.HTTPError(w, web.NewError(http.StatusBadRequest, "Bad request", ""))
 			return
 		}
+
+		allWorkers, ok := r.Context().Value("pipeline_workers").([]api.UserWorker)
+		if !ok {
+			WithSnackbarError(w, "Couldn't find workers", http.StatusBadRequest)
+			return
+		}
+
 		var dto api.CreatePipelineRequest
 		dto.SetDescription(r.FormValue("pipeline-descr"))
+		dto.SetSteps(stepsFromWorkersList(allWorkers))
 
 		_, resp, err := h.client.PipelinesApi.CreatePipeline(r.Context()).CreatePipelineRequest(dto).Execute()
 		if err != nil {
@@ -198,17 +207,22 @@ func (h *PipelinePageHandler) updatePipeline(next http.Handler) http.Handler {
 			return
 		}
 
+		if pipelineDescr[0] == "" {
+			WithSnackbarError(w, "Pipeline description cannot be emptry", http.StatusBadRequest)
+			return
+		}
+
 		allWorkers, ok := r.Context().Value("pipeline_workers").([]api.UserWorker)
 		if !ok {
 			WithSnackbarError(w, "Couldn't find workers", http.StatusBadRequest)
 			return
 		}
 
-		updatDto := api.UpdatePipelineRequest{
-			Steps:       stepsFromWorkersList(allWorkers),
-			Description: &pipelineDescr[0],
-		}
-		_, resp, err := h.client.PipelinesApi.UpdatePipeline(r.Context(), pipelineId).UpdatePipelineRequest(updatDto).Execute()
+		var updateDto api.UpdatePipelineRequest
+		updateDto.SetDescription(pipelineDescr[0])
+		updateDto.SetSteps(stepsFromWorkersList(allWorkers))
+
+		_, resp, err := h.client.PipelinesApi.UpdatePipeline(r.Context(), pipelineId).UpdatePipelineRequest(updateDto).Execute()
 		if err != nil {
 			SnackbarSomethingWentWrong(w)
 			return
@@ -296,7 +310,7 @@ func (h *PipelinePageHandler) validatePipelineSteps(next http.Handler) http.Hand
 			newOrder[ix] = key
 		}
 
-		if newOrder[len(newOrder)-1] != "meas" {
+		if newOrder[len(newOrder)-1] != IMAGE_MEAS {
 			WithSnackbarError(w, "Last step must be measurement storage", http.StatusBadRequest)
 			return
 		}
@@ -513,21 +527,21 @@ func userWorkersFromImageWorkers(steps []string) []api.UserWorker {
 	return userWorkers
 }
 
-var imageWorkers = []api.UserWorker{
-	imageWorker("sbox", "Worker for the sensorbox"),
-	imageWorker("ttn", "ttn description"),
-	imageWorker("meas", "stores the measurement in the database (immutable)"),
-	imageWorker("mfm", "multiflexmeter"),
-	imageWorker("mfm-2", "particulate matter"),
-}
+var (
+	IMAGE_SBOX = env.Must("IMAGE_SBOX")
+	IMAGE_TTN  = env.Must("IMAGE_TTN")
+	IMAGE_MEAS = env.Must("IMAGE_MEAS")
+	IMAGE_MFM  = env.Must("IMAGE_MFM")
+	IMAGE_MFM2 = env.Must("IMAGE_MFM2")
+)
 
-// var imageWorkers = []api.UserWorker{
-// 	imageWorker("pzld-sensorbox", "Worker for the sensorbox"),
-// 	imageWorker("the-things-network", "ttn description"),
-// 	imageWorker("measurement-storage", "stores the measurement in the database (immutable)"),
-// 	imageWorker("multiflexmeter-groundwater", "multiflexmeter"),
-// 	imageWorker("multiflexmeter-particulate-matter", "particulate matter"),
-// }
+var imageWorkers = []api.UserWorker{
+	imageWorker(IMAGE_SBOX, "Worker for the sensorbox"),
+	imageWorker(IMAGE_TTN, "ttn description"),
+	imageWorker(IMAGE_MEAS, "stores the measurement in the database (immutable)"),
+	imageWorker(IMAGE_MFM, "multiflexmeter"),
+	imageWorker(IMAGE_MFM2, "particulate matter"),
+}
 
 func imageWorker(name string, description string) api.UserWorker {
 	return api.UserWorker{
