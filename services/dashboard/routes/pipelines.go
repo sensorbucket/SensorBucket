@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
@@ -69,20 +68,15 @@ func (h *PipelinePageHandler) pipelineListPage() http.HandlerFunc {
 		}
 
 		page := &views.PipelinePage{
-			Pipelines:         pipelines.Data,
-			PipelinesNextPage: pipelines.Links.GetNext(),
+			Pipelines: pipelines.Data,
 		}
 		if pipelines.Links.GetNext() != "" {
-			u, err := url.Parse(pipelines.Links.GetNext())
-			if err == nil {
-				page.PipelinesNextPage = "/pipelines/table?cursor=" + u.Query().Get("cursor")
-			}
+			page.PipelinesNextPage = "/pipelines/table?cursor=" + getCursor(pipelines.Links.GetNext())
 		}
 		if isHX(r) {
 			page.WriteBody(w)
 			return
 		}
-		// TODO: what does below do? first page in index rendering?
 		views.WriteIndex(w, page)
 	}
 }

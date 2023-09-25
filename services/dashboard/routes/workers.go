@@ -35,6 +35,7 @@ func (h *WorkerPageHandler) SetupRoutes(r chi.Router) {
 	r.Get("/create", h.createWorkerPage())
 	r.Post("/create", h.createWorker())
 	r.Get("/{id}", h.workerDetails())
+	r.Get("/table", h.workersTable())
 	r.Patch("/{id}", h.updateWorker())
 }
 
@@ -49,11 +50,42 @@ func (h *WorkerPageHandler) listWorkers() http.HandlerFunc {
 		page.Workers = res.Data
 		page.WorkersNextPage = res.Links.GetNext()
 
+		if res.Links.GetNext() != "" {
+			if err == nil {
+				page.WorkersNextPage = "/workers/table?cursor=" + getCursor(res.Links.GetNext())
+			}
+		}
+
+		fmt.Println("Cursor", res.Links.GetNext())
 		if isHX(r) {
 			page.WriteBody(w)
 			return
 		}
 		views.WriteIndex(w, page)
+	}
+}
+
+func (h *WorkerPageHandler) workersTable() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("get table")
+		req := h.client.WorkersApi.ListWorkers(r.Context())
+		if r.URL.Query().Has("cursor") {
+			req = req.Cursor(r.URL.Query().Get("cursor"))
+		}
+		res, _, err := req.Execute()
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		nextCursor := ""
+		if res.Links.GetNext() != "" {
+			nextCursor = "/workers/table?cursor=" + getCursor(res.Links.GetNext())
+		}
+
+		if isHX(r) {
+			views.WriteRenderWorkerTableRows(w, res.Data, nextCursor)
+		}
 	}
 }
 
