@@ -1,0 +1,146 @@
+package userworkers
+
+import (
+	"context"
+	"encoding/base64"
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/google/uuid"
+
+	"sensorbucket.nl/sensorbucket/internal/httpfilter"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/internal/web"
+)
+
+type HTTPTransport struct {
+	server *http.Server
+}
+
+func NewHTTPTransport(app *Application, addr string) *HTTPTransport {
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	createRoutes(app, r)
+	srv := &http.Server{
+		Addr:         addr,
+		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  5 * time.Second,
+		Handler:      r,
+	}
+	return &HTTPTransport{
+		server: srv,
+	}
+}
+
+func (t *HTTPTransport) Start() {
+	log.Printf("HTTP server listening at: %s\n", t.server.Addr)
+	t.server.ListenAndServe()
+}
+
+func (t *HTTPTransport) Stop(ctx context.Context) {
+	log.Println("HTTP Server shutting down...")
+	t.server.Shutdown(ctx)
+}
+
+type WorkersHTTPFilters struct {
+	pagination.Request
+	ListWorkerFilters
+}
+
+func createRoutes(app *Application, r chi.Router) {
+	r.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Hello"))
+	})
+	r.Get("/workers", func(w http.ResponseWriter, r *http.Request) {
+		params, err := httpfilter.Parse[WorkersHTTPFilters](r)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		page, err := app.ListWorkers(r.Context(), params.ListWorkerFilters, params.Request)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusOK, pagination.CreateResponse(r, "", *page))
+	})
+	r.Post("/workers", func(w http.ResponseWriter, r *http.Request) {
+		var dto CreateWorkerOpts
+		if err := web.DecodeJSON(r, &dto); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		worker, err := app.CreateWorker(r.Context(), dto)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
+			Message: "Created worker",
+			Data:    worker,
+		})
+	})
+	r.With(resolveWorker(app)).Get("/workers/{id}", func(w http.ResponseWriter, r *http.Request) {
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+			Data: r.Context().Value("worker"),
+		})
+	})
+	r.With(resolveWorker(app)).Get("/workers/{id}/usercode", func(w http.ResponseWriter, r *http.Request) {
+		worker := r.Context().Value("worker").(*UserWorker)
+		userCode, err := worker.GetUserCode()
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+			Data: userCode,
+		})
+	})
+	r.With(resolveWorker(app)).Get("/workers/{id}/source", func(w http.ResponseWriter, r *http.Request) {
+		worker := r.Context().Value("worker").(*UserWorker)
+		src := base64.StdEncoding.EncodeToString(worker.ZipSource)
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+			Data: src,
+		})
+	})
+	r.With(resolveWorker(app)).Patch("/workers/{id}", func(w http.ResponseWriter, r *http.Request) {
+		var dto UpdateWorkerOpts
+		if err := web.DecodeJSON(r, &dto); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		worker := r.Context().Value("worker").(*UserWorker)
+		if err := app.UpdateWorker(r.Context(), worker, dto); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+			Message: "Worker has been updated",
+		})
+	})
+}
+
+type Middleware = func(next http.Handler) http.Handler
+
+func resolveWorker(app *Application) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			idStr := chi.URLParam(r, "id")
+			id, err := uuid.Parse(idStr)
+			if err != nil {
+				web.HTTPError(w, ErrInvalidUUID)
+				return
+			}
+			worker, err := app.GetWorker(r.Context(), id)
+			if err != nil {
+				web.HTTPError(w, err)
+				return
+			}
+			r = r.WithContext(context.WithValue(r.Context(), "worker", worker))
+			next.ServeHTTP(w, r)
+		})
+	}
+}

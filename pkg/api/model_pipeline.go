@@ -18,12 +18,12 @@ import (
 
 // Pipeline struct for Pipeline
 type Pipeline struct {
-	Id *string `json:"id,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Steps []string `json:"steps,omitempty"`
+	Id string `json:"id"`
+	Description string `json:"description"`
+	Steps []string `json:"steps"`
 	// either active or inactive
-	Status *string `json:"status,omitempty"`
-	LastStatusChange *time.Time `json:"last_status_change,omitempty"`
+	Status string `json:"status"`
+	LastStatusChange time.Time `json:"last_status_change"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
@@ -31,8 +31,13 @@ type Pipeline struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPipeline() *Pipeline {
+func NewPipeline(id string, description string, steps []string, status string, lastStatusChange time.Time) *Pipeline {
 	this := Pipeline{}
+	this.Id = id
+	this.Description = description
+	this.Steps = steps
+	this.Status = status
+	this.LastStatusChange = lastStatusChange
 	return &this
 }
 
@@ -44,164 +49,124 @@ func NewPipelineWithDefaults() *Pipeline {
 	return &this
 }
 
-// GetId returns the Id field value if set, zero value otherwise.
+// GetId returns the Id field value
 func (o *Pipeline) GetId() string {
-	if o == nil || isNil(o.Id) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.Id
+
+	return o.Id
 }
 
-// GetIdOk returns a tuple with the Id field value if set, nil otherwise
+// GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
 func (o *Pipeline) GetIdOk() (*string, bool) {
-	if o == nil || isNil(o.Id) {
+	if o == nil {
     return nil, false
 	}
-	return o.Id, true
+	return &o.Id, true
 }
 
-// HasId returns a boolean if a field has been set.
-func (o *Pipeline) HasId() bool {
-	if o != nil && !isNil(o.Id) {
-		return true
-	}
-
-	return false
-}
-
-// SetId gets a reference to the given string and assigns it to the Id field.
+// SetId sets field value
 func (o *Pipeline) SetId(v string) {
-	o.Id = &v
+	o.Id = v
 }
 
-// GetDescription returns the Description field value if set, zero value otherwise.
+// GetDescription returns the Description field value
 func (o *Pipeline) GetDescription() string {
-	if o == nil || isNil(o.Description) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.Description
+
+	return o.Description
 }
 
-// GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
+// GetDescriptionOk returns a tuple with the Description field value
 // and a boolean to check if the value has been set.
 func (o *Pipeline) GetDescriptionOk() (*string, bool) {
-	if o == nil || isNil(o.Description) {
+	if o == nil {
     return nil, false
 	}
-	return o.Description, true
+	return &o.Description, true
 }
 
-// HasDescription returns a boolean if a field has been set.
-func (o *Pipeline) HasDescription() bool {
-	if o != nil && !isNil(o.Description) {
-		return true
-	}
-
-	return false
-}
-
-// SetDescription gets a reference to the given string and assigns it to the Description field.
+// SetDescription sets field value
 func (o *Pipeline) SetDescription(v string) {
-	o.Description = &v
+	o.Description = v
 }
 
-// GetSteps returns the Steps field value if set, zero value otherwise.
+// GetSteps returns the Steps field value
 func (o *Pipeline) GetSteps() []string {
-	if o == nil || isNil(o.Steps) {
+	if o == nil {
 		var ret []string
 		return ret
 	}
+
 	return o.Steps
 }
 
-// GetStepsOk returns a tuple with the Steps field value if set, nil otherwise
+// GetStepsOk returns a tuple with the Steps field value
 // and a boolean to check if the value has been set.
 func (o *Pipeline) GetStepsOk() ([]string, bool) {
-	if o == nil || isNil(o.Steps) {
+	if o == nil {
     return nil, false
 	}
 	return o.Steps, true
 }
 
-// HasSteps returns a boolean if a field has been set.
-func (o *Pipeline) HasSteps() bool {
-	if o != nil && !isNil(o.Steps) {
-		return true
-	}
-
-	return false
-}
-
-// SetSteps gets a reference to the given []string and assigns it to the Steps field.
+// SetSteps sets field value
 func (o *Pipeline) SetSteps(v []string) {
 	o.Steps = v
 }
 
-// GetStatus returns the Status field value if set, zero value otherwise.
+// GetStatus returns the Status field value
 func (o *Pipeline) GetStatus() string {
-	if o == nil || isNil(o.Status) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.Status
+
+	return o.Status
 }
 
-// GetStatusOk returns a tuple with the Status field value if set, nil otherwise
+// GetStatusOk returns a tuple with the Status field value
 // and a boolean to check if the value has been set.
 func (o *Pipeline) GetStatusOk() (*string, bool) {
-	if o == nil || isNil(o.Status) {
+	if o == nil {
     return nil, false
 	}
-	return o.Status, true
+	return &o.Status, true
 }
 
-// HasStatus returns a boolean if a field has been set.
-func (o *Pipeline) HasStatus() bool {
-	if o != nil && !isNil(o.Status) {
-		return true
-	}
-
-	return false
-}
-
-// SetStatus gets a reference to the given string and assigns it to the Status field.
+// SetStatus sets field value
 func (o *Pipeline) SetStatus(v string) {
-	o.Status = &v
+	o.Status = v
 }
 
-// GetLastStatusChange returns the LastStatusChange field value if set, zero value otherwise.
+// GetLastStatusChange returns the LastStatusChange field value
 func (o *Pipeline) GetLastStatusChange() time.Time {
-	if o == nil || isNil(o.LastStatusChange) {
+	if o == nil {
 		var ret time.Time
 		return ret
 	}
-	return *o.LastStatusChange
+
+	return o.LastStatusChange
 }
 
-// GetLastStatusChangeOk returns a tuple with the LastStatusChange field value if set, nil otherwise
+// GetLastStatusChangeOk returns a tuple with the LastStatusChange field value
 // and a boolean to check if the value has been set.
 func (o *Pipeline) GetLastStatusChangeOk() (*time.Time, bool) {
-	if o == nil || isNil(o.LastStatusChange) {
+	if o == nil {
     return nil, false
 	}
-	return o.LastStatusChange, true
+	return &o.LastStatusChange, true
 }
 
-// HasLastStatusChange returns a boolean if a field has been set.
-func (o *Pipeline) HasLastStatusChange() bool {
-	if o != nil && !isNil(o.LastStatusChange) {
-		return true
-	}
-
-	return false
-}
-
-// SetLastStatusChange gets a reference to the given time.Time and assigns it to the LastStatusChange field.
+// SetLastStatusChange sets field value
 func (o *Pipeline) SetLastStatusChange(v time.Time) {
-	o.LastStatusChange = &v
+	o.LastStatusChange = v
 }
 
 // GetCreatedAt returns the CreatedAt field value if set, zero value otherwise.
@@ -238,19 +203,19 @@ func (o *Pipeline) SetCreatedAt(v time.Time) {
 
 func (o Pipeline) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.Id) {
+	if true {
 		toSerialize["id"] = o.Id
 	}
-	if !isNil(o.Description) {
+	if true {
 		toSerialize["description"] = o.Description
 	}
-	if !isNil(o.Steps) {
+	if true {
 		toSerialize["steps"] = o.Steps
 	}
-	if !isNil(o.Status) {
+	if true {
 		toSerialize["status"] = o.Status
 	}
-	if !isNil(o.LastStatusChange) {
+	if true {
 		toSerialize["last_status_change"] = o.LastStatusChange
 	}
 	if !isNil(o.CreatedAt) {

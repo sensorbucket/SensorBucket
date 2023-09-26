@@ -17,20 +17,26 @@ import (
 
 // Datastream struct for Datastream
 type Datastream struct {
-	Id *string `json:"id,omitempty"`
-	Description *string `json:"description,omitempty"`
-	SensorId *float32 `json:"sensor_id,omitempty"`
-	ObservedProperty *string `json:"observed_property,omitempty"`
-	UnitOfMeasurement *string `json:"unit_of_measurement,omitempty"`
-	CreatedAt *string `json:"created_at,omitempty"`
+	Id string `json:"id"`
+	Description string `json:"description"`
+	SensorId int32 `json:"sensor_id"`
+	ObservedProperty string `json:"observed_property"`
+	UnitOfMeasurement string `json:"unit_of_measurement"`
+	CreatedAt string `json:"created_at"`
 }
 
 // NewDatastream instantiates a new Datastream object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewDatastream() *Datastream {
+func NewDatastream(id string, description string, sensorId int32, observedProperty string, unitOfMeasurement string, createdAt string) *Datastream {
 	this := Datastream{}
+	this.Id = id
+	this.Description = description
+	this.SensorId = sensorId
+	this.ObservedProperty = observedProperty
+	this.UnitOfMeasurement = unitOfMeasurement
+	this.CreatedAt = createdAt
 	return &this
 }
 
@@ -42,216 +48,168 @@ func NewDatastreamWithDefaults() *Datastream {
 	return &this
 }
 
-// GetId returns the Id field value if set, zero value otherwise.
+// GetId returns the Id field value
 func (o *Datastream) GetId() string {
-	if o == nil || isNil(o.Id) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.Id
+
+	return o.Id
 }
 
-// GetIdOk returns a tuple with the Id field value if set, nil otherwise
+// GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
 func (o *Datastream) GetIdOk() (*string, bool) {
-	if o == nil || isNil(o.Id) {
+	if o == nil {
     return nil, false
 	}
-	return o.Id, true
+	return &o.Id, true
 }
 
-// HasId returns a boolean if a field has been set.
-func (o *Datastream) HasId() bool {
-	if o != nil && !isNil(o.Id) {
-		return true
-	}
-
-	return false
-}
-
-// SetId gets a reference to the given string and assigns it to the Id field.
+// SetId sets field value
 func (o *Datastream) SetId(v string) {
-	o.Id = &v
+	o.Id = v
 }
 
-// GetDescription returns the Description field value if set, zero value otherwise.
+// GetDescription returns the Description field value
 func (o *Datastream) GetDescription() string {
-	if o == nil || isNil(o.Description) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.Description
+
+	return o.Description
 }
 
-// GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
+// GetDescriptionOk returns a tuple with the Description field value
 // and a boolean to check if the value has been set.
 func (o *Datastream) GetDescriptionOk() (*string, bool) {
-	if o == nil || isNil(o.Description) {
+	if o == nil {
     return nil, false
 	}
-	return o.Description, true
+	return &o.Description, true
 }
 
-// HasDescription returns a boolean if a field has been set.
-func (o *Datastream) HasDescription() bool {
-	if o != nil && !isNil(o.Description) {
-		return true
-	}
-
-	return false
-}
-
-// SetDescription gets a reference to the given string and assigns it to the Description field.
+// SetDescription sets field value
 func (o *Datastream) SetDescription(v string) {
-	o.Description = &v
+	o.Description = v
 }
 
-// GetSensorId returns the SensorId field value if set, zero value otherwise.
-func (o *Datastream) GetSensorId() float32 {
-	if o == nil || isNil(o.SensorId) {
-		var ret float32
+// GetSensorId returns the SensorId field value
+func (o *Datastream) GetSensorId() int32 {
+	if o == nil {
+		var ret int32
 		return ret
 	}
-	return *o.SensorId
+
+	return o.SensorId
 }
 
-// GetSensorIdOk returns a tuple with the SensorId field value if set, nil otherwise
+// GetSensorIdOk returns a tuple with the SensorId field value
 // and a boolean to check if the value has been set.
-func (o *Datastream) GetSensorIdOk() (*float32, bool) {
-	if o == nil || isNil(o.SensorId) {
+func (o *Datastream) GetSensorIdOk() (*int32, bool) {
+	if o == nil {
     return nil, false
 	}
-	return o.SensorId, true
+	return &o.SensorId, true
 }
 
-// HasSensorId returns a boolean if a field has been set.
-func (o *Datastream) HasSensorId() bool {
-	if o != nil && !isNil(o.SensorId) {
-		return true
-	}
-
-	return false
+// SetSensorId sets field value
+func (o *Datastream) SetSensorId(v int32) {
+	o.SensorId = v
 }
 
-// SetSensorId gets a reference to the given float32 and assigns it to the SensorId field.
-func (o *Datastream) SetSensorId(v float32) {
-	o.SensorId = &v
-}
-
-// GetObservedProperty returns the ObservedProperty field value if set, zero value otherwise.
+// GetObservedProperty returns the ObservedProperty field value
 func (o *Datastream) GetObservedProperty() string {
-	if o == nil || isNil(o.ObservedProperty) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.ObservedProperty
+
+	return o.ObservedProperty
 }
 
-// GetObservedPropertyOk returns a tuple with the ObservedProperty field value if set, nil otherwise
+// GetObservedPropertyOk returns a tuple with the ObservedProperty field value
 // and a boolean to check if the value has been set.
 func (o *Datastream) GetObservedPropertyOk() (*string, bool) {
-	if o == nil || isNil(o.ObservedProperty) {
+	if o == nil {
     return nil, false
 	}
-	return o.ObservedProperty, true
+	return &o.ObservedProperty, true
 }
 
-// HasObservedProperty returns a boolean if a field has been set.
-func (o *Datastream) HasObservedProperty() bool {
-	if o != nil && !isNil(o.ObservedProperty) {
-		return true
-	}
-
-	return false
-}
-
-// SetObservedProperty gets a reference to the given string and assigns it to the ObservedProperty field.
+// SetObservedProperty sets field value
 func (o *Datastream) SetObservedProperty(v string) {
-	o.ObservedProperty = &v
+	o.ObservedProperty = v
 }
 
-// GetUnitOfMeasurement returns the UnitOfMeasurement field value if set, zero value otherwise.
+// GetUnitOfMeasurement returns the UnitOfMeasurement field value
 func (o *Datastream) GetUnitOfMeasurement() string {
-	if o == nil || isNil(o.UnitOfMeasurement) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.UnitOfMeasurement
+
+	return o.UnitOfMeasurement
 }
 
-// GetUnitOfMeasurementOk returns a tuple with the UnitOfMeasurement field value if set, nil otherwise
+// GetUnitOfMeasurementOk returns a tuple with the UnitOfMeasurement field value
 // and a boolean to check if the value has been set.
 func (o *Datastream) GetUnitOfMeasurementOk() (*string, bool) {
-	if o == nil || isNil(o.UnitOfMeasurement) {
+	if o == nil {
     return nil, false
 	}
-	return o.UnitOfMeasurement, true
+	return &o.UnitOfMeasurement, true
 }
 
-// HasUnitOfMeasurement returns a boolean if a field has been set.
-func (o *Datastream) HasUnitOfMeasurement() bool {
-	if o != nil && !isNil(o.UnitOfMeasurement) {
-		return true
-	}
-
-	return false
-}
-
-// SetUnitOfMeasurement gets a reference to the given string and assigns it to the UnitOfMeasurement field.
+// SetUnitOfMeasurement sets field value
 func (o *Datastream) SetUnitOfMeasurement(v string) {
-	o.UnitOfMeasurement = &v
+	o.UnitOfMeasurement = v
 }
 
-// GetCreatedAt returns the CreatedAt field value if set, zero value otherwise.
+// GetCreatedAt returns the CreatedAt field value
 func (o *Datastream) GetCreatedAt() string {
-	if o == nil || isNil(o.CreatedAt) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.CreatedAt
+
+	return o.CreatedAt
 }
 
-// GetCreatedAtOk returns a tuple with the CreatedAt field value if set, nil otherwise
+// GetCreatedAtOk returns a tuple with the CreatedAt field value
 // and a boolean to check if the value has been set.
 func (o *Datastream) GetCreatedAtOk() (*string, bool) {
-	if o == nil || isNil(o.CreatedAt) {
+	if o == nil {
     return nil, false
 	}
-	return o.CreatedAt, true
+	return &o.CreatedAt, true
 }
 
-// HasCreatedAt returns a boolean if a field has been set.
-func (o *Datastream) HasCreatedAt() bool {
-	if o != nil && !isNil(o.CreatedAt) {
-		return true
-	}
-
-	return false
-}
-
-// SetCreatedAt gets a reference to the given string and assigns it to the CreatedAt field.
+// SetCreatedAt sets field value
 func (o *Datastream) SetCreatedAt(v string) {
-	o.CreatedAt = &v
+	o.CreatedAt = v
 }
 
 func (o Datastream) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.Id) {
+	if true {
 		toSerialize["id"] = o.Id
 	}
-	if !isNil(o.Description) {
+	if true {
 		toSerialize["description"] = o.Description
 	}
-	if !isNil(o.SensorId) {
+	if true {
 		toSerialize["sensor_id"] = o.SensorId
 	}
-	if !isNil(o.ObservedProperty) {
+	if true {
 		toSerialize["observed_property"] = o.ObservedProperty
 	}
-	if !isNil(o.UnitOfMeasurement) {
+	if true {
 		toSerialize["unit_of_measurement"] = o.UnitOfMeasurement
 	}
-	if !isNil(o.CreatedAt) {
+	if true {
 		toSerialize["created_at"] = o.CreatedAt
 	}
 	return json.Marshal(toSerialize)

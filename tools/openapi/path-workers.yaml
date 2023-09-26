@@ -1,0 +1,73 @@
+get:
+  x-is-paginated: true
+  operationId: ListWorkers
+  summary: List workers
+  description: |
+    Lists traces that match the provided filter.
+  tags: [Workers]
+  parameters:
+    - in: query
+      name: cursor
+      description: The cursor for the current page
+      schema:
+        type: string
+    - in: query
+      name: limit
+      description: |
+        The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+      schema:
+        type: integer
+    - name: id
+      description: |
+        Filter by Pipeline IDs
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+  responses:
+    "200":
+      description: Fetched workers
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "./schemas.yaml#/paginatedResponse"
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "schemas.yaml#/userWorker"
+    "400":
+      $ref: "./responses.yaml#/400"
+    "401":
+      $ref: "./responses.yaml#/401"
+    "403":
+      $ref: "./responses.yaml#/403"
+post:
+  operationId: CreateWorker
+  summary: Create Worker
+  description: |
+    Create a new worker
+  tags: [Workers]
+  requestBody: 
+    content:
+      application/json:
+        schema: 
+          $ref: 'schemas.yaml#/createUserWorkerRequest'
+  responses:
+    "201":
+      description: Created worker
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: created user worker
+              data:
+                $ref: "schemas.yaml#/userWorker"

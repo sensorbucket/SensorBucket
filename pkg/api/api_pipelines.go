@@ -377,7 +377,7 @@ type ApiListPipelinesRequest struct {
 	inactive *bool
 	step *[]string
 	cursor *string
-	limit *float32
+	limit *int32
 }
 
 // Only show inactive pipelines
@@ -399,7 +399,7 @@ func (r ApiListPipelinesRequest) Cursor(cursor string) ApiListPipelinesRequest {
 }
 
 // The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
-func (r ApiListPipelinesRequest) Limit(limit float32) ApiListPipelinesRequest {
+func (r ApiListPipelinesRequest) Limit(limit int32) ApiListPipelinesRequest {
 	r.limit = &limit
 	return r
 }

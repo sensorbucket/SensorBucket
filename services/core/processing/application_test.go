@@ -42,7 +42,7 @@ func TestShouldProcessIngressDTO(t *testing.T) {
 	assert.NoError(t, err)
 	require.Len(t, publ, 1)
 	result := <-publ
-	assert.Equal(t, dto.TracingID.String(), result.ID)
+	assert.Equal(t, dto.TracingID.String(), result.TracingID)
 	assert.Equal(t, pl.Steps, result.PipelineSteps)
 	assert.Equal(t, dto.Payload, result.Payload)
 	assert.Equal(t, dto.OwnerID, result.OwnerID)

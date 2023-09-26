@@ -10,7 +10,8 @@ get:
       in: path
       required: true
       schema:
-        type: number
+        type: integer
+        format: int64
   responses:
     '200':
       description: Fetched sensor group
@@ -44,7 +45,7 @@ patch:
       in: path
       required: true
       schema:
-        type: number
+        type: integer
   requestBody: 
     content:
       application/json:
@@ -79,7 +80,7 @@ delete:
       in: path
       required: true
       schema:
-        type: number
+        type: integer
   responses:
     '200':
       description: Sensor group deleted

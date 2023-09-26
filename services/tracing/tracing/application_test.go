@@ -5,25 +5,26 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
 
 func TestPipelineMessageWithInvalidAmountOfPipelineSteps(t *testing.T) {
 	svc := Service{}
-	assert.EqualError(t, svc.HandlePipelineMessage(
+	assert.ErrorIs(t, svc.HandlePipelineMessage(
 		pipeline.Message{
 			PipelineSteps: []string{"1", "2", "3"},
 			StepIndex:     3,
 		},
-		time.Now()), "steps remaining cannot be smaller than 0 (pipelinesteps len: 3, stepindex: 3)")
-	assert.EqualError(t, svc.HandlePipelineError(
+		time.Now()), ErrInvalidStepsRemaining)
+	assert.ErrorIs(t, svc.HandlePipelineError(
 		pipeline.PipelineError{
 			ReceivedByWorker: pipeline.Message{
 				PipelineSteps: []string{"1", "2", "3", "4", "5"},
 				StepIndex:     5,
 			},
 		},
-		time.Now()), "steps remaining cannot be smaller than 0 (pipelinesteps len: 5, stepindex: 5)")
+		time.Now()), ErrInvalidStepsRemaining)
 }
 
 func TestPipelineErrorAppears(t *testing.T) {
@@ -38,7 +39,7 @@ func TestPipelineErrorAppears(t *testing.T) {
 		"pipeline error with 3 steps remaining": {
 			input: pipeline.PipelineError{
 				ReceivedByWorker: pipeline.Message{
-					ID:            "234324",
+					TracingID:     "234324",
 					Timestamp:     21342143,
 					StepIndex:     3,
 					PipelineSteps: []string{"A", "B", "C", "D", "E", "F", "G"},
@@ -56,7 +57,7 @@ func TestPipelineErrorAppears(t *testing.T) {
 		"pipeline message with 0 steps remaining": {
 			input: pipeline.PipelineError{
 				ReceivedByWorker: pipeline.Message{
-					ID:            "234324",
+					TracingID:     "234324",
 					Timestamp:     21342143,
 					StepIndex:     6,
 					PipelineSteps: []string{"A", "B", "C", "D", "E", "F", "G"},
@@ -74,7 +75,7 @@ func TestPipelineErrorAppears(t *testing.T) {
 		"pipeline message with 1 step remaining": {
 			input: pipeline.PipelineError{
 				ReceivedByWorker: pipeline.Message{
-					ID:            "234324",
+					TracingID:     "234324",
 					Timestamp:     21342143,
 					StepIndex:     5,
 					PipelineSteps: []string{"A", "B", "C", "D", "E", "F", "G"},
@@ -127,7 +128,7 @@ func TestPipelineMessageAppears(t *testing.T) {
 	scenarios := map[string]scene{
 		"pipeline message with 3 steps remaining": {
 			input: pipeline.Message{
-				ID:            "234324",
+				TracingID:     "234324",
 				Timestamp:     21342143,
 				StepIndex:     3,
 				PipelineSteps: []string{"A", "B", "C", "D", "E", "F", "G"},
@@ -141,7 +142,7 @@ func TestPipelineMessageAppears(t *testing.T) {
 		},
 		"pipeline message with 0 steps remaining": {
 			input: pipeline.Message{
-				ID:            "234324",
+				TracingID:     "234324",
 				Timestamp:     21342143,
 				StepIndex:     3,
 				PipelineSteps: []string{"A", "B", "C", "D"},
@@ -155,7 +156,7 @@ func TestPipelineMessageAppears(t *testing.T) {
 		},
 		"pipeline message with 1 step remaining": {
 			input: pipeline.Message{
-				ID:            "234324",
+				TracingID:     "234324",
 				Timestamp:     21342143,
 				StepIndex:     4,
 				PipelineSteps: []string{"A", "B", "C", "D", "E", "F"},

@@ -10,7 +10,7 @@ post:
       in: path
       required: true
       schema:
-        type: number
+        type: integer
   requestBody: 
     content:
       application/json:
@@ -18,7 +18,7 @@ post:
           type: object
           properties:
             sensor_id:
-              type: number
+              type: integer
               example: 5
               description: id of the sensor to add
   responses:
