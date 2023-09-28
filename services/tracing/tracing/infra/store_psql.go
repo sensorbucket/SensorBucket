@@ -1,7 +1,6 @@
 package tracinginfra
 
 import (
-	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -56,12 +55,16 @@ func (s *stepStore) QueryTraces(filter tracing.Filter, r pagination.Request) (*p
 		q = q.Where(sq.Eq{"steps.device_id": filter.DeviceIDs})
 	}
 
+	if filter.StartTime != nil {
+		q = q.Where(sq.GtOrEq{"archive.archived_at": filter.StartTime})
+	}
+
 	if len(filter.TracingIDs) > 0 {
 		q = q.Where(sq.Eq{"steps.tracing_id": filter.TracingIDs})
 	}
 
 	if len(filter.Status) > 0 {
-		q = q.Where(sq.Eq{"steps.trace_status": tracing.StatusStringsToStatusCodes(filter.Status)})
+		q = q.Where(sq.Eq{"steps.trace_status": filter.Status})
 	}
 
 	if filter.DurationGreaterThan != nil {
@@ -125,6 +128,7 @@ func (s *stepStore) GetStepsByTracingIDs(tracingIds []string) ([]tracing.Enriche
 	list := []tracing.EnrichedStep{}
 	for rows.Next() {
 		var t tracing.EnrichedStep
+		var durationMS int64
 		err = rows.Scan(
 			&t.Step.TracingID,
 			&t.Step.DeviceID,
@@ -133,13 +137,13 @@ func (s *stepStore) GetStepsByTracingIDs(tracingIds []string) ([]tracing.Enriche
 			&t.Step.StartTime,
 			&t.Step.Error,
 			&t.Status,
-			&t.Duration,
+			&durationMS,
 			&t.HighestCollectiveStatus,
 		)
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("t.Duration: %v\n", t.Duration)
+		t.Duration = time.Duration(durationMS * int64(time.Millisecond))
 		list = append(list, t)
 	}
 	return list, nil

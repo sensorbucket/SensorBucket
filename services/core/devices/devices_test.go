@@ -98,3 +98,43 @@ func TestAddSensorToDevice(t *testing.T) {
 		})
 	}
 }
+
+func TestDeviceShouldProvideSensorByEIDOrFallback(t *testing.T) {
+	dev, err := devices.NewDevice(devices.NewDeviceOpts{
+		Code: "test_device",
+	})
+	require.NoError(t, err)
+
+	// Fetch non existing sensor
+	sensor, err := dev.GetSensorByExternalIDOrFallback("sensor_eid")
+	assert.Nil(t, sensor)
+	assert.ErrorIs(t, err, devices.ErrSensorNotFound)
+
+	// Add fallback
+	opt := devices.NewSensorOpts{
+		Code:       "test_fallback_sensor",
+		IsFallback: true,
+	}
+	err = dev.AddSensor(opt)
+	assert.NoError(t, err)
+
+	// Fetch fallback
+	sensor, err = dev.GetSensorByExternalIDOrFallback("sensor_eid")
+	assert.NotNil(t, sensor)
+	assert.NoError(t, err)
+	assert.Equal(t, opt.Code, sensor.Code)
+
+	// Add match sensor
+	opt = devices.NewSensorOpts{
+		Code:       "test_sensor",
+		ExternalID: "sensor_eid",
+	}
+	err = dev.AddSensor(opt)
+	assert.NoError(t, err)
+
+	// Fetch fallback
+	sensor, err = dev.GetSensorByExternalIDOrFallback("sensor_eid")
+	assert.NotNil(t, sensor)
+	assert.NoError(t, err)
+	assert.Equal(t, opt.Code, sensor.Code)
+}

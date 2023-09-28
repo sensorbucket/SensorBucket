@@ -14,9 +14,9 @@ type emailSender struct {
 	host     string
 }
 
-func (infra *emailSender) SendMail(subject string, from string, to string, templateHtml string, content interface{}) error {
+func (infra *emailSender) SendMail(subject string, from string, to string, templateHtml []string, content interface{}) error {
 	log.Printf("sending mail to '%s'\n", to)
-	t, err := template.ParseFiles(templateHtml)
+	t, err := template.ParseFiles(templateHtml...)
 	if err != nil {
 		return fmt.Errorf("template parse: %w", err)
 	}

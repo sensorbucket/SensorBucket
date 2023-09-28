@@ -111,14 +111,21 @@ Class | Method | HTTP request | Description
 *PipelinesApi* | [**GetPipeline**](docs/PipelinesApi.md#getpipeline) | **Get** /pipelines/{id} | Get pipeline
 *PipelinesApi* | [**ListPipelines**](docs/PipelinesApi.md#listpipelines) | **Get** /pipelines | List pipelines
 *PipelinesApi* | [**UpdatePipeline**](docs/PipelinesApi.md#updatepipeline) | **Patch** /pipelines/{id} | Update pipeline
+*TracingApi* | [**ListIngresses**](docs/TracingApi.md#listingresses) | **Get** /ingresses | List ingresses
 *TracingApi* | [**ListTraces**](docs/TracingApi.md#listtraces) | **Get** /tracing | List traces
 *UplinkApi* | [**ProcessUplinkData**](docs/UplinkApi.md#processuplinkdata) | **Post** /uplinks/{pipeline_id} | Process uplink message
+*WorkersApi* | [**CreateWorker**](docs/WorkersApi.md#createworker) | **Post** /workers | Create Worker
+*WorkersApi* | [**GetWorker**](docs/WorkersApi.md#getworker) | **Get** /workers/{id} | Get worker
+*WorkersApi* | [**GetWorkerUserCode**](docs/WorkersApi.md#getworkerusercode) | **Get** /workers/{id}/usercode | Get the User Code for a Worker
+*WorkersApi* | [**ListWorkers**](docs/WorkersApi.md#listworkers) | **Get** /workers | List workers
+*WorkersApi* | [**UpdateWorker**](docs/WorkersApi.md#updateworker) | **Patch** /workers/{id} | Update worker properties
 
 
 ## Documentation For Models
 
  - [AddSensorToSensorGroup201Response](docs/AddSensorToSensorGroup201Response.md)
  - [AddSensorToSensorGroupRequest](docs/AddSensorToSensorGroupRequest.md)
+ - [ArchivedIngress](docs/ArchivedIngress.md)
  - [CreateDevice201Response](docs/CreateDevice201Response.md)
  - [CreateDeviceRequest](docs/CreateDeviceRequest.md)
  - [CreateDeviceSensor201Response](docs/CreateDeviceSensor201Response.md)
@@ -127,6 +134,8 @@ Class | Method | HTTP request | Description
  - [CreateSensorGroup201Response](docs/CreateSensorGroup201Response.md)
  - [CreateSensorGroupRequest](docs/CreateSensorGroupRequest.md)
  - [CreateSensorRequest](docs/CreateSensorRequest.md)
+ - [CreateUserWorkerRequest](docs/CreateUserWorkerRequest.md)
+ - [CreateWorker201Response](docs/CreateWorker201Response.md)
  - [Datastream](docs/Datastream.md)
  - [DeleteDeviceSensor200Response](docs/DeleteDeviceSensor200Response.md)
  - [DeleteSensorFromSensorGroup200Response](docs/DeleteSensorFromSensorGroup200Response.md)
@@ -135,22 +144,28 @@ Class | Method | HTTP request | Description
  - [DisablePipeline200Response](docs/DisablePipeline200Response.md)
  - [GetDatastream200Response](docs/GetDatastream200Response.md)
  - [GetDatastream200ResponseData](docs/GetDatastream200ResponseData.md)
- - [GetDatastream200ResponseDataAllOf](docs/GetDatastream200ResponseDataAllOf.md)
  - [GetDevice200Response](docs/GetDevice200Response.md)
  - [GetPipeline200Response](docs/GetPipeline200Response.md)
  - [GetSensorGroup200Response](docs/GetSensorGroup200Response.md)
+ - [GetWorker200Response](docs/GetWorker200Response.md)
+ - [GetWorkerUserCode200Response](docs/GetWorkerUserCode200Response.md)
+ - [IngressDTO](docs/IngressDTO.md)
  - [ListDatastreams200Response](docs/ListDatastreams200Response.md)
  - [ListDatastreams200ResponseAllOf](docs/ListDatastreams200ResponseAllOf.md)
  - [ListDeviceSensors200Response](docs/ListDeviceSensors200Response.md)
  - [ListDeviceSensors200ResponseAllOf](docs/ListDeviceSensors200ResponseAllOf.md)
  - [ListDevices200Response](docs/ListDevices200Response.md)
  - [ListDevices200ResponseAllOf](docs/ListDevices200ResponseAllOf.md)
+ - [ListIngresses200Response](docs/ListIngresses200Response.md)
+ - [ListIngresses200ResponseAllOf](docs/ListIngresses200ResponseAllOf.md)
  - [ListPipelines200Response](docs/ListPipelines200Response.md)
  - [ListPipelines200ResponseAllOf](docs/ListPipelines200ResponseAllOf.md)
  - [ListSensorGroups200Response](docs/ListSensorGroups200Response.md)
  - [ListSensorGroups200ResponseAllOf](docs/ListSensorGroups200ResponseAllOf.md)
  - [ListTraces200Response](docs/ListTraces200Response.md)
  - [ListTraces200ResponseAllOf](docs/ListTraces200ResponseAllOf.md)
+ - [ListWorkers200Response](docs/ListWorkers200Response.md)
+ - [ListWorkers200ResponseAllOf](docs/ListWorkers200ResponseAllOf.md)
  - [Measurement](docs/Measurement.md)
  - [PaginatedResponse](docs/PaginatedResponse.md)
  - [PaginatedResponseLinks](docs/PaginatedResponseLinks.md)
@@ -167,6 +182,9 @@ Class | Method | HTTP request | Description
  - [UpdatePipelineRequest](docs/UpdatePipelineRequest.md)
  - [UpdateSensorGroup200Response](docs/UpdateSensorGroup200Response.md)
  - [UpdateSensorGroupRequest](docs/UpdateSensorGroupRequest.md)
+ - [UpdateWorker200Response](docs/UpdateWorker200Response.md)
+ - [UpdateWorkerRequest](docs/UpdateWorkerRequest.md)
+ - [UserWorker](docs/UserWorker.md)
 
 
 ## Documentation For Authorization

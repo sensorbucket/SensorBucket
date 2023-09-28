@@ -1,0 +1,30 @@
+apiVersion: fission.io/v1
+kind: MessageQueueTrigger
+metadata:
+  name: rmq-test
+  namespace: default
+spec:
+  contentType: application/json
+  cooldownPeriod: 30
+  functionref:
+    functionweights: null
+    name: hellopy
+    type: name
+  maxReplicaCount: 100
+  maxRetries: 3
+  messageQueueType: rabbitmq
+  metadata:
+    exchange: pipeline.messages
+  minReplicaCount: 0
+  mqtkind: keda
+  podspec:
+    imagePullSecrets:
+    - name: regcred
+    containers:
+    - env: []
+      imagePullPolicy: Always
+      image: ghcr.io/sensorbucket/fission-rmq-connector@sha256:f7762ced27530d4c93f43fa6d015d4e0fecf31b9995861b501698aeba6261478
+      name: rmq-test
+  pollingInterval: 5
+  secret: keda-rmq-secret
+  topic: user-worker-identifier

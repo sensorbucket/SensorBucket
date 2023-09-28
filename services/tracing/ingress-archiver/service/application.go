@@ -32,7 +32,9 @@ func (a *Application) ArchiveIngressDTO(tracingID uuid.UUID, rawMessage []byte) 
 	return nil
 }
 
-type ArchiveFilters struct{}
+type ArchiveFilters struct {
+	TracingIDs []string `schema:"tracing_id"`
+}
 
 func (a *Application) ListIngresses(ctx context.Context, filters ArchiveFilters, p pagination.Request) (*pagination.Page[ArchivedIngressDTO], error) {
 	return a.store.List(filters, p)

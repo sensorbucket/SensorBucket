@@ -95,7 +95,7 @@ func (w *worker) Run() {
 			continue
 		}
 		w.publisher <- mq.PublishMessage{Topic: topic, Publishing: amqp091.Publishing{
-			MessageId: result.ID,
+			MessageId: result.TracingID,
 			Body:      msgJSON,
 		}}
 

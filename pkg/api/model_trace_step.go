@@ -22,19 +22,20 @@ type TraceStep struct {
 	Status int32 `json:"status"`
 	StatusString string `json:"status_string"`
 	// Duration in seconds
-	Duration float32 `json:"duration"`
-	Error *string `json:"error,omitempty"`
+	Duration float64 `json:"duration"`
+	Error string `json:"error"`
 }
 
 // NewTraceStep instantiates a new TraceStep object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewTraceStep(status int32, statusString string, duration float32) *TraceStep {
+func NewTraceStep(status int32, statusString string, duration float64, error_ string) *TraceStep {
 	this := TraceStep{}
 	this.Status = status
 	this.StatusString = statusString
 	this.Duration = duration
+	this.Error = error_
 	return &this
 }
 
@@ -127,9 +128,9 @@ func (o *TraceStep) SetStatusString(v string) {
 }
 
 // GetDuration returns the Duration field value
-func (o *TraceStep) GetDuration() float32 {
+func (o *TraceStep) GetDuration() float64 {
 	if o == nil {
-		var ret float32
+		var ret float64
 		return ret
 	}
 
@@ -138,7 +139,7 @@ func (o *TraceStep) GetDuration() float32 {
 
 // GetDurationOk returns a tuple with the Duration field value
 // and a boolean to check if the value has been set.
-func (o *TraceStep) GetDurationOk() (*float32, bool) {
+func (o *TraceStep) GetDurationOk() (*float64, bool) {
 	if o == nil {
     return nil, false
 	}
@@ -146,40 +147,32 @@ func (o *TraceStep) GetDurationOk() (*float32, bool) {
 }
 
 // SetDuration sets field value
-func (o *TraceStep) SetDuration(v float32) {
+func (o *TraceStep) SetDuration(v float64) {
 	o.Duration = v
 }
 
-// GetError returns the Error field value if set, zero value otherwise.
+// GetError returns the Error field value
 func (o *TraceStep) GetError() string {
-	if o == nil || isNil(o.Error) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.Error
+
+	return o.Error
 }
 
-// GetErrorOk returns a tuple with the Error field value if set, nil otherwise
+// GetErrorOk returns a tuple with the Error field value
 // and a boolean to check if the value has been set.
 func (o *TraceStep) GetErrorOk() (*string, bool) {
-	if o == nil || isNil(o.Error) {
+	if o == nil {
     return nil, false
 	}
-	return o.Error, true
+	return &o.Error, true
 }
 
-// HasError returns a boolean if a field has been set.
-func (o *TraceStep) HasError() bool {
-	if o != nil && !isNil(o.Error) {
-		return true
-	}
-
-	return false
-}
-
-// SetError gets a reference to the given string and assigns it to the Error field.
+// SetError sets field value
 func (o *TraceStep) SetError(v string) {
-	o.Error = &v
+	o.Error = v
 }
 
 func (o TraceStep) MarshalJSON() ([]byte, error) {
@@ -196,7 +189,7 @@ func (o TraceStep) MarshalJSON() ([]byte, error) {
 	if true {
 		toSerialize["duration"] = o.Duration
 	}
-	if !isNil(o.Error) {
+	if true {
 		toSerialize["error"] = o.Error
 	}
 	return json.Marshal(toSerialize)

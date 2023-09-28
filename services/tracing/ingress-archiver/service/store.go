@@ -74,6 +74,11 @@ func (s *StorePSQL) List(filters ArchiveFilters, pageRequest pagination.Request)
 	if err != nil {
 		return nil, fmt.Errorf("list archives, error getting pagination cursor: %w", err)
 	}
+
+	if len(filters.TracingIDs) > 0 {
+		q = q.Where(sq.Eq{"tracing_id": filters.TracingIDs})
+	}
+
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, fmt.Errorf("list archives, could not apply pagination: %w", err)

@@ -17,9 +17,9 @@ import (
 
 // UpdateDeviceRequest struct for UpdateDeviceRequest
 type UpdateDeviceRequest struct {
-	Description *float32 `json:"description,omitempty"`
-	Latitude *float32 `json:"latitude,omitempty"`
-	Longitude *float32 `json:"longitude,omitempty"`
+	Description *int32 `json:"description,omitempty"`
+	Latitude *float64 `json:"latitude,omitempty"`
+	Longitude *float64 `json:"longitude,omitempty"`
 	LocationDescription *string `json:"location_description,omitempty"`
 	Properties map[string]interface{} `json:"properties,omitempty"`
 }
@@ -42,9 +42,9 @@ func NewUpdateDeviceRequestWithDefaults() *UpdateDeviceRequest {
 }
 
 // GetDescription returns the Description field value if set, zero value otherwise.
-func (o *UpdateDeviceRequest) GetDescription() float32 {
+func (o *UpdateDeviceRequest) GetDescription() int32 {
 	if o == nil || isNil(o.Description) {
-		var ret float32
+		var ret int32
 		return ret
 	}
 	return *o.Description
@@ -52,7 +52,7 @@ func (o *UpdateDeviceRequest) GetDescription() float32 {
 
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *UpdateDeviceRequest) GetDescriptionOk() (*float32, bool) {
+func (o *UpdateDeviceRequest) GetDescriptionOk() (*int32, bool) {
 	if o == nil || isNil(o.Description) {
     return nil, false
 	}
@@ -68,15 +68,15 @@ func (o *UpdateDeviceRequest) HasDescription() bool {
 	return false
 }
 
-// SetDescription gets a reference to the given float32 and assigns it to the Description field.
-func (o *UpdateDeviceRequest) SetDescription(v float32) {
+// SetDescription gets a reference to the given int32 and assigns it to the Description field.
+func (o *UpdateDeviceRequest) SetDescription(v int32) {
 	o.Description = &v
 }
 
 // GetLatitude returns the Latitude field value if set, zero value otherwise.
-func (o *UpdateDeviceRequest) GetLatitude() float32 {
+func (o *UpdateDeviceRequest) GetLatitude() float64 {
 	if o == nil || isNil(o.Latitude) {
-		var ret float32
+		var ret float64
 		return ret
 	}
 	return *o.Latitude
@@ -84,7 +84,7 @@ func (o *UpdateDeviceRequest) GetLatitude() float32 {
 
 // GetLatitudeOk returns a tuple with the Latitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *UpdateDeviceRequest) GetLatitudeOk() (*float32, bool) {
+func (o *UpdateDeviceRequest) GetLatitudeOk() (*float64, bool) {
 	if o == nil || isNil(o.Latitude) {
     return nil, false
 	}
@@ -100,15 +100,15 @@ func (o *UpdateDeviceRequest) HasLatitude() bool {
 	return false
 }
 
-// SetLatitude gets a reference to the given float32 and assigns it to the Latitude field.
-func (o *UpdateDeviceRequest) SetLatitude(v float32) {
+// SetLatitude gets a reference to the given float64 and assigns it to the Latitude field.
+func (o *UpdateDeviceRequest) SetLatitude(v float64) {
 	o.Latitude = &v
 }
 
 // GetLongitude returns the Longitude field value if set, zero value otherwise.
-func (o *UpdateDeviceRequest) GetLongitude() float32 {
+func (o *UpdateDeviceRequest) GetLongitude() float64 {
 	if o == nil || isNil(o.Longitude) {
-		var ret float32
+		var ret float64
 		return ret
 	}
 	return *o.Longitude
@@ -116,7 +116,7 @@ func (o *UpdateDeviceRequest) GetLongitude() float32 {
 
 // GetLongitudeOk returns a tuple with the Longitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *UpdateDeviceRequest) GetLongitudeOk() (*float32, bool) {
+func (o *UpdateDeviceRequest) GetLongitudeOk() (*float64, bool) {
 	if o == nil || isNil(o.Longitude) {
     return nil, false
 	}
@@ -132,8 +132,8 @@ func (o *UpdateDeviceRequest) HasLongitude() bool {
 	return false
 }
 
-// SetLongitude gets a reference to the given float32 and assigns it to the Longitude field.
-func (o *UpdateDeviceRequest) SetLongitude(v float32) {
+// SetLongitude gets a reference to the given float64 and assigns it to the Longitude field.
+func (o *UpdateDeviceRequest) SetLongitude(v float64) {
 	o.Longitude = &v
 }
 

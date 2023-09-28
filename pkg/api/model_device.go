@@ -13,30 +13,39 @@ package api
 
 import (
 	"encoding/json"
+	"time"
 )
 
 // Device struct for Device
 type Device struct {
-	Id float32 `json:"id"`
+	Id int64 `json:"id"`
 	Code string `json:"code"`
-	Description *string `json:"description,omitempty"`
+	State int32 `json:"state"`
+	Description string `json:"description"`
 	Organisation string `json:"organisation"`
-	Properties map[string]interface{} `json:"properties,omitempty"`
-	Latitude *float32 `json:"latitude,omitempty"`
-	Longitude *float32 `json:"longitude,omitempty"`
+	Properties map[string]interface{} `json:"properties"`
+	Altitude *float64 `json:"altitude,omitempty"`
+	Latitude *float64 `json:"latitude,omitempty"`
+	Longitude *float64 `json:"longitude,omitempty"`
 	LocationDescription *string `json:"location_description,omitempty"`
-	Sensors []Sensor `json:"sensors,omitempty"`
+	Sensors []Sensor `json:"sensors"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // NewDevice instantiates a new Device object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewDevice(id float32, code string, organisation string) *Device {
+func NewDevice(id int64, code string, state int32, description string, organisation string, properties map[string]interface{}, sensors []Sensor, createdAt time.Time) *Device {
 	this := Device{}
 	this.Id = id
 	this.Code = code
+	this.State = state
+	this.Description = description
 	this.Organisation = organisation
+	this.Properties = properties
+	this.Sensors = sensors
+	this.CreatedAt = createdAt
 	return &this
 }
 
@@ -49,9 +58,9 @@ func NewDeviceWithDefaults() *Device {
 }
 
 // GetId returns the Id field value
-func (o *Device) GetId() float32 {
+func (o *Device) GetId() int64 {
 	if o == nil {
-		var ret float32
+		var ret int64
 		return ret
 	}
 
@@ -60,7 +69,7 @@ func (o *Device) GetId() float32 {
 
 // GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
-func (o *Device) GetIdOk() (*float32, bool) {
+func (o *Device) GetIdOk() (*int64, bool) {
 	if o == nil {
     return nil, false
 	}
@@ -68,7 +77,7 @@ func (o *Device) GetIdOk() (*float32, bool) {
 }
 
 // SetId sets field value
-func (o *Device) SetId(v float32) {
+func (o *Device) SetId(v int64) {
 	o.Id = v
 }
 
@@ -96,36 +105,52 @@ func (o *Device) SetCode(v string) {
 	o.Code = v
 }
 
-// GetDescription returns the Description field value if set, zero value otherwise.
+// GetState returns the State field value
+func (o *Device) GetState() int32 {
+	if o == nil {
+		var ret int32
+		return ret
+	}
+
+	return o.State
+}
+
+// GetStateOk returns a tuple with the State field value
+// and a boolean to check if the value has been set.
+func (o *Device) GetStateOk() (*int32, bool) {
+	if o == nil {
+    return nil, false
+	}
+	return &o.State, true
+}
+
+// SetState sets field value
+func (o *Device) SetState(v int32) {
+	o.State = v
+}
+
+// GetDescription returns the Description field value
 func (o *Device) GetDescription() string {
-	if o == nil || isNil(o.Description) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.Description
+
+	return o.Description
 }
 
-// GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
+// GetDescriptionOk returns a tuple with the Description field value
 // and a boolean to check if the value has been set.
 func (o *Device) GetDescriptionOk() (*string, bool) {
-	if o == nil || isNil(o.Description) {
+	if o == nil {
     return nil, false
 	}
-	return o.Description, true
+	return &o.Description, true
 }
 
-// HasDescription returns a boolean if a field has been set.
-func (o *Device) HasDescription() bool {
-	if o != nil && !isNil(o.Description) {
-		return true
-	}
-
-	return false
-}
-
-// SetDescription gets a reference to the given string and assigns it to the Description field.
+// SetDescription sets field value
 func (o *Device) SetDescription(v string) {
-	o.Description = &v
+	o.Description = v
 }
 
 // GetOrganisation returns the Organisation field value
@@ -152,42 +177,66 @@ func (o *Device) SetOrganisation(v string) {
 	o.Organisation = v
 }
 
-// GetProperties returns the Properties field value if set, zero value otherwise.
+// GetProperties returns the Properties field value
 func (o *Device) GetProperties() map[string]interface{} {
-	if o == nil || isNil(o.Properties) {
+	if o == nil {
 		var ret map[string]interface{}
 		return ret
 	}
+
 	return o.Properties
 }
 
-// GetPropertiesOk returns a tuple with the Properties field value if set, nil otherwise
+// GetPropertiesOk returns a tuple with the Properties field value
 // and a boolean to check if the value has been set.
 func (o *Device) GetPropertiesOk() (map[string]interface{}, bool) {
-	if o == nil || isNil(o.Properties) {
+	if o == nil {
     return map[string]interface{}{}, false
 	}
 	return o.Properties, true
 }
 
-// HasProperties returns a boolean if a field has been set.
-func (o *Device) HasProperties() bool {
-	if o != nil && !isNil(o.Properties) {
+// SetProperties sets field value
+func (o *Device) SetProperties(v map[string]interface{}) {
+	o.Properties = v
+}
+
+// GetAltitude returns the Altitude field value if set, zero value otherwise.
+func (o *Device) GetAltitude() float64 {
+	if o == nil || isNil(o.Altitude) {
+		var ret float64
+		return ret
+	}
+	return *o.Altitude
+}
+
+// GetAltitudeOk returns a tuple with the Altitude field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Device) GetAltitudeOk() (*float64, bool) {
+	if o == nil || isNil(o.Altitude) {
+    return nil, false
+	}
+	return o.Altitude, true
+}
+
+// HasAltitude returns a boolean if a field has been set.
+func (o *Device) HasAltitude() bool {
+	if o != nil && !isNil(o.Altitude) {
 		return true
 	}
 
 	return false
 }
 
-// SetProperties gets a reference to the given map[string]interface{} and assigns it to the Properties field.
-func (o *Device) SetProperties(v map[string]interface{}) {
-	o.Properties = v
+// SetAltitude gets a reference to the given float64 and assigns it to the Altitude field.
+func (o *Device) SetAltitude(v float64) {
+	o.Altitude = &v
 }
 
 // GetLatitude returns the Latitude field value if set, zero value otherwise.
-func (o *Device) GetLatitude() float32 {
+func (o *Device) GetLatitude() float64 {
 	if o == nil || isNil(o.Latitude) {
-		var ret float32
+		var ret float64
 		return ret
 	}
 	return *o.Latitude
@@ -195,7 +244,7 @@ func (o *Device) GetLatitude() float32 {
 
 // GetLatitudeOk returns a tuple with the Latitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Device) GetLatitudeOk() (*float32, bool) {
+func (o *Device) GetLatitudeOk() (*float64, bool) {
 	if o == nil || isNil(o.Latitude) {
     return nil, false
 	}
@@ -211,15 +260,15 @@ func (o *Device) HasLatitude() bool {
 	return false
 }
 
-// SetLatitude gets a reference to the given float32 and assigns it to the Latitude field.
-func (o *Device) SetLatitude(v float32) {
+// SetLatitude gets a reference to the given float64 and assigns it to the Latitude field.
+func (o *Device) SetLatitude(v float64) {
 	o.Latitude = &v
 }
 
 // GetLongitude returns the Longitude field value if set, zero value otherwise.
-func (o *Device) GetLongitude() float32 {
+func (o *Device) GetLongitude() float64 {
 	if o == nil || isNil(o.Longitude) {
-		var ret float32
+		var ret float64
 		return ret
 	}
 	return *o.Longitude
@@ -227,7 +276,7 @@ func (o *Device) GetLongitude() float32 {
 
 // GetLongitudeOk returns a tuple with the Longitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Device) GetLongitudeOk() (*float32, bool) {
+func (o *Device) GetLongitudeOk() (*float64, bool) {
 	if o == nil || isNil(o.Longitude) {
     return nil, false
 	}
@@ -243,8 +292,8 @@ func (o *Device) HasLongitude() bool {
 	return false
 }
 
-// SetLongitude gets a reference to the given float32 and assigns it to the Longitude field.
-func (o *Device) SetLongitude(v float32) {
+// SetLongitude gets a reference to the given float64 and assigns it to the Longitude field.
+func (o *Device) SetLongitude(v float64) {
 	o.Longitude = &v
 }
 
@@ -280,36 +329,52 @@ func (o *Device) SetLocationDescription(v string) {
 	o.LocationDescription = &v
 }
 
-// GetSensors returns the Sensors field value if set, zero value otherwise.
+// GetSensors returns the Sensors field value
 func (o *Device) GetSensors() []Sensor {
-	if o == nil || isNil(o.Sensors) {
+	if o == nil {
 		var ret []Sensor
 		return ret
 	}
+
 	return o.Sensors
 }
 
-// GetSensorsOk returns a tuple with the Sensors field value if set, nil otherwise
+// GetSensorsOk returns a tuple with the Sensors field value
 // and a boolean to check if the value has been set.
 func (o *Device) GetSensorsOk() ([]Sensor, bool) {
-	if o == nil || isNil(o.Sensors) {
+	if o == nil {
     return nil, false
 	}
 	return o.Sensors, true
 }
 
-// HasSensors returns a boolean if a field has been set.
-func (o *Device) HasSensors() bool {
-	if o != nil && !isNil(o.Sensors) {
-		return true
-	}
-
-	return false
-}
-
-// SetSensors gets a reference to the given []Sensor and assigns it to the Sensors field.
+// SetSensors sets field value
 func (o *Device) SetSensors(v []Sensor) {
 	o.Sensors = v
+}
+
+// GetCreatedAt returns the CreatedAt field value
+func (o *Device) GetCreatedAt() time.Time {
+	if o == nil {
+		var ret time.Time
+		return ret
+	}
+
+	return o.CreatedAt
+}
+
+// GetCreatedAtOk returns a tuple with the CreatedAt field value
+// and a boolean to check if the value has been set.
+func (o *Device) GetCreatedAtOk() (*time.Time, bool) {
+	if o == nil {
+    return nil, false
+	}
+	return &o.CreatedAt, true
+}
+
+// SetCreatedAt sets field value
+func (o *Device) SetCreatedAt(v time.Time) {
+	o.CreatedAt = v
 }
 
 func (o Device) MarshalJSON() ([]byte, error) {
@@ -320,14 +385,20 @@ func (o Device) MarshalJSON() ([]byte, error) {
 	if true {
 		toSerialize["code"] = o.Code
 	}
-	if !isNil(o.Description) {
+	if true {
+		toSerialize["state"] = o.State
+	}
+	if true {
 		toSerialize["description"] = o.Description
 	}
 	if true {
 		toSerialize["organisation"] = o.Organisation
 	}
-	if !isNil(o.Properties) {
+	if true {
 		toSerialize["properties"] = o.Properties
+	}
+	if !isNil(o.Altitude) {
+		toSerialize["altitude"] = o.Altitude
 	}
 	if !isNil(o.Latitude) {
 		toSerialize["latitude"] = o.Latitude
@@ -338,8 +409,11 @@ func (o Device) MarshalJSON() ([]byte, error) {
 	if !isNil(o.LocationDescription) {
 		toSerialize["location_description"] = o.LocationDescription
 	}
-	if !isNil(o.Sensors) {
+	if true {
 		toSerialize["sensors"] = o.Sensors
+	}
+	if true {
+		toSerialize["created_at"] = o.CreatedAt
 	}
 	return json.Marshal(toSerialize)
 }

@@ -2,18 +2,17 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
-	"strconv"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-	"sensorbucket.nl/sensorbucket/internal/env"
 )
 
 func main() {
 	cleanPtr := flag.Bool("clean", false, "indicates whether to delete all expired data from the tracing and sensorbucket database")
-	warnPtr := flag.Bool("warn", false, "indicates whether to alert users by email that expired data will soon be deleted")
+	warnExpiredPtr := flag.Bool("warn-expired", false, "indicates whether to alert users by email that expired data will soon be deleted")
+	warnStuckPtr := flag.Bool("warn-stuck", false, "indicates whether to alert users by email about any data that has been stuck in a pipeline")
+	warnErrorsPtr := flag.Bool("warn-errors", false, "indicated whether to alert users by email about any data that has been generating recurring errors")
 	flag.Parse()
 
 	if *cleanPtr {
@@ -22,69 +21,64 @@ func main() {
 			panic(err)
 		}
 	}
-	if *warnPtr {
-		err := runWarn()
+	if *warnExpiredPtr {
+		err := runWarnExpired()
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	if !*cleanPtr && !*warnPtr {
-		log.Println("[Warning] no clean or warn parameter given. not running.")
+	if *warnStuckPtr {
+		err := runWarnStuck()
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if *warnErrorsPtr {
+		err := runWarnErrors()
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if !*cleanPtr && !*warnExpiredPtr && !*warnStuckPtr && !*warnErrorsPtr {
+		log.Println("[Warning] no clean or warn parameters given. not running.")
 	}
 }
 
 func runCleanup() error {
-	var (
-		// Database
-		DB_DSN_SENSORBUCKET = env.Must("DB_DSN_SENSORBUCKET")
-		DB_DSN_TRACING      = env.Must("DB_DSN_TRACING")
-	)
-	// Setup all database connections
-	sensorbucketDb, err := createDB(DB_DSN_SENSORBUCKET)
-	if err != nil {
-		panic(fmt.Errorf("create conn to sensorbucket db: %w", err))
-	}
-	tracingDb, err := createDB(DB_DSN_TRACING)
-	if err != nil {
-		panic(fmt.Errorf("create conn to tracing db: %w", err))
-	}
-	dbStore := dbStore{
-		sensorbucketDb: sensorbucketDb,
-		tracingDb:      tracingDb,
-	}
+	c := baseConfig().withSensorbucketAndTracingDb()
 	s := service{
-		store: &dbStore,
+		store: &c.store,
 	}
 	return s.clean()
 }
 
-func runWarn() error {
-
-	var (
-		// SMTP Config
-		SMTP_USERNAME      = env.Must("SMTP_USERNAME")
-		SMTP_PASSWORD      = env.Must("SMTP_PASSWORD")
-		SMTP_HOST          = env.Must("SMTP_HOST")
-		TO_EMAIL           = env.Must("TO_EMAIL")
-		FROM_EMAIL         = env.Must("FROM_EMAIL")
-		DAYS_TILL_DELETION = env.Must("DAYS_TILL_DELETION")
-	)
-
-	// Use a mock while sending mails are not required yet
-	mailSender := emailSender{
-		username: SMTP_USERNAME,
-		password: SMTP_PASSWORD,
-		host:     SMTP_HOST,
-	}
+func runWarnExpired() error {
+	c := baseConfig().withMailer().withDaysTillDeletionConfig()
 	s := service{
-		mailer: &mailSender,
+		mailer: c.mailSender,
 	}
-	val, err := strconv.ParseInt(DAYS_TILL_DELETION, 10, 64)
-	if err != nil {
-		panic(err)
+	return s.warnExpired(c.fromEmail, c.toEmail, int(c.daysTillDeletion))
+}
+
+func runWarnErrors() error {
+	c := baseConfig().withMailer().withErrorThreshold().withApiClient().withTimeframe()
+	s := service{
+		apiClient: c.apiClient.TracingApi,
+		mailer:    c.mailSender,
 	}
-	return s.warn(FROM_EMAIL, TO_EMAIL, int(val))
+	return s.warnRecurringErrors(c.fromEmail, c.toEmail, int(c.errorThreshold), int(c.checkLastHours))
+}
+
+func runWarnStuck() error {
+	c := baseConfig().withMailer().withApiClient().withDataTimeout().withTimeframe()
+	s := service{
+		mailer:    c.mailSender,
+		apiClient: c.apiClient.TracingApi,
+	}
+	return s.warnStuck(c.fromEmail, c.toEmail, int32(c.dataTimeout), int(c.checkLastHours))
 }
 
 func createDB(dsn string) (*sqlx.DB, error) {

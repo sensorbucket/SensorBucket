@@ -285,6 +285,9 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter measurements.DatastreamFil
 	if len(filter.Sensor) > 0 {
 		q = q.Where(sq.Eq{"sensor_id": filter.Sensor})
 	}
+	if len(filter.ObservedProperty) > 0 {
+		q = q.Where(sq.Eq{"observed_property": filter.ObservedProperty})
+	}
 
 	cursor, err := pagination.GetCursor[datastreamPageQuery](r)
 	if err != nil {

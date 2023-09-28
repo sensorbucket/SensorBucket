@@ -146,24 +146,3 @@ func (es EnrichedSteps) AllSteps() EnrichedSteps {
 
 	return steps
 }
-
-func StatusStringsToStatusCodes(statusses []string) []int64 {
-	codes := []int64{}
-	for _, s := range statusses {
-		for _, c := range allPossibleCodes {
-			if c.String() == s {
-				codes = append(codes, int64(c))
-			}
-		}
-	}
-	return codes
-}
-
-var allPossibleCodes = []Status{
-	Unknown,
-	Canceled,
-	Pending,
-	Success,
-	InProgress,
-	Failed,
-}

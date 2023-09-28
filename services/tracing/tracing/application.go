@@ -1,6 +1,7 @@
 package tracing
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,6 +10,8 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
+
+var ErrInvalidStepsRemaining = errors.New("steps remaining invalid")
 
 type StepStore interface {
 	UpsertStep(step Step, withError bool) error
@@ -28,14 +31,16 @@ type Service struct {
 
 func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message, time time.Time) error {
 	if len(pipelineMessage.PipelineSteps)-(int(pipelineMessage.StepIndex+1)) < 0 {
-		return fmt.Errorf("steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d)",
+		return fmt.Errorf("%w: steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d) for id %s",
+			ErrInvalidStepsRemaining,
 			len(pipelineMessage.PipelineSteps),
 			pipelineMessage.StepIndex,
+			pipelineMessage.TracingID,
 		)
 	}
 
 	step := Step{
-		TracingID: pipelineMessage.ID,
+		TracingID: pipelineMessage.TracingID,
 		StepIndex: pipelineMessage.StepIndex,
 
 		// We have to add 1 to the stepindex to get the actual steps remaining
@@ -55,14 +60,16 @@ func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message, time t
 
 func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError, time time.Time) error {
 	if len(errorMessage.ReceivedByWorker.PipelineSteps)-(int(errorMessage.ReceivedByWorker.StepIndex+1)) < 0 {
-		return fmt.Errorf("steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d)",
+		return fmt.Errorf("%w: steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d) for id: %s",
+			ErrInvalidStepsRemaining,
 			len(errorMessage.ReceivedByWorker.PipelineSteps),
 			errorMessage.ReceivedByWorker.StepIndex,
+			errorMessage.ReceivedByWorker.TracingID,
 		)
 	}
 
 	step := Step{
-		TracingID:      errorMessage.ReceivedByWorker.ID,
+		TracingID:      errorMessage.ReceivedByWorker.TracingID,
 		StepIndex:      errorMessage.ReceivedByWorker.StepIndex,
 		StepsRemaining: uint64(len(errorMessage.ReceivedByWorker.PipelineSteps) - (int(errorMessage.ReceivedByWorker.StepIndex + 1))),
 		StartTime:      time,
@@ -134,11 +141,12 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 }
 
 type Filter struct {
-	TracingIDs          []string `schema:"tracing_id"`
-	Status              []string `schema:"status"`
-	DeviceIDs           []int64  `schema:"device_id"`
-	DurationGreaterThan *int64   `schema:"duration_greater_than"`
-	DurationLowerThan   *int64   `schema:"duration_lower_than"`
+	TracingIDs          []string   `schema:"tracing_id"`
+	Status              []int64    `schema:"status"`
+	StartTime           *time.Time `schema:"start_time"`
+	DeviceIDs           []int64    `schema:"device_id"`
+	DurationGreaterThan *int64     `schema:"duration_greater_than"`
+	DurationLowerThan   *int64     `schema:"duration_lower_than"`
 }
 
 type TraceDTO struct {

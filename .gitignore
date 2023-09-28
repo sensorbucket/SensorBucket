@@ -128,3 +128,5 @@ public/
 # Generated tool files
 tools/generated/
 
+tools/kube/
+**/__pycache__

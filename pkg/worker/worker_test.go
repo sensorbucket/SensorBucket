@@ -24,11 +24,11 @@ func (s *workerSuite) TestWorkerProcessorReturnsAnError() {
 	consumer := make(chan amqp091.Delivery)
 	id := uuid.NewString()
 	incomingMessage := pipeline.Message{
-		ID: id,
+		TracingID: id,
 	}
 	expectedMessage := pipeline.PipelineError{
 		ReceivedByWorker: pipeline.Message{
-			ID: id,
+			TracingID: id,
 		},
 		Worker: "some-worker",
 		Queue:  "message came from this topic",
@@ -116,13 +116,13 @@ func (s *workerSuite) TestIncomingMessageWithNextStep() {
 	publisher := make(chan mq.PublishMessage)
 	consumer := make(chan amqp091.Delivery)
 	incomingMessage := pipeline.Message{
-		ID:            "very-unique-id",
+		TracingID:            "very-unique-id",
 		StepIndex:     0,
 		PipelineSteps: []string{"step1", "step2"},
 		Measurements:  []pipeline.Measurement{},
 	}
 	expectedMessage := pipeline.Message{
-		ID:            "very-unique-id",
+		TracingID:            "very-unique-id",
 		StepIndex:     1,
 		PipelineSteps: []string{"step1", "step2"},
 		Measurements:  []pipeline.Measurement{},
@@ -153,7 +153,7 @@ func (s *workerSuite) TestIncomingMessageWithNextStep() {
 	s.Equal(mq.PublishMessage{
 		Topic: "step2",
 		Publishing: amqp091.Publishing{
-			MessageId: expectedMessage.ID,
+			MessageId: expectedMessage.TracingID,
 			Body:      toBytes(expectedMessage),
 		},
 	}, result)

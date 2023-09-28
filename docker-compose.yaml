@@ -17,10 +17,7 @@ services:
       - .:/workspace:cached
     environment:
     - STATIC_PATH=services/dashboard/static
-    - EP_INGRESSES=http://tracing:3000/ingresses
-    - EP_TRACES=http://tracing:3000/tracing
-    - EP_PIPELINES=http://core:3000/pipelines
-    - EP_DEVICES=http://core:3000/devices
+    - SB_API=http://caddy
 
   core:
     build:
@@ -56,6 +53,28 @@ services:
     - AMQP_XCHG_INGRESS=ingress
     - AMQP_XCHG_INGRESS_TOPIC=ingress.#
 
+  userworkers:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - .:/workspace:cached
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - APP_NAME=fission-user-workers
+      - APP_TYPE=service
+      - HTTP_ADDR=:3000
+      - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/userworkers?sslmode=disable
+      - WORKER_NAMESPACE=default
+      - AMQP_XCHG=pipeline.messages
+      - CTRL_TYPE=docker
+      - CTRL_K8S_CONFIG=/workspace/tools/kube/config
+      - CTRL_K8S_MQT_IMAGE=
+      - CTRL_K8S_MQT_SECRET=
+      - CTRL_K8S_PULL_SECRET=
+                  
+            
   httpimporter:
     build: 
       context: .

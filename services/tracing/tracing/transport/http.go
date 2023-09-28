@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -53,6 +54,12 @@ func (t *HTTPTransport) httpGetTraces() http.HandlerFunc {
 			params.DurationLowerThan != nil &&
 			*params.DurationGreaterThan >= *params.DurationLowerThan {
 			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "duration_greater_than cannot be greater than or equal to duration_smaller_than", ""))
+			return
+		}
+
+		log.Println("GOT", params.StartTime)
+		if params.StartTime != nil && params.StartTime.After(time.Now()) {
+			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "start_time cannot be after time now", ""))
 			return
 		}
 

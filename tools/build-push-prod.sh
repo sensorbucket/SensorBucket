@@ -14,23 +14,15 @@ then
 fi
 
 docker build -t ${PROD_CR}/httpimporter:${PROD_VER} -f services/httpimporter/Dockerfile . 
-docker build -t ${PROD_CR}/device:${PROD_VER} -f services/device/Dockerfile . 
-docker build -t ${PROD_CR}/measurements:${PROD_VER} -f services/measurements/Dockerfile . 
-docker build -t ${PROD_CR}/pipeline:${PROD_VER} -f services/pipeline/Dockerfile . 
-docker build -t ${PROD_CR}/dashboard:${PROD_VER} services/dashboard/  
+docker build -t ${PROD_CR}/core:${PROD_VER} -f services/core/Dockerfile . 
+docker build -t ${PROD_CR}/tracing:${PROD_VER} -f services/tracing/Dockerfile . 
+docker build -t ${PROD_CR}/dashboard:${PROD_VER} -f services/dashboard/Dockerfile .
+docker build -t ${PROD_CR}/fission-user-workers:${PROD_VER} -f services/fission-user-workers/Dockerfile . 
+docker build -t ${PROD_CR}/fission-rmq-connector:${PROD_VER} -f services/fission-rmq-connector/Dockerfile . 
 
-docker build -t ${PROD_CR}/worker-the-things-network:${PROD_VER} -f workers/the-things-network/Dockerfile . 
-docker build -t ${PROD_CR}/worker-multiflexmeter-groundwater:${PROD_VER} -f workers/multiflexmeter-groundwater-level/Dockerfile . 
-docker build -t ${PROD_CR}/worker-multiflexmeter-particulatematter:${PROD_VER} -f workers/multiflexmeter-particulatematter/Dockerfile . 
-docker build -t ${PROD_CR}/worker-pzld-sensorbox:${PROD_VER} -f workers/pzld-sensorbox/Dockerfile . 
-
-
-docker push ${PROD_CR}/httpimporter:${PROD_VER} 
-docker push ${PROD_CR}/device:${PROD_VER} 
-docker push ${PROD_CR}/measurements:${PROD_VER} 
-docker push ${PROD_CR}/pipeline:${PROD_VER} 
+docker push ${PROD_CR}/httpimporter:${PROD_VER}
+docker push ${PROD_CR}/core:${PROD_VER}
+docker push ${PROD_CR}/tracing:${PROD_VER}
 docker push ${PROD_CR}/dashboard:${PROD_VER}
-docker push ${PROD_CR}/worker-the-things-network:${PROD_VER} 
-docker push ${PROD_CR}/worker-multiflexmeter-groundwater:${PROD_VER} 
-docker push ${PROD_CR}/worker-multiflexmeter-particulatematter:${PROD_VER} 
-docker push ${PROD_CR}/worker-pzld-sensorbox:${PROD_VER} 
+docker push ${PROD_CR}/fission-user-workers:${PROD_VER}
+docker push ${PROD_CR}/fission-rmq-connector:${PROD_VER}

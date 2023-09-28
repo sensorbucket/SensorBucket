@@ -28,7 +28,7 @@ func CreateIngressDTO(pipeline uuid.UUID, ownerID int64, payload []byte) Ingress
 
 func TransformIngressDTOToPipelineMessage(dto IngressDTO, pl *Pipeline) (*pipeline.Message, error) {
 	pipelineMessage := pipeline.Message{
-		ID:            dto.TracingID.String(),
+		TracingID:            dto.TracingID.String(),
 		OwnerID:       dto.OwnerID,
 		ReceivedAt:    dto.CreatedAt.UnixMilli(),
 		Timestamp:     dto.CreatedAt.UnixMilli(),

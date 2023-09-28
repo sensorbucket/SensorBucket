@@ -19,31 +19,31 @@ import (
 // Measurement struct for Measurement
 type Measurement struct {
 	UplinkMessageId string `json:"uplink_message_id"`
-	DeviceId float32 `json:"device_id"`
+	DeviceId int64 `json:"device_id"`
 	DeviceCode string `json:"device_code"`
 	DeviceDescription *string `json:"device_description,omitempty"`
-	DeviceLatitude *float32 `json:"device_latitude,omitempty"`
-	DeviceLongitude *float32 `json:"device_longitude,omitempty"`
-	DeviceAltitude *float32 `json:"device_altitude,omitempty"`
+	DeviceLatitude *float64 `json:"device_latitude,omitempty"`
+	DeviceLongitude *float64 `json:"device_longitude,omitempty"`
+	DeviceAltitude *float64 `json:"device_altitude,omitempty"`
 	DeviceLocationDescription *string `json:"device_location_description,omitempty"`
 	DeviceProperties map[string]interface{} `json:"device_properties,omitempty"`
-	DeviceState float32 `json:"device_state"`
-	SensorId float32 `json:"sensor_id"`
+	DeviceState int32 `json:"device_state"`
+	SensorId int64 `json:"sensor_id"`
 	SensorCode string `json:"sensor_code"`
 	SensorDescription *string `json:"sensor_description,omitempty"`
 	SensorExternalId string `json:"sensor_external_id"`
 	SensorProperties map[string]interface{} `json:"sensor_properties,omitempty"`
 	SensorBrand *string `json:"sensor_brand,omitempty"`
-	SensorArchiveTime *float32 `json:"sensor_archive_time,omitempty"`
+	SensorArchiveTime *int32 `json:"sensor_archive_time,omitempty"`
 	DatastreamId string `json:"datastream_id"`
 	DatastreamDescription *string `json:"datastream_description,omitempty"`
 	DatastreamObservedProperty string `json:"datastream_observed_property"`
 	DatastreamUnitOfMeasurement string `json:"datastream_unit_of_measurement"`
 	MeasurementTimestamp time.Time `json:"measurement_timestamp"`
-	MeasurementValue float32 `json:"measurement_value"`
-	MeasurementLatitude *float32 `json:"measurement_latitude,omitempty"`
-	MeasurementLongitude *float32 `json:"measurement_longitude,omitempty"`
-	MeasurementAltitude *float32 `json:"measurement_altitude,omitempty"`
+	MeasurementValue float64 `json:"measurement_value"`
+	MeasurementLatitude *float64 `json:"measurement_latitude,omitempty"`
+	MeasurementLongitude *float64 `json:"measurement_longitude,omitempty"`
+	MeasurementAltitude *float64 `json:"measurement_altitude,omitempty"`
 	MeasurementProperties map[string]interface{} `json:"measurement_properties,omitempty"`
 	MeasurementExpiration time.Time `json:"measurement_expiration"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`
@@ -53,7 +53,7 @@ type Measurement struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewMeasurement(uplinkMessageId string, deviceId float32, deviceCode string, deviceState float32, sensorId float32, sensorCode string, sensorExternalId string, datastreamId string, datastreamObservedProperty string, datastreamUnitOfMeasurement string, measurementTimestamp time.Time, measurementValue float32, measurementExpiration time.Time) *Measurement {
+func NewMeasurement(uplinkMessageId string, deviceId int64, deviceCode string, deviceState int32, sensorId int64, sensorCode string, sensorExternalId string, datastreamId string, datastreamObservedProperty string, datastreamUnitOfMeasurement string, measurementTimestamp time.Time, measurementValue float64, measurementExpiration time.Time) *Measurement {
 	this := Measurement{}
 	this.UplinkMessageId = uplinkMessageId
 	this.DeviceId = deviceId
@@ -104,9 +104,9 @@ func (o *Measurement) SetUplinkMessageId(v string) {
 }
 
 // GetDeviceId returns the DeviceId field value
-func (o *Measurement) GetDeviceId() float32 {
+func (o *Measurement) GetDeviceId() int64 {
 	if o == nil {
-		var ret float32
+		var ret int64
 		return ret
 	}
 
@@ -115,7 +115,7 @@ func (o *Measurement) GetDeviceId() float32 {
 
 // GetDeviceIdOk returns a tuple with the DeviceId field value
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetDeviceIdOk() (*float32, bool) {
+func (o *Measurement) GetDeviceIdOk() (*int64, bool) {
 	if o == nil {
     return nil, false
 	}
@@ -123,7 +123,7 @@ func (o *Measurement) GetDeviceIdOk() (*float32, bool) {
 }
 
 // SetDeviceId sets field value
-func (o *Measurement) SetDeviceId(v float32) {
+func (o *Measurement) SetDeviceId(v int64) {
 	o.DeviceId = v
 }
 
@@ -184,9 +184,9 @@ func (o *Measurement) SetDeviceDescription(v string) {
 }
 
 // GetDeviceLatitude returns the DeviceLatitude field value if set, zero value otherwise.
-func (o *Measurement) GetDeviceLatitude() float32 {
+func (o *Measurement) GetDeviceLatitude() float64 {
 	if o == nil || isNil(o.DeviceLatitude) {
-		var ret float32
+		var ret float64
 		return ret
 	}
 	return *o.DeviceLatitude
@@ -194,7 +194,7 @@ func (o *Measurement) GetDeviceLatitude() float32 {
 
 // GetDeviceLatitudeOk returns a tuple with the DeviceLatitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetDeviceLatitudeOk() (*float32, bool) {
+func (o *Measurement) GetDeviceLatitudeOk() (*float64, bool) {
 	if o == nil || isNil(o.DeviceLatitude) {
     return nil, false
 	}
@@ -210,15 +210,15 @@ func (o *Measurement) HasDeviceLatitude() bool {
 	return false
 }
 
-// SetDeviceLatitude gets a reference to the given float32 and assigns it to the DeviceLatitude field.
-func (o *Measurement) SetDeviceLatitude(v float32) {
+// SetDeviceLatitude gets a reference to the given float64 and assigns it to the DeviceLatitude field.
+func (o *Measurement) SetDeviceLatitude(v float64) {
 	o.DeviceLatitude = &v
 }
 
 // GetDeviceLongitude returns the DeviceLongitude field value if set, zero value otherwise.
-func (o *Measurement) GetDeviceLongitude() float32 {
+func (o *Measurement) GetDeviceLongitude() float64 {
 	if o == nil || isNil(o.DeviceLongitude) {
-		var ret float32
+		var ret float64
 		return ret
 	}
 	return *o.DeviceLongitude
@@ -226,7 +226,7 @@ func (o *Measurement) GetDeviceLongitude() float32 {
 
 // GetDeviceLongitudeOk returns a tuple with the DeviceLongitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetDeviceLongitudeOk() (*float32, bool) {
+func (o *Measurement) GetDeviceLongitudeOk() (*float64, bool) {
 	if o == nil || isNil(o.DeviceLongitude) {
     return nil, false
 	}
@@ -242,15 +242,15 @@ func (o *Measurement) HasDeviceLongitude() bool {
 	return false
 }
 
-// SetDeviceLongitude gets a reference to the given float32 and assigns it to the DeviceLongitude field.
-func (o *Measurement) SetDeviceLongitude(v float32) {
+// SetDeviceLongitude gets a reference to the given float64 and assigns it to the DeviceLongitude field.
+func (o *Measurement) SetDeviceLongitude(v float64) {
 	o.DeviceLongitude = &v
 }
 
 // GetDeviceAltitude returns the DeviceAltitude field value if set, zero value otherwise.
-func (o *Measurement) GetDeviceAltitude() float32 {
+func (o *Measurement) GetDeviceAltitude() float64 {
 	if o == nil || isNil(o.DeviceAltitude) {
-		var ret float32
+		var ret float64
 		return ret
 	}
 	return *o.DeviceAltitude
@@ -258,7 +258,7 @@ func (o *Measurement) GetDeviceAltitude() float32 {
 
 // GetDeviceAltitudeOk returns a tuple with the DeviceAltitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetDeviceAltitudeOk() (*float32, bool) {
+func (o *Measurement) GetDeviceAltitudeOk() (*float64, bool) {
 	if o == nil || isNil(o.DeviceAltitude) {
     return nil, false
 	}
@@ -274,8 +274,8 @@ func (o *Measurement) HasDeviceAltitude() bool {
 	return false
 }
 
-// SetDeviceAltitude gets a reference to the given float32 and assigns it to the DeviceAltitude field.
-func (o *Measurement) SetDeviceAltitude(v float32) {
+// SetDeviceAltitude gets a reference to the given float64 and assigns it to the DeviceAltitude field.
+func (o *Measurement) SetDeviceAltitude(v float64) {
 	o.DeviceAltitude = &v
 }
 
@@ -344,9 +344,9 @@ func (o *Measurement) SetDeviceProperties(v map[string]interface{}) {
 }
 
 // GetDeviceState returns the DeviceState field value
-func (o *Measurement) GetDeviceState() float32 {
+func (o *Measurement) GetDeviceState() int32 {
 	if o == nil {
-		var ret float32
+		var ret int32
 		return ret
 	}
 
@@ -355,7 +355,7 @@ func (o *Measurement) GetDeviceState() float32 {
 
 // GetDeviceStateOk returns a tuple with the DeviceState field value
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetDeviceStateOk() (*float32, bool) {
+func (o *Measurement) GetDeviceStateOk() (*int32, bool) {
 	if o == nil {
     return nil, false
 	}
@@ -363,14 +363,14 @@ func (o *Measurement) GetDeviceStateOk() (*float32, bool) {
 }
 
 // SetDeviceState sets field value
-func (o *Measurement) SetDeviceState(v float32) {
+func (o *Measurement) SetDeviceState(v int32) {
 	o.DeviceState = v
 }
 
 // GetSensorId returns the SensorId field value
-func (o *Measurement) GetSensorId() float32 {
+func (o *Measurement) GetSensorId() int64 {
 	if o == nil {
-		var ret float32
+		var ret int64
 		return ret
 	}
 
@@ -379,7 +379,7 @@ func (o *Measurement) GetSensorId() float32 {
 
 // GetSensorIdOk returns a tuple with the SensorId field value
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetSensorIdOk() (*float32, bool) {
+func (o *Measurement) GetSensorIdOk() (*int64, bool) {
 	if o == nil {
     return nil, false
 	}
@@ -387,7 +387,7 @@ func (o *Measurement) GetSensorIdOk() (*float32, bool) {
 }
 
 // SetSensorId sets field value
-func (o *Measurement) SetSensorId(v float32) {
+func (o *Measurement) SetSensorId(v int64) {
 	o.SensorId = v
 }
 
@@ -536,9 +536,9 @@ func (o *Measurement) SetSensorBrand(v string) {
 }
 
 // GetSensorArchiveTime returns the SensorArchiveTime field value if set, zero value otherwise.
-func (o *Measurement) GetSensorArchiveTime() float32 {
+func (o *Measurement) GetSensorArchiveTime() int32 {
 	if o == nil || isNil(o.SensorArchiveTime) {
-		var ret float32
+		var ret int32
 		return ret
 	}
 	return *o.SensorArchiveTime
@@ -546,7 +546,7 @@ func (o *Measurement) GetSensorArchiveTime() float32 {
 
 // GetSensorArchiveTimeOk returns a tuple with the SensorArchiveTime field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetSensorArchiveTimeOk() (*float32, bool) {
+func (o *Measurement) GetSensorArchiveTimeOk() (*int32, bool) {
 	if o == nil || isNil(o.SensorArchiveTime) {
     return nil, false
 	}
@@ -562,8 +562,8 @@ func (o *Measurement) HasSensorArchiveTime() bool {
 	return false
 }
 
-// SetSensorArchiveTime gets a reference to the given float32 and assigns it to the SensorArchiveTime field.
-func (o *Measurement) SetSensorArchiveTime(v float32) {
+// SetSensorArchiveTime gets a reference to the given int32 and assigns it to the SensorArchiveTime field.
+func (o *Measurement) SetSensorArchiveTime(v int32) {
 	o.SensorArchiveTime = &v
 }
 
@@ -696,9 +696,9 @@ func (o *Measurement) SetMeasurementTimestamp(v time.Time) {
 }
 
 // GetMeasurementValue returns the MeasurementValue field value
-func (o *Measurement) GetMeasurementValue() float32 {
+func (o *Measurement) GetMeasurementValue() float64 {
 	if o == nil {
-		var ret float32
+		var ret float64
 		return ret
 	}
 
@@ -707,7 +707,7 @@ func (o *Measurement) GetMeasurementValue() float32 {
 
 // GetMeasurementValueOk returns a tuple with the MeasurementValue field value
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetMeasurementValueOk() (*float32, bool) {
+func (o *Measurement) GetMeasurementValueOk() (*float64, bool) {
 	if o == nil {
     return nil, false
 	}
@@ -715,14 +715,14 @@ func (o *Measurement) GetMeasurementValueOk() (*float32, bool) {
 }
 
 // SetMeasurementValue sets field value
-func (o *Measurement) SetMeasurementValue(v float32) {
+func (o *Measurement) SetMeasurementValue(v float64) {
 	o.MeasurementValue = v
 }
 
 // GetMeasurementLatitude returns the MeasurementLatitude field value if set, zero value otherwise.
-func (o *Measurement) GetMeasurementLatitude() float32 {
+func (o *Measurement) GetMeasurementLatitude() float64 {
 	if o == nil || isNil(o.MeasurementLatitude) {
-		var ret float32
+		var ret float64
 		return ret
 	}
 	return *o.MeasurementLatitude
@@ -730,7 +730,7 @@ func (o *Measurement) GetMeasurementLatitude() float32 {
 
 // GetMeasurementLatitudeOk returns a tuple with the MeasurementLatitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetMeasurementLatitudeOk() (*float32, bool) {
+func (o *Measurement) GetMeasurementLatitudeOk() (*float64, bool) {
 	if o == nil || isNil(o.MeasurementLatitude) {
     return nil, false
 	}
@@ -746,15 +746,15 @@ func (o *Measurement) HasMeasurementLatitude() bool {
 	return false
 }
 
-// SetMeasurementLatitude gets a reference to the given float32 and assigns it to the MeasurementLatitude field.
-func (o *Measurement) SetMeasurementLatitude(v float32) {
+// SetMeasurementLatitude gets a reference to the given float64 and assigns it to the MeasurementLatitude field.
+func (o *Measurement) SetMeasurementLatitude(v float64) {
 	o.MeasurementLatitude = &v
 }
 
 // GetMeasurementLongitude returns the MeasurementLongitude field value if set, zero value otherwise.
-func (o *Measurement) GetMeasurementLongitude() float32 {
+func (o *Measurement) GetMeasurementLongitude() float64 {
 	if o == nil || isNil(o.MeasurementLongitude) {
-		var ret float32
+		var ret float64
 		return ret
 	}
 	return *o.MeasurementLongitude
@@ -762,7 +762,7 @@ func (o *Measurement) GetMeasurementLongitude() float32 {
 
 // GetMeasurementLongitudeOk returns a tuple with the MeasurementLongitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetMeasurementLongitudeOk() (*float32, bool) {
+func (o *Measurement) GetMeasurementLongitudeOk() (*float64, bool) {
 	if o == nil || isNil(o.MeasurementLongitude) {
     return nil, false
 	}
@@ -778,15 +778,15 @@ func (o *Measurement) HasMeasurementLongitude() bool {
 	return false
 }
 
-// SetMeasurementLongitude gets a reference to the given float32 and assigns it to the MeasurementLongitude field.
-func (o *Measurement) SetMeasurementLongitude(v float32) {
+// SetMeasurementLongitude gets a reference to the given float64 and assigns it to the MeasurementLongitude field.
+func (o *Measurement) SetMeasurementLongitude(v float64) {
 	o.MeasurementLongitude = &v
 }
 
 // GetMeasurementAltitude returns the MeasurementAltitude field value if set, zero value otherwise.
-func (o *Measurement) GetMeasurementAltitude() float32 {
+func (o *Measurement) GetMeasurementAltitude() float64 {
 	if o == nil || isNil(o.MeasurementAltitude) {
-		var ret float32
+		var ret float64
 		return ret
 	}
 	return *o.MeasurementAltitude
@@ -794,7 +794,7 @@ func (o *Measurement) GetMeasurementAltitude() float32 {
 
 // GetMeasurementAltitudeOk returns a tuple with the MeasurementAltitude field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Measurement) GetMeasurementAltitudeOk() (*float32, bool) {
+func (o *Measurement) GetMeasurementAltitudeOk() (*float64, bool) {
 	if o == nil || isNil(o.MeasurementAltitude) {
     return nil, false
 	}
@@ -810,8 +810,8 @@ func (o *Measurement) HasMeasurementAltitude() bool {
 	return false
 }
 
-// SetMeasurementAltitude gets a reference to the given float32 and assigns it to the MeasurementAltitude field.
-func (o *Measurement) SetMeasurementAltitude(v float32) {
+// SetMeasurementAltitude gets a reference to the given float64 and assigns it to the MeasurementAltitude field.
+func (o *Measurement) SetMeasurementAltitude(v float64) {
 	o.MeasurementAltitude = &v
 }
 

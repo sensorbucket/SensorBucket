@@ -2,6 +2,8 @@ package devices
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"time"
@@ -210,7 +212,7 @@ func (d *Device) GetSensorByExternalID(eid string) (*Sensor, error) {
 		}
 	}
 
-	return nil, ErrSensorNotFound
+	return nil, fmt.Errorf("%w: for id '%s'", ErrSensorNotFound, eid)
 }
 
 func (d *Device) GetFallbackSensor() (*Sensor, error) {
@@ -221,6 +223,26 @@ func (d *Device) GetFallbackSensor() (*Sensor, error) {
 	}
 
 	return nil, ErrSensorNotFound
+}
+
+func (d *Device) GetSensorByExternalIDOrFallback(eid string) (*Sensor, error) {
+	s, err := d.GetSensorByExternalID(eid)
+	if err == nil {
+		return s, nil
+	}
+	if err != nil && !errors.Is(err, ErrSensorNotFound) {
+		return nil, err
+	}
+
+	// Original sensor not found get backup
+	fallback, err := d.GetFallbackSensor()
+	if errors.Is(err, ErrSensorNotFound) {
+		return nil, fmt.Errorf("%w: neither '%s' or fallback sensor", ErrSensorNotFound, eid)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error fetching fallback sensor: %w", err)
+	}
+	return fallback, nil
 }
 
 func (d *Device) DeleteSensorByID(id int64) error {

@@ -12,7 +12,8 @@ get:
       in: path
       required: true
       schema:
-        type: number
+        type: integer
+        format: int64
   responses:
     '200':
       description: Fetched device
@@ -46,7 +47,8 @@ patch:
       in: path
       required: true
       schema:
-        type: number
+        type: integer
+        format: int64
   requestBody: 
     content:
       application/json:

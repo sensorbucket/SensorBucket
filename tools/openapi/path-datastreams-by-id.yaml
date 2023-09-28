@@ -26,14 +26,20 @@ get:
                 type: string
                 example: Fetched datastream
               data:
-                allOf:
-                  - $ref: 'schemas.yaml#/datastream'
-                  - type: object
-                    properties:
-                      device:
-                        $ref: 'schemas.yaml#/device'
-                      sensor:
-                        $ref: 'schemas.yaml#/sensor'
+                type: object
+                properties:
+                  datastream:
+                    $ref: 'schemas.yaml#/datastream'
+                  device:
+                    $ref: 'schemas.yaml#/device'
+                  sensor:
+                    $ref: 'schemas.yaml#/sensor'
+                  measurement_value:
+                    type: number
+                    format: double
+                  measurement_timestamp:
+                    type: string
+                    format: date-time
     '401':
       $ref: './responses.yaml#/401'
     '403':

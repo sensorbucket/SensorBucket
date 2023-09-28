@@ -1,0 +1,23 @@
+{{define "body"}}
+<p>Via deze weg willen wij u informeren dat er een aantal foutmeldingen zijn gedetecteerd in SensorBucket</p>
+<table style="border: 1px solid black; border-spacing: 3px; border-collapse: collapse;" border="1">
+    <thead>
+        <tr>
+            <th>Foutmelding</th>
+            <th>Aantal</th>
+            <th>Sinds</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Rows}}
+        <tr>
+            <td>{{.Error}}</td>
+            <td>{{.Amount}}</td>
+            <td>{{.Since}}</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+<p>Neem contact op met een beheerder</p>
+<br>
+{{end}}

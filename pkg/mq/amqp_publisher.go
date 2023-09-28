@@ -47,7 +47,10 @@ func Publisher(conn *AMQPConnection, xchg string, setup AMQPSetupFunc) chan<- Pu
 					if !ok {
 						continue loopNewConnection
 					}
-					msg.Publishing.Timestamp = time.Now()
+					if msg.Publishing.Headers == nil {
+						msg.Publishing.Headers = amqp.Table{}
+					}
+					msg.Publishing.Headers["timestamp"] = time.Now().UnixMilli()
 					amqpChan.Publish(xchg, msg.Topic, true, false, msg.Publishing)
 				}
 			}

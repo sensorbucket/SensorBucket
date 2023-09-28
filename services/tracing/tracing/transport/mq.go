@@ -3,6 +3,7 @@ package tracingtransport
 import (
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/rabbitmq/amqp091-go"
 
@@ -21,8 +22,23 @@ func StartMQ(svc *tracing.Service, conn *mq.AMQPConnection, errQueue string, que
 func processMessage(queue string, deliveries <-chan amqp091.Delivery, svc *tracing.Service) {
 	log.Println("Measurement MQ Transport running, tracing pipeline errors...")
 	for msg := range deliveries {
-		if msg.Timestamp.IsZero() {
-			log.Printf("Error: msg timestamp cannot be empty")
+		tsHeader, ok := msg.Headers["timestamp"]
+		if !ok {
+			msg.Nack(false, false)
+			log.Printf("Error: Message missing timestamp HEADER\n")
+			continue
+		}
+		tsMilli, ok := tsHeader.(int64)
+		if !ok {
+			msg.Nack(false, false)
+			log.Printf("Error: Message timestamp header is invalid type: %T\n", tsHeader)
+			continue
+		}
+
+		ts := time.UnixMilli(tsMilli)
+		if ts.IsZero() {
+			msg.Nack(false, false)
+			log.Printf("Error: msg timestamp cannot be empty\n")
 			continue
 		}
 		if msg.RoutingKey == "errors" {
@@ -33,7 +49,7 @@ func processMessage(queue string, deliveries <-chan amqp091.Delivery, svc *traci
 				continue
 			}
 
-			if err := svc.HandlePipelineError(res, msg.Timestamp); err != nil {
+			if err := svc.HandlePipelineError(res, ts); err != nil {
 				msg.Nack(false, false)
 				log.Printf("Error handling pipeline message: %v\n", err)
 				continue
@@ -46,7 +62,7 @@ func processMessage(queue string, deliveries <-chan amqp091.Delivery, svc *traci
 				continue
 			}
 
-			if err := svc.HandlePipelineMessage(res, msg.Timestamp); err != nil {
+			if err := svc.HandlePipelineMessage(res, ts); err != nil {
 				msg.Nack(false, false)
 				log.Printf("Error handling pipeline message: %v\n", err)
 				continue

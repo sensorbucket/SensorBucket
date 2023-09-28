@@ -22,7 +22,7 @@ func ptr[T any](v T) *T {
 
 func newPipelineMessage(plID string, steps []string) *pipeline.Message {
 	return &pipeline.Message{
-		ID:            uuid.NewString(),
+		TracingID:            uuid.NewString(),
 		ReceivedAt:    time.Now().UnixMilli(),
 		Timestamp:     time.Now().UnixMilli(),
 		Payload:       nil,
@@ -203,7 +203,7 @@ func TestShouldCopyOverDefaultFields(t *testing.T) {
 	// Assert
 	require.Len(t, store.calls.Insert, 1, "SQL Insert should've been called")
 	measurement := store.calls.Insert[0].Measurement
-	assert.Equal(t, msg.ID, measurement.UplinkMessageID)
+	assert.Equal(t, msg.TracingID, measurement.UplinkMessageID)
 	// assert.Equal(t, OrganisationName, measurement.OrganisationName)
 	// assert.Equal(t, OrganisationAddress, measurement.OrganisationAddress)
 	// assert.Equal(t, OrganisationZipcode, measurement.OrganisationZipcode)
