@@ -1,0 +1,12 @@
+{{define "body"}}
+<p>Via deze weg willen wij u informeren dat de maandelijkse gegevensopruiming staat
+    gepland
+    op:</p>
+<br><br>
+<p style="text-align: center;"><strong>{{.DeletionDate}}</strong></p><br><br>
+<p>Data ouder dan de ingestelde archiefperiode van de sensor of van de organisatie zal
+    worden verwijderd</p>
+<p>U heeft nog {{.DaysTillDeletion}} dagen om de data van uw apparaten veilig te
+    stellen.</p>
+<br>
+{{end}}

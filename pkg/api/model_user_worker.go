@@ -23,7 +23,6 @@ type UserWorker struct {
 	State int32 `json:"state"`
 	Language int32 `json:"language"`
 	Organisation int64 `json:"organisation"`
-	Major int32 `json:"major"`
 	Revision int32 `json:"revision"`
 	Status int32 `json:"status"`
 }
@@ -32,7 +31,7 @@ type UserWorker struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewUserWorker(id string, name string, description string, state int32, language int32, organisation int64, major int32, revision int32, status int32) *UserWorker {
+func NewUserWorker(id string, name string, description string, state int32, language int32, organisation int64, revision int32, status int32) *UserWorker {
 	this := UserWorker{}
 	this.Id = id
 	this.Name = name
@@ -40,7 +39,6 @@ func NewUserWorker(id string, name string, description string, state int32, lang
 	this.State = state
 	this.Language = language
 	this.Organisation = organisation
-	this.Major = major
 	this.Revision = revision
 	this.Status = status
 	return &this
@@ -198,30 +196,6 @@ func (o *UserWorker) SetOrganisation(v int64) {
 	o.Organisation = v
 }
 
-// GetMajor returns the Major field value
-func (o *UserWorker) GetMajor() int32 {
-	if o == nil {
-		var ret int32
-		return ret
-	}
-
-	return o.Major
-}
-
-// GetMajorOk returns a tuple with the Major field value
-// and a boolean to check if the value has been set.
-func (o *UserWorker) GetMajorOk() (*int32, bool) {
-	if o == nil {
-    return nil, false
-	}
-	return &o.Major, true
-}
-
-// SetMajor sets field value
-func (o *UserWorker) SetMajor(v int32) {
-	o.Major = v
-}
-
 // GetRevision returns the Revision field value
 func (o *UserWorker) GetRevision() int32 {
 	if o == nil {
@@ -289,9 +263,6 @@ func (o UserWorker) MarshalJSON() ([]byte, error) {
 	}
 	if true {
 		toSerialize["organisation"] = o.Organisation
-	}
-	if true {
-		toSerialize["major"] = o.Major
 	}
 	if true {
 		toSerialize["revision"] = o.Revision

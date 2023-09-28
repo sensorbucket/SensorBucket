@@ -17,6 +17,16 @@ get:
         The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
       schema:
         type: integer
+    - in: query
+      name: tracing_id
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+          example: "a59d28c8-2a0f-4e89-9f49-6942f1c04342"
   responses:
     "200":
       description: Fetched ingresses

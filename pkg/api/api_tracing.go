@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"time"
 )
 
 
@@ -29,6 +30,7 @@ type ApiListIngressesRequest struct {
 	ApiService *TracingApiService
 	cursor *string
 	limit *int32
+	tracingId *[]string
 }
 
 // The cursor for the current page
@@ -40,6 +42,11 @@ func (r ApiListIngressesRequest) Cursor(cursor string) ApiListIngressesRequest {
 // The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
 func (r ApiListIngressesRequest) Limit(limit int32) ApiListIngressesRequest {
 	r.limit = &limit
+	return r
+}
+
+func (r ApiListIngressesRequest) TracingId(tracingId []string) ApiListIngressesRequest {
+	r.tracingId = &tracingId
 	return r
 }
 
@@ -89,6 +96,17 @@ func (a *TracingApiService) ListIngressesExecute(r ApiListIngressesRequest) (*Li
 	}
 	if r.limit != nil {
 		localVarQueryParams.Add("limit", parameterToString(*r.limit, ""))
+	}
+	if r.tracingId != nil {
+		t := *r.tracingId
+		if reflect.TypeOf(t).Kind() == reflect.Slice {
+			s := reflect.ValueOf(t)
+			for i := 0; i < s.Len(); i++ {
+				localVarQueryParams.Add("tracing_id", parameterToString(s.Index(i), "multi"))
+			}
+		} else {
+			localVarQueryParams.Add("tracing_id", parameterToString(t, "multi"))
+		}
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -152,8 +170,9 @@ type ApiListTracesRequest struct {
 	tracingId *[]string
 	deviceId *int64
 	status *int32
-	durationGreaterThan *int32
-	durationSmallerThan *int32
+	durationGreaterThan *int64
+	durationSmallerThan *int64
+	startTime *time.Time
 }
 
 // The cursor for the current page
@@ -183,13 +202,18 @@ func (r ApiListTracesRequest) Status(status int32) ApiListTracesRequest {
 	return r
 }
 
-func (r ApiListTracesRequest) DurationGreaterThan(durationGreaterThan int32) ApiListTracesRequest {
+func (r ApiListTracesRequest) DurationGreaterThan(durationGreaterThan int64) ApiListTracesRequest {
 	r.durationGreaterThan = &durationGreaterThan
 	return r
 }
 
-func (r ApiListTracesRequest) DurationSmallerThan(durationSmallerThan int32) ApiListTracesRequest {
+func (r ApiListTracesRequest) DurationSmallerThan(durationSmallerThan int64) ApiListTracesRequest {
 	r.durationSmallerThan = &durationSmallerThan
+	return r
+}
+
+func (r ApiListTracesRequest) StartTime(startTime time.Time) ApiListTracesRequest {
+	r.startTime = &startTime
 	return r
 }
 
@@ -262,6 +286,9 @@ func (a *TracingApiService) ListTracesExecute(r ApiListTracesRequest) (*ListTrac
 	}
 	if r.durationSmallerThan != nil {
 		localVarQueryParams.Add("duration_smaller_than", parameterToString(*r.durationSmallerThan, ""))
+	}
+	if r.startTime != nil {
+		localVarQueryParams.Add("start_time", parameterToString(*r.startTime, ""))
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}

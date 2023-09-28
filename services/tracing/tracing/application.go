@@ -141,11 +141,12 @@ func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[
 }
 
 type Filter struct {
-	TracingIDs          []string `schema:"tracing_id"`
-	Status              []string `schema:"status"`
-	DeviceIDs           []int64  `schema:"device_id"`
-	DurationGreaterThan *int64   `schema:"duration_greater_than"`
-	DurationLowerThan   *int64   `schema:"duration_lower_than"`
+	TracingIDs          []string   `schema:"tracing_id"`
+	Status              []int64    `schema:"status"`
+	StartTime           *time.Time `schema:"start_time"`
+	DeviceIDs           []int64    `schema:"device_id"`
+	DurationGreaterThan *int64     `schema:"duration_greater_than"`
+	DurationLowerThan   *int64     `schema:"duration_lower_than"`
 }
 
 type TraceDTO struct {

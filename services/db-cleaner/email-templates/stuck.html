@@ -1,0 +1,26 @@
+{{define "body"}}
+<p>Via deze weg willen wij u informeren dat één of meerdere datapunten vastzitten in SensorBucket en niet worden
+    verwerkt</p>
+<table style="border: 1px solid black; border-spacing: 3px; border-collapse: collapse;" border="1">
+    <thead>
+        <tr>
+            <th>Pipeline</th>
+            <th>Aantal</th>
+            <th>Sinds</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Rows}}
+        <tr>
+            <td>{{.Pipeline}}</td>
+            <td>{{.Amount}}</td>
+            <td>{{.Since}}</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+<p>Deze datapunten worden niet als metingen opgeslagen tot het probleem is opgelost</p>
+<p>Dit kan te maken hebben met eventuele Workers die niet werken naar behoren</p>
+<p>Neem contact op met een beheerder</p>
+<br>
+{{end}}

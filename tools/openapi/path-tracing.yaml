@@ -42,12 +42,19 @@ get:
       name: duration_greater_than
       schema:
         type: integer
-        example: 5 
+        format: int64
+        example: 5
     - in: query
       name: duration_smaller_than
       schema:
         type: integer
+        format: int64
         example: 10
+    - in: query
+      name: start_time
+      schema:
+        type: string
+        format: date-time
 
   responses:
     "200":
