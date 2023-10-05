@@ -72,14 +72,7 @@
             hx-target="main"
         >{%s worker.Name %}</a></td>
         <td class="px-4 h-10 border-b">
-        {% switch worker.State %}
-        {% case 0 %}
-        Unknown
-        {% case 1 %}
-        Disabled
-        {% case 2 %}
-        Enabled
-        {% endswitch %}
+        {%s worker.State %}
         </td>
         <td class="px-4 h-10 border-b">{%d int(worker.Revision) %}</td>
         <td class="px-4 h-10 border-b">{%s worker.Id %}</td>

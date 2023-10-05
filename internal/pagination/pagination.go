@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strings"
 
@@ -203,4 +204,12 @@ func CreateResponse[T any](r *http.Request, baseURL string, page Page[T]) APIRes
 		Data:     page.Data,
 	}
 	return response
+}
+
+func CursorFromURL(urlStr string) string {
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return ""
+	}
+	return u.Query().Get("cursor")
 }

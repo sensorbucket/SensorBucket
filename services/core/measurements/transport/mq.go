@@ -13,7 +13,7 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 )
 
-func StartMQ(svc *measurements.Service, conn *mq.AMQPConnection, queue, xchg string) func() {
+func StartMQ(svc *measurements.Service, conn *mq.AMQPConnection, queue, xchg, errorTopic string) func() {
 	done := make(chan struct{})
 	consume := mq.Consume(conn, queue, func(c *amqp091.Channel) error {
 		_, err := c.QueueDeclare(queue, true, false, false, false, nil)
@@ -52,7 +52,7 @@ func StartMQ(svc *measurements.Service, conn *mq.AMQPConnection, queue, xchg str
 						continue
 					}
 					publish <- mq.PublishMessage{
-						Topic: "errors",
+						Topic: errorTopic,
 						Publishing: amqp091.Publishing{
 							Body: msgErrorBytes,
 						},

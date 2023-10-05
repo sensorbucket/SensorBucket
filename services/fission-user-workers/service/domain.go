@@ -7,33 +7,39 @@ import (
 	_ "embed"
 	"io"
 	"io/fs"
+	"net/http"
+	"regexp"
 
 	"github.com/google/uuid"
+
+	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
 //go:embed python/*
 var PythonFiles embed.FS
 
-type Language uint
+var ErrWorkerInvalidName = web.NewError(http.StatusBadRequest, "Worker name is invalid", "ERR_INVALID_WORKER_NAME")
+
+type Language string
 
 const (
-	LanguagePython Language = iota
+	LanguagePython Language = "python"
 )
 
-type WorkerStatus uint
+type WorkerStatus string
 
 const (
-	StatusUnknown WorkerStatus = iota
-	StatusReady
-	StatusError
+	StatusUnknown WorkerStatus = "unknown"
+	StatusReady                = "ready"
+	StatusError                = "error"
 )
 
-type WorkerState uint
+type WorkerState string
 
 const (
-	StateUnknown WorkerState = iota
-	StateDisabled
-	StateEnabled
+	StateUnknown  WorkerState = "unknown"
+	StateDisabled             = "disabled"
+	StateEnabled              = "enabled"
 )
 
 type UserWorker struct {
@@ -58,7 +64,7 @@ func CreateWorker(name, description string, userCode []byte) (*UserWorker, error
 		ID:           uuid.New(),
 		Name:         name,
 		Description:  description,
-		State:        StateEnabled,
+		State:        StateDisabled,
 		Language:     LanguagePython,
 		Organisation: 0,
 		Revision:     1,
@@ -116,6 +122,16 @@ func (w *UserWorker) GetUserCode() ([]byte, error) {
 		return nil, err
 	}
 	return userCode, nil
+}
+
+var r_worker_name = regexp.MustCompile("")
+
+func (w *UserWorker) SetName(name string) error {
+	if !r_worker_name.MatchString(name) {
+		return ErrWorkerInvalidName
+	}
+	w.Name = name
+	return nil
 }
 
 func (w *UserWorker) Disable() {

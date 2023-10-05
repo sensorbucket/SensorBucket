@@ -21,8 +21,8 @@ type GetDatastream200ResponseData struct {
 	Datastream *Datastream `json:"datastream,omitempty"`
 	Device *Device `json:"device,omitempty"`
 	Sensor *Sensor `json:"sensor,omitempty"`
-	MeasurementValue *float64 `json:"measurement_value,omitempty"`
-	MeasurementTimestamp *time.Time `json:"measurement_timestamp,omitempty"`
+	LatestMeasurementValue *float64 `json:"latest_measurement_value,omitempty"`
+	LatestMeasurementTimestamp *time.Time `json:"latest_measurement_timestamp,omitempty"`
 }
 
 // NewGetDatastream200ResponseData instantiates a new GetDatastream200ResponseData object
@@ -138,68 +138,68 @@ func (o *GetDatastream200ResponseData) SetSensor(v Sensor) {
 	o.Sensor = &v
 }
 
-// GetMeasurementValue returns the MeasurementValue field value if set, zero value otherwise.
-func (o *GetDatastream200ResponseData) GetMeasurementValue() float64 {
-	if o == nil || isNil(o.MeasurementValue) {
+// GetLatestMeasurementValue returns the LatestMeasurementValue field value if set, zero value otherwise.
+func (o *GetDatastream200ResponseData) GetLatestMeasurementValue() float64 {
+	if o == nil || isNil(o.LatestMeasurementValue) {
 		var ret float64
 		return ret
 	}
-	return *o.MeasurementValue
+	return *o.LatestMeasurementValue
 }
 
-// GetMeasurementValueOk returns a tuple with the MeasurementValue field value if set, nil otherwise
+// GetLatestMeasurementValueOk returns a tuple with the LatestMeasurementValue field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetDatastream200ResponseData) GetMeasurementValueOk() (*float64, bool) {
-	if o == nil || isNil(o.MeasurementValue) {
+func (o *GetDatastream200ResponseData) GetLatestMeasurementValueOk() (*float64, bool) {
+	if o == nil || isNil(o.LatestMeasurementValue) {
     return nil, false
 	}
-	return o.MeasurementValue, true
+	return o.LatestMeasurementValue, true
 }
 
-// HasMeasurementValue returns a boolean if a field has been set.
-func (o *GetDatastream200ResponseData) HasMeasurementValue() bool {
-	if o != nil && !isNil(o.MeasurementValue) {
+// HasLatestMeasurementValue returns a boolean if a field has been set.
+func (o *GetDatastream200ResponseData) HasLatestMeasurementValue() bool {
+	if o != nil && !isNil(o.LatestMeasurementValue) {
 		return true
 	}
 
 	return false
 }
 
-// SetMeasurementValue gets a reference to the given float64 and assigns it to the MeasurementValue field.
-func (o *GetDatastream200ResponseData) SetMeasurementValue(v float64) {
-	o.MeasurementValue = &v
+// SetLatestMeasurementValue gets a reference to the given float64 and assigns it to the LatestMeasurementValue field.
+func (o *GetDatastream200ResponseData) SetLatestMeasurementValue(v float64) {
+	o.LatestMeasurementValue = &v
 }
 
-// GetMeasurementTimestamp returns the MeasurementTimestamp field value if set, zero value otherwise.
-func (o *GetDatastream200ResponseData) GetMeasurementTimestamp() time.Time {
-	if o == nil || isNil(o.MeasurementTimestamp) {
+// GetLatestMeasurementTimestamp returns the LatestMeasurementTimestamp field value if set, zero value otherwise.
+func (o *GetDatastream200ResponseData) GetLatestMeasurementTimestamp() time.Time {
+	if o == nil || isNil(o.LatestMeasurementTimestamp) {
 		var ret time.Time
 		return ret
 	}
-	return *o.MeasurementTimestamp
+	return *o.LatestMeasurementTimestamp
 }
 
-// GetMeasurementTimestampOk returns a tuple with the MeasurementTimestamp field value if set, nil otherwise
+// GetLatestMeasurementTimestampOk returns a tuple with the LatestMeasurementTimestamp field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetDatastream200ResponseData) GetMeasurementTimestampOk() (*time.Time, bool) {
-	if o == nil || isNil(o.MeasurementTimestamp) {
+func (o *GetDatastream200ResponseData) GetLatestMeasurementTimestampOk() (*time.Time, bool) {
+	if o == nil || isNil(o.LatestMeasurementTimestamp) {
     return nil, false
 	}
-	return o.MeasurementTimestamp, true
+	return o.LatestMeasurementTimestamp, true
 }
 
-// HasMeasurementTimestamp returns a boolean if a field has been set.
-func (o *GetDatastream200ResponseData) HasMeasurementTimestamp() bool {
-	if o != nil && !isNil(o.MeasurementTimestamp) {
+// HasLatestMeasurementTimestamp returns a boolean if a field has been set.
+func (o *GetDatastream200ResponseData) HasLatestMeasurementTimestamp() bool {
+	if o != nil && !isNil(o.LatestMeasurementTimestamp) {
 		return true
 	}
 
 	return false
 }
 
-// SetMeasurementTimestamp gets a reference to the given time.Time and assigns it to the MeasurementTimestamp field.
-func (o *GetDatastream200ResponseData) SetMeasurementTimestamp(v time.Time) {
-	o.MeasurementTimestamp = &v
+// SetLatestMeasurementTimestamp gets a reference to the given time.Time and assigns it to the LatestMeasurementTimestamp field.
+func (o *GetDatastream200ResponseData) SetLatestMeasurementTimestamp(v time.Time) {
+	o.LatestMeasurementTimestamp = &v
 }
 
 func (o GetDatastream200ResponseData) MarshalJSON() ([]byte, error) {
@@ -213,11 +213,11 @@ func (o GetDatastream200ResponseData) MarshalJSON() ([]byte, error) {
 	if !isNil(o.Sensor) {
 		toSerialize["sensor"] = o.Sensor
 	}
-	if !isNil(o.MeasurementValue) {
-		toSerialize["measurement_value"] = o.MeasurementValue
+	if !isNil(o.LatestMeasurementValue) {
+		toSerialize["latest_measurement_value"] = o.LatestMeasurementValue
 	}
-	if !isNil(o.MeasurementTimestamp) {
-		toSerialize["measurement_timestamp"] = o.MeasurementTimestamp
+	if !isNil(o.LatestMeasurementTimestamp) {
+		toSerialize["latest_measurement_timestamp"] = o.LatestMeasurementTimestamp
 	}
 	return json.Marshal(toSerialize)
 }

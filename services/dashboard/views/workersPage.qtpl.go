@@ -191,83 +191,63 @@ func StreamRenderWorkerTableRows(qw422016 *qt422016.Writer, workers []api.UserWo
         <td class="px-4 h-10 border-b">
         `)
 //line views/workersPage.qtpl:75
-		switch worker.State {
-//line views/workersPage.qtpl:76
-		case 0:
-//line views/workersPage.qtpl:76
-			qw422016.N().S(`
-        Unknown
-        `)
-//line views/workersPage.qtpl:78
-		case 1:
-//line views/workersPage.qtpl:78
-			qw422016.N().S(`
-        Disabled
-        `)
-//line views/workersPage.qtpl:80
-		case 2:
-//line views/workersPage.qtpl:80
-			qw422016.N().S(`
-        Enabled
-        `)
-//line views/workersPage.qtpl:82
-		}
-//line views/workersPage.qtpl:82
+		qw422016.E().S(worker.State)
+//line views/workersPage.qtpl:75
 		qw422016.N().S(`
         </td>
         <td class="px-4 h-10 border-b">`)
-//line views/workersPage.qtpl:84
+//line views/workersPage.qtpl:77
 		qw422016.N().D(int(worker.Revision))
-//line views/workersPage.qtpl:84
+//line views/workersPage.qtpl:77
 		qw422016.N().S(`</td>
         <td class="px-4 h-10 border-b">`)
-//line views/workersPage.qtpl:85
+//line views/workersPage.qtpl:78
 		qw422016.E().S(worker.Id)
-//line views/workersPage.qtpl:85
+//line views/workersPage.qtpl:78
 		qw422016.N().S(`</td>
         <td class="px-4 h-10 border-b">`)
-//line views/workersPage.qtpl:86
+//line views/workersPage.qtpl:79
 		qw422016.E().S(worker.Description)
-//line views/workersPage.qtpl:86
+//line views/workersPage.qtpl:79
 		qw422016.N().S(`</td>
         <td class="px-4 h-10 border-b">Python</td>
     </tr>
     `)
-//line views/workersPage.qtpl:89
+//line views/workersPage.qtpl:82
 	}
-//line views/workersPage.qtpl:89
+//line views/workersPage.qtpl:82
 	qw422016.N().S(`
 `)
-//line views/workersPage.qtpl:90
+//line views/workersPage.qtpl:83
 }
 
-//line views/workersPage.qtpl:90
+//line views/workersPage.qtpl:83
 func WriteRenderWorkerTableRows(qq422016 qtio422016.Writer, workers []api.UserWorker, nextPage string) {
-//line views/workersPage.qtpl:90
+//line views/workersPage.qtpl:83
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/workersPage.qtpl:90
+//line views/workersPage.qtpl:83
 	StreamRenderWorkerTableRows(qw422016, workers, nextPage)
-//line views/workersPage.qtpl:90
+//line views/workersPage.qtpl:83
 	qt422016.ReleaseWriter(qw422016)
-//line views/workersPage.qtpl:90
+//line views/workersPage.qtpl:83
 }
 
-//line views/workersPage.qtpl:90
+//line views/workersPage.qtpl:83
 func RenderWorkerTableRows(workers []api.UserWorker, nextPage string) string {
-//line views/workersPage.qtpl:90
+//line views/workersPage.qtpl:83
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/workersPage.qtpl:90
+//line views/workersPage.qtpl:83
 	WriteRenderWorkerTableRows(qb422016, workers, nextPage)
-//line views/workersPage.qtpl:90
+//line views/workersPage.qtpl:83
 	qs422016 := string(qb422016.B)
-//line views/workersPage.qtpl:90
+//line views/workersPage.qtpl:83
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/workersPage.qtpl:90
+//line views/workersPage.qtpl:83
 	return qs422016
-//line views/workersPage.qtpl:90
+//line views/workersPage.qtpl:83
 }
 
-//line views/workersPage.qtpl:93
+//line views/workersPage.qtpl:86
 type WorkerListPage struct {
 	BasePage
 	Workers []api.UserWorker

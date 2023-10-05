@@ -21,6 +21,7 @@ type CreateUserWorkerRequest struct {
 	Description *string `json:"description,omitempty"`
 	// base64 encoded user code
 	UserCode string `json:"user_code"`
+	State *string `json:"state,omitempty"`
 }
 
 // NewCreateUserWorkerRequest instantiates a new CreateUserWorkerRequest object
@@ -122,6 +123,38 @@ func (o *CreateUserWorkerRequest) SetUserCode(v string) {
 	o.UserCode = v
 }
 
+// GetState returns the State field value if set, zero value otherwise.
+func (o *CreateUserWorkerRequest) GetState() string {
+	if o == nil || isNil(o.State) {
+		var ret string
+		return ret
+	}
+	return *o.State
+}
+
+// GetStateOk returns a tuple with the State field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CreateUserWorkerRequest) GetStateOk() (*string, bool) {
+	if o == nil || isNil(o.State) {
+    return nil, false
+	}
+	return o.State, true
+}
+
+// HasState returns a boolean if a field has been set.
+func (o *CreateUserWorkerRequest) HasState() bool {
+	if o != nil && !isNil(o.State) {
+		return true
+	}
+
+	return false
+}
+
+// SetState gets a reference to the given string and assigns it to the State field.
+func (o *CreateUserWorkerRequest) SetState(v string) {
+	o.State = &v
+}
+
 func (o CreateUserWorkerRequest) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
 	if true {
@@ -132,6 +165,9 @@ func (o CreateUserWorkerRequest) MarshalJSON() ([]byte, error) {
 	}
 	if true {
 		toSerialize["user_code"] = o.UserCode
+	}
+	if !isNil(o.State) {
+		toSerialize["state"] = o.State
 	}
 	return json.Marshal(toSerialize)
 }

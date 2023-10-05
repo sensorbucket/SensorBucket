@@ -12,12 +12,12 @@ app = flask.Flask("dockerworker")
 
 
 def main():
-    print("Worker starting...\nValidating environt values...")
+    print("Worker starting...\nValidating environment values...")
     # Load all environment variables
     code_entrypoint = os.environ.get("CODE_ENTRYPOINT") or "main.main"
     code_entrypoint_parts = code_entrypoint.split('.')
-    code_file = code_entrypoint_parts[0]
-    code_func = code_entrypoint_parts[1]
+    code_file = code_entrypoint_parts[0] if len(code_entrypoint_parts) >= 1 else "main"
+    code_func = code_entrypoint_parts[1] if len(code_entrypoint_parts) >= 2 else "main"
 
     worker_id = os.environ.get("WORKER_ID")
     if worker_id is None:

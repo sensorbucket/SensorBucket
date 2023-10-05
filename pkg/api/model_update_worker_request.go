@@ -17,8 +17,9 @@ import (
 
 // UpdateWorkerRequest struct for UpdateWorkerRequest
 type UpdateWorkerRequest struct {
+	Name *string `json:"name,omitempty"`
 	Description *string `json:"description,omitempty"`
-	State *int32 `json:"state,omitempty"`
+	State *string `json:"state,omitempty"`
 	// base64 encoded user code
 	UserCode *string `json:"user_code,omitempty"`
 }
@@ -38,6 +39,38 @@ func NewUpdateWorkerRequest() *UpdateWorkerRequest {
 func NewUpdateWorkerRequestWithDefaults() *UpdateWorkerRequest {
 	this := UpdateWorkerRequest{}
 	return &this
+}
+
+// GetName returns the Name field value if set, zero value otherwise.
+func (o *UpdateWorkerRequest) GetName() string {
+	if o == nil || isNil(o.Name) {
+		var ret string
+		return ret
+	}
+	return *o.Name
+}
+
+// GetNameOk returns a tuple with the Name field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *UpdateWorkerRequest) GetNameOk() (*string, bool) {
+	if o == nil || isNil(o.Name) {
+    return nil, false
+	}
+	return o.Name, true
+}
+
+// HasName returns a boolean if a field has been set.
+func (o *UpdateWorkerRequest) HasName() bool {
+	if o != nil && !isNil(o.Name) {
+		return true
+	}
+
+	return false
+}
+
+// SetName gets a reference to the given string and assigns it to the Name field.
+func (o *UpdateWorkerRequest) SetName(v string) {
+	o.Name = &v
 }
 
 // GetDescription returns the Description field value if set, zero value otherwise.
@@ -73,9 +106,9 @@ func (o *UpdateWorkerRequest) SetDescription(v string) {
 }
 
 // GetState returns the State field value if set, zero value otherwise.
-func (o *UpdateWorkerRequest) GetState() int32 {
+func (o *UpdateWorkerRequest) GetState() string {
 	if o == nil || isNil(o.State) {
-		var ret int32
+		var ret string
 		return ret
 	}
 	return *o.State
@@ -83,7 +116,7 @@ func (o *UpdateWorkerRequest) GetState() int32 {
 
 // GetStateOk returns a tuple with the State field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *UpdateWorkerRequest) GetStateOk() (*int32, bool) {
+func (o *UpdateWorkerRequest) GetStateOk() (*string, bool) {
 	if o == nil || isNil(o.State) {
     return nil, false
 	}
@@ -99,8 +132,8 @@ func (o *UpdateWorkerRequest) HasState() bool {
 	return false
 }
 
-// SetState gets a reference to the given int32 and assigns it to the State field.
-func (o *UpdateWorkerRequest) SetState(v int32) {
+// SetState gets a reference to the given string and assigns it to the State field.
+func (o *UpdateWorkerRequest) SetState(v string) {
 	o.State = &v
 }
 
@@ -138,6 +171,9 @@ func (o *UpdateWorkerRequest) SetUserCode(v string) {
 
 func (o UpdateWorkerRequest) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
+	if !isNil(o.Name) {
+		toSerialize["name"] = o.Name
+	}
 	if !isNil(o.Description) {
 		toSerialize["description"] = o.Description
 	}

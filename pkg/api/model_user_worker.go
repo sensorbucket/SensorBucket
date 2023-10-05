@@ -20,19 +20,18 @@ type UserWorker struct {
 	Id string `json:"id"`
 	Name string `json:"name"`
 	Description string `json:"description"`
-	State int32 `json:"state"`
-	Language int32 `json:"language"`
+	State string `json:"state"`
+	Language string `json:"language"`
 	Organisation int64 `json:"organisation"`
-	Major int32 `json:"major"`
 	Revision int32 `json:"revision"`
-	Status int32 `json:"status"`
+	Status string `json:"status"`
 }
 
 // NewUserWorker instantiates a new UserWorker object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewUserWorker(id string, name string, description string, state int32, language int32, organisation int64, major int32, revision int32, status int32) *UserWorker {
+func NewUserWorker(id string, name string, description string, state string, language string, organisation int64, revision int32, status string) *UserWorker {
 	this := UserWorker{}
 	this.Id = id
 	this.Name = name
@@ -40,7 +39,6 @@ func NewUserWorker(id string, name string, description string, state int32, lang
 	this.State = state
 	this.Language = language
 	this.Organisation = organisation
-	this.Major = major
 	this.Revision = revision
 	this.Status = status
 	return &this
@@ -127,9 +125,9 @@ func (o *UserWorker) SetDescription(v string) {
 }
 
 // GetState returns the State field value
-func (o *UserWorker) GetState() int32 {
+func (o *UserWorker) GetState() string {
 	if o == nil {
-		var ret int32
+		var ret string
 		return ret
 	}
 
@@ -138,7 +136,7 @@ func (o *UserWorker) GetState() int32 {
 
 // GetStateOk returns a tuple with the State field value
 // and a boolean to check if the value has been set.
-func (o *UserWorker) GetStateOk() (*int32, bool) {
+func (o *UserWorker) GetStateOk() (*string, bool) {
 	if o == nil {
     return nil, false
 	}
@@ -146,14 +144,14 @@ func (o *UserWorker) GetStateOk() (*int32, bool) {
 }
 
 // SetState sets field value
-func (o *UserWorker) SetState(v int32) {
+func (o *UserWorker) SetState(v string) {
 	o.State = v
 }
 
 // GetLanguage returns the Language field value
-func (o *UserWorker) GetLanguage() int32 {
+func (o *UserWorker) GetLanguage() string {
 	if o == nil {
-		var ret int32
+		var ret string
 		return ret
 	}
 
@@ -162,7 +160,7 @@ func (o *UserWorker) GetLanguage() int32 {
 
 // GetLanguageOk returns a tuple with the Language field value
 // and a boolean to check if the value has been set.
-func (o *UserWorker) GetLanguageOk() (*int32, bool) {
+func (o *UserWorker) GetLanguageOk() (*string, bool) {
 	if o == nil {
     return nil, false
 	}
@@ -170,7 +168,7 @@ func (o *UserWorker) GetLanguageOk() (*int32, bool) {
 }
 
 // SetLanguage sets field value
-func (o *UserWorker) SetLanguage(v int32) {
+func (o *UserWorker) SetLanguage(v string) {
 	o.Language = v
 }
 
@@ -198,30 +196,6 @@ func (o *UserWorker) SetOrganisation(v int64) {
 	o.Organisation = v
 }
 
-// GetMajor returns the Major field value
-func (o *UserWorker) GetMajor() int32 {
-	if o == nil {
-		var ret int32
-		return ret
-	}
-
-	return o.Major
-}
-
-// GetMajorOk returns a tuple with the Major field value
-// and a boolean to check if the value has been set.
-func (o *UserWorker) GetMajorOk() (*int32, bool) {
-	if o == nil {
-    return nil, false
-	}
-	return &o.Major, true
-}
-
-// SetMajor sets field value
-func (o *UserWorker) SetMajor(v int32) {
-	o.Major = v
-}
-
 // GetRevision returns the Revision field value
 func (o *UserWorker) GetRevision() int32 {
 	if o == nil {
@@ -247,9 +221,9 @@ func (o *UserWorker) SetRevision(v int32) {
 }
 
 // GetStatus returns the Status field value
-func (o *UserWorker) GetStatus() int32 {
+func (o *UserWorker) GetStatus() string {
 	if o == nil {
-		var ret int32
+		var ret string
 		return ret
 	}
 
@@ -258,7 +232,7 @@ func (o *UserWorker) GetStatus() int32 {
 
 // GetStatusOk returns a tuple with the Status field value
 // and a boolean to check if the value has been set.
-func (o *UserWorker) GetStatusOk() (*int32, bool) {
+func (o *UserWorker) GetStatusOk() (*string, bool) {
 	if o == nil {
     return nil, false
 	}
@@ -266,7 +240,7 @@ func (o *UserWorker) GetStatusOk() (*int32, bool) {
 }
 
 // SetStatus sets field value
-func (o *UserWorker) SetStatus(v int32) {
+func (o *UserWorker) SetStatus(v string) {
 	o.Status = v
 }
 
@@ -289,9 +263,6 @@ func (o UserWorker) MarshalJSON() ([]byte, error) {
 	}
 	if true {
 		toSerialize["organisation"] = o.Organisation
-	}
-	if true {
-		toSerialize["major"] = o.Major
 	}
 	if true {
 		toSerialize["revision"] = o.Revision

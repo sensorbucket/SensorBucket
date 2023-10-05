@@ -8,7 +8,7 @@
         <header class="border-b py-2 px-4 text-sm text-slate-700">
             Worker Details
         </header>
-        <form class="p-4 gap-4 grid lg:grid-cols-2">
+        <form class="p-4 flex flex-col gap-4">
             <fieldset>
                 <label for="worker-name" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Worker name</small></label>
                 <input
@@ -23,16 +23,19 @@
                     "
 
                     {% if p.Worker != nil %}
-                    disabled
                     value="{%s p.Worker.Name %}"
                     {% endif %}
                 />
             </fieldset>
-            <fieldset class="flex flex-col items-center">
-                <label for="worker-state" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Worker Enabled</small></label>
-                <input
-                    type="checkbox" name="state" id="worker-state" {% if p.Worker.State == 2 %} checked {% endif %} class="m-2 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                />
+            <fieldset>
+                <label for="worker-description" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Worker Description</small></label>
+                <textarea
+                    name="description" id="worker-description"
+                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600
+                        text-slate-500
+                        "
+                >{%s p.Worker.Description %}
+                </textarea>
             </fieldset>
             <div class="col-span-full flex justify-between">
                 <section>
@@ -56,6 +59,12 @@
                         </button>
                     {% endif %}
                 </section>
+                <fieldset class="flex gap-2 items-center">
+                    <label for="worker-state" class="block"><small class="text-xs text-slate-500">Worker Enabled</small></label>
+                    <input
+                        type="checkbox" name="state" id="worker-state" {% if p.Worker != nil && p.Worker.State == "enabled" %} checked {% endif %} class="m-2 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                </fieldset>
             </div>
         </form>
     </div>

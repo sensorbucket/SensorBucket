@@ -37,7 +37,7 @@ func CreateDockerController(store Store) (*DockerController, error) {
 		return nil, err
 	}
 	// Find network id
-	netID := env.Could("CTRL_DOCK_WORKER_NET", "")
+	netID := env.Could("CTRL_DOCKER_WORKER_NET", "")
 	if netID == "" {
 		// try to get it ourselves
 		nets, err := docker.NetworkList(context.Background(), types.NetworkListOptions{})
@@ -55,12 +55,12 @@ func CreateDockerController(store Store) (*DockerController, error) {
 		docker: docker,
 		store:  store,
 
-		workersEndpoint: env.Could("CTLR_DOCK_WORKERS_EP", "http://caddy/api/workers"),
-		workerImage:     env.Could("CTLR_DOCK_WORKER_IMAGE", "sensorbucket/docker-worker:latest"),
+		workersEndpoint: env.Could("CTLR_DOCKER_WORKERS_EP", "http://caddy/api/workers"),
+		workerImage:     env.Could("CTLR_DOCKER_WORKER_IMAGE", "sensorbucket/docker-worker:latest"),
 		workerNetID:     netID,
-		amqpHost:        env.Could("CTRL_DOCK_AMQP_HOST", "amqp://guest:guest@mq:5672"),
-		amqpExchange:    env.Could("CTRL_DOCK_AMQP_XCHG", "pipeline.messages"),
-		endpointDevices: env.Could("CTRL_DOCK_ENDPOINT_DEVICES", "http://caddy/api/devices"),
+		amqpHost:        env.Could("CTRL_DOCKER_AMQP_HOST", "amqp://guest:guest@mq:5672"),
+		amqpExchange:    env.Could("CTRL_DOCKER_AMQP_XCHG", "pipeline.messages"),
+		endpointDevices: env.Could("CTRL_DOCKER_ENDPOINT_DEVICES", "http://caddy/api/devices"),
 	}
 	return ctrl, nil
 }
@@ -107,11 +107,13 @@ func (ctrl *DockerController) Reconcile(ctx context.Context) error {
 	}
 
 	// Iterate over workers in Database
-	pages, err := ctrl.store.ListUserWorkers(ListWorkerFilters{State: StateEnabled}, pagination.Request{Limit: 10})
-	if err != nil {
-		return fmt.Errorf("error listing user workers from database: %w", err)
-	}
+	var cursor string
 	for {
+		pages, err := ctrl.store.ListUserWorkers(ListWorkerFilters{State: StateEnabled}, pagination.Request{Limit: 10, Cursor: cursor})
+		if err != nil {
+			return fmt.Errorf("error listing user workers from database: %w", err)
+		}
+
 		toCreate := []UserWorker{}
 		toUpdate := []UserWorker{}
 		for _, worker := range pages.Data {
@@ -180,10 +182,7 @@ func (ctrl *DockerController) Reconcile(ctx context.Context) error {
 		if pages.Cursor == "" {
 			break
 		}
-		pages, err = ctrl.store.ListUserWorkers(ListWorkerFilters{State: StateEnabled}, pagination.Request{Cursor: pages.Cursor})
-		if err != nil {
-			return fmt.Errorf("error listing user workers from database: %w", err)
-		}
+		cursor = pagination.CursorFromURL(pages.Cursor)
 	}
 
 	return nil

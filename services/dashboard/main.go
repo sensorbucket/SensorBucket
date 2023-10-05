@@ -26,9 +26,11 @@ func main() {
 }
 
 var (
-	startTS   = time.Now()
-	HTTP_ADDR = env.Could("HTTP_ADDR", ":3000")
-	SB_API    = env.Must("SB_API")
+	startTS        = time.Now()
+	HTTP_ADDR      = env.Could("HTTP_ADDR", ":3000")
+	HTTP_AUTH_USER = env.Could("HTTP_AUTH_USER", "")
+	HTTP_AUTH_PASS = env.Could("HTTP_AUTH_PASS", "")
+	SB_API         = env.Must("SB_API")
 )
 
 //go:embed static/*
@@ -62,6 +64,18 @@ func Run() error {
 	cfg.Scheme = sbURL.Scheme
 	cfg.Host = sbURL.Host
 	apiClient := api.NewAPIClient(cfg)
+	if HTTP_AUTH_USER != "" && HTTP_AUTH_PASS != "" {
+		auth := api.BasicAuth{
+			UserName: HTTP_AUTH_USER,
+			Password: HTTP_AUTH_PASS,
+		}
+		router.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r = r.WithContext(context.WithValue(r.Context(), api.ContextBasicAuth, auth))
+				next.ServeHTTP(w, r)
+			})
+		})
+	}
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/overview", http.StatusFound) })
 	router.Mount("/overview", routes.CreateOverviewPageHandler(apiClient))

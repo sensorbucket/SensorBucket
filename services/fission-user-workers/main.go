@@ -18,6 +18,7 @@ import (
 
 var (
 	HTTP_ADDR        = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE        = env.Could("HTTP_BASE", "http://127.0.0.1:3000/api/workers")
 	WORKER_NAMESPACE = env.Could("WORKER_NAMESPACE", "default")
 	CTRL_TYPE        = env.Could("CTRL_TYPE", "k8s")
 	DB_DSN           = env.Must("DB_DSN")
@@ -54,7 +55,7 @@ func Run() error {
 	}
 
 	app := userworkers.NewApplication(store)
-	srv := userworkers.NewHTTPTransport(app, HTTP_ADDR)
+	srv := userworkers.NewHTTPTransport(app, HTTP_BASE, HTTP_ADDR)
 	go srv.Start()
 
 	var ctrl Controller

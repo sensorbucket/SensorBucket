@@ -63,4 +63,3 @@ golib: golib-clean
 		--git-host=sensorbucket.nl --git-repo-id=api \
 		--enable-post-process-file \
 		--additional-properties=packageName=api,packageUrl='https://sensorbucket.nl'
-#-t /sensorbucket/tools/openapi-templates/go 

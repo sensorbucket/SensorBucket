@@ -20,10 +20,10 @@ type HTTPTransport struct {
 	server *http.Server
 }
 
-func NewHTTPTransport(app *Application, addr string) *HTTPTransport {
+func NewHTTPTransport(app *Application, baseURL, addr string) *HTTPTransport {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-	createRoutes(app, r)
+	createRoutes(app, baseURL, r)
 	srv := &http.Server{
 		Addr:         addr,
 		WriteTimeout: 5 * time.Second,
@@ -50,7 +50,7 @@ type WorkersHTTPFilters struct {
 	ListWorkerFilters
 }
 
-func createRoutes(app *Application, r chi.Router) {
+func createRoutes(app *Application, baseURL string, r chi.Router) {
 	r.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello"))
 	})
@@ -65,7 +65,7 @@ func createRoutes(app *Application, r chi.Router) {
 			web.HTTPError(w, err)
 			return
 		}
-		web.HTTPResponse(w, http.StatusOK, pagination.CreateResponse(r, "", *page))
+		web.HTTPResponse(w, http.StatusOK, pagination.CreateResponse(r, baseURL, *page))
 	})
 	r.Post("/workers", func(w http.ResponseWriter, r *http.Request) {
 		var dto CreateWorkerOpts

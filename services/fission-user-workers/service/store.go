@@ -55,7 +55,6 @@ func applyFilters(q sq.SelectBuilder, filters ListWorkerFilters) sq.SelectBuilde
 		ids := lo.Filter(filters.ID, func(id string, _ int) bool {
 			return R_UUID.MatchString(id)
 		})
-		fmt.Printf("ids: %v\n", ids)
 		q = q.Where(sq.Eq{"id": ids})
 	}
 	if filters.State > StateUnknown {
@@ -135,8 +134,8 @@ func (s *PSQLStore) GetWorkerByID(id uuid.UUID) (*UserWorker, error) {
 
 func (s *PSQLStore) UpdateWorker(worker *UserWorker) error {
 	if _, err := s.db.Exec(
-		`UPDATE user_workers SET source=$1, revision=$2, state=$3, description=$4 WHERE id=$5`,
-		worker.ZipSource, worker.Revision, worker.State, worker.Description, worker.ID,
+		`UPDATE user_workers SET source=$1, revision=$2, state=$3, description=$4, name=$5 WHERE id=$6`,
+		worker.ZipSource, worker.Revision, worker.State, worker.Description, worker.Name, worker.ID,
 	); err != nil {
 		return fmt.Errorf("could not update worker in store: %w", err)
 	}

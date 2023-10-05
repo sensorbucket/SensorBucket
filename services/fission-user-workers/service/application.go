@@ -34,9 +34,10 @@ func NewApplication(store Store) *Application {
 }
 
 type CreateWorkerOpts struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	UserCode    []byte `json:"user_code"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	State       WorkerState `json:"state"`
+	UserCode    []byte      `json:"user_code"`
 }
 
 func (app *Application) GetWorker(ctx context.Context, id uuid.UUID) (*UserWorker, error) {
@@ -48,6 +49,9 @@ func (app *Application) CreateWorker(ctx context.Context, opts CreateWorkerOpts)
 	if err != nil {
 		return nil, err
 	}
+	if opts.State == StateEnabled {
+		worker.Enable()
+	}
 	if err := app.store.CreateWorker(worker); err != nil {
 		return nil, err
 	}
@@ -55,12 +59,18 @@ func (app *Application) CreateWorker(ctx context.Context, opts CreateWorkerOpts)
 }
 
 type UpdateWorkerOpts struct {
-	UserCode    []byte       `json:"user_code"`
+	Name        *string      `json:"name"`
 	Description *string      `json:"description"`
+	UserCode    []byte       `json:"user_code"`
 	State       *WorkerState `json:"state"`
 }
 
 func (app *Application) UpdateWorker(ctx context.Context, worker *UserWorker, opts UpdateWorkerOpts) error {
+	if opts.Name != nil {
+		if err := worker.SetName(*opts.Name); err != nil {
+			return err
+		}
+	}
 	if opts.Description != nil {
 		worker.Description = *opts.Description
 	}
@@ -71,7 +81,7 @@ func (app *Application) UpdateWorker(ctx context.Context, worker *UserWorker, op
 		case StateDisabled:
 			worker.Disable()
 		default:
-			return ErrWorkerInvalidState
+			worker.Disable()
 		}
 	}
 	if opts.UserCode != nil {

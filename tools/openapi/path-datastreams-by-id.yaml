@@ -34,10 +34,10 @@ get:
                     $ref: 'schemas.yaml#/device'
                   sensor:
                     $ref: 'schemas.yaml#/sensor'
-                  measurement_value:
+                  latest_measurement_value:
                     type: number
                     format: double
-                  measurement_timestamp:
+                  latest_measurement_timestamp:
                     type: string
                     format: date-time
     '401':

@@ -19,11 +19,11 @@ func Create(r chi.Router, measurementService *measurements.Service, deviceServic
 }
 
 type GetDatastreamResponse struct {
-	Datastream           *measurements.Datastream `json:"datastream"`
-	Device               *devices.Device          `json:"device"`
-	Sensor               *devices.Sensor          `json:"sensor"`
-	MeasurementValue     float64                  `json:"measurement_value"`
-	MeasurementTimestamp time.Time                `json:"measurement_timestamp"`
+	Datastream                 *measurements.Datastream `json:"datastream"`
+	Device                     *devices.Device          `json:"device"`
+	Sensor                     *devices.Sensor          `json:"sensor"`
+	LatestMeasurementValue     float64                  `json:"latest_measurement_value"`
+	LatestMeasurementTimestamp time.Time                `json:"latest_measurement_timestamp"`
 }
 
 func getDatastreams(measurementService *measurements.Service, deviceService *devices.Service) http.HandlerFunc {
@@ -62,12 +62,12 @@ func getDatastreams(measurementService *measurements.Service, deviceService *dev
 			Datastream: []string{ds.ID.String()},
 		}, pagination.Request{Limit: 1})
 		if len(m.Data) > 0 {
-			res.MeasurementValue = m.Data[0].MeasurementValue
-			res.MeasurementTimestamp = m.Data[0].MeasurementTimestamp
+			res.LatestMeasurementValue = m.Data[0].MeasurementValue
+			res.LatestMeasurementTimestamp = m.Data[0].MeasurementTimestamp
 		}
 
 		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
-			Message: "",
+			Message: "Fetched detailed datastream",
 			Data:    res,
 		})
 	}

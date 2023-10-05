@@ -524,27 +524,29 @@ userWorker:
     description:
       type: string
     state:
-      type: integer
-      enum: [0, 1]
+      type: string
+      enum: ["enabled", "disabled"]
     language:
-      type: integer
-      enum: [1]
+      type: string
+      enum: ["python"]
     organisation:
       type: integer
       format: int64
     revision:
       type: integer
     status:
-      type: integer
-      enum: [0,1,2]
+      type: string
+      enum: ["unknown", "ready", "error"]
 updateWorkerRequest:
   type: object
   properties:
+    name:
+      type: string
     description:
       type: string
     state:
-      type: integer
-      enum: [0, 1]
+      type: string
+      enum: ["enabled", "disabled"]
     user_code:
       type: string
       format: base64
@@ -563,6 +565,9 @@ createUserWorkerRequest:
       type: string
       format: base64
       description: base64 encoded user code
+    state:
+      type: string
+      enum: ["enabled", "disabled"]
 
 ingressDTO:
   type: object

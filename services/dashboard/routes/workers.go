@@ -2,6 +2,7 @@ package routes
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -86,17 +87,21 @@ func (h *WorkerPageHandler) updateWorker() http.HandlerFunc {
 
 		var dto api.UpdateWorkerRequest
 		if err := r.ParseForm(); err != nil {
-			web.HTTPError(w, web.NewError(http.StatusBadRequest, "Bad request", ""))
+			errBadRequest := web.NewError(http.StatusBadRequest, "http request body is malformed", "ERR_BAD_REQUEST")
+			web.HTTPError(w, fmt.Errorf("%w: %w", errBadRequest, err))
 			return
+		}
+		if name := r.FormValue("name"); name != "" {
+			dto.Name = &name
 		}
 		if desc := r.FormValue("description"); desc != "" {
 			dto.Description = &desc
 		}
 		switch r.FormValue("state") {
 		case "on":
-			dto.SetState(2)
+			dto.SetState("enabled")
 		default:
-			dto.SetState(1)
+			dto.SetState("disabled")
 		}
 		if userCode := r.FormValue("userCode"); userCode != "" {
 			dto.UserCode = &userCode

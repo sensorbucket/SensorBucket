@@ -22,6 +22,8 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 )
 
+const WORKERS_PER_PAGE = 50
+
 var controlledBySensorBucket *labels.Requirement
 
 func init() {
@@ -109,8 +111,7 @@ func (ctrl *KubernetesController) Reconcile(ctx context.Context) error {
 		return fmt.Errorf("error deleting wandering resources: %w", err)
 	}
 
-	// TODO: Limit?
-	pages, err := ctrl.store.ListUserWorkers(ListWorkerFilters{State: StateEnabled}, pagination.Request{Limit: 10})
+	pages, err := ctrl.store.ListUserWorkers(ListWorkerFilters{State: StateEnabled}, pagination.Request{Limit: WORKERS_PER_PAGE})
 	if err != nil {
 		return fmt.Errorf("error listing user workers from database: %w", err)
 	}
