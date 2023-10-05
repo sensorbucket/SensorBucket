@@ -88,7 +88,7 @@ func (h *WorkerPageHandler) updateWorker() http.HandlerFunc {
 		var dto api.UpdateWorkerRequest
 		if err := r.ParseForm(); err != nil {
 			errBadRequest := web.NewError(http.StatusBadRequest, "http request body is malformed", "ERR_BAD_REQUEST")
-			web.HTTPError(w, fmt.Errorf("%w: %w", errBadRequest, err))
+			web.HTTPError(w, fmt.Errorf("%w: %s", errBadRequest, err.Error()))
 			return
 		}
 		if name := r.FormValue("name"); name != "" {
