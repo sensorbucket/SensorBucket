@@ -11,7 +11,7 @@ import (
 
 func TestMeasurementBuilderAddMeasurement(t *testing.T) {
 	msg := &pipeline.Message{
-		ID: uuid.NewString(),
+		TracingID: uuid.NewString(),
 	}
 	intermediateBuilder := msg.NewMeasurement().
 		SetSensor("testsensor").

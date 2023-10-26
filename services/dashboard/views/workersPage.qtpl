@@ -1,0 +1,90 @@
+{% import "sensorbucket.nl/sensorbucket/pkg/api" %}
+
+{% func (p *WorkerListPage) Body() %}
+    <div 
+        class="w-full xl:w-2/3 mx-auto bg-white border rounded-md"
+    >
+        <header class="w-full flex items-center justify-between border-b py-2 px-4 text-sm text-slate-700">
+            <section>
+                SensorBucket Worker List
+            </section>
+            <section class="flex gap-2">
+                <button 
+                    class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                    hx-get="/workers/create"
+                    hx-target="main"
+                    hx-push-url="true"
+                >
+                Create
+                </button>
+            </section>
+        </header>
+        <div>
+            {%= RenderWorkerTable(p.Workers) %}
+        </div>
+    </div>
+{% endfunc %}
+
+{% func RenderWorkerTable(workers []api.UserWorker) %}
+    <table class="w-full text-sm border-separate border-spacing-0" id="device-table">
+        <thead class="text-left text-slate-500 sticky top-0 bg-white">
+            <tr class="h-10">
+                <th class="font-normal border-b align-middle px-4">
+                    Name
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Enabled
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Revision
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    ID
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Description
+                </th>
+                <th class="font-normal border-b align-middle px-4">
+                    Language
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {%= RenderWorkerTableRows(workers, "") %}
+        </tbody>
+    </table>
+{% endfunc %}
+
+{% func RenderWorkerTableRows(workers []api.UserWorker, nextPage string) %}
+    {% for ix, worker := range workers %}
+    <tr
+        class="hover:bg-slate-50 group"
+        {% if nextPage != "" && ix == len(workers)-1 %}
+        hx-trigger="revealed"
+        hx-target="this"
+        hx-swap="afterend"
+        hx-get="{%s nextPage %}"
+        {% endif %}
+    >
+        <td class="border-b"><a
+            class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
+            href="/workers/{%s worker.Id %}"
+            hx-target="main"
+        >{%s worker.Name %}</a></td>
+        <td class="px-4 h-10 border-b">
+        {%s worker.State %}
+        </td>
+        <td class="px-4 h-10 border-b">{%d int(worker.Revision) %}</td>
+        <td class="px-4 h-10 border-b">{%s worker.Id %}</td>
+        <td class="px-4 h-10 border-b">{%s worker.Description %}</td>
+        <td class="px-4 h-10 border-b">Python</td>
+    </tr>
+    {% endfor %}
+{% endfunc %}
+
+{% code
+type WorkerListPage struct {
+    BasePage
+    Workers []api.UserWorker
+}
+%}

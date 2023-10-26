@@ -10,13 +10,13 @@ delete:
       in: path
       required: true
       schema:
-        type: number
+        type: integer
     - name: sensor_id
       description: The id of the sensor
       in: path
       required: true
       schema:
-        type: number
+        type: integer
   responses:
     '200':
       description: Deleted sensor from sensor group

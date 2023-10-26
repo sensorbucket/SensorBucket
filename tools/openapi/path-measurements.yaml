@@ -53,7 +53,7 @@ get:
       description: |
         The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
       schema:
-        type: number
+        type: integer
   responses:
     '200':
       description: Fetched measurements

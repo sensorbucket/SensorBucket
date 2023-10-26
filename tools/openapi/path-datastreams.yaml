@@ -15,11 +15,16 @@ get:
     The sensor now has two datastreams. Presusre in millivolt and watercolumn in meters.
   tags: ["Measurements"]
   parameters:
-    - in: query
-      name: sensor
+    - name: sensor
       description: only return datastreams that are produced by the given sensor identifier
+      in: query
+      style: form
+      explode: true
       schema:
-        type: number
+        type: array
+        items:
+          type: integer
+          format: int64
     - in: query
       name: cursor
       description: The cursor for the current page
@@ -30,7 +35,8 @@ get:
       description: |
         The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
       schema:
-        type: number
+        type: integer
+        format: int64
   responses:
     '200':
       description: Fetched datastreams

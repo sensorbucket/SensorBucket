@@ -1,6 +1,6 @@
 ARG APP_NAME
 ARG APP_TYPE
-FROM golang:1.18-alpine AS dev
+FROM golang:1.19-alpine AS dev
 ENV APP_NAME=${APP_NAME}
 ENV APP_TYPE=${APP_TYPE}
 WORKDIR /workspace

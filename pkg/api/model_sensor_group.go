@@ -17,18 +17,22 @@ import (
 
 // SensorGroup struct for SensorGroup
 type SensorGroup struct {
-	Id *float32 `json:"id,omitempty"`
-	Name *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Sensors []Sensor `json:"sensors,omitempty"`
+	Id int64 `json:"id"`
+	Name string `json:"name"`
+	Description string `json:"description"`
+	Sensors []int64 `json:"sensors"`
 }
 
 // NewSensorGroup instantiates a new SensorGroup object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewSensorGroup() *SensorGroup {
+func NewSensorGroup(id int64, name string, description string, sensors []int64) *SensorGroup {
 	this := SensorGroup{}
+	this.Id = id
+	this.Name = name
+	this.Description = description
+	this.Sensors = sensors
 	return &this
 }
 
@@ -40,146 +44,114 @@ func NewSensorGroupWithDefaults() *SensorGroup {
 	return &this
 }
 
-// GetId returns the Id field value if set, zero value otherwise.
-func (o *SensorGroup) GetId() float32 {
-	if o == nil || isNil(o.Id) {
-		var ret float32
+// GetId returns the Id field value
+func (o *SensorGroup) GetId() int64 {
+	if o == nil {
+		var ret int64
 		return ret
 	}
-	return *o.Id
+
+	return o.Id
 }
 
-// GetIdOk returns a tuple with the Id field value if set, nil otherwise
+// GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
-func (o *SensorGroup) GetIdOk() (*float32, bool) {
-	if o == nil || isNil(o.Id) {
+func (o *SensorGroup) GetIdOk() (*int64, bool) {
+	if o == nil {
     return nil, false
 	}
-	return o.Id, true
+	return &o.Id, true
 }
 
-// HasId returns a boolean if a field has been set.
-func (o *SensorGroup) HasId() bool {
-	if o != nil && !isNil(o.Id) {
-		return true
-	}
-
-	return false
+// SetId sets field value
+func (o *SensorGroup) SetId(v int64) {
+	o.Id = v
 }
 
-// SetId gets a reference to the given float32 and assigns it to the Id field.
-func (o *SensorGroup) SetId(v float32) {
-	o.Id = &v
-}
-
-// GetName returns the Name field value if set, zero value otherwise.
+// GetName returns the Name field value
 func (o *SensorGroup) GetName() string {
-	if o == nil || isNil(o.Name) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.Name
+
+	return o.Name
 }
 
-// GetNameOk returns a tuple with the Name field value if set, nil otherwise
+// GetNameOk returns a tuple with the Name field value
 // and a boolean to check if the value has been set.
 func (o *SensorGroup) GetNameOk() (*string, bool) {
-	if o == nil || isNil(o.Name) {
+	if o == nil {
     return nil, false
 	}
-	return o.Name, true
+	return &o.Name, true
 }
 
-// HasName returns a boolean if a field has been set.
-func (o *SensorGroup) HasName() bool {
-	if o != nil && !isNil(o.Name) {
-		return true
-	}
-
-	return false
-}
-
-// SetName gets a reference to the given string and assigns it to the Name field.
+// SetName sets field value
 func (o *SensorGroup) SetName(v string) {
-	o.Name = &v
+	o.Name = v
 }
 
-// GetDescription returns the Description field value if set, zero value otherwise.
+// GetDescription returns the Description field value
 func (o *SensorGroup) GetDescription() string {
-	if o == nil || isNil(o.Description) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.Description
+
+	return o.Description
 }
 
-// GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
+// GetDescriptionOk returns a tuple with the Description field value
 // and a boolean to check if the value has been set.
 func (o *SensorGroup) GetDescriptionOk() (*string, bool) {
-	if o == nil || isNil(o.Description) {
+	if o == nil {
     return nil, false
 	}
-	return o.Description, true
+	return &o.Description, true
 }
 
-// HasDescription returns a boolean if a field has been set.
-func (o *SensorGroup) HasDescription() bool {
-	if o != nil && !isNil(o.Description) {
-		return true
-	}
-
-	return false
-}
-
-// SetDescription gets a reference to the given string and assigns it to the Description field.
+// SetDescription sets field value
 func (o *SensorGroup) SetDescription(v string) {
-	o.Description = &v
+	o.Description = v
 }
 
-// GetSensors returns the Sensors field value if set, zero value otherwise.
-func (o *SensorGroup) GetSensors() []Sensor {
-	if o == nil || isNil(o.Sensors) {
-		var ret []Sensor
+// GetSensors returns the Sensors field value
+func (o *SensorGroup) GetSensors() []int64 {
+	if o == nil {
+		var ret []int64
 		return ret
 	}
+
 	return o.Sensors
 }
 
-// GetSensorsOk returns a tuple with the Sensors field value if set, nil otherwise
+// GetSensorsOk returns a tuple with the Sensors field value
 // and a boolean to check if the value has been set.
-func (o *SensorGroup) GetSensorsOk() ([]Sensor, bool) {
-	if o == nil || isNil(o.Sensors) {
+func (o *SensorGroup) GetSensorsOk() ([]int64, bool) {
+	if o == nil {
     return nil, false
 	}
 	return o.Sensors, true
 }
 
-// HasSensors returns a boolean if a field has been set.
-func (o *SensorGroup) HasSensors() bool {
-	if o != nil && !isNil(o.Sensors) {
-		return true
-	}
-
-	return false
-}
-
-// SetSensors gets a reference to the given []Sensor and assigns it to the Sensors field.
-func (o *SensorGroup) SetSensors(v []Sensor) {
+// SetSensors sets field value
+func (o *SensorGroup) SetSensors(v []int64) {
 	o.Sensors = v
 }
 
 func (o SensorGroup) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.Id) {
+	if true {
 		toSerialize["id"] = o.Id
 	}
-	if !isNil(o.Name) {
+	if true {
 		toSerialize["name"] = o.Name
 	}
-	if !isNil(o.Description) {
+	if true {
 		toSerialize["description"] = o.Description
 	}
-	if !isNil(o.Sensors) {
+	if true {
 		toSerialize["sensors"] = o.Sensors
 	}
 	return json.Marshal(toSerialize)

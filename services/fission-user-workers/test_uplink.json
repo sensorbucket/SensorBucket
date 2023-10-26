@@ -1,0 +1,17 @@
+{
+    "tracing_id": "616a7ce9-725a-4427-a1dd-43e4ce2a54d3",
+    "owner_id": 1,
+    "received_at": 1694435883523,
+    "pipeline_id": "7f19d215-0c06-4387-9086-7af2e81020f2",
+    "step_index": 0,
+    "pipeline_steps": [
+        "ttn",
+        "mfm-fijnstof",
+        "storage"
+    ],
+    "timestamp": 1694435883523,
+    "device": null,
+    "measurements": [],
+    "payload": "eyJlbmRfZGV2aWNlX2lkcyI6eyJkZXZpY2VfaWQiOiJldWktZDQ5YzEwMDAwMDAwNDAzOSIsImFwcGxpY2F0aW9uX2lkcyI6eyJhcHBsaWNhdGlvbl9pZCI6Im1mbS1maWpuc3RvZi1weiJ9LCJkZXZfZXVpIjoiRDQ5QzEwMDAwMDAwNDAzOSIsImRldl9hZGRyIjoiMjYwQjRFOTIifSwicmVjZWl2ZWRfYXQiOiIyMDIyLTExLTI0VDE3OjAwOjAxLjg4NjcyODMxNloiLCJ1cGxpbmtfbWVzc2FnZSI6eyJmX3BvcnQiOjEsImZfY250IjoxMDkwLCJmcm1fcGF5bG9hZCI6IkFBWT0iLCJkZWNvZGVkX3BheWxvYWQiOnsicG0yNSI6Nn0sInJ4X21ldGFkYXRhIjpbeyJnYXRld2F5X2lkcyI6eyJnYXRld2F5X2lkIjoicHotdHRpZzAwMiIsImV1aSI6IjU4QTBDQkZGRkU4MDRFMTYifSwidGltZSI6IjIwMjItMTEtMjRUMTc6MDA6MDEuNjIwMDczMDgwWiIsInRpbWVzdGFtcCI6MjI5MjMzMjY5OSwicnNzaSI6LTc5LCJjaGFubmVsX3Jzc2kiOi03OSwic25yIjo3LjUsImxvY2F0aW9uIjp7ImxhdGl0dWRlIjo1MS4yMjk5NjM0ODU3NDkwOTYsImxvbmdpdHVkZSI6My45NjUyNjI0NzI2Mjk1NDc2LCJzb3VyY2UiOiJTT1VSQ0VfUkVHSVNUUlkifSwicmVjZWl2ZWRfYXQiOiIyMDIyLTExLTI0VDE3OjAwOjAxLjYyOTk4NzQzM1oifV0sInNldHRpbmdzIjp7ImRhdGFfcmF0ZSI6eyJsb3JhIjp7ImJhbmR3aWR0aCI6MTI1MDAwLCJzcHJlYWRpbmdfZmFjdG9yIjo3LCJjb2RpbmdfcmF0ZSI6IjQvNSJ9fSwiZnJlcXVlbmN5IjoiODY4NTAwMDAwIiwidGltZXN0YW1wIjoyMjkyMzMyNjk5LCJ0aW1lIjoiMjAyMi0xMS0yNFQxNzowMDowMS42MjAwNzMwODBaIn0sInJlY2VpdmVkX2F0IjoiMjAyMi0xMS0yNFQxNzowMDowMS42Nzk0MTM1MjRaIiwiY29uc3VtZWRfYWlydGltZSI6IjAuMDQ2MzM2cyIsImxvY2F0aW9ucyI6eyJ1c2VyIjp7ImxhdGl0dWRlIjo1MS4yMzAyNDk2LCJsb25naXR1ZGUiOjMuOTcwNDUyNiwic291cmNlIjoiU09VUkNFX1JFR0lTVFJZIn19LCJuZXR3b3JrX2lkcyI6eyJuZXRfaWQiOiIwMDAwMTMiLCJ0ZW5hbnRfaWQiOiJ0dG4iLCJjbHVzdGVyX2lkIjoiZXUxIiwiY2x1c3Rlcl9hZGRyZXNzIjoiZXUxLmNsb3VkLnRoZXRoaW5ncy5uZXR3b3JrIn19fQ==",
+    "metadata": {}
+}

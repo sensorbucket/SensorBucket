@@ -45,13 +45,17 @@ markdown_extensions:
 nav:
   - Overview: index.md
   - Introduction: introduction.md
+  - Supporting new devices: creating-workers.md
   - Development:
     - Architecture: development/architecture.md
     - Data Model: development/data-model.md
+    - Workers and Fission: development/user-workers.md
     - Services:
       - Core: development/core.md
       - Dashboard: development/dashboard.md
       - HTTP Ingress: development/http-importer.md
       - Tracing: development/tracing.md
+      - Fission User Workers: development/fission-user-workers.md
+      - Fission RMQ Connector: development/fission-rmq-connector.md
       - Workers: development/workers.md
   - API Reference: ./api/index.html

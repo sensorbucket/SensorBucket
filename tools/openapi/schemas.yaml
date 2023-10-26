@@ -37,9 +37,11 @@ createDeviceRequest:
 #      example: provincie_zeeland
     latitude:
       type: number
+      format: double
       example: 1.2345
     longitude:
       type: number
+      format: double
       example: 1.2345
     location_description:
       type: string
@@ -53,13 +55,15 @@ updateDeviceRequest:
     type: object
     properties:
       description:
-        type: number
+        type: integer
         example: 1
       latitude:
         type: number
+        format: double
         example: 1.2345
       longitude:
         type: number
+        format: double
         example: 1.2345
       location_description:
         type: string
@@ -74,14 +78,22 @@ device:
   required:
     - id
     - code
+    - state
+    - description
     - organisation
+    - properties
+    - sensors
+    - created_at
   properties:
     id:
-      type: number
+      type: integer
+      format: int64
       example: 1
     code:
       type: string
       example: mfm1000
+    state:
+      type: integer
     description:
       type: string
       example: Grasfield pipe 24
@@ -92,11 +104,17 @@ device:
       type: object
       example:
         eui: "060708090A0B0C0D"
+    altitude:
+      type: number
+      format: double
+      example: 1.2345
     latitude:
       type: number
+      format: double
       example: 1.2345
     longitude:
       type: number
+      format: double
       example: 1.2345
     location_description:
       type: string
@@ -105,6 +123,9 @@ device:
       type: array
       items:
         $ref: '#/sensor'
+    created_at:
+      type: string
+      format: date-time
 
 createSensorRequest:
   type: object
@@ -129,14 +150,28 @@ createSensorRequest:
       example: 
         mount_height: 15cm
     archive_time:
-      type: number
+      type: integer
       example: 7
 
 sensor:
   type: object
+  required:
+    - id
+    - code
+    - description
+    - external_id
+    - brand
+    - properties
+    - created_at
+    - device_id
   properties:
     id:
-      type: number
+      type: integer
+      format: int64
+      example: 1
+    device_id:
+      type: integer
+      format: int64
       example: 1
     code:
       type: string
@@ -151,7 +186,7 @@ sensor:
       type: string
       example: "SensorCompany LTD. SCL115"
     archive_time:
-      type: number
+      type: integer
       example: 7
     properties:
       type: object
@@ -200,6 +235,7 @@ trace_step:
     - status
     - status_string
     - duration
+    - error
   properties:
     start_time:
       type: string
@@ -212,7 +248,7 @@ trace_step:
       example: "succes"
     duration:
       type: number
-      format: float
+      format: double
       description: Duration in seconds
       example: 5.321
     error:
@@ -239,7 +275,8 @@ measurement:
       type: string
       example: ca29e28e-eeb6-4662-922c-6cf6a36ccb6e
     device_id:
-      type: number
+      type: integer
+      format: int64
       example: 5
     device_code:
       type: string
@@ -249,12 +286,15 @@ measurement:
       example: Particulate matter device
     device_latitude:
       type: number
+      format: double
       example: 5.131313
     device_longitude:
       type: number
+      format: double
       example: 5.131313
     device_altitude:
       type: number
+      format: double
       example: 5.131313
     device_location_description:
       type: string
@@ -264,10 +304,11 @@ measurement:
       example:
         eui: "060708090A0B0C0D"
     device_state:
-      type: number
+      type: integer
       example: 0
     sensor_id:
-      type: number
+      type: integer
+      format: int64
       example: 3 
     sensor_code:
       type: string
@@ -285,7 +326,7 @@ measurement:
       type: string
       example: "SensorCompany Inc. SC123" 
     sensor_archive_time:
-      type: number
+      type: integer
       example: 7 
     datastream_id:
       type: string
@@ -306,15 +347,19 @@ measurement:
       example: "2022-01-01T00:00:00Z"
     measurement_value:
       type: number
+      format: double
       example: 3.44
     measurement_latitude:
       type: number
+      format: double
       example: 3.44
     measurement_longitude:
       type: number
+      format: double
       example: 3.44
     measurement_altitude:
       type: number
+      format: double
       example: 3.44
     measurement_properties:
       type: object
@@ -329,6 +374,12 @@ measurement:
 
 pipeline:
   type: object
+  required:
+    - id
+    - description
+    - steps
+    - status
+    - last_status_change
   properties:
     id:
       type: string
@@ -393,6 +444,13 @@ updatePipelineRequest:
 
 datastream:
   type: object
+  required:
+    - id
+    - description
+    - sensor_id
+    - observed_property
+    - unit_of_measurement
+    - created_at
   properties:
     id:
       type: string
@@ -400,7 +458,7 @@ datastream:
     description:
       type: string
     sensor_id:
-      type: number
+      type: integer
     observed_property:
       type: string
     unit_of_measurement:
@@ -413,9 +471,15 @@ datastream:
 
 sensorGroup:
   type: object
+  required:
+    - id
+    - name
+    - description
+    - sensors
   properties:
     id:
-      type: number
+      type: integer
+      format: int64
     name:
       type: string
     description:
@@ -423,7 +487,8 @@ sensorGroup:
     sensors:
       type: array
       items:
-          $ref: '#/sensor'
+        type: integer
+        format: int64
 createSensorGroupRequest:
   type: object
   properties:
@@ -438,3 +503,116 @@ updateSensorGroupRequest:
       type: string
     description:
       type: string
+userWorker:
+  type: object
+  required:
+    - id
+    - name
+    - description
+    - state
+    - language
+    - organisation
+    - major
+    - revision
+    - status
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    description:
+      type: string
+    state:
+      type: string
+      enum: ["enabled", "disabled"]
+    language:
+      type: string
+      enum: ["python"]
+    organisation:
+      type: integer
+      format: int64
+    revision:
+      type: integer
+    status:
+      type: string
+      enum: ["unknown", "ready", "error"]
+updateWorkerRequest:
+  type: object
+  properties:
+    name:
+      type: string
+    description:
+      type: string
+    state:
+      type: string
+      enum: ["enabled", "disabled"]
+    user_code:
+      type: string
+      format: base64
+      description: base64 encoded user code
+createUserWorkerRequest:
+  type: object
+  required:
+    - name
+    - user_code
+  properties:
+    name:
+      type: string
+    description:
+      type: string
+    user_code:
+      type: string
+      format: base64
+      description: base64 encoded user code
+    state:
+      type: string
+      enum: ["enabled", "disabled"]
+
+ingressDTO:
+  type: object
+  required:
+    - tracing_id
+    - pipeline_id
+    - owner_id
+    - payload
+    - created_at
+  properties:
+    tracing_id:
+      type: string
+      format: uuid
+    pipeline_id:
+      type: string
+      format: uuid
+    owner_id:
+      type: integer
+      format: int64
+    payload:
+      type: string
+      format: base64
+    created_at:
+      type: string
+      format: date-time
+
+archivedIngress:
+  type: object
+  required:
+    - tracing_id
+    - raw_message
+    - archived_at
+    - expires_at
+  properties:
+    tracing_id:
+      type: string
+      format: uuid
+    raw_message:
+      type: string
+      format: base64
+    archived_at:
+      type: string
+      format: date-time
+    expires_at:
+      type: string
+      format: date-time
+    ingress_dto:
+      $ref: "#/ingressDTO"
