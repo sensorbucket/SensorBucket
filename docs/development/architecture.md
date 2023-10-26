@@ -32,6 +32,8 @@ Somewhere in the pipeline of workers, there is a worker that must be able to ass
 
 Along the pipeline of workers, each worker can append measurements and data to the message that is routed to the next worker. 
 
+Workers are not deployed as regular services, instead they use the [Fission](https://fission.io/) framework to automatically be built and deployed. For more information see [Workers](/workers).
+
 ## Device service
 
 The device service is an administrative service containing information about devices and their sensors. It is used to configure new devices, making their data available for processing.

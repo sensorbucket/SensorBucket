@@ -45,7 +45,9 @@ markdown_extensions:
 nav:
   - Overview: index.md
   - Introduction: introduction.md
+  - Supporting new devices: creating-workers.md
   - Development:
     - Architecture: development/architecture.md
     - Data Model: development/data-model.md
+    - Workers and Fission: development/workers.md
   - API Reference: ./api/index.html
