@@ -49,5 +49,5 @@ nav:
   - Development:
     - Architecture: development/architecture.md
     - Data Model: development/data-model.md
-    - Workers and Fission: development/workers.md
+    - Workers and Fission: development/user-workers.md
   - API Reference: ./api/index.html
