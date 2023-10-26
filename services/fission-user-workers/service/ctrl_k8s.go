@@ -45,7 +45,7 @@ type KubernetesController struct {
 	mqtExchange        string
 }
 
-func CreateKubernetesController(store Store, workerNamespace, xchg string) (*KubernetesController, error) {
+func CreateKubernetesController(store Store, xchg string) (*KubernetesController, error) {
 	var cfg *rest.Config
 	var err error
 	kcfg := env.Could("CTRL_K8S_CONFIG", "")
@@ -64,7 +64,7 @@ func CreateKubernetesController(store Store, workerNamespace, xchg string) (*Kub
 	return &KubernetesController{
 		store:              store,
 		fission:            fission,
-		workerNamespace:    workerNamespace,
+		workerNamespace:    env.Must("CTRL_K8S_WORKER_NAMESPACE"),
 		prefix:             "worker",
 		mqtImage:           env.Must("CTRL_K8S_MQT_IMAGE"),
 		mqtImagePullSecret: env.Must("CTRL_K8S_PULL_SECRET"),

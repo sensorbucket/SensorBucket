@@ -15,7 +15,6 @@ type PublishMessage struct {
 func Publisher(conn *AMQPConnection, xchg string, setup AMQPSetupFunc) chan<- PublishMessage {
 	ch := make(chan PublishMessage, 10)
 	newConnection := conn.UseConnection()
-	returns := make(chan amqp.Return)
 
 	go func() {
 	loopNewConnection:
@@ -29,6 +28,7 @@ func Publisher(conn *AMQPConnection, xchg string, setup AMQPSetupFunc) chan<- Pu
 			if err != nil {
 				continue
 			}
+			returns := make(chan amqp.Return)
 			amqpChan.NotifyReturn(returns)
 			err = setup(amqpChan)
 			if err != nil {
@@ -38,7 +38,10 @@ func Publisher(conn *AMQPConnection, xchg string, setup AMQPSetupFunc) chan<- Pu
 			// Loop until publish channel is closed
 			for {
 				select {
-				case msg := <-returns:
+				case msg, ok := <-returns:
+					if !ok {
+						continue loopNewConnection
+					}
 					log.Printf("AMQPPublisher no route to %s (%s)\n", msg.Exchange, msg.RoutingKey)
 				case msg, ok := <-ch:
 					if !ok {

@@ -35,7 +35,9 @@ This code can be found [here in the repository](https://github.com/sensorbucket/
 !!! Note
     This chapter assumes existing knowledge about Fission. To learn more, check out [the Fission architecture documentation](https://fission.io/docs/architecture/).
 
-Workers are deployed to Fission as Functions. A Function uses a Package which is bundled or compiled code. Because all Fission Functions are invoked through HTTP, a separate connector is required. In this case a custom RabbitMQ Connector, which consumes from a Queue and published to a result queue or error queue. The connector consumes a message and makes a request to the Function. The Function must return a header `X-AMQP-Topic`, indicating which is used as the topic / routing-key in the result queue. If the response has a not-ok status code, the result will be published to the error queue.
+Workers are deployed to Fission as Functions. A Function uses a Package which is bundled or compiled code. Because all Fission Functions are invoked through HTTP, a separate connector is required. In this case a custom RabbitMQ Connector, which consumes from a Queue and published to a result queue. The connector consumes a message and makes a request to the Function. The Function must return a header `X-AMQP-Topic`, indicating which is used as the topic / routing-key in the result queue. An error in the worker is considered a succesful invocation, but the routing key should be "error", instead of the next step..
+
+A non-ok HTTP Status code in the response will cause a re-invocation until the retry limit is reached.
 
 The User Service Fission controller will automatically reconciliate Fission and KEDA CRDs to ensure every enabled worker will be deployed. These resources include: Functions, Message Queue Triggers and Packages. Fission will create the corresponding KEDA resources by deriving them from the Message Queue Trigger.
 
