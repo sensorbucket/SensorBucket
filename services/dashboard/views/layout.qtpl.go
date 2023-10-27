@@ -222,14 +222,88 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     <script type="text/javascript" src="/static/uplot.htmx.js"></script>
     <script type="text/javascript" src="/static/leaflet.htmx.js"></script>
     <script src="http://SortableJS.github.io/Sortable/Sortable.js"></script>
+    <script type="text/javascript">
+
+        htmx.onLoad(function(content) {
+            document.body.addEventListener("showSnackbar", function(evt) {
+                showSnackbar(evt.detail.message, evt.detail.type);
+            });
+        });
+     
+        const snackbarSuccess = 1;
+        const snackbarError = 2;
+        
+        let currentHideSnackbarTimer = null;
+        function showSnackbar(message, type) {
+            // If called again before disapearing, immediately hide
+            hideSnackbar();
+
+            const snackbar = document.getElementById('snackbar');
+            const snackbarMessage = document.getElementById('snackbarMessage');
+
+            snackbarMessage.innerText = message;
+
+            snackbar.classList.add('translate-y-0');
+            snackbar.classList.add('opacity-100');
+            snackbar.classList.remove('pointer-events-none');
+
+            const successIcon = document.getElementById('successIcon');
+            const errorIcon = document.getElementById('errorIcon');
+
+            if (!successIcon.classList.contains('hidden')) {
+                successIcon.classList.add('hidden');
+            }
+
+            if (!errorIcon.classList.contains('hidden')) {
+                errorIcon.classList.add('hidden');
+            }
+
+            if (type == snackbarSuccess) {
+                const successIcon = document.getElementById('successIcon');
+                successIcon.classList.remove('hidden');
+            } else if (type == snackbarError) {
+                const errorIcon = document.getElementById('errorIcon');
+                errorIcon.classList.remove('hidden');
+            }
+
+            currentHideSnackbarTimer = setTimeout(() => {
+              hideSnackbar();
+            }, 3000);
+        }
+
+        function hideSnackbar() {
+            if (currentHideSnackbarTimer != null) {
+                clearTimeout(currentHideSnackbarTimer);
+                currentHideSnackbarTimer = null;
+            }
+            const snackbar = document.getElementById('snackbar');
+            snackbar.classList.remove('translate-y-0');
+            snackbar.classList.remove('opacity-100');
+            snackbar.classList.add('pointer-events-none');
+        }
+    </script>
     `)
-//line views/layout.qtpl:57
+//line views/layout.qtpl:117
 	page.StreamHeader(qw422016)
-//line views/layout.qtpl:57
+//line views/layout.qtpl:117
 	qw422016.N().S(`
 </head>
 
 <body class="min-h-full" hx-boost="true">
+    <div id="snackbar" class="fixed bottom-3 right-3 w-96 h-24 select-none transition ease-in duration-100 drop-shadow-2xl -translate-y-5 opacity-0 pointer-events-none"> 
+        <div class="flex justify-between w-full h-full p-4 mb-4 text-gray-500 bg-secondary-600" role="alert">
+            <div class="flex items-center justify-start w-full">
+                <div class="w-1/6 h-full border-solid border border-white">
+                    <iconify-icon id="successIcon" icon="ph:check-bold" width="100%" height="100%" class="text-green-500 hidden"></iconify-icon>
+                    <iconify-icon id="errorIcon" icon="tdesign:error" width="100%" height="100%" class="text-rose-800 hidden"></iconify-icon>
+                </div>
+                <span id="snackbarMessage" class="ml-3 text-lg font-normal text-white">hello there</span>
+            </div>
+            <div class="cursor-pointer" onclick="hideSnackbar()">
+                <iconify-icon icon="ooui:close" class="text-white"></iconify-icon>
+            </div>
+        </div>
+    </div>
     <sidebar class="w-screen lg:w-sidebar fixed lg:h-screen top-0 left-0 flex flex-col bg-secondary-600 z-[5000]">
         <header class="h-12 lg:h-header flex justify-between lg:flex-col lg:justify-end">
             <a hx-target="main" class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="/overview"><img src="/static/logo-white.png" alt="SensorBucket" class="h-full" /></a>
@@ -246,35 +320,35 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
             <ul hx-target="main">
                 <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
                 `)
-//line views/layout.qtpl:76
+//line views/layout.qtpl:150
 	for _, item := range navItems {
-//line views/layout.qtpl:76
+//line views/layout.qtpl:150
 		qw422016.N().S(`
                 <li>
                     <a href="`)
-//line views/layout.qtpl:78
+//line views/layout.qtpl:152
 		qw422016.E().S(item.URL)
-//line views/layout.qtpl:78
+//line views/layout.qtpl:152
 		qw422016.N().S(`"
                         class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">
                         <iconify-icon icon="`)
-//line views/layout.qtpl:80
+//line views/layout.qtpl:154
 		qw422016.E().S(item.Icon)
-//line views/layout.qtpl:80
+//line views/layout.qtpl:154
 		qw422016.N().S(`" width="24" class="pr-4 w-8"></iconify-icon>
                         <span>
                             `)
-//line views/layout.qtpl:82
+//line views/layout.qtpl:156
 		qw422016.E().S(item.Label)
-//line views/layout.qtpl:82
+//line views/layout.qtpl:156
 		qw422016.N().S(`
                         </span>
                     </a>
                 </li>
                 `)
-//line views/layout.qtpl:86
+//line views/layout.qtpl:160
 	}
-//line views/layout.qtpl:86
+//line views/layout.qtpl:160
 	qw422016.N().S(`
             </ul>
         </nav>
@@ -284,68 +358,57 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
             
         </header>
         <main class="p-4 pt-0 mt-4" id="main">
-            <!-- <div class="absolute select-none transition ease-in duration-100 hover:-translate-y-5 hover:opacity-0">
-                <div id="toast-success" class="flex items-center w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow dark:text-gray-400 dark:bg-gray-800" role="alert">
-                    <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg dark:bg-green-800 dark:text-green-200">
-                        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>
-                        </svg>
-                        <span class="sr-only">Check icon</span>
-                    </div>
-                    <div class="ml-3 text-sm font-normal">Save succesful.</div>
-                </div>
-            </div> -->
             `)
-//line views/layout.qtpl:106
+//line views/layout.qtpl:169
 	page.StreamBody(qw422016)
-//line views/layout.qtpl:106
+//line views/layout.qtpl:169
 	qw422016.N().S(`
         </main>
     </section>
 
     `)
-//line views/layout.qtpl:110
+//line views/layout.qtpl:173
 	page.StreamFooter(qw422016)
-//line views/layout.qtpl:110
+//line views/layout.qtpl:173
 	qw422016.N().S(`
 </body>
 
 </html>
 `)
-//line views/layout.qtpl:114
+//line views/layout.qtpl:177
 }
 
-//line views/layout.qtpl:114
+//line views/layout.qtpl:177
 func WriteIndex(qq422016 qtio422016.Writer, page Page) {
-//line views/layout.qtpl:114
+//line views/layout.qtpl:177
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/layout.qtpl:114
+//line views/layout.qtpl:177
 	StreamIndex(qw422016, page)
-//line views/layout.qtpl:114
+//line views/layout.qtpl:177
 	qt422016.ReleaseWriter(qw422016)
-//line views/layout.qtpl:114
+//line views/layout.qtpl:177
 }
 
-//line views/layout.qtpl:114
+//line views/layout.qtpl:177
 func Index(page Page) string {
-//line views/layout.qtpl:114
+//line views/layout.qtpl:177
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/layout.qtpl:114
+//line views/layout.qtpl:177
 	WriteIndex(qb422016, page)
-//line views/layout.qtpl:114
+//line views/layout.qtpl:177
 	qs422016 := string(qb422016.B)
-//line views/layout.qtpl:114
+//line views/layout.qtpl:177
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/layout.qtpl:114
+//line views/layout.qtpl:177
 	return qs422016
-//line views/layout.qtpl:114
+//line views/layout.qtpl:177
 }
 
 // These are for debugging only. In production the tailwind and icons should be bundled with the dashboard
 
-//line views/layout.qtpl:118
+//line views/layout.qtpl:181
 func streamdebugHeaders(qw422016 *qt422016.Writer) {
-//line views/layout.qtpl:118
+//line views/layout.qtpl:181
 	qw422016.N().S(`
 <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4"></script>
 <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4/dist/ext/ws.js"></script>
@@ -353,31 +416,31 @@ func streamdebugHeaders(qw422016 *qt422016.Writer) {
 <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
 <!--<script type="text/javascript" src="https://livejs.com/live.js"></script>-->
 `)
-//line views/layout.qtpl:124
+//line views/layout.qtpl:187
 }
 
-//line views/layout.qtpl:124
+//line views/layout.qtpl:187
 func writedebugHeaders(qq422016 qtio422016.Writer) {
-//line views/layout.qtpl:124
+//line views/layout.qtpl:187
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/layout.qtpl:124
+//line views/layout.qtpl:187
 	streamdebugHeaders(qw422016)
-//line views/layout.qtpl:124
+//line views/layout.qtpl:187
 	qt422016.ReleaseWriter(qw422016)
-//line views/layout.qtpl:124
+//line views/layout.qtpl:187
 }
 
-//line views/layout.qtpl:124
+//line views/layout.qtpl:187
 func debugHeaders() string {
-//line views/layout.qtpl:124
+//line views/layout.qtpl:187
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/layout.qtpl:124
+//line views/layout.qtpl:187
 	writedebugHeaders(qb422016)
-//line views/layout.qtpl:124
+//line views/layout.qtpl:187
 	qs422016 := string(qb422016.B)
-//line views/layout.qtpl:124
+//line views/layout.qtpl:187
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/layout.qtpl:124
+//line views/layout.qtpl:187
 	return qs422016
-//line views/layout.qtpl:124
+//line views/layout.qtpl:187
 }
