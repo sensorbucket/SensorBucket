@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/samber/lo"
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
@@ -73,6 +74,12 @@ func (t *Transport) httpUpdatePipeline() http.HandlerFunc {
 		if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
 			log.Printf("Failed to decode request body: %v\n", err)
 			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponseAny{Message: "Could not decode request body"})
+			return
+		}
+
+		if len(lo.FindDuplicates(dto.Steps)) != 0 {
+			log.Printf("Invalid update dto, duplicate workers not allowed")
+			web.HTTPResponse(rw, http.StatusBadRequest, web.APIResponseAny{Message: "Duplicate workers not allowed"})
 			return
 		}
 

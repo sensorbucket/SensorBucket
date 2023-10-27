@@ -1,2 +1,0 @@
-ALTER TABLE pipelines
-DROP COLUMN name;

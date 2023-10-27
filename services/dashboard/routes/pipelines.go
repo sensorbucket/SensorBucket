@@ -2,8 +2,10 @@ package routes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
@@ -21,14 +23,20 @@ func CreatePipelinePageHandler(client *api.APIClient) http.Handler {
 
 	// Setup routes
 	handler.router.Get("/", handler.pipelineListPage())
-	handler.router.Post("/{pipeline_id}/steps", handler.updatePipelineSteps())
+	handler.router.Patch("/{pipeline_id}/steps", handler.updatePipelineSteps())
+	handler.router.Patch("/{pipeline_id}/details", handler.updatePipelineDetails())
 	handler.router.
 		With(handler.resolveWorkers).
 		With(handler.resolvePipeline).
 		With(handler.resolveWorkersInPipeline).
 		Get("/edit/{pipeline_id}", pipelineDetailPage())
-	handler.router.Get("/create", pipelineDetailPage())
-	// handler.router.Post("/create", createPipeline())
+	handler.router.
+		With(handler.resolveWorkers).
+		With(handler.createNewPipeline).
+		With(handler.resolveWorkersInPipeline).
+		Get("/create", pipelineDetailPage())
+	handler.router.Get("/workers/table", handler.getWorkersTable())
+	handler.router.Get("/table", handler.getPipelinesTable())
 	return handler
 }
 
@@ -43,14 +51,21 @@ func (h PipelinePageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *PipelinePageHandler) pipelineListPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pipelines, _, err := h.client.PipelinesApi.ListPipelines(r.Context()).Cursor("").Execute()
+		pipelines, _, err := h.client.PipelinesApi.ListPipelines(r.Context()).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
+
 		page := &views.PipelinePage{
 			Pipelines:         pipelines.Data,
-			PipelinesNextPage: "",
+			PipelinesNextPage: pipelines.Links.GetNext(),
+		}
+		if pipelines.Links.GetNext() != "" {
+			u, err := url.Parse(pipelines.Links.GetNext())
+			if err == nil {
+				page.PipelinesNextPage = "/pipelines/table?cursor=" + u.Query().Get("cursor")
+			}
 		}
 		if isHX(r) {
 			page.WriteBody(w)
@@ -61,8 +76,29 @@ func (h *PipelinePageHandler) pipelineListPage() http.HandlerFunc {
 	}
 }
 
-func pipelineCreatePage() http.HandlerFunc {
-
+func (h *PipelinePageHandler) createNewPipeline(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		pipeline, resp, err := h.client.PipelinesApi.CreatePipeline(r.Context()).Execute()
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		if resp.StatusCode != http.StatusCreated {
+			web.HTTPResponse(w, resp.StatusCode, "status not ok")
+			return
+		}
+		if pipeline.Data == nil {
+			web.HTTPResponse(w, resp.StatusCode, "couldn't create pipeline")
+			return
+		}
+		ctx := context.WithValue(
+			r.Context(),
+			"pipeline",
+			*pipeline.Data,
+		)
+		r = r.WithContext(ctx)
+		next.ServeHTTP(w, r)
+	})
 }
 
 func pipelineDetailPage() http.HandlerFunc {
@@ -102,6 +138,58 @@ func pipelineDetailPage() http.HandlerFunc {
 	}
 }
 
+func (h *PipelinePageHandler) updatePipelineDetails() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		if err != nil {
+			web.HTTPResponse(w, http.StatusBadRequest, "invalid form")
+			return
+		}
+		pipelineId := chi.URLParam(r, "pipeline_id")
+		if pipelineId == "" {
+			WithSnackbarError(w, "Pipeline must be given", http.StatusBadRequest)
+			return
+		}
+
+		pipelineDescr, ok := r.Form["pipeline-descr"]
+		if !ok {
+			WithSnackbarError(w, "Pipeline description cannot be empty", http.StatusBadRequest)
+			return
+		}
+
+		if len(pipelineDescr) != 1 {
+			WithSnackbarError(w, "Invalid request", http.StatusBadRequest)
+			return
+		}
+
+		updatDto := api.UpdatePipelineRequest{
+			Description: &pipelineDescr[0],
+		}
+		_, resp, err := h.client.PipelinesApi.UpdatePipeline(r.Context(), pipelineId).UpdatePipelineRequest(updatDto).Execute()
+		if err != nil {
+			SnackbarSomethingWentWrong(w)
+			return
+		}
+
+		// TODO: API returns status created instead of found for some reason
+		if resp.StatusCode != http.StatusCreated {
+			if resp.StatusCode == http.StatusInternalServerError {
+				SnackbarSomethingWentWrong(w)
+			} else {
+				var apierror *web.APIError
+				if errors.As(err, &apierror) {
+					WithSnackbarError(w, apierror.Message, apierror.HTTPStatus)
+					return
+				}
+			}
+			return
+		}
+
+		SnackbarSaveSuccessful(w)
+		return
+	}
+}
+
 func (h *PipelinePageHandler) updatePipelineSteps() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
@@ -111,27 +199,34 @@ func (h *PipelinePageHandler) updatePipelineSteps() http.HandlerFunc {
 		}
 		pipelineId := chi.URLParam(r, "pipeline_id")
 		if pipelineId == "" {
-			web.HTTPResponse(w, http.StatusBadRequest, "pipeline_id cannot be empty")
+			WithSnackbarError(w, "Pipeline must be given", http.StatusBadRequest)
 			return
 		}
 
 		newOrder := make([]string, len(r.Form))
 		for key, val := range r.Form {
 			if len(val) != 1 {
-				web.HTTPResponse(w, http.StatusBadRequest, "only 1 value is allowed per key")
+				WithSnackbarError(w, "Duplicate workers are not allowed", http.StatusBadRequest)
 				return
 			}
 
 			ix, err := strconv.Atoi(val[0])
 			if err != nil {
-				web.HTTPResponse(w, http.StatusBadRequest, "each value must be a valid index number")
+				fmt.Println("ERRR", err)
+				WithSnackbarError(w, "Invalid input", http.StatusBadRequest)
 				return
 			}
-			if ix >= len(newOrder) {
-				web.HTTPResponse(w, http.StatusBadRequest, "index cannot be higher than the length of the list")
+			if ix >= len(newOrder) || ix < 0 {
+				fmt.Println("INVALI")
+				WithSnackbarError(w, "Invalid input", http.StatusBadRequest)
 				return
 			}
 			newOrder[ix] = key
+		}
+
+		if newOrder[len(newOrder)-1] != "meas" {
+			WithSnackbarError(w, "Last step must be measurement storage", http.StatusBadRequest)
+			return
 		}
 
 		updatDto := api.UpdatePipelineRequest{
@@ -139,26 +234,73 @@ func (h *PipelinePageHandler) updatePipelineSteps() http.HandlerFunc {
 		}
 		_, resp, err := h.client.PipelinesApi.UpdatePipeline(r.Context(), pipelineId).UpdatePipelineRequest(updatDto).Execute()
 		if err != nil {
-			web.HTTPError(w, err)
+			SnackbarSomethingWentWrong(w)
 			return
 		}
 
 		// TODO: API returns status created instead of found for some reason
 		if resp.StatusCode != http.StatusCreated {
-			web.HTTPResponse(w, resp.StatusCode, "pipeline not found")
+			if resp.StatusCode == http.StatusInternalServerError {
+				SnackbarSomethingWentWrong(w)
+			} else {
+				var apierror *web.APIError
+				if errors.As(err, &apierror) {
+					WithSnackbarError(w, apierror.Message, apierror.HTTPStatus)
+					return
+				}
+			}
 			return
 		}
 
 		// TODO: maybe not do another call..
 		allWorkers, err := h.getAllWorkers(r, newOrder)
 		if err != nil {
-			web.HTTPError(w, err)
+			SnackbarSomethingWentWrong(w)
 			return
 		}
 
 		if isHX(r) {
 			views.WriteRenderPipelineStepsSortable(SnackbarSaveSuccessful(w), allWorkers)
 		}
+	}
+}
+
+func (h *PipelinePageHandler) getWorkersTable() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := h.client.WorkersApi.ListWorkers(r.Context())
+		if r.URL.Query().Has("cursor") {
+			req = req.Cursor(r.URL.Query().Get("cursor"))
+		}
+		res, _, err := req.Execute()
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		nextCursor := ""
+		if res.Links.GetNext() != "" {
+			nextCursor = "/pipelines/workers/table?cursor=" + getCursor(res.Links.GetNext())
+		}
+		views.WriteRenderPipelineEditWorkerTableRows(w, res.Data, nextCursor)
+	}
+}
+
+func (h *PipelinePageHandler) getPipelinesTable() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := h.client.PipelinesApi.ListPipelines(r.Context())
+		if r.URL.Query().Has("cursor") {
+			req = req.Cursor(r.URL.Query().Get("cursor"))
+		}
+		res, _, err := req.Execute()
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		nextCursor := ""
+		if res.Links.GetNext() != "" {
+			nextCursor = "/pipelines/table?cursor=" + getCursor(res.Links.GetNext())
+		}
+		views.WriteRenderPipelineTableRows(w, res.Data, nextCursor)
 	}
 }
 
@@ -228,12 +370,18 @@ func (h *PipelinePageHandler) resolveWorkers(next http.Handler) http.Handler {
 		ctx := context.WithValue(
 			r.Context(),
 			"workers",
-			workers.Data,
+			append(imageWorkers, workers.Data...),
 		)
+
+		nextCursor := ""
+		if workers.Links.GetNext() != "" {
+			nextCursor = "/pipelines/workers/table?cursor=" + getCursor(workers.Links.GetNext())
+		}
+
 		ctx = context.WithValue(
 			ctx,
 			"workers_cursor",
-			"",
+			nextCursor,
 		)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
@@ -306,12 +454,19 @@ func userWorkersFromImageWorkers(steps []string) []api.UserWorker {
 
 var imageWorkers = []api.UserWorker{
 	imageWorker("sbox", "Worker for the sensorbox"),
-	imageWorker("http-import", "http importer"),
 	imageWorker("ttn", "ttn description"),
 	imageWorker("meas", "stores the measurement in the database (immutable)"),
 	imageWorker("mfm", "multiflexmeter"),
 	imageWorker("mfm-2", "particulate matter"),
 }
+
+// var imageWorkers = []api.UserWorker{
+// 	imageWorker("pzld-sensorbox", "Worker for the sensorbox"),
+// 	imageWorker("the-things-network", "ttn description"),
+// 	imageWorker("measurement-storage", "stores the measurement in the database (immutable)"),
+// 	imageWorker("multiflexmeter-groundwater", "multiflexmeter"),
+// 	imageWorker("multiflexmeter-particulate-matter", "particulate matter"),
+// }
 
 func imageWorker(name string, description string) api.UserWorker {
 	return api.UserWorker{

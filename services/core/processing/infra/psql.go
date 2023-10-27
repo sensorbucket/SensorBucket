@@ -52,8 +52,8 @@ func (s *PSQLStore) UpdatePipeline(p *processing.Pipeline) error {
 	}
 
 	if _, err := tx.Exec(
-		`UPDATE "pipelines" SET "description" = $1, "status" = $2, "last_status_change" = $3, "name" = $4 WHERE "id" = $5`,
-		p.Description, p.Status, p.LastStatusChange, p.Name, p.ID,
+		`UPDATE "pipelines" SET "description" = $1, "status" = $2, "last_status_change" = $3 WHERE "id" = $4`,
+		p.Description, p.Status, p.LastStatusChange, p.ID,
 	); err != nil {
 		tx.Rollback()
 		return err
@@ -81,7 +81,7 @@ func (s *PSQLStore) ListPipelines(filter processing.PipelinesFilter, p paginatio
 	var page pagination.Page[processing.Pipeline]
 	var err error
 	// Fetch pipelines
-	q := pq.Select("id", "name", "description", "status", "last_status_change", "created_at").From("pipelines")
+	q := pq.Select("id", "description", "status", "last_status_change", "created_at").From("pipelines")
 	if len(filter.Status) > 0 {
 		q = q.Where(sq.Eq{"status": filter.Status})
 	} else {
@@ -122,7 +122,7 @@ func (s *PSQLStore) ListPipelines(filter processing.PipelinesFilter, p paginatio
 			Steps: []string{},
 		}
 		if err := row.Scan(
-			&p.ID, &p.Name, &p.Description, &p.Status, &p.LastStatusChange, &p.CreatedAt,
+			&p.ID, &p.Description, &p.Status, &p.LastStatusChange, &p.CreatedAt,
 			&cursor.Columns.CreatedAt, &cursor.Columns.ID,
 		); err != nil {
 			return page, err
@@ -189,7 +189,7 @@ func (s *PSQLStore) GetPipeline(id string) (*processing.Pipeline, error) {
 // Private methods which have DB interface injected. Allows for transactional queries
 func getPipeline(db DB, id string) (*processing.Pipeline, error) {
 	var p processing.Pipeline
-	if err := db.QueryRowx(`SELECT id, name, description, status, last_status_change, created_at FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Name, &p.Description, &p.Status, &p.LastStatusChange, &p.CreatedAt); err != nil {
+	if err := db.QueryRowx(`SELECT id, description, status, last_status_change, created_at FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange, &p.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, processing.ErrPipelineNotFound
 		}
@@ -209,7 +209,7 @@ func getPipeline(db DB, id string) (*processing.Pipeline, error) {
 }
 
 func createPipeline(db DB, p *processing.Pipeline) error {
-	if _, err := db.Exec(`INSERT INTO "pipelines" ("id", "name", "description", "status", "last_status_change", "created_at") VALUES ($1, $2, $3, $4, $5, $6)`, p.ID, p.Name, p.Description, p.Status, p.LastStatusChange, p.CreatedAt); err != nil {
+	if _, err := db.Exec(`INSERT INTO "pipelines" ("id", "description", "status", "last_status_change", "created_at") VALUES ($1, $2, $3, $4, $5)`, p.ID, p.Description, p.Status, p.LastStatusChange, p.CreatedAt); err != nil {
 		return err
 	}
 
