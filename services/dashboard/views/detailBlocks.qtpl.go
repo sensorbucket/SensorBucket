@@ -11,400 +11,455 @@ import "sensorbucket.nl/sensorbucket/pkg/api"
 import "sensorbucket.nl/sensorbucket/services/core/devices"
 
 //line views/detailBlocks.qtpl:3
-import "fmt"
+import "sensorbucket.nl/sensorbucket/services/core/processing"
 
 //line views/detailBlocks.qtpl:4
+import "fmt"
+
+//line views/detailBlocks.qtpl:5
 import "encoding/json"
 
-//line views/detailBlocks.qtpl:6
+//line views/detailBlocks.qtpl:7
 import (
 	qtio422016 "io"
 
 	qt422016 "github.com/valyala/quicktemplate"
 )
 
-//line views/detailBlocks.qtpl:6
+//line views/detailBlocks.qtpl:7
 var (
 	_ = qtio422016.Copy
 	_ = qt422016.AcquireByteBuffer
 )
 
-//line views/detailBlocks.qtpl:6
+//line views/detailBlocks.qtpl:7
+func StreamPipelineDetailBlock(qw422016 *qt422016.Writer, pipeline processing.Pipeline) {
+//line views/detailBlocks.qtpl:7
+	qw422016.N().S(`
+<div class="grid grid-cols-3 gap-x-8 gap-y-3 [&>*]:min-h-[2rem] text-sm">
+    <div class="flex flex-col">
+        <small class="text-xs font-semibold text-slate-500">Name</small>
+        <span>`)
+//line views/detailBlocks.qtpl:11
+	qw422016.E().S(pipeline.Name)
+//line views/detailBlocks.qtpl:11
+	qw422016.N().S(`</span>
+    </div>
+    <div class="flex flex-col">
+        <small class="text-xs font-semibold text-slate-500">Description</small>
+        <span>`)
+//line views/detailBlocks.qtpl:15
+	qw422016.E().S(pipeline.Description)
+//line views/detailBlocks.qtpl:15
+	qw422016.N().S(`</span>
+    </div>
+</div>
+`)
+//line views/detailBlocks.qtpl:18
+}
+
+//line views/detailBlocks.qtpl:18
+func WritePipelineDetailBlock(qq422016 qtio422016.Writer, pipeline processing.Pipeline) {
+//line views/detailBlocks.qtpl:18
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line views/detailBlocks.qtpl:18
+	StreamPipelineDetailBlock(qw422016, pipeline)
+//line views/detailBlocks.qtpl:18
+	qt422016.ReleaseWriter(qw422016)
+//line views/detailBlocks.qtpl:18
+}
+
+//line views/detailBlocks.qtpl:18
+func PipelineDetailBlock(pipeline processing.Pipeline) string {
+//line views/detailBlocks.qtpl:18
+	qb422016 := qt422016.AcquireByteBuffer()
+//line views/detailBlocks.qtpl:18
+	WritePipelineDetailBlock(qb422016, pipeline)
+//line views/detailBlocks.qtpl:18
+	qs422016 := string(qb422016.B)
+//line views/detailBlocks.qtpl:18
+	qt422016.ReleaseByteBuffer(qb422016)
+//line views/detailBlocks.qtpl:18
+	return qs422016
+//line views/detailBlocks.qtpl:18
+}
+
+//line views/detailBlocks.qtpl:20
 func StreamDeviceDetailBlock(qw422016 *qt422016.Writer, device api.Device) {
-//line views/detailBlocks.qtpl:6
+//line views/detailBlocks.qtpl:20
 	qw422016.N().S(`
     <div class="grid grid-cols-3 gap-x-8 gap-y-3 [&>*]:min-h-[2rem] text-sm">
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Device Code</small>
             <span>`)
-//line views/detailBlocks.qtpl:10
+//line views/detailBlocks.qtpl:24
 	qw422016.E().S(device.Code)
-//line views/detailBlocks.qtpl:10
+//line views/detailBlocks.qtpl:24
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Device ID</small>
             <span>`)
-//line views/detailBlocks.qtpl:14
+//line views/detailBlocks.qtpl:28
 	qw422016.N().DL(device.Id)
-//line views/detailBlocks.qtpl:14
+//line views/detailBlocks.qtpl:28
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Organisation</small>
             <span>`)
-//line views/detailBlocks.qtpl:18
+//line views/detailBlocks.qtpl:32
 	qw422016.E().S(device.Organisation)
-//line views/detailBlocks.qtpl:18
+//line views/detailBlocks.qtpl:32
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Sensor Count</small>
             <span>`)
-//line views/detailBlocks.qtpl:22
+//line views/detailBlocks.qtpl:36
 	qw422016.E().S(fmt.Sprintf("Has %d sensors", len(device.Sensors)))
-//line views/detailBlocks.qtpl:22
+//line views/detailBlocks.qtpl:36
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">State</small>
             <span>
             `)
-//line views/detailBlocks.qtpl:27
+//line views/detailBlocks.qtpl:41
 	switch devices.DeviceState(device.State) {
-//line views/detailBlocks.qtpl:28
+//line views/detailBlocks.qtpl:42
 	case devices.DeviceStateUnknown:
-//line views/detailBlocks.qtpl:28
+//line views/detailBlocks.qtpl:42
 		qw422016.N().S(`
             Unknown
             `)
-//line views/detailBlocks.qtpl:30
+//line views/detailBlocks.qtpl:44
 	case devices.DeviceEnabled:
-//line views/detailBlocks.qtpl:30
+//line views/detailBlocks.qtpl:44
 		qw422016.N().S(`
             Enabled
             `)
-//line views/detailBlocks.qtpl:32
+//line views/detailBlocks.qtpl:46
 	case devices.DeviceDisabled:
-//line views/detailBlocks.qtpl:32
+//line views/detailBlocks.qtpl:46
 		qw422016.N().S(`
             Disabled
             `)
-//line views/detailBlocks.qtpl:34
+//line views/detailBlocks.qtpl:48
 	}
-//line views/detailBlocks.qtpl:34
+//line views/detailBlocks.qtpl:48
 	qw422016.N().S(`
             </span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Created at</small>
             <span>`)
-//line views/detailBlocks.qtpl:39
+//line views/detailBlocks.qtpl:53
 	qw422016.E().S(device.CreatedAt.Format("Mon, 02 Jan 2006"))
-//line views/detailBlocks.qtpl:39
+//line views/detailBlocks.qtpl:53
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col col-span-full">
             <small class="text-xs font-semibold text-slate-500">Description</small>
             <span>`)
-//line views/detailBlocks.qtpl:43
+//line views/detailBlocks.qtpl:57
 	qw422016.E().S(device.Description)
-//line views/detailBlocks.qtpl:43
+//line views/detailBlocks.qtpl:57
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col col-span-full">
             <small class="text-xs font-semibold text-slate-500">Location (Latitude, Longitude, Altitude)</small>
             <div class="grid grid-cols-3 items-center">
                 `)
-//line views/detailBlocks.qtpl:48
+//line views/detailBlocks.qtpl:62
 	if device.Latitude != nil && device.Longitude != nil {
-//line views/detailBlocks.qtpl:48
+//line views/detailBlocks.qtpl:62
 		qw422016.N().S(`
                 <span>`)
-//line views/detailBlocks.qtpl:49
+//line views/detailBlocks.qtpl:63
 		qw422016.N().FPrec(float64(device.GetLatitude()), 3)
-//line views/detailBlocks.qtpl:49
+//line views/detailBlocks.qtpl:63
 		qw422016.N().S(`</span>
                 <span>`)
-//line views/detailBlocks.qtpl:50
+//line views/detailBlocks.qtpl:64
 		qw422016.N().FPrec(float64(device.GetLongitude()), 3)
-//line views/detailBlocks.qtpl:50
+//line views/detailBlocks.qtpl:64
 		qw422016.N().S(`</span>
                 `)
-//line views/detailBlocks.qtpl:51
+//line views/detailBlocks.qtpl:65
 	} else {
-//line views/detailBlocks.qtpl:51
+//line views/detailBlocks.qtpl:65
 		qw422016.N().S(`
                 <span>No latitude</span>
                 <span>No longitude</span>
                 `)
-//line views/detailBlocks.qtpl:54
+//line views/detailBlocks.qtpl:68
 	}
-//line views/detailBlocks.qtpl:54
+//line views/detailBlocks.qtpl:68
 	qw422016.N().S(`
                 `)
-//line views/detailBlocks.qtpl:55
+//line views/detailBlocks.qtpl:69
 	if device.Altitude != nil {
-//line views/detailBlocks.qtpl:55
+//line views/detailBlocks.qtpl:69
 		qw422016.N().S(`
                 <span>`)
-//line views/detailBlocks.qtpl:56
+//line views/detailBlocks.qtpl:70
 		qw422016.N().FPrec(float64(device.GetAltitude()), 3)
-//line views/detailBlocks.qtpl:56
+//line views/detailBlocks.qtpl:70
 		qw422016.N().S(`</span>
                 `)
-//line views/detailBlocks.qtpl:57
+//line views/detailBlocks.qtpl:71
 	}
-//line views/detailBlocks.qtpl:57
+//line views/detailBlocks.qtpl:71
 	qw422016.N().S(`
                 <span class="col-span-full">`)
-//line views/detailBlocks.qtpl:58
+//line views/detailBlocks.qtpl:72
 	qw422016.E().S(device.GetLocationDescription())
-//line views/detailBlocks.qtpl:58
+//line views/detailBlocks.qtpl:72
 	qw422016.N().S(`</span>
             </div>
         </div>
         <div class="flex flex-col col-span-full">
             <small class="text-xs font-semibold text-slate-500">Properties</small>
             `)
-//line views/detailBlocks.qtpl:64
+//line views/detailBlocks.qtpl:78
 	deviceProps, _ := json.Marshal(device.Properties)
 
-//line views/detailBlocks.qtpl:65
+//line views/detailBlocks.qtpl:79
 	qw422016.N().S(`
             <span>`)
-//line views/detailBlocks.qtpl:66
+//line views/detailBlocks.qtpl:80
 	qw422016.E().S(string(deviceProps))
-//line views/detailBlocks.qtpl:66
+//line views/detailBlocks.qtpl:80
 	qw422016.N().S(`</span>
         </div>
     </div>
 `)
-//line views/detailBlocks.qtpl:69
+//line views/detailBlocks.qtpl:83
 }
 
-//line views/detailBlocks.qtpl:69
+//line views/detailBlocks.qtpl:83
 func WriteDeviceDetailBlock(qq422016 qtio422016.Writer, device api.Device) {
-//line views/detailBlocks.qtpl:69
+//line views/detailBlocks.qtpl:83
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/detailBlocks.qtpl:69
+//line views/detailBlocks.qtpl:83
 	StreamDeviceDetailBlock(qw422016, device)
-//line views/detailBlocks.qtpl:69
+//line views/detailBlocks.qtpl:83
 	qt422016.ReleaseWriter(qw422016)
-//line views/detailBlocks.qtpl:69
+//line views/detailBlocks.qtpl:83
 }
 
-//line views/detailBlocks.qtpl:69
+//line views/detailBlocks.qtpl:83
 func DeviceDetailBlock(device api.Device) string {
-//line views/detailBlocks.qtpl:69
+//line views/detailBlocks.qtpl:83
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/detailBlocks.qtpl:69
+//line views/detailBlocks.qtpl:83
 	WriteDeviceDetailBlock(qb422016, device)
-//line views/detailBlocks.qtpl:69
+//line views/detailBlocks.qtpl:83
 	qs422016 := string(qb422016.B)
-//line views/detailBlocks.qtpl:69
+//line views/detailBlocks.qtpl:83
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/detailBlocks.qtpl:69
+//line views/detailBlocks.qtpl:83
 	return qs422016
-//line views/detailBlocks.qtpl:69
+//line views/detailBlocks.qtpl:83
 }
 
-//line views/detailBlocks.qtpl:71
+//line views/detailBlocks.qtpl:85
 func StreamSensorDetailBlock(qw422016 *qt422016.Writer, sensor api.Sensor) {
-//line views/detailBlocks.qtpl:71
+//line views/detailBlocks.qtpl:85
 	qw422016.N().S(`
     <div class="grid grid-cols-3 gap-x-8 gap-y-3 [&>*]:min-h-[2rem] text-sm">
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Sensor ID</small>
             <span>`)
-//line views/detailBlocks.qtpl:75
+//line views/detailBlocks.qtpl:89
 	qw422016.N().DL(sensor.Id)
-//line views/detailBlocks.qtpl:75
+//line views/detailBlocks.qtpl:89
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Sensor Code</small>
             <span>`)
-//line views/detailBlocks.qtpl:79
+//line views/detailBlocks.qtpl:93
 	qw422016.E().S(sensor.Code)
-//line views/detailBlocks.qtpl:79
+//line views/detailBlocks.qtpl:93
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Sensor Brand</small>
             <span>`)
-//line views/detailBlocks.qtpl:83
+//line views/detailBlocks.qtpl:97
 	qw422016.E().S(sensor.Brand)
-//line views/detailBlocks.qtpl:83
+//line views/detailBlocks.qtpl:97
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Archive Time</small>
             <span>
             `)
-//line views/detailBlocks.qtpl:88
+//line views/detailBlocks.qtpl:102
 	if sensor.ArchiveTime != nil {
-//line views/detailBlocks.qtpl:88
+//line views/detailBlocks.qtpl:102
 		qw422016.N().S(`
                 `)
-//line views/detailBlocks.qtpl:89
+//line views/detailBlocks.qtpl:103
 		qw422016.N().D(int(sensor.GetArchiveTime()))
-//line views/detailBlocks.qtpl:89
+//line views/detailBlocks.qtpl:103
 		qw422016.N().S(` days
             `)
-//line views/detailBlocks.qtpl:90
+//line views/detailBlocks.qtpl:104
 	} else {
-//line views/detailBlocks.qtpl:90
+//line views/detailBlocks.qtpl:104
 		qw422016.N().S(`
                 Not set
             `)
-//line views/detailBlocks.qtpl:92
+//line views/detailBlocks.qtpl:106
 	}
-//line views/detailBlocks.qtpl:92
+//line views/detailBlocks.qtpl:106
 	qw422016.N().S(`
             </span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">Parent Device ID</small>
             <span>`)
-//line views/detailBlocks.qtpl:97
+//line views/detailBlocks.qtpl:111
 	qw422016.N().DL(sensor.DeviceId)
-//line views/detailBlocks.qtpl:97
+//line views/detailBlocks.qtpl:111
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col">
             <small class="text-xs font-semibold text-slate-500">External ID</small>
             <span>`)
-//line views/detailBlocks.qtpl:101
+//line views/detailBlocks.qtpl:115
 	qw422016.E().S(sensor.ExternalId)
-//line views/detailBlocks.qtpl:101
+//line views/detailBlocks.qtpl:115
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col col-span-full">
             <small class="text-xs font-semibold text-slate-500">Properties</small>
             `)
-//line views/detailBlocks.qtpl:106
+//line views/detailBlocks.qtpl:120
 	sensorProps, _ := json.Marshal(sensor.Properties)
 
-//line views/detailBlocks.qtpl:107
+//line views/detailBlocks.qtpl:121
 	qw422016.N().S(`
             <span>`)
-//line views/detailBlocks.qtpl:108
+//line views/detailBlocks.qtpl:122
 	qw422016.E().S(string(sensorProps))
-//line views/detailBlocks.qtpl:108
+//line views/detailBlocks.qtpl:122
 	qw422016.N().S(`</span>
         </div>
     </div>
 `)
-//line views/detailBlocks.qtpl:111
+//line views/detailBlocks.qtpl:125
 }
 
-//line views/detailBlocks.qtpl:111
+//line views/detailBlocks.qtpl:125
 func WriteSensorDetailBlock(qq422016 qtio422016.Writer, sensor api.Sensor) {
-//line views/detailBlocks.qtpl:111
+//line views/detailBlocks.qtpl:125
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/detailBlocks.qtpl:111
+//line views/detailBlocks.qtpl:125
 	StreamSensorDetailBlock(qw422016, sensor)
-//line views/detailBlocks.qtpl:111
+//line views/detailBlocks.qtpl:125
 	qt422016.ReleaseWriter(qw422016)
-//line views/detailBlocks.qtpl:111
+//line views/detailBlocks.qtpl:125
 }
 
-//line views/detailBlocks.qtpl:111
+//line views/detailBlocks.qtpl:125
 func SensorDetailBlock(sensor api.Sensor) string {
-//line views/detailBlocks.qtpl:111
+//line views/detailBlocks.qtpl:125
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/detailBlocks.qtpl:111
+//line views/detailBlocks.qtpl:125
 	WriteSensorDetailBlock(qb422016, sensor)
-//line views/detailBlocks.qtpl:111
+//line views/detailBlocks.qtpl:125
 	qs422016 := string(qb422016.B)
-//line views/detailBlocks.qtpl:111
+//line views/detailBlocks.qtpl:125
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/detailBlocks.qtpl:111
+//line views/detailBlocks.qtpl:125
 	return qs422016
-//line views/detailBlocks.qtpl:111
+//line views/detailBlocks.qtpl:125
 }
 
-//line views/detailBlocks.qtpl:113
+//line views/detailBlocks.qtpl:127
 func streamrenderDeviceMap(qw422016 *qt422016.Writer, device api.Device) {
-//line views/detailBlocks.qtpl:113
+//line views/detailBlocks.qtpl:127
 	qw422016.N().S(`
     `)
-//line views/detailBlocks.qtpl:114
+//line views/detailBlocks.qtpl:128
 	if device.Latitude != nil && device.Longitude != nil {
-//line views/detailBlocks.qtpl:114
+//line views/detailBlocks.qtpl:128
 		qw422016.N().S(`
         <div
             class="w-full h-96" 
             id="device-map"
             hx-ext="leaflet" 
             data-latitude="`)
-//line views/detailBlocks.qtpl:119
+//line views/detailBlocks.qtpl:133
 		qw422016.N().F(*device.Latitude)
-//line views/detailBlocks.qtpl:119
+//line views/detailBlocks.qtpl:133
 		qw422016.N().S(`"
             data-longitude="`)
-//line views/detailBlocks.qtpl:120
+//line views/detailBlocks.qtpl:134
 		qw422016.N().F(*device.Longitude)
-//line views/detailBlocks.qtpl:120
+//line views/detailBlocks.qtpl:134
 		qw422016.N().S(`"
             data-zoom="11"
         >
             <map-marker
                 latitude="`)
-//line views/detailBlocks.qtpl:124
+//line views/detailBlocks.qtpl:138
 		qw422016.N().F(*device.Latitude)
-//line views/detailBlocks.qtpl:124
+//line views/detailBlocks.qtpl:138
 		qw422016.N().S(`"
                 longitude="`)
-//line views/detailBlocks.qtpl:125
+//line views/detailBlocks.qtpl:139
 		qw422016.N().F(*device.Longitude)
-//line views/detailBlocks.qtpl:125
+//line views/detailBlocks.qtpl:139
 		qw422016.N().S(`"
                 label="`)
-//line views/detailBlocks.qtpl:126
+//line views/detailBlocks.qtpl:140
 		qw422016.E().S(device.Code)
-//line views/detailBlocks.qtpl:126
+//line views/detailBlocks.qtpl:140
 		qw422016.N().S(`"
             ></map-marker>
         </div>
     `)
-//line views/detailBlocks.qtpl:129
+//line views/detailBlocks.qtpl:143
 	} else {
-//line views/detailBlocks.qtpl:129
+//line views/detailBlocks.qtpl:143
 		qw422016.N().S(`
         <span> Device has no location set </span>
     `)
-//line views/detailBlocks.qtpl:131
+//line views/detailBlocks.qtpl:145
 	}
-//line views/detailBlocks.qtpl:131
+//line views/detailBlocks.qtpl:145
 	qw422016.N().S(`
 `)
-//line views/detailBlocks.qtpl:132
+//line views/detailBlocks.qtpl:146
 }
 
-//line views/detailBlocks.qtpl:132
+//line views/detailBlocks.qtpl:146
 func writerenderDeviceMap(qq422016 qtio422016.Writer, device api.Device) {
-//line views/detailBlocks.qtpl:132
+//line views/detailBlocks.qtpl:146
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/detailBlocks.qtpl:132
+//line views/detailBlocks.qtpl:146
 	streamrenderDeviceMap(qw422016, device)
-//line views/detailBlocks.qtpl:132
+//line views/detailBlocks.qtpl:146
 	qt422016.ReleaseWriter(qw422016)
-//line views/detailBlocks.qtpl:132
+//line views/detailBlocks.qtpl:146
 }
 
-//line views/detailBlocks.qtpl:132
+//line views/detailBlocks.qtpl:146
 func renderDeviceMap(device api.Device) string {
-//line views/detailBlocks.qtpl:132
+//line views/detailBlocks.qtpl:146
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/detailBlocks.qtpl:132
+//line views/detailBlocks.qtpl:146
 	writerenderDeviceMap(qb422016, device)
-//line views/detailBlocks.qtpl:132
+//line views/detailBlocks.qtpl:146
 	qs422016 := string(qb422016.B)
-//line views/detailBlocks.qtpl:132
+//line views/detailBlocks.qtpl:146
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/detailBlocks.qtpl:132
+//line views/detailBlocks.qtpl:146
 	return qs422016
-//line views/detailBlocks.qtpl:132
+//line views/detailBlocks.qtpl:146
 }

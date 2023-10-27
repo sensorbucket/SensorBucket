@@ -1,0 +1,54 @@
+{% import "sensorbucket.nl/sensorbucket/services/core/processing" %}
+{% func (p *PipelinePage) Body() %}
+<fieldset class="relative col-span-2">
+    <button
+        class="bg-transparent hover:bg-gray-500 text-gray-700 font-normal hover:text-white py-1 px-2 border border-gray-600 hover:border-transparent rounded">
+        Create
+    </button>
+</fieldset>
+<div class="w-full xl:w-2/3 mx-auto bg-white border rounded-md">
+
+    <div> {%= RenderPipelineTable(p.Pipelines, p.PipelinesNextPage) %}</div>
+</div>
+{% endfunc %}
+
+{% func RenderPipelineTable(pipelines []processing.Pipeline, nextPage string) %}
+<table class="w-full text-sm border-separate border-spacing-0" id="device-table">
+    <thead class="text-left text-slate-500 sticky top-0 bg-white">
+        <tr class="h-10">
+            <th class="font-normal border-b align-middle px-4">
+                Pipeline ID
+            </th>
+            <th class="font-normal border-b align-middle px-4">
+                Pipeline Name
+            </th>
+            <th class="font-normal border-b align-middle px-4">
+                Pipeline Description
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {%= RenderPipelineTableRows(pipelines, nextPage) %}
+    </tbody>
+</table>
+{% endfunc %}
+
+{% func RenderPipelineTableRows(pipelines []processing.Pipeline, nextPage string) %}
+{% for ix, pl := range pipelines %}
+<tr class="hover:bg-slate-50 group" {% if nextPage !="" && ix==len(pipelines)-1 %} hx-trigger="revealed"
+    hx-target="this" hx-swap="afterend" hx-get="{%s nextPage %}" {% endif %}>
+    <td class="px-4 h-10 border-b">{%s pl.ID %}</td>
+    <td class="border-b"><a class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
+            href="/pipelines/edit/{%s pl.ID %}" hx-target="main">{%s pl.Name %}</a></td>
+    <td class="px-4 h-10 border-b">{%s pl.Description %}</td>
+</tr>
+{% endfor %}
+{% endfunc %}
+
+{% code
+type PipelinePage struct {
+BasePage
+Pipelines []processing.Pipeline
+PipelinesNextPage string
+}
+%}
