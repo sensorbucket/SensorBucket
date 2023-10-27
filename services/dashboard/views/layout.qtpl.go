@@ -284,57 +284,68 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
             
         </header>
         <main class="p-4 pt-0 mt-4" id="main">
+            <!-- <div class="absolute select-none transition ease-in duration-100 hover:-translate-y-5 hover:opacity-0">
+                <div id="toast-success" class="flex items-center w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow dark:text-gray-400 dark:bg-gray-800" role="alert">
+                    <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg dark:bg-green-800 dark:text-green-200">
+                        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>
+                        </svg>
+                        <span class="sr-only">Check icon</span>
+                    </div>
+                    <div class="ml-3 text-sm font-normal">Save succesful.</div>
+                </div>
+            </div> -->
             `)
-//line views/layout.qtpl:95
+//line views/layout.qtpl:106
 	page.StreamBody(qw422016)
-//line views/layout.qtpl:95
+//line views/layout.qtpl:106
 	qw422016.N().S(`
         </main>
     </section>
 
     `)
-//line views/layout.qtpl:99
+//line views/layout.qtpl:110
 	page.StreamFooter(qw422016)
-//line views/layout.qtpl:99
+//line views/layout.qtpl:110
 	qw422016.N().S(`
 </body>
 
 </html>
 `)
-//line views/layout.qtpl:103
+//line views/layout.qtpl:114
 }
 
-//line views/layout.qtpl:103
+//line views/layout.qtpl:114
 func WriteIndex(qq422016 qtio422016.Writer, page Page) {
-//line views/layout.qtpl:103
+//line views/layout.qtpl:114
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/layout.qtpl:103
+//line views/layout.qtpl:114
 	StreamIndex(qw422016, page)
-//line views/layout.qtpl:103
+//line views/layout.qtpl:114
 	qt422016.ReleaseWriter(qw422016)
-//line views/layout.qtpl:103
+//line views/layout.qtpl:114
 }
 
-//line views/layout.qtpl:103
+//line views/layout.qtpl:114
 func Index(page Page) string {
-//line views/layout.qtpl:103
+//line views/layout.qtpl:114
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/layout.qtpl:103
+//line views/layout.qtpl:114
 	WriteIndex(qb422016, page)
-//line views/layout.qtpl:103
+//line views/layout.qtpl:114
 	qs422016 := string(qb422016.B)
-//line views/layout.qtpl:103
+//line views/layout.qtpl:114
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/layout.qtpl:103
+//line views/layout.qtpl:114
 	return qs422016
-//line views/layout.qtpl:103
+//line views/layout.qtpl:114
 }
 
 // These are for debugging only. In production the tailwind and icons should be bundled with the dashboard
 
-//line views/layout.qtpl:107
+//line views/layout.qtpl:118
 func streamdebugHeaders(qw422016 *qt422016.Writer) {
-//line views/layout.qtpl:107
+//line views/layout.qtpl:118
 	qw422016.N().S(`
 <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4"></script>
 <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4/dist/ext/ws.js"></script>
@@ -342,31 +353,31 @@ func streamdebugHeaders(qw422016 *qt422016.Writer) {
 <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
 <!--<script type="text/javascript" src="https://livejs.com/live.js"></script>-->
 `)
-//line views/layout.qtpl:113
+//line views/layout.qtpl:124
 }
 
-//line views/layout.qtpl:113
+//line views/layout.qtpl:124
 func writedebugHeaders(qq422016 qtio422016.Writer) {
-//line views/layout.qtpl:113
+//line views/layout.qtpl:124
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/layout.qtpl:113
+//line views/layout.qtpl:124
 	streamdebugHeaders(qw422016)
-//line views/layout.qtpl:113
+//line views/layout.qtpl:124
 	qt422016.ReleaseWriter(qw422016)
-//line views/layout.qtpl:113
+//line views/layout.qtpl:124
 }
 
-//line views/layout.qtpl:113
+//line views/layout.qtpl:124
 func debugHeaders() string {
-//line views/layout.qtpl:113
+//line views/layout.qtpl:124
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/layout.qtpl:113
+//line views/layout.qtpl:124
 	writedebugHeaders(qb422016)
-//line views/layout.qtpl:113
+//line views/layout.qtpl:124
 	qs422016 := string(qb422016.B)
-//line views/layout.qtpl:113
+//line views/layout.qtpl:124
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/layout.qtpl:113
+//line views/layout.qtpl:124
 	return qs422016
-//line views/layout.qtpl:113
+//line views/layout.qtpl:124
 }

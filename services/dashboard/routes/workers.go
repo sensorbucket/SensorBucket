@@ -47,6 +47,7 @@ func (h *WorkerPageHandler) listWorkers() http.HandlerFunc {
 			return
 		}
 		page.Workers = res.Data
+		page.WorkersNextPage = res.Links.GetNext()
 
 		if isHX(r) {
 			page.WriteBody(w)

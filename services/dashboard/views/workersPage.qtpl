@@ -20,12 +20,12 @@
             </section>
         </header>
         <div>
-            {%= RenderWorkerTable(p.Workers) %}
+            {%= RenderWorkerTable(p.Workers, p.WorkersNextPage) %}
         </div>
     </div>
 {% endfunc %}
 
-{% func RenderWorkerTable(workers []api.UserWorker) %}
+{% func RenderWorkerTable(workers []api.UserWorker, nextPage string) %}
     <table class="w-full text-sm border-separate border-spacing-0" id="device-table">
         <thead class="text-left text-slate-500 sticky top-0 bg-white">
             <tr class="h-10">
@@ -50,7 +50,7 @@
             </tr>
         </thead>
         <tbody>
-            {%= RenderWorkerTableRows(workers, "") %}
+            {%= RenderWorkerTableRows(workers, nextPage) %}
         </tbody>
     </table>
 {% endfunc %}
@@ -86,5 +86,6 @@
 type WorkerListPage struct {
     BasePage
     Workers []api.UserWorker
+    WorkersNextPage string
 }
 %}
