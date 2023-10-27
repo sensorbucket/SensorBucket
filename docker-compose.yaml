@@ -18,10 +18,10 @@ services:
     environment:
     - STATIC_PATH=services/dashboard/static
     - SB_API=http://caddy
-    - IMAGE_SBOX=sbox
+    - IMAGE_SBOX=pzld_sensorbox
     - IMAGE_TTN=ttn
-    - IMAGE_MEAS=meas
-    - IMAGE_MFM=mfm
+    - IMAGE_MEAS=storage
+    - IMAGE_MFM=mfm-fijnstof
     - IMAGE_MFM2=mfm-2
 
   core:

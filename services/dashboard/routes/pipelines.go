@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/samber/lo"
+
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
@@ -541,7 +542,6 @@ func imageWorker(name string, description string) api.UserWorker {
 	return api.UserWorker{
 		Id:          name,
 		Name:        name,
-		Major:       1,
 		Revision:    0,
 		Description: description,
 	}

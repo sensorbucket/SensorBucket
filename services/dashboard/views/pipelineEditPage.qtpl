@@ -211,7 +211,7 @@
         <div id="sortable-item-{%s step.Id %}" class="p-2 w-2/4 mt-1.5 mx-auto text-white bg-secondary-600 rounded-lg flex justify-between items-center">
             <input type="hidden" name="{%s step.Id %}" value="{%d ix %}" />
             <div>
-                <p class="text-lg">{%s step.Name %} v{%v step.Major %}.{%v step.Revision %}</p>
+                <p class="text-lg">{%s step.Name %} v{%v step.Revision %}</p>
                 <p class="text-sm font-thin">{%s step.Description %}</p>
             </div>
             <div class="cursor-pointer h-full w-1/12" onclick="removeFromSortable('{%s step.Id %}')">
@@ -231,9 +231,6 @@
             <tr class="h-10">
                 <th class="font-normal border-b align-middle px-4">
                     Name
-                </th>
-                <th class="font-normal border-b align-middle px-4">
-                    Major version
                 </th>
                 <th class="font-normal border-b align-middle px-4">
                     Revision
@@ -274,7 +271,6 @@
             href="/workers/{%s worker.Id %}"
             hx-target="main"
         >{%s worker.Name %}</a></td>
-        <td class="px-4 h-10 border-b">{%d int(worker.Major) %}</td>
         <td class="px-4 h-10 border-b">{%d int(worker.Revision) %}</td>
         <td class="px-4 h-10 border-b">{%s worker.Id %}</td>
         <td class="px-4 h-10 border-b">{%s worker.Description %}</td>

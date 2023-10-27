@@ -512,7 +512,6 @@ userWorker:
     - state
     - language
     - organisation
-    - major
     - revision
     - status
   properties:
