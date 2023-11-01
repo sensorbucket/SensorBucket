@@ -28,9 +28,6 @@
                 Pipeline ID
             </th>
             <th class="font-normal border-b align-middle px-4">
-                Pipeline Name
-            </th>
-            <th class="font-normal border-b align-middle px-4">
                 Pipeline Description
             </th>
         </tr>
@@ -50,8 +47,7 @@
     hx-swap="afterend"
     hx-get="{%s nextPage %}"
     {% endif %}>
-    <td class="px-4 h-10 border-b">{%s pl.Id %}</td>
-    <td class="border-b"><a class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
+    <td class="border-b w-1/2"><a class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
             href="/pipelines/edit/{%s pl.Id %}" hx-target="main">{%s pl.Id %}</a></td>
     <td class="px-4 h-10 border-b">{%s pl.Description %}</td>
 </tr>
