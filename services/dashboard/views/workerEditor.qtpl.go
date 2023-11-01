@@ -83,7 +83,11 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
                         "
                 >`)
 //line views/workerEditor.qtpl:37
-	qw422016.E().S(p.Worker.Description)
+	if p.Worker != nil {
+//line views/workerEditor.qtpl:37
+		qw422016.E().S(p.Worker.Description)
+//line views/workerEditor.qtpl:37
+	}
 //line views/workerEditor.qtpl:37
 	qw422016.N().S(`
                 </textarea>
