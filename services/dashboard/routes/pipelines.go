@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
@@ -16,6 +17,8 @@ import (
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
 )
+
+var STORAGE_STEP = env.Could("STORAGE_STEP", "storage")
 
 func CreatePipelinePageHandler(client *api.APIClient) http.Handler {
 	handler := &PipelinePageHandler{
@@ -305,12 +308,9 @@ func (h *PipelinePageHandler) validatePipelineSteps(next http.Handler) http.Hand
 			newOrder[ix] = key
 		}
 
-		if newOrder[len(newOrder)-1] != IMAGE_MEAS {
-			WithSnackbarError(w, "Last step must be measurement storage", http.StatusBadRequest)
-			return
-		}
+		newOrder = fixStorageStep(newOrder)
 
-		allWorkers, err := h.getAllWorkers(r, newOrder)
+		allWorkers, err := h.getWorkersForSteps(r, newOrder)
 		if err != nil {
 			SnackbarSomethingWentWrong(w)
 			return
@@ -326,6 +326,14 @@ func (h *PipelinePageHandler) validatePipelineSteps(next http.Handler) http.Hand
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func fixStorageStep(steps []string) []string {
+	steps = lo.Filter(steps, func(item string, index int) bool {
+		return item != STORAGE_STEP
+	})
+	steps = append(steps, STORAGE_STEP)
+	return steps
 }
 
 func stepsFromWorkersList(workers []api.UserWorker) []string {
@@ -409,7 +417,7 @@ func (h *PipelinePageHandler) resolveWorkersInPipeline(next http.Handler) http.H
 			return
 		}
 
-		workersInPipeline, err := h.getAllWorkers(r, pipeline.Steps)
+		workersInPipeline, err := h.getWorkersForSteps(r, pipeline.Steps)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -437,10 +445,11 @@ func (h *PipelinePageHandler) resolveWorkers(next http.Handler) http.Handler {
 			web.HTTPResponse(w, resp.StatusCode, "status not ok")
 			return
 		}
+		// Include old workers or some arbitrary stuff
 		ctx := context.WithValue(
 			r.Context(),
 			"workers",
-			append(imageWorkers, workers.Data...),
+			workers.Data,
 		)
 
 		nextCursor := ""
@@ -464,81 +473,48 @@ func (h *PipelinePageHandler) resolveWorkers(next http.Handler) http.Handler {
 // while this feature is being developed we need to accomodate retrieving user workers based on an image.
 // This method and it's references can simply be deleted once the workers have been rewritten to userworkers.
 
-// Images:
-// - sbox
-// - http-import
-// - ttn
-// - mfm
-// - meas
-// - mfm-2
-
-func (h *PipelinePageHandler) getAllWorkers(r *http.Request, steps []string) ([]api.UserWorker, error) {
-	// First check if there are any image workers left in this pipeline
-	workersInPipeline := userWorkersFromImageWorkers(steps)
-	if len(workersInPipeline) != len(steps) {
-		// Not all workers were image workers, append any remaining workers by getting them from the workers api
-		userWorkers, resp, err := h.client.WorkersApi.ListWorkers(r.Context()).Id(steps).Execute()
-		if err != nil {
-			return nil, err
-		}
-		if resp.StatusCode != http.StatusOK {
-			return nil, err
-		}
-		if userWorkers.Data == nil {
-			return nil, err
-		}
-		workersInPipeline = append(workersInPipeline, userWorkers.Data...)
+func (h *PipelinePageHandler) getWorkersForSteps(r *http.Request, steps []string) ([]api.UserWorker, error) {
+	// Try and fetch all workers from user-workers service.
+	// For any worker not found create a "placeholder" worker
+	res, _, err := h.client.WorkersApi.ListWorkers(r.Context()).Id(steps).Execute()
+	if err != nil {
+		return nil, err
 	}
+	workersIDs := lo.Map(res.Data, func(w api.UserWorker, _ int) string { return w.GetId() })
+	missingWorkers, _ := lo.Difference(steps, workersIDs)
+	workers := res.GetData()
+	workers = append(workers, createPlaceholderWorkers(missingWorkers)...)
 
-	if len(workersInPipeline) != len(steps) {
+	if len(workers) != len(steps) {
 		return nil, fmt.Errorf("some pipeline workers not found")
 	}
 
-	// Now that we have the full result we need to make sure the order of the workers is the same as the order of the pipeline steps
-	res := make([]api.UserWorker, len(workersInPipeline))
-	for i, step := range steps {
-		worker, ok := lo.Find(workersInPipeline, func(item api.UserWorker) bool {
-			return item.Id == step
-		})
-		if !ok {
-			return nil, fmt.Errorf("some pipeline workers were not found")
-		}
+	workersByID := lo.SliceToMap(workers, func(w api.UserWorker) (string, api.UserWorker) {
+		return w.GetId(), w
+	})
 
-		res[i] = worker
-	}
-	return res, nil
+	// Now that we have the full result we need to make sure the order of the workers is the same as the order of the pipeline steps
+	orderedWorkers := lo.Map(steps, func(step string, _ int) api.UserWorker {
+		return workersByID[step]
+	})
+
+	return orderedWorkers, nil
 }
 
 // This function returns any steps that match an image worker to as an API userworker
-func userWorkersFromImageWorkers(steps []string) []api.UserWorker {
-	userWorkers := []api.UserWorker{}
-	for _, s := range steps {
-		if worker, ok := lo.Find(imageWorkers, func(item api.UserWorker) bool {
-			return item.Name == s
-		}); ok {
-			userWorkers = append(userWorkers, worker)
-		}
-	}
-	return userWorkers
+func createPlaceholderWorkers(steps []string) []api.UserWorker {
+	return lo.Map(steps, func(step string, _ int) api.UserWorker {
+		return placeholderWorker(step, step)
+	})
 }
 
-var (
-	IMAGE_SBOX = env.Must("IMAGE_SBOX")
-	IMAGE_TTN  = env.Must("IMAGE_TTN")
-	IMAGE_MEAS = env.Must("IMAGE_MEAS")
-	IMAGE_MFM  = env.Must("IMAGE_MFM")
-	IMAGE_MFM2 = env.Must("IMAGE_MFM2")
-)
+var R_UUID = regexp.MustCompile("^[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}$")
 
-var imageWorkers = []api.UserWorker{
-	imageWorker(IMAGE_SBOX, "Worker for the sensorbox"),
-	imageWorker(IMAGE_TTN, "ttn description"),
-	imageWorker(IMAGE_MEAS, "stores the measurement in the database (immutable)"),
-	imageWorker(IMAGE_MFM, "multiflexmeter"),
-	imageWorker(IMAGE_MFM2, "particulate matter"),
+func isOldWorker(step string) bool {
+	return R_UUID.MatchString(step)
 }
 
-func imageWorker(name string, description string) api.UserWorker {
+func placeholderWorker(name string, description string) api.UserWorker {
 	return api.UserWorker{
 		Id:          name,
 		Name:        name,

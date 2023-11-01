@@ -63,7 +63,7 @@ func (p *PipelineEditPage) StreamBody(qw422016 *qt422016.Writer) {
                 <label for="pipeline-id" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Pipeline ID</small></label>
                 <input
                     type="text" name="pipeline-id" id="pipeline-id"
-                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600"
+                    class="block w-full px-2 py-1 border rounded-md bg-white text-slate-600"
                     `)
 //line views/pipelineEditPage.qtpl:26
 	if p.Pipeline != nil {
