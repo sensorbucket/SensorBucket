@@ -12,10 +12,13 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/samber/lo"
 
+	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
 )
+
+var STORAGE_STEP = env.Could("STORAGE_STEP", "storage")
 
 func CreatePipelinePageHandler(client *api.APIClient) http.Handler {
 	handler := &PipelinePageHandler{
@@ -305,28 +308,32 @@ func (h *PipelinePageHandler) validatePipelineSteps(next http.Handler) http.Hand
 			newOrder[ix] = key
 		}
 
-		// TODO: Validate that the last step is storage
-		//if newOrder[len(newOrder)-1] != IMAGE_MEAS {
-		//	WithSnackbarError(w, "Last step must be measurement storage", http.StatusBadRequest)
-		//	return
-		//}
+		newOrder = fixStorageStep(newOrder)
 
-		//allWorkers, err := h.getWorkersForSteps(r, newOrder)
-		//if err != nil {
-		//	SnackbarSomethingWentWrong(w)
-		//	return
-		//}
+		allWorkers, err := h.getWorkersForSteps(r, newOrder)
+		if err != nil {
+			SnackbarSomethingWentWrong(w)
+			return
+		}
 
-		//r = r.WithContext(
-		//	context.WithValue(
-		//		r.Context(),
-		//		"pipeline_workers",
-		//		allWorkers,
-		//	),
-		//)
+		r = r.WithContext(
+			context.WithValue(
+				r.Context(),
+				"pipeline_workers",
+				allWorkers,
+			),
+		)
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func fixStorageStep(steps []string) []string {
+	steps = lo.Filter(steps, func(item string, index int) bool {
+		return item != STORAGE_STEP
+	})
+	steps = append(steps, STORAGE_STEP)
+	return steps
 }
 
 func stepsFromWorkersList(workers []api.UserWorker) []string {
