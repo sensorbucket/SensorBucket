@@ -43,4 +43,8 @@ def process(payload, msg):
         for gw in gateways:
             create_gateway_measurements(msg, gw)
 
+    msg.match_device({
+        "dev_eui": payload.get("end_device_ids").get("dev_eui")
+    })
+
     return f_payload
