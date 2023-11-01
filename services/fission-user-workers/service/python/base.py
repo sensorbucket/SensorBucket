@@ -4,6 +4,7 @@ from flask import request
 import usercode
 import json
 import os
+import traceback
 import requests as r
 from datetime import datetime
 from typing import List, Dict, Optional, Any, Union
@@ -221,8 +222,7 @@ def main():
     try:
         original_message = Message.from_json(request.get_data(as_text=True))
         message = deepcopy(original_message)
-        new_payload = usercode.process(message.payload, message)
-        message.payload = new_payload
+        message = usercode.process(message)
         next_step = message.next_step()
 
         res = flask.Response(json.dumps(message, cls=Serializer), content_type="application/json")
@@ -236,7 +236,7 @@ def main():
             worker="your_worker_name",
             queue="your_queue_name",
             timestamp=int(datetime.now().timestamp()),
-            error=str(e)
+            error=traceback.format_exc()
         )
         res = flask.Response(json.dumps(pipeline_error, cls=Serializer), content_type="application/json")
         res.headers["X-AMQP-Topic"] = "errors"

@@ -1,4 +1,4 @@
-def process(payload, msg):
+def process(msg):
     msg.create_measurement(1.234, "test", "C").add()
-    payload = f"test: {payload}"
-    return payload
+    msg.payload = f"test: {msg.payload}"
+    return msg
