@@ -284,7 +284,7 @@ func (ctrl *KubernetesController) workerToMessageQueueTrigger(worker UserWorker)
 					Type: fissionV1.FunctionReferenceTypeFunctionName,
 				},
 				MessageQueueType: "rabbitmq",
-				Topic:            ctrl.resourceName(worker.ID),
+				Topic:            worker.ID.String(),
 				MaxRetries:       3,
 				MinReplicaCount:  lo.ToPtr(int32(0)),
 				MaxReplicaCount:  lo.ToPtr(int32(10)),

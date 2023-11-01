@@ -45,6 +45,7 @@ func main() {
 var (
 	AMQP_HOST     = env.Must("HOST")
 	AMQP_QUEUE    = env.Must("QUEUE_NAME")
+	AMQP_TOPIC    = env.Must("TOPIC")
 	AMQP_PREFETCH = env.Could("AMQP_PREFETCH", "5")
 	AMQP_XCHG     = env.Must("EXCHANGE")
 	HTTP_ENDPOINT = env.Must("HTTP_ENDPOINT")
@@ -77,7 +78,7 @@ func Run() error {
 		if err != nil {
 			return err
 		}
-		err = c.QueueBind(AMQP_QUEUE, AMQP_QUEUE, AMQP_XCHG, false, nil)
+		err = c.QueueBind(AMQP_QUEUE, AMQP_TOPIC, AMQP_XCHG, false, nil)
 		if err != nil {
 			return err
 		}
