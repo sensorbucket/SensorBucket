@@ -52,14 +52,14 @@ class Measurement:
                  longitude: Optional[float] = None,
                  altitude: Optional[float] = None,
                  properties: Optional[Dict[str, Any]] = None):
-        self.timestamp = timestamp
-        self.sensor_external_id = sensor_external_id
-        self.value = value
-        self.observed_property = observed_property
-        self.unit_of_measurement = unit_of_measurement
-        self.latitude = latitude
-        self.longitude = longitude
-        self.altitude = altitude
+        self.timestamp = int(timestamp)
+        self.sensor_external_id = str(sensor_external_id)
+        self.value = float(value)
+        self.observed_property = str(observed_property)
+        self.unit_of_measurement = str(unit_of_measurement)
+        self.latitude = float(latitude) if latitude else None
+        self.longitude = float(longitude) if longitude else None
+        self.altitude = float(altitude) if altitude else None
         self.properties = properties if properties else {}
 
     def json_dict(self):
