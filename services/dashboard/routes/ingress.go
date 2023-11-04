@@ -13,6 +13,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
+	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
 )
 
 type IngressPageHandler struct {
@@ -102,12 +103,26 @@ func (h *IngressPageHandler) createViewIngresses(ctx context.Context) ([]views.I
 			log.Printf("warning: could not find trace for archived ingres: %s\n", ingress.TracingId)
 			continue
 		}
-		ingress := views.Ingress{
-			TracingID: ingress.TracingId,
-			CreatedAt: ingress.IngressDto.CreatedAt,
-			Steps: lo.Map(pl.Steps, func(stepKey string, ix int) views.IngressStep {
-				// TODO: This currently requires that there are an equal number of StepDTO's and Pipeline Steps
-				// In the future pipelines will have revisions and are not directly mutable, thus this should always be equal
+
+		viewSteps := []views.IngressStep{
+			{
+				Label:   "Information not available",
+				Tooltip: "The pipeline was modified after this message was received, information is not available",
+				Status:  int(tracing.Unknown),
+			},
+		}
+		if len(traceLog.Steps) != len(pl.Steps) {
+			// The default viewSteps array above already has an "error" set by default.
+			// If we can show all the steps, then the whole array is overwritten. See the next "else"
+			log.Printf(
+				"warning: pipeline has %d steps, but log only has %d. Pipeline has probably been modified after this ingress. Showing no steps...\n",
+				len(pl.Steps),
+				len(traceLog.Steps),
+			)
+		} else {
+			// TODO: This currently requires that there are an equal number of StepDTO's and Pipeline Steps
+			// In the future pipelines will have revisions and are not directly mutable, thus this should always be equal
+			viewSteps = lo.Map(pl.Steps, func(stepKey string, ix int) views.IngressStep {
 				step := traceLog.Steps[ix]
 				stepName := stepKey
 				if workerName, ok := workerNames[stepName]; ok {
@@ -125,7 +140,13 @@ func (h *IngressPageHandler) createViewIngresses(ctx context.Context) ([]views.I
 					viewStep.Tooltip = "<1s"
 				}
 				return viewStep
-			}),
+			})
+		}
+
+		ingress := views.Ingress{
+			TracingID: ingress.TracingId,
+			CreatedAt: ingress.IngressDto.CreatedAt,
+			Steps:     viewSteps,
 		}
 		if traceLog.DeviceId != 0 {
 			ingress.Device = deviceMap[traceLog.DeviceId]
