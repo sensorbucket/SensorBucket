@@ -1,0 +1,74 @@
+name: Build latest staging images
+
+on:
+  push:
+    branches:
+      - dev
+      - dev-build-images
+
+jobs:
+  docker:
+    name: Build images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: sensorbucket/httpimporter:nightly
+            dockerfile: services/httimporter/Dockerfile
+            context: .
+          - image: sensorbucket/core:nightly
+            dockerfile: services/core/Dockerfile
+            context: .
+          - image: sensorbucket/tracing:nightly
+            dockerfile: services/tracing/Dockerfile
+            context: .
+          - image: sensorbucket/dashboard:nightly
+            dockerfile: services/dashboard/Dockerfile
+            context: .
+          - image: sensorbucket/fission-user-workers:nightly
+            dockerfile: services/fission-user-workers/Dockerfile
+            context: .
+          - image: sensorbucket/fission-rmq-connector:nightly
+            dockerfile: services/fission-rmq-connector/Dockerfile
+            context: .
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: ./go.mod
+
+      - name: Run Go Tests
+        run: go test ./...
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ matrix.image }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }
