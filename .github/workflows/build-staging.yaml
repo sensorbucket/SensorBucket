@@ -27,13 +27,14 @@ jobs:
 
   docker:
     name: Build images
+    needs: test
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
           - image: sensorbucket/httpimporter
-            dockerfile: services/httimporter/Dockerfile
+            dockerfile: services/httpimporter/Dockerfile
             context: .
           - image: sensorbucket/core
             dockerfile: services/core/Dockerfile
