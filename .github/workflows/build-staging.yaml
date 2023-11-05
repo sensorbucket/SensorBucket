@@ -7,34 +7,9 @@ on:
       - dev-build-images
 
 jobs:
-  docker:
-    name: Build images
+  test:
+    name: Run Go Tests
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - image: sensorbucket/httpimporter:nightly
-            dockerfile: services/httimporter/Dockerfile
-            context: .
-          - image: sensorbucket/core:nightly
-            dockerfile: services/core/Dockerfile
-            context: .
-          - image: sensorbucket/tracing:nightly
-            dockerfile: services/tracing/Dockerfile
-            context: .
-          - image: sensorbucket/dashboard:nightly
-            dockerfile: services/dashboard/Dockerfile
-            context: .
-          - image: sensorbucket/fission-user-workers:nightly
-            dockerfile: services/fission-user-workers/Dockerfile
-            context: .
-          - image: sensorbucket/fission-rmq-connector:nightly
-            dockerfile: services/fission-rmq-connector/Dockerfile
-            context: .
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - name: Checkout Repository
@@ -47,6 +22,41 @@ jobs:
 
       - name: Run Go Tests
         run: go test ./...
+
+
+
+  docker:
+    name: Build images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: sensorbucket/httpimporter
+            dockerfile: services/httimporter/Dockerfile
+            context: .
+          - image: sensorbucket/core
+            dockerfile: services/core/Dockerfile
+            context: .
+          - image: sensorbucket/tracing
+            dockerfile: services/tracing/Dockerfile
+            context: .
+          - image: sensorbucket/dashboard
+            dockerfile: services/dashboard/Dockerfile
+            context: .
+          - image: sensorbucket/fission-user-workers
+            dockerfile: services/fission-user-workers/Dockerfile
+            context: .
+          - image: sensorbucket/fission-rmq-connector
+            dockerfile: services/fission-rmq-connector/Dockerfile
+            context: .
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
