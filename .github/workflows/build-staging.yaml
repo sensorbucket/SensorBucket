@@ -32,31 +32,31 @@ jobs:
     name: Build images
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       fail-fast: false
       matrix:
         include:
-          - image: ghcr.io/sensorbucket/httpimporter
+          - image: sensorbucket/httpimporter
             dockerfile: services/httpimporter/Dockerfile
             context: .
-          - image: ghcr.io/sensorbucket/core
+          - image: sensorbucket/core
             dockerfile: services/core/Dockerfile
             context: .
-          - image: ghcr.io/sensorbucket/tracing
+          - image: sensorbucket/tracing
             dockerfile: services/tracing/Dockerfile
             context: .
-          - image: ghcr.io/sensorbucket/dashboard
+          - image: sensorbucket/dashboard
             dockerfile: services/dashboard/Dockerfile
             context: .
-          - image: ghcr.io/sensorbucket/fission-user-workers
+          - image: sensorbucket/fission-user-workers
             dockerfile: services/fission-user-workers/Dockerfile
             context: .
-          - image: ghcr.io/sensorbucket/fission-rmq-connector
+          - image: sensorbucket/fission-rmq-connector
             dockerfile: services/fission-rmq-connector/Dockerfile
             context: .
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - name: Checkout Repository
@@ -76,7 +76,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ${{ matrix.image }}
+          images: ${{ env.REGISTRY }}/${{ matrix.image }}
 
       - name: Build and push
         uses: docker/build-push-action@v4
