@@ -5,6 +5,9 @@ on:
     branches:
       - dev
       - dev-build-images
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   test:
@@ -33,22 +36,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: sensorbucket/httpimporter
+          - image: ghcr.io/sensorbucket/httpimporter
             dockerfile: services/httpimporter/Dockerfile
             context: .
-          - image: sensorbucket/core
+          - image: ghcr.io/sensorbucket/core
             dockerfile: services/core/Dockerfile
             context: .
-          - image: sensorbucket/tracing
+          - image: ghcr.io/sensorbucket/tracing
             dockerfile: services/tracing/Dockerfile
             context: .
-          - image: sensorbucket/dashboard
+          - image: ghcr.io/sensorbucket/dashboard
             dockerfile: services/dashboard/Dockerfile
             context: .
-          - image: sensorbucket/fission-user-workers
+          - image: ghcr.io/sensorbucket/fission-user-workers
             dockerfile: services/fission-user-workers/Dockerfile
             context: .
-          - image: sensorbucket/fission-rmq-connector
+          - image: ghcr.io/sensorbucket/fission-rmq-connector
             dockerfile: services/fission-rmq-connector/Dockerfile
             context: .
     permissions:
@@ -65,7 +68,7 @@ jobs:
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
