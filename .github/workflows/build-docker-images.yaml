@@ -1,11 +1,11 @@
-name: Build latest staging images
+name: Build latest images
 
 on:
   push:
     branches:
       - develop
-  tags:
-    - '*'
+    tags:
+      - '*'
 
 env:
   REGISTRY: ghcr.io
