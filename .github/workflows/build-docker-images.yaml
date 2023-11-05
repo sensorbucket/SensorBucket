@@ -3,7 +3,7 @@ name: Build latest images
 on:
   push:
     branches:
-      - develop
+      - main
     tags:
       - '*'
 
@@ -80,11 +80,11 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ matrix.image }}
           tags: |
-            type=edge,branch=develop
+            type=edge
+            type=sha
             type=semver,pattern={{major}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{version}}
-            type=sha
 
       - name: Build and push
         uses: docker/build-push-action@v4
