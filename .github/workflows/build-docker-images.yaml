@@ -32,6 +32,7 @@ jobs:
     name: Build images
     needs: test
     runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'staging' || (github.ref == 'refs/tags/*' && 'production' || '') }}
     permissions:
       contents: read
       packages: write
