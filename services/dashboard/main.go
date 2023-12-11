@@ -42,6 +42,21 @@ func Run() error {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 
+	// Middleware to pass on basic auth to the client api
+	router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			user, pass, ok := r.BasicAuth()
+			if ok {
+				r = r.WithContext(context.WithValue(
+					r.Context(), api.ContextBasicAuth, api.BasicAuth{
+						UserName: user,
+						Password: pass,
+					}))
+			}
+			next.ServeHTTP(w, r)
+		})
+	})
+
 	// Serve static files
 	if os.Getenv("GO_ENV") != "production" {
 		staticPath := env.Could("STATIC_PATH", "")
@@ -62,21 +77,6 @@ func Run() error {
 	cfg.Scheme = sbURL.Scheme
 	cfg.Host = sbURL.Host
 	apiClient := api.NewAPIClient(cfg)
-
-	// Middleware to pass on basic auth to the client api
-	router.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			user, pass, ok := r.BasicAuth()
-			if ok {
-				r = r.WithContext(context.WithValue(
-					r.Context(), api.ContextBasicAuth, api.BasicAuth{
-						UserName: user,
-						Password: pass,
-					}))
-			}
-			next.ServeHTTP(w, r)
-		})
-	})
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/overview", http.StatusFound) })
 	router.Mount("/overview", routes.CreateOverviewPageHandler(apiClient))
