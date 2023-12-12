@@ -203,7 +203,11 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     <title>SensorBucket</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="`)
+//line views/layout.qtpl:42
+	qw422016.E().S(u("static/style.css"))
+//line views/layout.qtpl:42
+	qw422016.N().S(`" />
     `)
 //line views/layout.qtpl:43
 	streamdebugHeaders(qw422016)
@@ -219,11 +223,10 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     <script type="text/javascript" src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.25/dist/uPlot.min.css" />
     <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
-    <script type="text/javascript" src="/static/uplot.htmx.js"></script>
-    <script type="text/javascript" src="/static/leaflet.htmx.js"></script>
+    <script type="text/javascript" src="static/uplot.htmx.js"></script>
+    <script type="text/javascript" src="static/leaflet.htmx.js"></script>
     <script src="http://SortableJS.github.io/Sortable/Sortable.js"></script>
     <script type="text/javascript">
-
         window.addEventListener("DOMContentLoaded", function(){
             document.body.addEventListener("showSnackbar", function(evt) {
                 showSnackbar(evt.detail.message, evt.detail.type);
@@ -283,9 +286,9 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
         }
     </script>
     `)
-//line views/layout.qtpl:117
+//line views/layout.qtpl:116
 	page.StreamHeader(qw422016)
-//line views/layout.qtpl:117
+//line views/layout.qtpl:116
 	qw422016.N().S(`
 </head>
 
@@ -306,7 +309,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     </div>
     <sidebar class="w-screen lg:w-sidebar fixed lg:h-screen top-0 left-0 flex flex-col bg-secondary-600 z-[5000]">
         <header class="h-12 lg:h-header flex justify-between lg:flex-col lg:justify-end">
-            <a hx-target="main" class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="/overview"><img src="/static/logo-white.png" alt="SensorBucket" class="h-full" /></a>
+            <a hx-target="main" class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="/overview"><img src="static/logo-white.png" alt="SensorBucket" class="h-full" /></a>
             <button 
                 class="h-8 w-8 self-center lg:hidden"
                 _="on click toggle .h-auto on <nav/>
@@ -320,35 +323,35 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
             <ul hx-target="main">
                 <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
                 `)
-//line views/layout.qtpl:150
+//line views/layout.qtpl:149
 	for _, item := range navItems {
-//line views/layout.qtpl:150
+//line views/layout.qtpl:149
 		qw422016.N().S(`
                 <li>
                     <a href="`)
-//line views/layout.qtpl:152
+//line views/layout.qtpl:151
 		qw422016.E().S(item.URL)
-//line views/layout.qtpl:152
+//line views/layout.qtpl:151
 		qw422016.N().S(`"
                         class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">
                         <iconify-icon icon="`)
-//line views/layout.qtpl:154
+//line views/layout.qtpl:153
 		qw422016.E().S(item.Icon)
-//line views/layout.qtpl:154
+//line views/layout.qtpl:153
 		qw422016.N().S(`" width="24" class="pr-4 w-8"></iconify-icon>
                         <span>
                             `)
-//line views/layout.qtpl:156
+//line views/layout.qtpl:155
 		qw422016.E().S(item.Label)
-//line views/layout.qtpl:156
+//line views/layout.qtpl:155
 		qw422016.N().S(`
                         </span>
                     </a>
                 </li>
                 `)
-//line views/layout.qtpl:160
+//line views/layout.qtpl:159
 	}
-//line views/layout.qtpl:160
+//line views/layout.qtpl:159
 	qw422016.N().S(`
             </ul>
         </nav>
@@ -359,56 +362,56 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
         </header>
         <main class="p-4 pt-0 mt-4" id="main">
             `)
-//line views/layout.qtpl:169
+//line views/layout.qtpl:168
 	page.StreamBody(qw422016)
-//line views/layout.qtpl:169
+//line views/layout.qtpl:168
 	qw422016.N().S(`
         </main>
     </section>
 
     `)
-//line views/layout.qtpl:173
+//line views/layout.qtpl:172
 	page.StreamFooter(qw422016)
-//line views/layout.qtpl:173
+//line views/layout.qtpl:172
 	qw422016.N().S(`
 </body>
 
 </html>
 `)
-//line views/layout.qtpl:177
+//line views/layout.qtpl:176
 }
 
-//line views/layout.qtpl:177
+//line views/layout.qtpl:176
 func WriteIndex(qq422016 qtio422016.Writer, page Page) {
-//line views/layout.qtpl:177
+//line views/layout.qtpl:176
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/layout.qtpl:177
+//line views/layout.qtpl:176
 	StreamIndex(qw422016, page)
-//line views/layout.qtpl:177
+//line views/layout.qtpl:176
 	qt422016.ReleaseWriter(qw422016)
-//line views/layout.qtpl:177
+//line views/layout.qtpl:176
 }
 
-//line views/layout.qtpl:177
+//line views/layout.qtpl:176
 func Index(page Page) string {
-//line views/layout.qtpl:177
+//line views/layout.qtpl:176
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/layout.qtpl:177
+//line views/layout.qtpl:176
 	WriteIndex(qb422016, page)
-//line views/layout.qtpl:177
+//line views/layout.qtpl:176
 	qs422016 := string(qb422016.B)
-//line views/layout.qtpl:177
+//line views/layout.qtpl:176
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/layout.qtpl:177
+//line views/layout.qtpl:176
 	return qs422016
-//line views/layout.qtpl:177
+//line views/layout.qtpl:176
 }
 
 // These are for debugging only. In production the tailwind and icons should be bundled with the dashboard
 
-//line views/layout.qtpl:181
+//line views/layout.qtpl:180
 func streamdebugHeaders(qw422016 *qt422016.Writer) {
-//line views/layout.qtpl:181
+//line views/layout.qtpl:180
 	qw422016.N().S(`
 <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4"></script>
 <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4/dist/ext/ws.js"></script>
@@ -416,31 +419,31 @@ func streamdebugHeaders(qw422016 *qt422016.Writer) {
 <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
 <!--<script type="text/javascript" src="https://livejs.com/live.js"></script>-->
 `)
-//line views/layout.qtpl:187
+//line views/layout.qtpl:186
 }
 
-//line views/layout.qtpl:187
+//line views/layout.qtpl:186
 func writedebugHeaders(qq422016 qtio422016.Writer) {
-//line views/layout.qtpl:187
+//line views/layout.qtpl:186
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/layout.qtpl:187
+//line views/layout.qtpl:186
 	streamdebugHeaders(qw422016)
-//line views/layout.qtpl:187
+//line views/layout.qtpl:186
 	qt422016.ReleaseWriter(qw422016)
-//line views/layout.qtpl:187
+//line views/layout.qtpl:186
 }
 
-//line views/layout.qtpl:187
+//line views/layout.qtpl:186
 func debugHeaders() string {
-//line views/layout.qtpl:187
+//line views/layout.qtpl:186
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/layout.qtpl:187
+//line views/layout.qtpl:186
 	writedebugHeaders(qb422016)
-//line views/layout.qtpl:187
+//line views/layout.qtpl:186
 	qs422016 := string(qb422016.B)
-//line views/layout.qtpl:187
+//line views/layout.qtpl:186
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/layout.qtpl:187
+//line views/layout.qtpl:186
 	return qs422016
-//line views/layout.qtpl:187
+//line views/layout.qtpl:186
 }

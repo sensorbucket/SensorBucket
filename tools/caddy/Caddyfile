@@ -29,8 +29,10 @@
         reverse_proxy mail-server:8025
     }
 
-    handle {
+    redir /dashboard /dashboard/
+    handle_path /dashboard/* {
         reverse_proxy dashboard:3000
     }
+    respond 404
 }
 

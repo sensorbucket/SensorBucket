@@ -1,4 +1,4 @@
-FROM golang:1.18-alpine AS dev
+FROM golang:1.21-alpine AS dev
 WORKDIR /workspace
 
 RUN go install github.com/cespare/reflex@latest

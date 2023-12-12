@@ -17,6 +17,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/services/dashboard/routes"
+	"sensorbucket.nl/sensorbucket/services/dashboard/views"
 )
 
 func main() {
@@ -41,6 +42,9 @@ func Run() error {
 
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
+
+	baseURL, _ := url.Parse("http://localhost:3000/dashboard")
+	views.SetBase(baseURL)
 
 	// Middleware to pass on basic auth to the client api
 	router.Use(func(next http.Handler) http.Handler {
@@ -78,7 +82,10 @@ func Run() error {
 	cfg.Host = sbURL.Host
 	apiClient := api.NewAPIClient(cfg)
 
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/overview", http.StatusFound) })
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		u := baseURL.JoinPath("overview").String()
+		http.Redirect(w, r, u, http.StatusFound)
+	})
 	router.Mount("/overview", routes.CreateOverviewPageHandler(apiClient))
 	router.Mount("/ingress", routes.CreateIngressPageHandler(apiClient))
 	router.Mount("/workers", routes.CreateWorkerPageHandler(apiClient))
