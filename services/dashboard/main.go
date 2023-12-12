@@ -29,6 +29,7 @@ func main() {
 var (
 	startTS   = time.Now()
 	HTTP_ADDR = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE = env.Could("HTTP_BASE", "")
 	SB_API    = env.Must("SB_API")
 )
 
@@ -43,8 +44,11 @@ func Run() error {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 
-	baseURL, _ := url.Parse("http://localhost:3000/dashboard")
-	views.SetBase(baseURL)
+	var baseURL *url.URL
+	if HTTP_BASE != "" {
+		baseURL, _ = url.Parse(HTTP_BASE)
+		views.SetBase(baseURL)
+	}
 
 	// Middleware to pass on basic auth to the client api
 	router.Use(func(next http.Handler) http.Handler {

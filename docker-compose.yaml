@@ -17,6 +17,7 @@ services:
       - .:/workspace:cached
     environment:
     - STATIC_PATH=services/dashboard/static
+    - HTTP_BASE=/dashboard
     - SB_API=http://caddy
     - IMAGE_SBOX=pzld_sensorbox
     - IMAGE_TTN=ttn
