@@ -51,8 +51,8 @@ type BasePage struct {
     <script type="text/javascript" src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.25/dist/uPlot.min.css" />
     <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
-    <script type="text/javascript" src="static/uplot.htmx.js"></script>
-    <script type="text/javascript" src="static/leaflet.htmx.js"></script>
+    <script type="text/javascript" src="{%s u("static/uplot.htmx.js") %}"></script>
+    <script type="text/javascript" src="{%s u("static/leaflet.htmx.js") %}"></script>
     <script src="http://SortableJS.github.io/Sortable/Sortable.js"></script>
     <script type="text/javascript">
         window.addEventListener("DOMContentLoaded", function(){
@@ -133,7 +133,7 @@ type BasePage struct {
     </div>
     <sidebar class="w-screen lg:w-sidebar fixed lg:h-screen top-0 left-0 flex flex-col bg-secondary-600 z-[5000]">
         <header class="h-12 lg:h-header flex justify-between lg:flex-col lg:justify-end">
-            <a hx-target="main" class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="/overview"><img src="static/logo-white.png" alt="SensorBucket" class="h-full" /></a>
+            <a hx-target="main" class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="{%s u("/overview") %}"><img src="{%s u("static/logo-white.png") %}" alt="SensorBucket" class="h-full" /></a>
             <button 
                 class="h-8 w-8 self-center lg:hidden"
                 _="on click toggle .h-auto on <nav/>
@@ -148,7 +148,7 @@ type BasePage struct {
                 <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
                 {% for _, item := range navItems %}
                 <li>
-                    <a href="{%s item.URL %}"
+                    <a href="{%s u(item.URL) %}"
                         class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">
                         <iconify-icon icon="{%s item.Icon %}" width="24" class="pr-4 w-8"></iconify-icon>
                         <span>

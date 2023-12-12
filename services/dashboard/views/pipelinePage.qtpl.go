@@ -32,7 +32,11 @@ func (p *PipelinePage) StreamBody(qw422016 *qt422016.Writer) {
         <section class="flex gap-2">
             <button 
                 class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                hx-get="/pipelines/create"
+                hx-get="`)
+//line views/pipelinePage.qtpl:11
+	qw422016.E().S(u("/pipelines/create"))
+//line views/pipelinePage.qtpl:11
+	qw422016.N().S(`"
                 hx-target="main"
                 hx-push-url="true"
             >
@@ -158,9 +162,9 @@ func StreamRenderPipelineTableRows(qw422016 *qt422016.Writer, pipelines []api.Pi
 //line views/pipelinePage.qtpl:49
 		qw422016.N().S(`>
     <td class="border-b w-1/2"><a class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-            href="/pipelines/edit/`)
+            href="`)
 //line views/pipelinePage.qtpl:51
-		qw422016.E().S(pl.Id)
+		qw422016.E().S(u("/pipelines/edit/%s", pl.Id))
 //line views/pipelinePage.qtpl:51
 		qw422016.N().S(`" hx-target="main">`)
 //line views/pipelinePage.qtpl:51

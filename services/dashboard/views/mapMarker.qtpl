@@ -5,7 +5,7 @@
         latitude="{%f latitude %}"
         longitude="{%f longitude %}"
         label="{%s label %}"
-        hx-get="/overview/devices/{%dl deviceID %}"
+        hx-get="{%s u("/overview/devices/%d", deviceID) %}"
         hx-target="main"
         hx-push-url="true"
     >

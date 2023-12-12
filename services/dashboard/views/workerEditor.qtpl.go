@@ -101,7 +101,11 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
 		qw422016.N().S(`
                         <button 
                             class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                            hx-post="/workers/create"
+                            hx-post="`)
+//line views/workerEditor.qtpl:45
+		qw422016.E().S(u("/workers/create"))
+//line views/workerEditor.qtpl:45
+		qw422016.N().S(`"
                             hx-vals='js:{userCode: currentUserCode()}'
                             hx-swap="none"
                         >
@@ -114,9 +118,9 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
 		qw422016.N().S(`
                         <button 
                             class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                            hx-patch="/workers/`)
+                            hx-patch="`)
 //line views/workerEditor.qtpl:54
-		qw422016.E().S(p.Worker.Id)
+		qw422016.E().S(u("/workers/%s", p.Worker.Id))
 //line views/workerEditor.qtpl:54
 		qw422016.N().S(`"
                             hx-vals='js:{userCode: currentUserCode()}'
@@ -156,7 +160,11 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
         <div id="editor-container" class="min-h-[500px]">
         </div>
         <script type="module">
-            import {createEditor} from '/static/codemirror.js';
+            import {createEditor} from '`)
+//line views/workerEditor.qtpl:80
+	qw422016.E().S(u("/static/codemirror.js"))
+//line views/workerEditor.qtpl:80
+	qw422016.N().S(`';
             const usercode = atob('`)
 //line views/workerEditor.qtpl:81
 	qw422016.E().S(p.UserCode)

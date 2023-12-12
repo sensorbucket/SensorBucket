@@ -8,7 +8,7 @@
             Incoming data and processing statusses
         </header>
         <div 
-            hx-get="/ingress/list"
+            hx-get="{%s u("/ingress/list") %}"
             hx-trigger="every 2s"
         >
             {%= RenderIngressList(p.Ingresses) %}
@@ -24,7 +24,7 @@
             <div class="text-slate-500 text-xs">
                 <span>{%s ingress.CreatedAt.Format("15:04:05 2006-01-02") %}</span>
                 {% if ingress.Device.Id != 0 %}
-                    <a hx-target="main" href="/overview/devices/{%dl ingress.Device.Id %}" class="ml-3 text-sky-600 hover:underline">{%s ingress.Device.Code %}</a>
+                    <a hx-target="main" href="{%s u("/overview/devices/%d", ingress.Device.Id) %}" class="ml-3 text-sky-600 hover:underline">{%s ingress.Device.Code %}</a>
                 {% endif %}
             </div>
         </section>

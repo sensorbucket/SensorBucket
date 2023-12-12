@@ -8,7 +8,7 @@
         <section class="flex gap-2">
             <button 
                 class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                hx-get="/pipelines/create"
+                hx-get="{%s u("/pipelines/create") %}"
                 hx-target="main"
                 hx-push-url="true"
             >
@@ -48,7 +48,7 @@
     hx-get="{%s nextPage %}"
     {% endif %}>
     <td class="border-b w-1/2"><a class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-            href="/pipelines/edit/{%s pl.Id %}" hx-target="main">{%s pl.Id %}</a></td>
+            href="{%s u("/pipelines/edit/%s", pl.Id) %}" hx-target="main">{%s pl.Id %}</a></td>
     <td class="px-4 h-10 border-b">{%s pl.Description %}</td>
 </tr>
 {% endfor %}

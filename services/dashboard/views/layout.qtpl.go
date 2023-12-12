@@ -223,8 +223,16 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     <script type="text/javascript" src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.25/dist/uPlot.min.css" />
     <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
-    <script type="text/javascript" src="static/uplot.htmx.js"></script>
-    <script type="text/javascript" src="static/leaflet.htmx.js"></script>
+    <script type="text/javascript" src="`)
+//line views/layout.qtpl:54
+	qw422016.E().S(u("static/uplot.htmx.js"))
+//line views/layout.qtpl:54
+	qw422016.N().S(`"></script>
+    <script type="text/javascript" src="`)
+//line views/layout.qtpl:55
+	qw422016.E().S(u("static/leaflet.htmx.js"))
+//line views/layout.qtpl:55
+	qw422016.N().S(`"></script>
     <script src="http://SortableJS.github.io/Sortable/Sortable.js"></script>
     <script type="text/javascript">
         window.addEventListener("DOMContentLoaded", function(){
@@ -309,7 +317,15 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     </div>
     <sidebar class="w-screen lg:w-sidebar fixed lg:h-screen top-0 left-0 flex flex-col bg-secondary-600 z-[5000]">
         <header class="h-12 lg:h-header flex justify-between lg:flex-col lg:justify-end">
-            <a hx-target="main" class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="/overview"><img src="static/logo-white.png" alt="SensorBucket" class="h-full" /></a>
+            <a hx-target="main" class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="`)
+//line views/layout.qtpl:136
+	qw422016.E().S(u("/overview"))
+//line views/layout.qtpl:136
+	qw422016.N().S(`"><img src="`)
+//line views/layout.qtpl:136
+	qw422016.E().S(u("static/logo-white.png"))
+//line views/layout.qtpl:136
+	qw422016.N().S(`" alt="SensorBucket" class="h-full" /></a>
             <button 
                 class="h-8 w-8 self-center lg:hidden"
                 _="on click toggle .h-auto on <nav/>
@@ -330,7 +346,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
                 <li>
                     <a href="`)
 //line views/layout.qtpl:151
-		qw422016.E().S(item.URL)
+		qw422016.E().S(u(item.URL))
 //line views/layout.qtpl:151
 		qw422016.N().S(`"
                         class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">

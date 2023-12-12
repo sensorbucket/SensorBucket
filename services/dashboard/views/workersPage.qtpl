@@ -11,7 +11,7 @@
             <section class="flex gap-2">
                 <button 
                     class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                    hx-get="/workers/create"
+                    hx-get="{%s u("/workers/create") %}"
                     hx-target="main"
                     hx-push-url="true"
                 >
@@ -68,7 +68,7 @@
     >
         <td class="border-b"><a
             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-            href="/workers/{%s worker.Id %}"
+            href="{%s u("/workers/%s", worker.Id) %}"
             hx-target="main"
         >{%s worker.Name %}</a></td>
         <td class="px-4 h-10 border-b">

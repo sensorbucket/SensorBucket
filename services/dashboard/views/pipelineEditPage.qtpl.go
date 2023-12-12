@@ -41,9 +41,9 @@ func (p *PipelineEditPage) StreamBody(qw422016 *qt422016.Writer) {
 	if p.Pipeline != nil {
 //line views/pipelineEditPage.qtpl:14
 		qw422016.N().S(`
-                    hx-patch="/pipelines/edit/`)
+                    hx-patch="`)
 //line views/pipelineEditPage.qtpl:15
-		qw422016.E().S(p.Pipeline.Id)
+		qw422016.E().S(u("/pipelines/edit/%s", p.Pipeline.Id))
 //line views/pipelineEditPage.qtpl:15
 		qw422016.N().S(`" hx-trigger="form-updated"
                 `)
@@ -51,7 +51,11 @@ func (p *PipelineEditPage) StreamBody(qw422016 *qt422016.Writer) {
 	} else {
 //line views/pipelineEditPage.qtpl:16
 		qw422016.N().S(`
-                    hx-post="/pipelines/create"
+                    hx-post="`)
+//line views/pipelineEditPage.qtpl:17
+		qw422016.E().S(u("/pipelines/create"))
+//line views/pipelineEditPage.qtpl:17
+		qw422016.N().S(`"
                 `)
 //line views/pipelineEditPage.qtpl:18
 	}
@@ -160,7 +164,7 @@ func (p *PipelineEditPage) StreamBody(qw422016 *qt422016.Writer) {
 //line views/pipelineEditPage.qtpl:72
 	qw422016.N().S(`
     </div>
-    <div id="sortable-item-staging-template" class="hidden p-2 w-2/4 mt-1.5 mx-auto text-white bg-orange-400 rounded-lg flex justify-between items-center">
+    <div id="sortable-item-staging-template" class="p-2 w-2/4 mt-1.5 mx-auto text-white bg-orange-400 rounded-lg flex justify-between items-center">
         <input type="hidden"/>
         <div>
             <p class="sortable-title text-lg"></p>
@@ -322,7 +326,11 @@ func StreamRenderPipelineSteps(qw422016 *qt422016.Writer, pipeline *api.Pipeline
 	if pipeline == nil {
 //line views/pipelineEditPage.qtpl:200
 		qw422016.N().S(`
-            hx-patch="/pipelines/validate" hx-trigger="form-updated"
+            hx-patch="`)
+//line views/pipelineEditPage.qtpl:201
+		qw422016.E().S(u("/pipelines/validate"))
+//line views/pipelineEditPage.qtpl:201
+		qw422016.N().S(`" hx-trigger="form-updated"
         `)
 //line views/pipelineEditPage.qtpl:202
 	}
@@ -588,9 +596,9 @@ func StreamRenderPipelineEditWorkerTableRows(qw422016 *qt422016.Writer, workers 
     >
         <td class="border-b"><a
             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-            href="/workers/`)
+            href="`)
 //line views/pipelineEditPage.qtpl:271
-		qw422016.E().S(worker.Id)
+		qw422016.E().S(u("/workers/%s", worker.Id))
 //line views/pipelineEditPage.qtpl:271
 		qw422016.N().S(`"
             hx-target="main"

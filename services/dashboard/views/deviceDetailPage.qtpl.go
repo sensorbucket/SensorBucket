@@ -25,7 +25,11 @@ func (p *DeviceDetailPage) StreamBody(qw422016 *qt422016.Writer) {
 //line views/deviceDetailPage.qtpl:3
 	qw422016.N().S(`
     <div class="flex gap-3 text-sm my-4 italic items-center">
-        <a hx-target="main" href="/overview" class="hover:underline text-sky-600">Devices</a>
+        <a hx-target="main" href="`)
+//line views/deviceDetailPage.qtpl:5
+	qw422016.E().S(u("/overview"))
+//line views/deviceDetailPage.qtpl:5
+	qw422016.N().S(`" class="hover:underline text-sky-600">Devices</a>
         <span>/</span>
         <span>`)
 //line views/deviceDetailPage.qtpl:7
@@ -86,13 +90,9 @@ func (p *DeviceDetailPage) StreamBody(qw422016 *qt422016.Writer) {
                         <td class="border-b"><a
                             hx-target="main"
                             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-                            href="/overview/devices/`)
+                            href="`)
 //line views/deviceDetailPage.qtpl:46
-		qw422016.N().DL(p.Device.Id)
-//line views/deviceDetailPage.qtpl:46
-		qw422016.N().S(`/sensors/`)
-//line views/deviceDetailPage.qtpl:46
-		qw422016.E().S(sensor.Code)
+		qw422016.E().S(u("/overview/devices/%d/sensors/%s", p.Device.Id, sensor.Code))
 //line views/deviceDetailPage.qtpl:46
 		qw422016.N().S(`"
                         >`)

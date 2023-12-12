@@ -109,7 +109,11 @@ func StreamRenderFilters(qw422016 *qt422016.Writer, sensorGroup *api.SensorGroup
 
                 class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600"
                 hx-trigger="keyup changed delay:500ms, search"
-                hx-get="/overview/sensor-groups"
+                hx-get="`)
+//line views/deviceListPage.qtpl:34
+		qw422016.E().S(u("/overview/sensor-groups"))
+//line views/deviceListPage.qtpl:34
+		qw422016.N().S(`"
                 hx-target="next ul"
                 _="on blur wait 50ms add .hidden to next <ul/> on focus remove .hidden from next <ul/>"
             />
@@ -123,8 +127,16 @@ func StreamRenderFilters(qw422016 *qt422016.Writer, sensorGroup *api.SensorGroup
 //line views/deviceListPage.qtpl:42
 		qw422016.N().S(`
             <a
-                href="/overview"
-                hx-delete="/overview/sensor-groups"
+                href="`)
+//line views/deviceListPage.qtpl:44
+		qw422016.E().S(u("/overview"))
+//line views/deviceListPage.qtpl:44
+		qw422016.N().S(`"
+                hx-delete="`)
+//line views/deviceListPage.qtpl:45
+		qw422016.E().S(u("/overview/sensor-groups"))
+//line views/deviceListPage.qtpl:45
+		qw422016.N().S(`"
                 hx-target="#device-table"
                 class="w-full px-2 py-1 border rounded-md text-primary-600 flex justify-between items-center"
             >
@@ -182,14 +194,14 @@ func StreamSensorGroupSearch(qw422016 *qt422016.Writer, sgs []api.SensorGroup) {
 		qw422016.N().S(`
         <li>
             <a
-                href="?sensor_group=`)
+                href="`)
 //line views/deviceListPage.qtpl:60
-		qw422016.N().DL(sg.Id)
+		qw422016.E().S(u("?sensor_group=%d", sg.Id))
 //line views/deviceListPage.qtpl:60
 		qw422016.N().S(`"
-                hx-post="/overview/sensor-groups?sensor_group=`)
+                hx-post="`)
 //line views/deviceListPage.qtpl:61
-		qw422016.N().DL(sg.Id)
+		qw422016.E().S(u("/overview/sensor-groups?sensor_group=%d", sg.Id))
 //line views/deviceListPage.qtpl:61
 		qw422016.N().S(`"
                 hx-target="#device-table"
@@ -331,9 +343,9 @@ func StreamRenderDeviceTableRows(qw422016 *qt422016.Writer, devices []api.Device
 		qw422016.N().S(`</td>
         <td class="border-b"><a
             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-            href="/overview/devices/`)
+            href="`)
 //line views/deviceListPage.qtpl:107
-		qw422016.N().DL(dev.Id)
+		qw422016.E().S(u("/overview/devices/%d", dev.Id))
 //line views/deviceListPage.qtpl:107
 		qw422016.N().S(`"
             hx-target="main"

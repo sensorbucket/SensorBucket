@@ -2,9 +2,9 @@
 
 {% func (p *SensorDetailPage) Body() %}
     <div class="flex gap-3 text-sm my-4 italic items-center" hx-target="main">
-        <a href="/overview" class="hover:underline text-sky-600">Devices</a>
+        <a href="{%s u("/overview") %}" class="hover:underline text-sky-600">Devices</a>
         <span>/</span>
-        <a href="/overview/devices/{%dl p.Device.Id%}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
+        <a href="{%s u("/overview/devices/%d", p.Device.Id) %}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
         <span>/</span>
         <span>{%s p.Sensor.Code %}</span>
     </div>
@@ -52,7 +52,7 @@
                         <td class="border-b"><a
                             hx-target="main"
                             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-                            href="/overview/datastreams/{%s datastream.Id %}"
+                            href="{%s u("/overview/datastreams/%s", datastream.Id) %}"
                         >{%s datastream.Id %}</a></td>
                         <td class="px-4 h-10 border-b">{%s datastream.ObservedProperty %}</td>
                         <td class="px-4 h-10 border-b">{%s datastream.UnitOfMeasurement %}</td>

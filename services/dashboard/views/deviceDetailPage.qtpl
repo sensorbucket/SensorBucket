@@ -2,7 +2,7 @@
 
 {% func (p *DeviceDetailPage) Body() %}
     <div class="flex gap-3 text-sm my-4 italic items-center">
-        <a hx-target="main" href="/overview" class="hover:underline text-sky-600">Devices</a>
+        <a hx-target="main" href="{%s u("/overview") %}" class="hover:underline text-sky-600">Devices</a>
         <span>/</span>
         <span>{%s p.Device.Code %}</span>
     </div>
@@ -43,7 +43,7 @@
                         <td class="border-b"><a
                             hx-target="main"
                             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-                            href="/overview/devices/{%dl p.Device.Id %}/sensors/{%s sensor.Code %}"
+                            href="{%s u("/overview/devices/%d/sensors/%s", p.Device.Id, sensor.Code) %}"
                         >{%s sensor.Code %}</a></td>
                         <td class="px-4 h-10 border-b">{%s sensor.Brand %}</td>
                         <td class="px-4 h-10 border-b">{%s sensor.Description %}</td>

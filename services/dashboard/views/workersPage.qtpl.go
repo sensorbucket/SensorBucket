@@ -34,7 +34,11 @@ func (p *WorkerListPage) StreamBody(qw422016 *qt422016.Writer) {
             <section class="flex gap-2">
                 <button 
                     class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                    hx-get="/workers/create"
+                    hx-get="`)
+//line views/workersPage.qtpl:14
+	qw422016.E().S(u("/workers/create"))
+//line views/workersPage.qtpl:14
+	qw422016.N().S(`"
                     hx-target="main"
                     hx-push-url="true"
                 >
@@ -177,9 +181,9 @@ func StreamRenderWorkerTableRows(qw422016 *qt422016.Writer, workers []api.UserWo
     >
         <td class="border-b"><a
             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-            href="/workers/`)
+            href="`)
 //line views/workersPage.qtpl:71
-		qw422016.E().S(worker.Id)
+		qw422016.E().S(u("/workers/%s", worker.Id))
 //line views/workersPage.qtpl:71
 		qw422016.N().S(`"
             hx-target="main"

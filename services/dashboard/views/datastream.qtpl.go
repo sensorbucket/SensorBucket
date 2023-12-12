@@ -29,11 +29,15 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
 	qw422016.N().S(`
 <header class="flex justify-between items-center">
     <div class="flex gap-3 text-sm my-4 italic items-center" hx-target="main">
-        <a href="/overview" class="hover:underline text-sky-600">Devices</a>
+        <a href="`)
+//line views/datastream.qtpl:7
+	qw422016.E().S(u("/overview"))
+//line views/datastream.qtpl:7
+	qw422016.N().S(`" class="hover:underline text-sky-600">Devices</a>
         <span>/</span>
-        <a href="/overview/devices/`)
+        <a href="`)
 //line views/datastream.qtpl:9
-	qw422016.N().DL(p.Device.GetId())
+	qw422016.E().S(u("/overview/devices/%d", p.Device.GetId()))
 //line views/datastream.qtpl:9
 	qw422016.N().S(`" class="hover:underline text-sky-600">`)
 //line views/datastream.qtpl:9
@@ -41,13 +45,9 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
 //line views/datastream.qtpl:9
 	qw422016.N().S(`</a>
         <span>/</span>
-        <a href="/overview/devices/`)
+        <a href="`)
 //line views/datastream.qtpl:11
-	qw422016.N().DL(p.Device.GetId())
-//line views/datastream.qtpl:11
-	qw422016.N().S(`/sensors/`)
-//line views/datastream.qtpl:11
-	qw422016.E().S(p.Sensor.Code)
+	qw422016.E().S(u("/overview/devices/%d/sensors/%s", p.Device.GetId(), p.Sensor.Code))
 //line views/datastream.qtpl:11
 	qw422016.N().S(`" class="hover:underline text-sky-600">`)
 //line views/datastream.qtpl:11
@@ -293,12 +293,10 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start,
             const ws = new WebSocket(getWebSocketURL(`)
 //line views/datastream.qtpl:117
 	qw422016.N().S("`")
-//line views/datastream.qtpl:117
-	qw422016.N().S(`/overview/datastreams/`)
 //line views/datastream.qtpl:145
-	qw422016.E().S(ds.Id)
+	qw422016.N().S(u("/overview/datastreams/%s/stream?start=${start.toISOString()}&end=${end.toISOString()}", ds.Id))
 //line views/datastream.qtpl:145
-	qw422016.N().S(`/stream?start=${start.toISOString()}&end=${end.toISOString()}`)
+	qw422016.N().S(``)
 //line views/datastream.qtpl:145
 	qw422016.N().S("`")
 //line views/datastream.qtpl:145
