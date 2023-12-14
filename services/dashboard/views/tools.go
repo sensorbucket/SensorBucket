@@ -7,7 +7,7 @@ import (
 
 var base *url.URL
 
-func u(str string, args ...any) string {
+func U(str string, args ...any) string {
 	res := fmt.Sprintf(str, args...)
 	if base == nil {
 		return res

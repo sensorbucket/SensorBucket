@@ -52,7 +52,7 @@ func (h *WorkerPageHandler) listWorkers() http.HandlerFunc {
 
 		if res.Links.GetNext() != "" {
 			if err == nil {
-				page.WorkersNextPage = "/workers/table?cursor=" + getCursor(res.Links.GetNext())
+				page.WorkersNextPage = views.U("/workers/table?cursor=" + getCursor(res.Links.GetNext()))
 			}
 		}
 
@@ -80,7 +80,7 @@ func (h *WorkerPageHandler) workersTable() http.HandlerFunc {
 
 		nextCursor := ""
 		if res.Links.GetNext() != "" {
-			nextCursor = "/workers/table?cursor=" + getCursor(res.Links.GetNext())
+			nextCursor = views.U("/workers/table?cursor=" + getCursor(res.Links.GetNext()))
 		}
 
 		if isHX(r) {
@@ -145,7 +145,7 @@ func (h *WorkerPageHandler) updateWorker() http.HandlerFunc {
 			web.HTTPError(w, err)
 			return
 		}
-		w.Header().Set("HX-Redirect", "/workers")
+		w.Header().Set("HX-Redirect", views.U("/workers"))
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -185,7 +185,7 @@ func (h *WorkerPageHandler) createWorker() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("HX-Redirect", "/workers")
+		w.Header().Set("HX-Redirect", views.U("/workers"))
 		w.WriteHeader(http.StatusOK)
 	}
 }

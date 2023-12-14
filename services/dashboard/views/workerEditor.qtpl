@@ -42,7 +42,7 @@
                     {% if p.Worker == nil %}
                         <button 
                             class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                            hx-post="{%s u("/workers/create") %}"
+                            hx-post="{%s U("/workers/create") %}"
                             hx-vals='js:{userCode: currentUserCode()}'
                             hx-swap="none"
                         >
@@ -51,7 +51,7 @@
                     {% else %}
                         <button 
                             class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                            hx-patch="{%s u("/workers/%s", p.Worker.Id) %}"
+                            hx-patch="{%s U("/workers/%s", p.Worker.Id) %}"
                             hx-vals='js:{userCode: currentUserCode()}'
                             hx-swap="none"
                         >
@@ -77,7 +77,7 @@
         <div id="editor-container" class="min-h-[500px]">
         </div>
         <script type="module">
-            import {createEditor} from '{%s u("/static/codemirror.js") %}';
+            import {createEditor} from '{%s U("/static/codemirror.js") %}';
             const usercode = atob('{%s p.UserCode %}');
             const editor = createEditor(document.getElementById("editor-container"), usercode);
             window.editor = editor;

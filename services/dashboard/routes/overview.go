@@ -94,7 +94,7 @@ func (t *OverviewRoute) createSensorGroup() http.HandlerFunc {
 			web.HTTPError(w, err)
 			return
 		}
-		w.Header().Set("hx-push-url", "/overview?"+r.URL.Query().Encode())
+		w.Header().Set("hx-push-url", views.U("/overview?"+r.URL.Query().Encode()))
 		w.Header().Set("hx-trigger-after-settle", "newDeviceList")
 		views.WriteRenderFilters(w, sg, true)
 		views.WriteRenderDeviceTable(w, res.Data, getCursor(res.Links.GetNext()))
@@ -108,7 +108,7 @@ func (t *OverviewRoute) deleteSensorGroup() http.HandlerFunc {
 			web.HTTPError(w, err)
 			return
 		}
-		w.Header().Set("hx-push-url", "/overview?"+r.URL.Query().Encode())
+		w.Header().Set("hx-push-url", views.U("/overview?"+r.URL.Query().Encode()))
 		w.Header().Set("hx-trigger-after-settle", "newDeviceList")
 		views.WriteRenderFilters(w, nil, true)
 		views.WriteRenderDeviceTable(w, res.Data, getCursor(res.Links.GetNext()))
@@ -137,7 +137,7 @@ func (t *OverviewRoute) getDevicesTable() http.HandlerFunc {
 
 		nextCursor := ""
 		if res.Links.GetNext() != "" {
-			nextCursor = "/overview/devices/table?cursor=" + getCursor(res.Links.GetNext())
+			nextCursor = views.U("/overview/devices/table?cursor=" + getCursor(res.Links.GetNext()))
 		}
 		views.WriteRenderDeviceTableRows(w, res.Data, nextCursor)
 	}
@@ -537,7 +537,8 @@ func snackbarGenericError() []byte {
 		Details: snackbarDetails{
 			Message: "Something went wrong",
 			Type:    Error,
-		}}
+		},
+	}
 	b, _ := json.Marshal(ev)
 	return b
 }

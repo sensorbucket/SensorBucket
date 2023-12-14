@@ -4,11 +4,11 @@
 {% func (p *DatastreamPage) Body() %}
 <header class="flex justify-between items-center">
     <div class="flex gap-3 text-sm my-4 italic items-center" hx-target="main">
-        <a href="{%s u("/overview") %}" class="hover:underline text-sky-600">Devices</a>
+        <a href="{%s U("/overview") %}" class="hover:underline text-sky-600">Devices</a>
         <span>/</span>
-        <a href="{%s u("/overview/devices/%d", p.Device.GetId()) %}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
+        <a href="{%s U("/overview/devices/%d", p.Device.GetId()) %}" class="hover:underline text-sky-600">{%s p.Device.Code %}</a>
         <span>/</span>
-        <a href="{%s u("/overview/devices/%d/sensors/%s", p.Device.GetId(), p.Sensor.Code) %}" class="hover:underline text-sky-600">{%s p.Sensor.Code %}</a>
+        <a href="{%s U("/overview/devices/%d/sensors/%s", p.Device.GetId(), p.Sensor.Code) %}" class="hover:underline text-sky-600">{%s p.Sensor.Code %}</a>
         <span>/</span>
         <span>{%s p.Datastream.Id %}</span>
     </div>
@@ -142,7 +142,7 @@
             let min = start.getTime()/1000
             let max = end.getTime()/1000
             plot.setScale('x', {min, max})
-            const ws = new WebSocket(getWebSocketURL(`{%s= u("/overview/datastreams/%s/stream?start=${start.toISOString()}&end=${end.toISOString()}", ds.Id) %}`))
+            const ws = new WebSocket(getWebSocketURL(`{%s= U("/overview/datastreams/%s/stream?start=${start.toISOString()}&end=${end.toISOString()}", ds.Id) %}`))
             ws.onmessage = (event) => {
                 const reader = new FileReader();
                 reader.onload = function() {

@@ -205,7 +205,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="`)
 //line views/layout.qtpl:42
-	qw422016.E().S(u("static/style.css"))
+	qw422016.E().S(U("static/style.css"))
 //line views/layout.qtpl:42
 	qw422016.N().S(`" />
     `)
@@ -225,12 +225,12 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
     <script type="text/javascript" src="`)
 //line views/layout.qtpl:54
-	qw422016.E().S(u("static/uplot.htmx.js"))
+	qw422016.E().S(U("static/uplot.htmx.js"))
 //line views/layout.qtpl:54
 	qw422016.N().S(`"></script>
     <script type="text/javascript" src="`)
 //line views/layout.qtpl:55
-	qw422016.E().S(u("static/leaflet.htmx.js"))
+	qw422016.E().S(U("static/leaflet.htmx.js"))
 //line views/layout.qtpl:55
 	qw422016.N().S(`"></script>
     <script src="http://SortableJS.github.io/Sortable/Sortable.js"></script>
@@ -319,11 +319,11 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
         <header class="h-12 lg:h-header flex justify-between lg:flex-col lg:justify-end">
             <a hx-target="main" class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="`)
 //line views/layout.qtpl:136
-	qw422016.E().S(u("/overview"))
+	qw422016.E().S(U("/overview"))
 //line views/layout.qtpl:136
 	qw422016.N().S(`"><img src="`)
 //line views/layout.qtpl:136
-	qw422016.E().S(u("static/logo-white.png"))
+	qw422016.E().S(U("static/logo-white.png"))
 //line views/layout.qtpl:136
 	qw422016.N().S(`" alt="SensorBucket" class="h-full" /></a>
             <button 
@@ -346,7 +346,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
                 <li>
                     <a href="`)
 //line views/layout.qtpl:151
-		qw422016.E().S(u(item.URL))
+		qw422016.E().S(U(item.URL))
 //line views/layout.qtpl:151
 		qw422016.N().S(`"
                         class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">

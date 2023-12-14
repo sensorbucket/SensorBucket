@@ -31,13 +31,13 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
     <div class="flex gap-3 text-sm my-4 italic items-center" hx-target="main">
         <a href="`)
 //line views/datastream.qtpl:7
-	qw422016.E().S(u("/overview"))
+	qw422016.E().S(U("/overview"))
 //line views/datastream.qtpl:7
 	qw422016.N().S(`" class="hover:underline text-sky-600">Devices</a>
         <span>/</span>
         <a href="`)
 //line views/datastream.qtpl:9
-	qw422016.E().S(u("/overview/devices/%d", p.Device.GetId()))
+	qw422016.E().S(U("/overview/devices/%d", p.Device.GetId()))
 //line views/datastream.qtpl:9
 	qw422016.N().S(`" class="hover:underline text-sky-600">`)
 //line views/datastream.qtpl:9
@@ -47,7 +47,7 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
         <span>/</span>
         <a href="`)
 //line views/datastream.qtpl:11
-	qw422016.E().S(u("/overview/devices/%d/sensors/%s", p.Device.GetId(), p.Sensor.Code))
+	qw422016.E().S(U("/overview/devices/%d/sensors/%s", p.Device.GetId(), p.Sensor.Code))
 //line views/datastream.qtpl:11
 	qw422016.N().S(`" class="hover:underline text-sky-600">`)
 //line views/datastream.qtpl:11
@@ -294,7 +294,7 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start,
 //line views/datastream.qtpl:117
 	qw422016.N().S("`")
 //line views/datastream.qtpl:145
-	qw422016.N().S(u("/overview/datastreams/%s/stream?start=${start.toISOString()}&end=${end.toISOString()}", ds.Id))
+	qw422016.N().S(U("/overview/datastreams/%s/stream?start=${start.toISOString()}&end=${end.toISOString()}", ds.Id))
 //line views/datastream.qtpl:145
 	qw422016.N().S(``)
 //line views/datastream.qtpl:145

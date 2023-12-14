@@ -45,7 +45,7 @@ func StreamMapMarker(qw422016 *qt422016.Writer, deviceID int64, latitude, longit
 	qw422016.N().S(`"
         hx-get="`)
 //line views/mapMarker.qtpl:8
-	qw422016.E().S(u("/overview/devices/%d", deviceID))
+	qw422016.E().S(U("/overview/devices/%d", deviceID))
 //line views/mapMarker.qtpl:8
 	qw422016.N().S(`"
         hx-target="main"

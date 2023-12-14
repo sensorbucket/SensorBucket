@@ -44,13 +44,6 @@ func (h *IngressPageHandler) createViewIngresses(ctx context.Context) ([]views.I
 	if err != nil {
 		return nil, fmt.Errorf("error listing ingresses: %w", err)
 	}
-	pipelineIDs := lo.FilterMap(resIngresses.Data, func(ingr api.ArchivedIngress, _ int) (string, bool) {
-		if ingr.IngressDto == nil {
-			return "", false
-		}
-		return ingr.IngressDto.GetPipelineId(), true
-	})
-	pipelineIDs = lo.Uniq(pipelineIDs)
 	resPipelines, _, err := h.client.PipelinesApi.ListPipelines(ctx).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("error listing pipelines: %w", err)

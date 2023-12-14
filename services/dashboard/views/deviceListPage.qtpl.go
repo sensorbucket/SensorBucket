@@ -111,7 +111,7 @@ func StreamRenderFilters(qw422016 *qt422016.Writer, sensorGroup *api.SensorGroup
                 hx-trigger="keyup changed delay:500ms, search"
                 hx-get="`)
 //line views/deviceListPage.qtpl:34
-		qw422016.E().S(u("/overview/sensor-groups"))
+		qw422016.E().S(U("/overview/sensor-groups"))
 //line views/deviceListPage.qtpl:34
 		qw422016.N().S(`"
                 hx-target="next ul"
@@ -129,12 +129,12 @@ func StreamRenderFilters(qw422016 *qt422016.Writer, sensorGroup *api.SensorGroup
             <a
                 href="`)
 //line views/deviceListPage.qtpl:44
-		qw422016.E().S(u("/overview"))
+		qw422016.E().S(U("/overview"))
 //line views/deviceListPage.qtpl:44
 		qw422016.N().S(`"
                 hx-delete="`)
 //line views/deviceListPage.qtpl:45
-		qw422016.E().S(u("/overview/sensor-groups"))
+		qw422016.E().S(U("/overview/sensor-groups"))
 //line views/deviceListPage.qtpl:45
 		qw422016.N().S(`"
                 hx-target="#device-table"
@@ -196,12 +196,12 @@ func StreamSensorGroupSearch(qw422016 *qt422016.Writer, sgs []api.SensorGroup) {
             <a
                 href="`)
 //line views/deviceListPage.qtpl:60
-		qw422016.E().S(u("?sensor_group=%d", sg.Id))
+		qw422016.E().S(U("?sensor_group=%d", sg.Id))
 //line views/deviceListPage.qtpl:60
 		qw422016.N().S(`"
                 hx-post="`)
 //line views/deviceListPage.qtpl:61
-		qw422016.E().S(u("/overview/sensor-groups?sensor_group=%d", sg.Id))
+		qw422016.E().S(U("/overview/sensor-groups?sensor_group=%d", sg.Id))
 //line views/deviceListPage.qtpl:61
 		qw422016.N().S(`"
                 hx-target="#device-table"
@@ -345,7 +345,7 @@ func StreamRenderDeviceTableRows(qw422016 *qt422016.Writer, devices []api.Device
             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
             href="`)
 //line views/deviceListPage.qtpl:107
-		qw422016.E().S(u("/overview/devices/%d", dev.Id))
+		qw422016.E().S(U("/overview/devices/%d", dev.Id))
 //line views/deviceListPage.qtpl:107
 		qw422016.N().S(`"
             hx-target="main"
@@ -440,12 +440,20 @@ func StreamRenderMap(qw422016 *qt422016.Writer, sensorGroup *api.SensorGroup) {
                 map.addLayer(markerLayer);
 
                 // Fetch news
-                ws = new WebSocket(getWebSocketURL("/overview/devices/stream-map" + location.search))
+                ws = new WebSocket(getWebSocketURL("`)
+//line views/deviceListPage.qtpl:153
+	qw422016.E().S(U("/overview/devices/stream-map"))
+//line views/deviceListPage.qtpl:153
+	qw422016.N().S(`" + location.search))
                 ws.onmessage = (event) => {
                     const data = JSON.parse(event.data)
                     const marker = L.marker(data.coordinates).addTo(markerLayer)
                     marker.on('click', evt => {
-                        const url = "/overview/devices/" + data.device_id;
+                        const url = "`)
+//line views/deviceListPage.qtpl:158
+	qw422016.E().S(U("/overview/devices/"))
+//line views/deviceListPage.qtpl:158
+	qw422016.N().S(`" + data.device_id;
                         htmx.ajax("GET", url, "main").then(() => {
                             window.history.pushState({}, null, url)
                         })

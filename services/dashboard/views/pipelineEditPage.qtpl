@@ -12,9 +12,9 @@
         </header>
         <form id="pipelineEditForm" class="p-4 gap-4 grid lg:grid-cols-1"
                 {% if p.Pipeline != nil %}
-                    hx-patch="{%s u("/pipelines/edit/%s", p.Pipeline.Id) %}" hx-trigger="form-updated"
+                    hx-patch="{%s U("/pipelines/edit/%s", p.Pipeline.Id) %}" hx-trigger="form-updated"
                 {% else %}
-                    hx-post="{%s u("/pipelines/create") %}"
+                    hx-post="{%s U("/pipelines/create") %}"
                 {% endif %}
                 hx-vals="js:{steps: getSteps()}"
                 hx-target="#sortableForm">
@@ -198,7 +198,7 @@
     </div>
     <form id="sortableForm" name="sortable" class="sortable" hx-indicator="#stepsIndicator" hx-vals="js:{steps: getSteps()}"
         {% if pipeline == nil %}
-            hx-patch="{%s u("/pipelines/validate") %}" hx-trigger="form-updated"
+            hx-patch="{%s U("/pipelines/validate") %}" hx-trigger="form-updated"
         {% endif %}>
         {% if workers != nil %}
             {%= RenderPipelineStepsSortable(*workers) %}
@@ -268,7 +268,7 @@
     >
         <td class="border-b"><a
             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
-            href="{%s u("/workers/%s", worker.Id) %}"
+            href="{%s U("/workers/%s", worker.Id) %}"
             hx-target="main"
         >{%s worker.Name %}</a></td>
         <td class="px-4 h-10 border-b">{%d int(worker.Revision) %}</td>

@@ -103,7 +103,7 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
                             class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
                             hx-post="`)
 //line views/workerEditor.qtpl:45
-		qw422016.E().S(u("/workers/create"))
+		qw422016.E().S(U("/workers/create"))
 //line views/workerEditor.qtpl:45
 		qw422016.N().S(`"
                             hx-vals='js:{userCode: currentUserCode()}'
@@ -120,7 +120,7 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
                             class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
                             hx-patch="`)
 //line views/workerEditor.qtpl:54
-		qw422016.E().S(u("/workers/%s", p.Worker.Id))
+		qw422016.E().S(U("/workers/%s", p.Worker.Id))
 //line views/workerEditor.qtpl:54
 		qw422016.N().S(`"
                             hx-vals='js:{userCode: currentUserCode()}'
@@ -162,7 +162,7 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
         <script type="module">
             import {createEditor} from '`)
 //line views/workerEditor.qtpl:80
-	qw422016.E().S(u("/static/codemirror.js"))
+	qw422016.E().S(U("/static/codemirror.js"))
 //line views/workerEditor.qtpl:80
 	qw422016.N().S(`';
             const usercode = atob('`)

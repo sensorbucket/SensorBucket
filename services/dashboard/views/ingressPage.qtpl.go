@@ -36,7 +36,7 @@ func (p *IngressPage) StreamBody(qw422016 *qt422016.Writer) {
         <div 
             hx-get="`)
 //line views/ingressPage.qtpl:11
-	qw422016.E().S(u("/ingress/list"))
+	qw422016.E().S(U("/ingress/list"))
 //line views/ingressPage.qtpl:11
 	qw422016.N().S(`"
             hx-trigger="every 2s"
@@ -107,7 +107,7 @@ func StreamRenderIngressList(qw422016 *qt422016.Writer, ingresses []Ingress) {
 			qw422016.N().S(`
                     <a hx-target="main" href="`)
 //line views/ingressPage.qtpl:27
-			qw422016.E().S(u("/overview/devices/%d", ingress.Device.Id))
+			qw422016.E().S(U("/overview/devices/%d", ingress.Device.Id))
 //line views/ingressPage.qtpl:27
 			qw422016.N().S(`" class="ml-3 text-sky-600 hover:underline">`)
 //line views/ingressPage.qtpl:27

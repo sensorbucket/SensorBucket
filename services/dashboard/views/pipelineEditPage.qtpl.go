@@ -43,7 +43,7 @@ func (p *PipelineEditPage) StreamBody(qw422016 *qt422016.Writer) {
 		qw422016.N().S(`
                     hx-patch="`)
 //line views/pipelineEditPage.qtpl:15
-		qw422016.E().S(u("/pipelines/edit/%s", p.Pipeline.Id))
+		qw422016.E().S(U("/pipelines/edit/%s", p.Pipeline.Id))
 //line views/pipelineEditPage.qtpl:15
 		qw422016.N().S(`" hx-trigger="form-updated"
                 `)
@@ -53,7 +53,7 @@ func (p *PipelineEditPage) StreamBody(qw422016 *qt422016.Writer) {
 		qw422016.N().S(`
                     hx-post="`)
 //line views/pipelineEditPage.qtpl:17
-		qw422016.E().S(u("/pipelines/create"))
+		qw422016.E().S(U("/pipelines/create"))
 //line views/pipelineEditPage.qtpl:17
 		qw422016.N().S(`"
                 `)
@@ -328,7 +328,7 @@ func StreamRenderPipelineSteps(qw422016 *qt422016.Writer, pipeline *api.Pipeline
 		qw422016.N().S(`
             hx-patch="`)
 //line views/pipelineEditPage.qtpl:201
-		qw422016.E().S(u("/pipelines/validate"))
+		qw422016.E().S(U("/pipelines/validate"))
 //line views/pipelineEditPage.qtpl:201
 		qw422016.N().S(`" hx-trigger="form-updated"
         `)
@@ -598,7 +598,7 @@ func StreamRenderPipelineEditWorkerTableRows(qw422016 *qt422016.Writer, workers 
             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
             href="`)
 //line views/pipelineEditPage.qtpl:271
-		qw422016.E().S(u("/workers/%s", worker.Id))
+		qw422016.E().S(U("/workers/%s", worker.Id))
 //line views/pipelineEditPage.qtpl:271
 		qw422016.N().S(`"
             hx-target="main"
