@@ -1,4 +1,4 @@
-package tenants
+package apikeys
 
 import (
 	"math/rand"
@@ -7,41 +7,53 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type TenantState string
+
+var (
+	Active TenantState = "Active"
+)
+
 type Tenant struct {
-	ID   int64
-	Name string
+	ID    int64
+	Name  string
+	State TenantState
 }
 
-func NewApiKey() ApiKey {
+func newApiKey() ApiKey {
 	return ApiKey{
-		ID:    rand.Int63(),
+		Key: Key{
+			ID: rand.Int63(),
+		},
 		Value: generateRandomString32(),
 	}
 }
 
 type ApiKey struct {
-	ID          int64
-	HashedValue string
-	Value       string
+	Key
+	Value string
+}
+type HashedApiKey struct {
+	Key
+	Value string
 }
 
-func KeyFromString() (ApiKey, error) {
-	debase64ed
-	split
-	apikey
+type Key struct {
+	ID int64
 }
 
-func (a *ApiKey) Hash() error {
+func (a *ApiKey) hash() (HashedApiKey, error) {
 	b, err := bcrypt.GenerateFromPassword([]byte(a.Value), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return HashedApiKey{}, err
 	}
-	a.HashedValue = string(b)
-	return nil
+	return HashedApiKey{
+		Key:   a.Key,
+		Value: string(b),
+	}, nil
 }
 
-func (a *ApiKey) Compare(with string) bool {
-	return bcrypt.CompareHashAndPassword([]byte(a.HashedValue), []byte(with)) == nil
+func (a *HashedApiKey) compare(with string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(a.Value), []byte(with)) == nil
 }
 
 func generateRandomString32() string {

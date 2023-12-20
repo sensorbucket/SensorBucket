@@ -1,34 +1,32 @@
-package tenantstransport
+package apikeystransport
 
 import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
-	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
+	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 )
 
-func NewHTTP(svc service, url string) *HTTPTransport {
+func NewHTTP(apiKeySvc apiKeyService, url string) *HTTPTransport {
 	t := &HTTPTransport{
-		router: chi.NewRouter(),
-		svc:    svc,
-		url:    url,
+		router:    chi.NewRouter(),
+		apiKeySvc: apiKeySvc,
+		url:       url,
 	}
 	t.setupRoutes(t.router)
 	return t
 }
 
 type HTTPTransport struct {
-	router chi.Router
-	svc    service
-	url    string
+	router    chi.Router
+	apiKeySvc apiKeyService
+	url       string
 }
 
 func (t *HTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +44,7 @@ func (t *HTTPTransport) httpCreateApiKey() http.HandlerFunc {
 		Expiry   *time.Time `json:"expiry"`
 	}
 	type Result struct {
+		ID     int64  `json:"id"`
 		ApiKey string `json:"api_key"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -59,9 +58,9 @@ func (t *HTTPTransport) httpCreateApiKey() http.HandlerFunc {
 			return
 		}
 
-		tenant, err := t.svc.GetTenantById(params.TenantID)
-		if err != nil {
-			if errors.Is(err, tenants.ErrTenantIsNotValid) {
+		apiKeyId, apiKey, err := t.apiKeySvc.GenerateNewApiKey(params.TenantID, params.Expiry)
+		if err == nil {
+			if errors.Is(err, apikeys.ErrTenantIsNotValid) {
 				web.HTTPResponse(w, http.StatusNotFound, web.APIResponseAny{
 					Message: "Organisation does not exist or has been archived",
 				})
@@ -71,12 +70,8 @@ func (t *HTTPTransport) httpCreateApiKey() http.HandlerFunc {
 				return
 			}
 		}
-		apiKey, err := t.svc.GenerateNewApiKey(tenant, params.Expiry)
-		if err == nil {
-			web.HTTPError(w, err)
-			return
-		}
 		web.HTTPResponse(w, http.StatusCreated, Result{
+			ID:     apiKeyId,
 			ApiKey: apiKey,
 		})
 	}
@@ -85,59 +80,19 @@ func (t *HTTPTransport) httpCreateApiKey() http.HandlerFunc {
 func (t *HTTPTransport) httpValidateApiKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
 				Message: "Authorization header must be set",
 			})
 			return
 		}
-
-		headerParts := strings.Split(authHeader, " ")
-		if len(headerParts) != 2 {
-			error
-		}
-
-		// The Authorization header should contain the API key in format: 'Bearer <id>:<apiKey>'
-		regexPattern := `Bearer (\d+):(\w+)`
-		KeyFromString(headerParts[1])
-		re := regexp.MustCompile(regexPattern)
-		matches := re.FindStringSubmatch(authHeader)
-		if len(matches) != 3 {
-			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
-				Message: "Authorization header must have format 'Bearer id:key'",
-			})
-			return
-		}
-		apiKey := matches[2]
-		if apiKey == "" {
-			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
-				Message: "API key cannot be empty",
-			})
-			return
-		}
-		apiKeyId, err := strconv.ParseInt(matches[1], 10, 32)
+		idAndKeyCombination := strings.TrimPrefix(authHeader, "Bearer ")
+		valid, err := t.apiKeySvc.ValidateApiKey(idAndKeyCombination)
 		if err != nil {
-			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
-				Message: "id in Authorization header should be a valid int",
-			})
+			web.HTTPError(w, err)
 			return
 		}
-
-		// The hashed API key should be retrieved by this id to compare against the given API key by the client
-		hashed, err := t.svc.GetHashedApiKeyById(apiKeyId)
-		if err != nil {
-			if errors.Is(err, tenants.ErrKeyNotFound) {
-				// Just send back a unauthorized since we don't want to expose whether an API key id exists or not
-				web.HTTPResponse(w, http.StatusUnauthorized, web.APIResponseAny{})
-				return
-			} else {
-				web.HTTPError(w, err)
-				return
-			}
-		}
-		authorized := hashed.Compare(apiKey)
-		if authorized {
-			// API key is succesfully compared and is valid
+		if valid {
 			web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
 				Message: "API Key is valid",
 				Data:    "", // TODO: rw.Write([]byte(fmt.Sprintf(`{"sub": "org id"}`)))??
@@ -148,8 +103,7 @@ func (t *HTTPTransport) httpValidateApiKey() http.HandlerFunc {
 	}
 }
 
-type service interface {
-	GetTenantById(id int64) (tenants.Tenant, error)
-	GetHashedApiKeyById(id int64) (tenants.ApiKey, error)
-	GenerateNewApiKey(owner tenants.Tenant, expiry *time.Time) (string, error)
+type apiKeyService interface {
+	ValidateApiKey(base64IdAndKeyCombination string) (bool, error)
+	GenerateNewApiKey(tenantId int64, expiry *time.Time) (int64, string, error)
 }
