@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
@@ -82,18 +84,22 @@ func (t *HTTPTransport) httpCreateApiKey() http.HandlerFunc {
 
 func (t *HTTPTransport) httpValidateApiKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		authHeaders, ok := r.Header["Authorization"]
-		if !ok || len(authHeaders) != 1 {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
 			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
 				Message: "Authorization header must be set",
 			})
 			return
 		}
 
-		authHeader := authHeaders[0]
+		headerParts := strings.Split(authHeader, " ")
+		if len(headerParts) != 2 {
+			error
+		}
 
 		// The Authorization header should contain the API key in format: 'Bearer <id>:<apiKey>'
 		regexPattern := `Bearer (\d+):(\w+)`
+		KeyFromString(headerParts[1])
 		re := regexp.MustCompile(regexPattern)
 		matches := re.FindStringSubmatch(authHeader)
 		if len(matches) != 3 {

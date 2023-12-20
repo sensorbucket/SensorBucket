@@ -90,6 +90,7 @@
     </table>
 {% endfunc %}
 
+
 {% func RenderDeviceTableRows(devices []api.Device, nextPage string) %}
     {% for ix, dev := range devices %}
     <tr

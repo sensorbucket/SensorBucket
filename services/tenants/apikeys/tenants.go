@@ -25,6 +25,12 @@ type ApiKey struct {
 	Value       string
 }
 
+func KeyFromString() (ApiKey, error) {
+	debase64ed
+	split
+	apikey
+}
+
 func (a *ApiKey) Hash() error {
 	b, err := bcrypt.GenerateFromPassword([]byte(a.Value), bcrypt.DefaultCost)
 	if err != nil {

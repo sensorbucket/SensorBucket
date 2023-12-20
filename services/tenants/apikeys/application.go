@@ -17,6 +17,9 @@ func (s *Service) GetHashedApiKeyById(id int64) (ApiKey, error) {
 	return ApiKey{}, nil
 }
 
+func (s *Service) ValidateKey() {
+}
+
 func (s *Service) GenerateNewApiKey(owner Tenant) (string, error) {
 	return "", nil
 }
