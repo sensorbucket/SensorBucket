@@ -6,7 +6,7 @@ services:
     ports:
       - 3000:80
     volumes:
-      - ./tools/caddy:/etc/caddy
+      - ./tools/docker-compose/caddy:/etc/caddy
 
   dashboard:
     build:
