@@ -34,8 +34,15 @@ func (t *HTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *HTTPTransport) setupRoutes(r chi.Router) {
+	r.Delete("/api-keys/revoke", t.httpRevokeApiKey())
 	r.Post("/api-keys/new", t.httpCreateApiKey())
 	r.Get("/api-keys/validate", t.httpValidateApiKey())
+}
+
+func (t *HTTPTransport) httpRevokeApiKey() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+	}
 }
 
 func (t *HTTPTransport) httpCreateApiKey() http.HandlerFunc {
