@@ -1,8 +1,8 @@
 serve:
-  proxy:
-    port: 4466 # run the proxy at port 4455
+  #  proxy:
+  #    port: 4455 # run the proxy at port 4455
   api:
-    port: 4467 # run the api at port 4456
+    port: 4456 # run the api at port 4456
 
 access_rules:
   repositories:
@@ -42,6 +42,8 @@ authorizers:
     enabled: true
 
 authenticators:
+  noop:
+    enabled: true
   cookie_session:
     enabled: true
     config:
