@@ -19,11 +19,6 @@ services:
     - STATIC_PATH=services/dashboard/static
     - HTTP_BASE=/dashboard
     - SB_API=http://caddy
-    - IMAGE_SBOX=pzld_sensorbox
-    - IMAGE_TTN=ttn
-    - IMAGE_MEAS=storage
-    - IMAGE_MFM=mfm-fijnstof
-    - IMAGE_MFM2=mfm-2
 
   core:
     build:
