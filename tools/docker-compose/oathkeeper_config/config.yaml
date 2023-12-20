@@ -27,13 +27,13 @@ mutators:
   id_token:
     enabled: true
     config:
-      issuer_url: http://localhost:4466/
+      issuer_url: http://localhost:3000/
       jwks_url: file:///etc/config/oathkeeper/jwks.json
   hydrator:
     enabled: true
     config:
       api:
-        url: http://auth-service:9090/hydrate
+        url: http://tenants:3000/session/hydrate
 
 authorizers:
   allow:
@@ -56,7 +56,7 @@ authenticators:
   bearer_token:
     enabled: true
     config:
-      check_session_url: "http://auth-service:9090/validate"
+      check_session_url: "http://tenants:3000/apikeys/validate"
       preserve_path: true
       token_from:
         header: Authorization

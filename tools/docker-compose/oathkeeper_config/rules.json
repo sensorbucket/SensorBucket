@@ -18,8 +18,7 @@
         "mutators": [
             {
                 "handler": "id_token",
-                "config": {
-                }
+                "config": {}
             }
         ]
     }
