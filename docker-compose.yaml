@@ -145,7 +145,7 @@ services:
   db:
     image: timescale/timescaledb-postgis:latest-pg12
     volumes:
-      - ./tools/postgres.d:/docker-entrypoint-initdb.d
+      - ./tools/docker-compose/postgres.d:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
     environment:
