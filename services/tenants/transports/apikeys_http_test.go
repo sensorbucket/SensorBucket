@@ -54,16 +54,18 @@ func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 
 func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 	// Arrange
+	exp := time.Now().UTC().Add(time.Hour * 24 * 5)
 	svc := apiKeyServiceMock{
 		GenerateNewApiKeyFunc: func(tenantId int64, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
 			assert.NotNil(t, expiry)
-			assert.Equal(t, time.Date(2024, 5, 19, 12, 0, 0, 0, time.UTC), *expiry)
+			assert.Equal(t, exp, *expiry)
 			return "newapikey", nil
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(`{"organisation_id": 905, "expiration_date": "2024-05-19T12:00:00Z"}`))
+	fmt.Println(exp.String())
+	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(fmt.Sprintf(`{"organisation_id": 905, "expiration_date": "%s"}`, exp.Format("2006-01-02T15:04:05.999999999Z"))))
 
 	// Act
 	rr := httptest.NewRecorder()

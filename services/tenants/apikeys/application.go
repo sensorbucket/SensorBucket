@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 )
 
 var (
@@ -20,6 +22,10 @@ func NewAPIKeyService(tenantStore tenantStore, apiKeyStore apiKeyStore) *service
 		tenantStore: tenantStore,
 		apiKeyStore: apiKeyStore,
 	}
+}
+
+func (s *service) ListAPIKeys(filter Filter, p pagination.Request) (*pagination.Page[ApiKeyDTO], error) {
+	return s.apiKeyStore.List(filter, p)
 }
 
 // Revokes an API key, returns ErrKeyNotFound if the given key was not found in the apiKeyStore
@@ -42,7 +48,7 @@ func (s *service) RevokeApiKey(base64IdAndKeyCombination string) error {
 // Creates a new API key for the given tenant and with the given expiration date.
 // Returns the api key as: 'apiKeyId:apiKey' encoded to a base64 string.
 // Fails if the tenant is not active
-func (s *service) GenerateNewApiKey(tenantId int64, expirationDate *time.Time) (string, error) {
+func (s *service) GenerateNewApiKey(name string, tenantId int64, expirationDate *time.Time) (string, error) {
 	tenant, err := s.tenantStore.GetTenantById(tenantId)
 	if err != nil {
 		return "", err
@@ -50,7 +56,7 @@ func (s *service) GenerateNewApiKey(tenantId int64, expirationDate *time.Time) (
 	if tenant.State != Active {
 		return "", ErrTenantIsNotValid
 	}
-	newApiKey := newApiKey(expirationDate)
+	newApiKey := newApiKey(name, expirationDate)
 	hashed, err := newApiKey.hash()
 	if err != nil {
 		return "", err
@@ -86,6 +92,16 @@ func (s *service) ValidateApiKey(base64IdAndKeyCombination string) (bool, error)
 	return hashed.compare(apiKey), nil
 }
 
+type Filter struct {
+	TenantID []int64 `schema:"tenant_id"`
+}
+
+type ApiKeyDTO struct {
+	Name           string
+	TenantID       int64
+	ExpirationDate *time.Time
+}
+
 func apiKeyAndIdFromBase64(base64Src string) (int64, string, error) {
 	decoded, err := base64.StdEncoding.WithPadding(base64.NoPadding).DecodeString(base64Src)
 	if err != nil {
@@ -116,6 +132,7 @@ type apiKeyStore interface {
 	AddApiKey(tenantID int64, hashedApiKey HashedApiKey) error
 	DeleteApiKey(id int64) (bool, error)
 	GetHashedApiKeyById(id int64) (HashedApiKey, error)
+	List(Filter, pagination.Request) (*pagination.Page[ApiKeyDTO], error)
 }
 
 type tenantStore interface {

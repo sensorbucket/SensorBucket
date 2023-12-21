@@ -9,6 +9,119 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGenerateNewApiKeyCreatesNewApiKey(t *testing.T) {
+	// Arrange
+	exp := time.Date(2024, 12, 9, 33, 12, 50, 300, time.UTC)
+	tenantStore := &tenantStoreMock{
+		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+			assert.Equal(t, int64(905), id)
+			return Tenant{
+				ID:    905,
+				State: Active,
+			}, nil
+		},
+	}
+	apiKeyStore := &apiKeyStoreMock{
+		AddApiKeyFunc: func(tenantID int64, hashedApiKey HashedApiKey) error {
+			assert.Equal(t, int64(905), tenantID)
+			assert.NotNil(t, hashedApiKey.ExpirationDate)
+			assert.Equal(t, exp, *hashedApiKey.ExpirationDate)
+			assert.NotEmpty(t, hashedApiKey.Value)
+			assert.NotEqual(t, 0, hashedApiKey.Key.ID)
+			return nil
+		},
+	}
+	s := &service{
+		tenantStore: tenantStore,
+		apiKeyStore: apiKeyStore,
+	}
+
+	// Act
+	res, err := s.GenerateNewApiKey(905, &exp)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotEmpty(t, res)
+	assert.Len(t, tenantStore.GetTenantByIdCalls(), 1)
+	assert.Len(t, apiKeyStore.AddApiKeyCalls(), 1)
+}
+
+func TestGenerateNewApiKeyErrorOccursWhileAddingApiKeyToStore(t *testing.T) {
+	// Arrange
+	tenantStore := &tenantStoreMock{
+		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+			assert.Equal(t, int64(905), id)
+			return Tenant{
+				ID:    905,
+				State: Active,
+			}, nil
+		},
+	}
+	apiKeyStore := &apiKeyStoreMock{
+		AddApiKeyFunc: func(tenantID int64, hashedApiKey HashedApiKey) error {
+			assert.Equal(t, int64(905), tenantID)
+			assert.NotEmpty(t, hashedApiKey.Value)
+			assert.NotEqual(t, 0, hashedApiKey.Key.ID)
+			return fmt.Errorf("weird database error!!")
+		},
+	}
+	s := &service{
+		tenantStore: tenantStore,
+		apiKeyStore: apiKeyStore,
+	}
+
+	// Act
+	res, err := s.GenerateNewApiKey(905, nil)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Empty(t, res)
+	assert.Len(t, tenantStore.GetTenantByIdCalls(), 1)
+	assert.Len(t, apiKeyStore.AddApiKeyCalls(), 1)
+}
+
+func TestGenerateNewApiKeyErrorOccursWhenRetrievingTenant(t *testing.T) {
+	// Arrange
+	tenantStore := &tenantStoreMock{
+		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+			assert.Equal(t, int64(905), id)
+			return Tenant{}, fmt.Errorf("weird database error!")
+		},
+	}
+	s := &service{
+		tenantStore: tenantStore,
+	}
+
+	// Act
+	res, err := s.GenerateNewApiKey(905, nil)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Empty(t, res)
+	assert.Len(t, tenantStore.GetTenantByIdCalls(), 1)
+}
+
+func TestGenerateNewApiKeyTenantDoesNotExist(t *testing.T) {
+	// Arrange
+	tenantStore := &tenantStoreMock{
+		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+			assert.Equal(t, int64(334), id)
+			return Tenant{}, nil
+		},
+	}
+	s := &service{
+		tenantStore: tenantStore,
+	}
+
+	// Act
+	res, err := s.GenerateNewApiKey(334, nil)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Empty(t, res)
+	assert.Len(t, tenantStore.GetTenantByIdCalls(), 1)
+}
+
 func TestRevokeApiKeyDeletesKey(t *testing.T) {
 	// Arrange
 	apiKeyStore := &apiKeyStoreMock{

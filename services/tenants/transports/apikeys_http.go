@@ -9,6 +9,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"sensorbucket.nl/sensorbucket/internal/httpfilter"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 )
@@ -34,6 +36,7 @@ func (t *APIKeysHTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
 func (t *APIKeysHTTPTransport) setupRoutes(r chi.Router) {
+	r.Get("/api-keys", t.httpGetApiKeys())
 	r.Delete("/api-keys/revoke", t.httpRevokeApiKey())
 	r.Post("/api-keys/new", t.httpCreateApiKey())
 	r.Get("/api-keys/validate", t.httpValidateApiKey())
@@ -83,6 +86,7 @@ func (t *APIKeysHTTPTransport) httpRevokeApiKey() http.HandlerFunc {
 
 func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 	type Params struct {
+		Name           string     `json:"name"`
 		TenantID       int64      `json:"organisation_id"`
 		ExpirationDate *time.Time `json:"expiration_date"`
 	}
@@ -95,12 +99,32 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 		err := json.NewDecoder(r.Body).Decode(&params)
 		if err != nil {
 			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
-				Message: "Invalid data",
+				Message: "Invalid JSON body",
+			})
+			return
+		}
+		if params.Name == "" {
+			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
+				Message: "name cannot be empty",
 			})
 			return
 		}
 
-		apiKey, err := t.apiKeySvc.GenerateNewApiKey(params.TenantID, params.ExpirationDate)
+		if params.TenantID <= 0 {
+			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
+				Message: "organisation_id must be higher than 0",
+			})
+			return
+		}
+
+		if params.ExpirationDate != nil && !params.ExpirationDate.After(time.Now()) {
+			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
+				Message: "expiration_date must be set in the future",
+			})
+			return
+		}
+
+		apiKey, err := t.apiKeySvc.GenerateNewApiKey(params.Name, params.TenantID, params.ExpirationDate)
 		if err != nil {
 			if errors.Is(err, apikeys.ErrTenantIsNotValid) {
 				web.HTTPResponse(w, http.StatusNotFound, web.APIResponseAny{
@@ -150,8 +174,31 @@ func (t *APIKeysHTTPTransport) httpValidateApiKey() http.HandlerFunc {
 	}
 }
 
+func (t *APIKeysHTTPTransport) httpGetApiKeys() http.HandlerFunc {
+	type Params struct {
+		apikeys.Filter     `pagination:",squash"`
+		pagination.Request `pagination:",squash"`
+	}
+	return func(rw http.ResponseWriter, r *http.Request) {
+		params, err := httpfilter.Parse[Params](r)
+		if err != nil {
+			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "invalid params", ""))
+			return
+		}
+
+		page, err := t.apiKeySvc.ListAPIKeys(params.Filter, params.Request)
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.url, *page))
+	}
+}
+
 type apiKeyService interface {
 	ValidateApiKey(base64IdAndKeyCombination string) (bool, error)
-	GenerateNewApiKey(tenantId int64, expiry *time.Time) (string, error)
+	GenerateNewApiKey(name string, tenantId int64, expiry *time.Time) (string, error)
 	RevokeApiKey(base64IdAndKeyCombination string) error
+	ListAPIKeys(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
 }

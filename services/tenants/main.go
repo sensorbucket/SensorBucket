@@ -35,6 +35,7 @@ type tmock struct{}
 
 func (t *tmock) GetTenantById(id int64) (apikeys.Tenant, error) {
 	return apikeys.Tenant{
+		ID:    1,
 		State: apikeys.Active,
 	}, nil
 }

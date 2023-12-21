@@ -19,10 +19,11 @@ type Tenant struct {
 	State TenantState
 }
 
-func newApiKey(expirationDate *time.Time) ApiKey {
+func newApiKey(name string, expirationDate *time.Time) ApiKey {
 	return ApiKey{
 		Key: Key{
 			ID:             rand.Int63(),
+			Name:           name,
 			ExpirationDate: expirationDate,
 		},
 		Value: generateRandomString32(),
@@ -39,8 +40,9 @@ type HashedApiKey struct {
 }
 
 type Key struct {
-	ID             int64      `json:"id"`
-	ExpirationDate *time.Time `json:"expiration_date"`
+	ID             int64
+	Name           string
+	ExpirationDate *time.Time
 }
 
 func (k *Key) IsExpired() bool {
