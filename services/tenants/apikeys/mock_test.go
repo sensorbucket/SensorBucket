@@ -17,10 +17,10 @@ var _ apiKeyStore = &apiKeyStoreMock{}
 //
 //		// make and configure a mocked apiKeyStore
 //		mockedapiKeyStore := &apiKeyStoreMock{
-//			AddApiKeyFunc: func(tenantID int64, id int64, hashedKey string) error {
+//			AddApiKeyFunc: func(tenantID int64, hashedApiKey HashedApiKey) error {
 //				panic("mock out the AddApiKey method")
 //			},
-//			DeleteApiKeyFunc: func(id int64) error {
+//			DeleteApiKeyFunc: func(id int64) (bool, error) {
 //				panic("mock out the DeleteApiKey method")
 //			},
 //			GetHashedApiKeyByIdFunc: func(id int64) (HashedApiKey, error) {
@@ -34,10 +34,10 @@ var _ apiKeyStore = &apiKeyStoreMock{}
 //	}
 type apiKeyStoreMock struct {
 	// AddApiKeyFunc mocks the AddApiKey method.
-	AddApiKeyFunc func(tenantID int64, id int64, hashedKey string) error
+	AddApiKeyFunc func(tenantID int64, hashedApiKey HashedApiKey) error
 
 	// DeleteApiKeyFunc mocks the DeleteApiKey method.
-	DeleteApiKeyFunc func(id int64) error
+	DeleteApiKeyFunc func(id int64) (bool, error)
 
 	// GetHashedApiKeyByIdFunc mocks the GetHashedApiKeyById method.
 	GetHashedApiKeyByIdFunc func(id int64) (HashedApiKey, error)
@@ -48,10 +48,8 @@ type apiKeyStoreMock struct {
 		AddApiKey []struct {
 			// TenantID is the tenantID argument value.
 			TenantID int64
-			// ID is the id argument value.
-			ID int64
-			// HashedKey is the hashedKey argument value.
-			HashedKey string
+			// HashedApiKey is the hashedApiKey argument value.
+			HashedApiKey HashedApiKey
 		}
 		// DeleteApiKey holds details about calls to the DeleteApiKey method.
 		DeleteApiKey []struct {
@@ -70,23 +68,21 @@ type apiKeyStoreMock struct {
 }
 
 // AddApiKey calls AddApiKeyFunc.
-func (mock *apiKeyStoreMock) AddApiKey(tenantID int64, id int64, hashedKey string) error {
+func (mock *apiKeyStoreMock) AddApiKey(tenantID int64, hashedApiKey HashedApiKey) error {
 	if mock.AddApiKeyFunc == nil {
 		panic("apiKeyStoreMock.AddApiKeyFunc: method is nil but apiKeyStore.AddApiKey was just called")
 	}
 	callInfo := struct {
-		TenantID  int64
-		ID        int64
-		HashedKey string
+		TenantID     int64
+		HashedApiKey HashedApiKey
 	}{
-		TenantID:  tenantID,
-		ID:        id,
-		HashedKey: hashedKey,
+		TenantID:     tenantID,
+		HashedApiKey: hashedApiKey,
 	}
 	mock.lockAddApiKey.Lock()
 	mock.calls.AddApiKey = append(mock.calls.AddApiKey, callInfo)
 	mock.lockAddApiKey.Unlock()
-	return mock.AddApiKeyFunc(tenantID, id, hashedKey)
+	return mock.AddApiKeyFunc(tenantID, hashedApiKey)
 }
 
 // AddApiKeyCalls gets all the calls that were made to AddApiKey.
@@ -94,14 +90,12 @@ func (mock *apiKeyStoreMock) AddApiKey(tenantID int64, id int64, hashedKey strin
 //
 //	len(mockedapiKeyStore.AddApiKeyCalls())
 func (mock *apiKeyStoreMock) AddApiKeyCalls() []struct {
-	TenantID  int64
-	ID        int64
-	HashedKey string
+	TenantID     int64
+	HashedApiKey HashedApiKey
 } {
 	var calls []struct {
-		TenantID  int64
-		ID        int64
-		HashedKey string
+		TenantID     int64
+		HashedApiKey HashedApiKey
 	}
 	mock.lockAddApiKey.RLock()
 	calls = mock.calls.AddApiKey
@@ -110,7 +104,7 @@ func (mock *apiKeyStoreMock) AddApiKeyCalls() []struct {
 }
 
 // DeleteApiKey calls DeleteApiKeyFunc.
-func (mock *apiKeyStoreMock) DeleteApiKey(id int64) error {
+func (mock *apiKeyStoreMock) DeleteApiKey(id int64) (bool, error) {
 	if mock.DeleteApiKeyFunc == nil {
 		panic("apiKeyStoreMock.DeleteApiKeyFunc: method is nil but apiKeyStore.DeleteApiKey was just called")
 	}

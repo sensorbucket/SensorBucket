@@ -4,16 +4,17 @@ import (
 	"encoding/base64"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRevokeApiKey(t *testing.T) {
+func TestRevokeApiKeyDeletesKey(t *testing.T) {
 	// Arrange
 	apiKeyStore := &apiKeyStoreMock{
-		DeleteApiKeyFunc: func(id int64) error {
+		DeleteApiKeyFunc: func(id int64) (bool, error) {
 			assert.Equal(t, int64(665213432), id)
-			return nil
+			return true, nil
 		},
 	}
 	s := &service{
@@ -21,7 +22,7 @@ func TestRevokeApiKey(t *testing.T) {
 	}
 
 	// Act
-	err := s.RevokeApiKey(665213432)
+	err := s.RevokeApiKey(asBase64("665213432:supersecretapikey"))
 
 	// Assert
 	assert.NoError(t, err)
@@ -31,9 +32,9 @@ func TestRevokeApiKey(t *testing.T) {
 func TestRevokeApiKeyErrorOccurs(t *testing.T) {
 	// Arrange
 	apiKeyStore := &apiKeyStoreMock{
-		DeleteApiKeyFunc: func(id int64) error {
-			assert.Equal(t, int64(4343241), id)
-			return fmt.Errorf("database error!")
+		DeleteApiKeyFunc: func(id int64) (bool, error) {
+			assert.Equal(t, int64(83245345), id)
+			return false, fmt.Errorf("weird error!!")
 		},
 	}
 	s := &service{
@@ -41,14 +42,34 @@ func TestRevokeApiKeyErrorOccurs(t *testing.T) {
 	}
 
 	// Act
-	err := s.RevokeApiKey(4343241)
+	err := s.RevokeApiKey(asBase64("83245345:supersecretapikey"))
 
 	// Assert
 	assert.Error(t, err)
 	assert.Len(t, apiKeyStore.DeleteApiKeyCalls(), 1)
 }
 
-func TestValidateApiKey(t *testing.T) {
+func TestRevokeApiKeyWasNotDeletedByStore(t *testing.T) {
+	// Arrange
+	apiKeyStore := &apiKeyStoreMock{
+		DeleteApiKeyFunc: func(id int64) (bool, error) {
+			assert.Equal(t, int64(83245345), id)
+			return false, nil
+		},
+	}
+	s := &service{
+		apiKeyStore: apiKeyStore,
+	}
+
+	// Act
+	err := s.RevokeApiKey(asBase64("83245345:supersecretapikey"))
+
+	// Assert
+	assert.ErrorIs(t, err, ErrKeyNotFound)
+	assert.Len(t, apiKeyStore.DeleteApiKeyCalls(), 1)
+}
+
+func TestRevokeKeyInvalidEncoding(t *testing.T) {
 	type scene struct {
 		Value    string
 		Expected bool
@@ -56,46 +77,49 @@ func TestValidateApiKey(t *testing.T) {
 	}
 
 	// Arrange
-	scenarios := map[string]scene{
-		"invalid base64 string": {
-			Value:    "invalid base64 blabla",
-			Expected: false,
-			Error:    true,
-		},
-		"invalid decoded format": {
-			Value:    asBase64("asdasdjahsdlkoahsd"),
-			Expected: false,
-			Error:    true,
-		},
-		"empty api key": {
-			Value:    asBase64("1231234:"),
-			Expected: false,
-			Error:    true,
-		},
-		"api key id invalid int": {
-			Value:    asBase64(("123sad213213:asdasidhlas")),
-			Expected: false,
-			Error:    true,
-		},
-		"api key id empty": {
-			Value:    asBase64(":asdashdlhasd"),
-			Expected: false,
-			Error:    true,
-		},
+	scenarios := map[string]string{
+		"invalid base64 string":  "invalid base64 blabla",
+		"invalid decoded format": asBase64("asdasdjahsdlkoahsd"),
+		"empty api key":          asBase64("1231234:"),
+		"api key id invalid int": asBase64(("123sad213213:asdasidhlas")),
+		"api key id empty":       asBase64(":asdashdlhasd"),
 	}
 	for scenario, input := range scenarios {
 		t.Run(scenario, func(t *testing.T) {
 			// Act
 			s := &service{}
-			res, err := s.ValidateApiKey(input.Value)
+			err := s.RevokeApiKey(input)
 
 			// Assert
-			assert.Equal(t, input.Expected, res)
-			if input.Error {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
+			assert.ErrorIs(t, err, ErrInvalidEncoding)
+		})
+	}
+}
+
+func TestValidateApiKeyInvalidEncoding(t *testing.T) {
+	type scene struct {
+		Value    string
+		Expected bool
+		Error    bool
+	}
+
+	// Arrange
+	scenarios := map[string]string{
+		"invalid base64 string":  "invalid base64 blabla",
+		"invalid decoded format": asBase64("asdasdjahsdlkoahsd"),
+		"empty api key":          asBase64("1231234:"),
+		"api key id invalid int": asBase64(("123sad213213:asdasidhlas")),
+		"api key id empty":       asBase64(":asdashdlhasd"),
+	}
+	for scenario, input := range scenarios {
+		t.Run(scenario, func(t *testing.T) {
+			// Act
+			s := &service{}
+			res, err := s.ValidateApiKey(input)
+
+			// Assert
+			assert.False(t, res)
+			assert.ErrorIs(t, err, ErrInvalidEncoding)
 		})
 	}
 }
@@ -145,6 +169,72 @@ func TestValidateApiKeyInvalidKey(t *testing.T) {
 	assert.False(t, res)
 	assert.NoError(t, err)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
+}
+
+func TestValidateApiKeyKeyIsExpired(t *testing.T) {
+	// Arrange
+	apiKeyStore := &apiKeyStoreMock{
+		GetHashedApiKeyByIdFunc: func(id int64) (HashedApiKey, error) {
+			assert.Equal(t, int64(43214), id)
+			t := time.Date(2010, 11, 12, 8, 37, 3, 500, time.Local)
+			return HashedApiKey{
+				Key: Key{
+					ID:             id,
+					ExpirationDate: &t,
+				},
+				Value: "$2a$10$b1rIBcIIN0SgBjqIIgZp9uPFHbJ0zAcJL27Wu8/kLMlIa0KMXjLua",
+			}, nil
+		},
+		DeleteApiKeyFunc: func(id int64) (bool, error) {
+			assert.Equal(t, int64(43214), id)
+			return true, nil
+		},
+	}
+	s := &service{
+		apiKeyStore: apiKeyStore,
+	}
+
+	// Act
+	res, err := s.ValidateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
+
+	// Assert
+	assert.False(t, res)
+	assert.NoError(t, err)
+	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
+	assert.Len(t, apiKeyStore.DeleteApiKeyCalls(), 1)
+}
+
+func TestValidateApiKeyKeyIsExpiredDeleteErrorOccurs(t *testing.T) {
+	// Arrange
+	apiKeyStore := &apiKeyStoreMock{
+		GetHashedApiKeyByIdFunc: func(id int64) (HashedApiKey, error) {
+			assert.Equal(t, int64(43214), id)
+			t := time.Date(2010, 11, 12, 8, 37, 3, 500, time.Local)
+			return HashedApiKey{
+				Key: Key{
+					ID:             id,
+					ExpirationDate: &t,
+				},
+				Value: "$2a$10$b1rIBcIIN0SgBjqIIgZp9uPFHbJ0zAcJL27Wu8/kLMlIa0KMXjLua",
+			}, nil
+		},
+		DeleteApiKeyFunc: func(id int64) (bool, error) {
+			assert.Equal(t, int64(43214), id)
+			return false, fmt.Errorf("weird database error")
+		},
+	}
+	s := &service{
+		apiKeyStore: apiKeyStore,
+	}
+
+	// Act
+	res, err := s.ValidateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
+
+	// Assert
+	assert.False(t, res)
+	assert.NoError(t, err)
+	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
+	assert.Len(t, apiKeyStore.DeleteApiKeyCalls(), 1)
 }
 
 func TestValidateApiKeyValidKey(t *testing.T) {

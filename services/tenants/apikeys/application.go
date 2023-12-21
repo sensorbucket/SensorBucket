@@ -26,7 +26,7 @@ func NewAPIKeyService(tenantStore tenantStore, apiKeyStore apiKeyStore) *service
 func (s *service) RevokeApiKey(base64IdAndKeyCombination string) error {
 	apiKeyId, _, err := apiKeyAndIdFromBase64(base64IdAndKeyCombination)
 	if err != nil {
-		return err
+		return ErrInvalidEncoding
 	}
 
 	res, err := s.apiKeyStore.DeleteApiKey(apiKeyId)
@@ -39,7 +39,6 @@ func (s *service) RevokeApiKey(base64IdAndKeyCombination string) error {
 	return nil
 }
 
-// TODO: unit tests for generate
 // Creates a new API key for the given tenant and with the given expiration date.
 // Returns the api key as: 'apiKeyId:apiKey' encoded to a base64 string.
 // Fails if the tenant is not active
@@ -80,7 +79,7 @@ func (s *service) ValidateApiKey(base64IdAndKeyCombination string) (bool, error)
 	if hashed.IsExpired() {
 		log.Println("[Info] detected expired API key, deleting")
 		if err := s.RevokeApiKey(base64IdAndKeyCombination); err != nil {
-			log.Printf("[Warning] couldnt' cleanup expired API key: '%s'\n", err)
+			log.Printf("[Warning] couldn't cleanup expired API key: '%s'\n", err)
 		}
 		return false, nil
 	}
