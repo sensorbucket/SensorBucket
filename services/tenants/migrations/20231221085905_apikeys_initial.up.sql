@@ -1,0 +1,9 @@
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS api_keys (
+    id BIGINT PRIMARY KEY,
+    value VARCHAR(255) NOT NULL,
+    expiration_date TIMESTAMP
+);
+
+COMMIT;

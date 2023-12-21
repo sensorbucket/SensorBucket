@@ -3,70 +3,101 @@ package apikeys
 import (
 	"encoding/base64"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
 )
 
-type Service struct {
-	tenantStore tenantStore
-	apiKeyStore apiKeyStore
-}
-
 var (
 	ErrTenantIsNotValid = fmt.Errorf("tenant is not valid")
 	ErrKeyNotFound      = fmt.Errorf("couldnt find key")
+	ErrInvalidEncoding  = fmt.Errorf("API key was sent using an invalid encoding")
 )
 
-func (s *Service) RevokeApiKey(apiKeyId int64) error {
-	return s.apiKeyStore.DeleteApiKey(apiKeyId)
+func NewAPIKeyService(tenantStore tenantStore, apiKeyStore apiKeyStore) *service {
+	return &service{
+		tenantStore: tenantStore,
+		apiKeyStore: apiKeyStore,
+	}
 }
 
-func (s *Service) GenerateNewApiKey(tenantId int64, expiry *time.Time) (ApiKey, error) {
+// Revokes an API key, returns ErrKeyNotFound if the given key was not found in the apiKeyStore
+func (s *service) RevokeApiKey(base64IdAndKeyCombination string) error {
+	apiKeyId, _, err := apiKeyAndIdFromBase64(base64IdAndKeyCombination)
+	if err != nil {
+		return err
+	}
+
+	res, err := s.apiKeyStore.DeleteApiKey(apiKeyId)
+	if err != nil {
+		return err
+	}
+	if !res {
+		return ErrKeyNotFound
+	}
+	return nil
+}
+
+// TODO: unit tests for generate
+// Creates a new API key for the given tenant and with the given expiration date.
+// Returns the api key as: 'apiKeyId:apiKey' encoded to a base64 string.
+// Fails if the tenant is not active
+func (s *service) GenerateNewApiKey(tenantId int64, expirationDate *time.Time) (string, error) {
 	tenant, err := s.tenantStore.GetTenantById(tenantId)
 	if err != nil {
-		return ApiKey{}, err
+		return "", err
 	}
 	if tenant.State != Active {
-		return ApiKey{}, ErrTenantIsNotValid
+		return "", ErrTenantIsNotValid
 	}
-	newApiKey := newApiKey()
+	newApiKey := newApiKey(expirationDate)
 	hashed, err := newApiKey.hash()
 	if err != nil {
-		return ApiKey{}, err
+		return "", err
 	}
-	err = s.apiKeyStore.AddApiKey(tenant.ID, newApiKey.ID, hashed.Value)
+	err = s.apiKeyStore.AddApiKey(tenant.ID, hashed)
 	if err != nil {
-		return ApiKey{}, err
+		return "", err
 	}
-	return newApiKey, nil
+	apiKey :=
+		base64.StdEncoding.WithPadding(base64.NoPadding).EncodeToString(
+			[]byte(fmt.Sprintf("%d:%s", newApiKey.ID, newApiKey.Value)))
+	return apiKey, nil
 }
 
-func (s *Service) ValidateApiKey(base64IdAndKeyCombination string) (bool, error) {
+// Validates a given API key. Input must be 'apiKeyId:apiKey' encoded to a base64 string
+// API key is valid if it is the correct api key id and api key combination and if the attached tenant is active
+func (s *service) ValidateApiKey(base64IdAndKeyCombination string) (bool, error) {
 	apiKeyId, apiKey, err := apiKeyAndIdFromBase64(base64IdAndKeyCombination)
 	if err != nil {
-		return false, err
+		return false, ErrInvalidEncoding
 	}
 	hashed, err := s.apiKeyStore.GetHashedApiKeyById(apiKeyId)
 	if err != nil {
 		return false, err
 	}
+	if hashed.IsExpired() {
+		log.Println("[Info] detected expired API key, deleting")
+		if err := s.RevokeApiKey(base64IdAndKeyCombination); err != nil {
+			log.Printf("[Warning] couldnt' cleanup expired API key: '%s'\n", err)
+		}
+		return false, nil
+	}
 	return hashed.compare(apiKey), nil
 }
 
 func apiKeyAndIdFromBase64(base64Src string) (int64, string, error) {
-	decoded, err := base64.StdEncoding.DecodeString(base64Src)
+	decoded, err := base64.StdEncoding.WithPadding(base64.NoPadding).DecodeString(base64Src)
 	if err != nil {
-		// TODO: wrap error in generic invalid base64 error
 		return -1, "", err
 	}
-
 	// Expected format for the decoded base64 string is 'id:apiKey'
 	combo := strings.Split(string(decoded), ":")
 	if len(combo) != 2 {
 		return -1, "", fmt.Errorf("api key combination format must adhere to 'id:apiKey'")
 	}
-	apiKeyId, err := strconv.ParseInt(combo[0], 10, 32)
+	apiKeyId, err := strconv.ParseInt(combo[0], 10, 64)
 	if err != nil {
 		return -1, "", err
 	}
@@ -77,9 +108,14 @@ func apiKeyAndIdFromBase64(base64Src string) (int64, string, error) {
 	return apiKeyId, apiKey, nil
 }
 
+type service struct {
+	tenantStore tenantStore
+	apiKeyStore apiKeyStore
+}
+
 type apiKeyStore interface {
-	AddApiKey(tenantID int64, id int64, hashedKey string) error
-	DeleteApiKey(id int64) error
+	AddApiKey(tenantID int64, hashedApiKey HashedApiKey) error
+	DeleteApiKey(id int64) (bool, error)
 	GetHashedApiKeyById(id int64) (HashedApiKey, error)
 }
 

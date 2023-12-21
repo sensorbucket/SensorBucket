@@ -16,7 +16,7 @@ func TestRevokeApiKey(t *testing.T) {
 			return nil
 		},
 	}
-	s := &Service{
+	s := &service{
 		apiKeyStore: apiKeyStore,
 	}
 
@@ -36,7 +36,7 @@ func TestRevokeApiKeyErrorOccurs(t *testing.T) {
 			return fmt.Errorf("database error!")
 		},
 	}
-	s := &Service{
+	s := &service{
 		apiKeyStore: apiKeyStore,
 	}
 
@@ -86,7 +86,7 @@ func TestValidateApiKey(t *testing.T) {
 	for scenario, input := range scenarios {
 		t.Run(scenario, func(t *testing.T) {
 			// Act
-			s := &Service{}
+			s := &service{}
 			res, err := s.ValidateApiKey(input.Value)
 
 			// Assert
@@ -108,7 +108,7 @@ func TestValidateApiKeyErrorOccursWhileRetrievingKey(t *testing.T) {
 			return HashedApiKey{}, fmt.Errorf("database error!!")
 		},
 	}
-	s := &Service{
+	s := &service{
 		apiKeyStore: apiKeyStore,
 	}
 
@@ -134,7 +134,7 @@ func TestValidateApiKeyInvalidKey(t *testing.T) {
 			}, nil
 		},
 	}
-	s := &Service{
+	s := &service{
 		apiKeyStore: apiKeyStore,
 	}
 
@@ -160,7 +160,7 @@ func TestValidateApiKeyValidKey(t *testing.T) {
 			}, nil
 		},
 	}
-	s := &Service{
+	s := &service{
 		apiKeyStore: apiKeyStore,
 	}
 
@@ -174,5 +174,5 @@ func TestValidateApiKeyValidKey(t *testing.T) {
 }
 
 func asBase64(val string) string {
-	return base64.StdEncoding.EncodeToString([]byte(val))
+	return base64.StdEncoding.WithPadding(base64.NoPadding).EncodeToString([]byte(val))
 }
