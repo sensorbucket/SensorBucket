@@ -30,6 +30,55 @@ func TestNewApiKeyInvalidJsonBody(t *testing.T) {
 	assert.Len(t, svc.GenerateNewApiKeyCalls(), 0)
 }
 
+func TestNewApiKeyNoName(t *testing.T) {
+	// Arrange
+	svc := apiKeyServiceMock{}
+	transport := testTransport(&svc)
+	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(`{"name": "", "organisation_id": 905}`))
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Equal(t, `{"message":"name cannot be empty"}`+"\n", rr.Body.String())
+	assert.Len(t, svc.GenerateNewApiKeyCalls(), 0)
+}
+
+func TestNewApiKeyNoOrganisationID(t *testing.T) {
+	// Arrange
+	svc := apiKeyServiceMock{}
+	transport := testTransport(&svc)
+	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(`{"name": "wasdasdas", "organisation_id": 0}`))
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Equal(t, `{"message":"organisation_id must be higher than 0"}`+"\n", rr.Body.String())
+	assert.Len(t, svc.GenerateNewApiKeyCalls(), 0)
+}
+
+func TestNewApiKeyExpirationDateNotInTheFuture(t *testing.T) {
+	// Arrange
+	svc := apiKeyServiceMock{}
+	transport := testTransport(&svc)
+	req, _ := http.NewRequest("POST", "/api-keys/new",
+		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "organisation_id": 12, "expiration_date": "%s"}`, time.Now().Add(-time.Hour*24).Format(time.RFC3339))))
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Equal(t, `{"message":"expiration_date must be set in the future"}`+"\n", rr.Body.String())
+	assert.Len(t, svc.GenerateNewApiKeyCalls(), 0)
+}
+
 func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
