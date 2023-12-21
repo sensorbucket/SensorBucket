@@ -1,4 +1,9 @@
 :80 {
+    forward_auth oathkeeper:4456 {
+        uri /decisions
+        copy_headers Authorization
+    }
+
     handle_path /api/* {
         handle_path /uplinks* {
             reverse_proxy httpimporter:3000
