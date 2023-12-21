@@ -4,6 +4,7 @@
 package apikeys
 
 import (
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sync"
 )
 
@@ -26,6 +27,9 @@ var _ apiKeyStore = &apiKeyStoreMock{}
 //			GetHashedApiKeyByIdFunc: func(id int64) (HashedApiKey, error) {
 //				panic("mock out the GetHashedApiKeyById method")
 //			},
+//			ListFunc: func(filter Filter, request pagination.Request) (*pagination.Page[ApiKeyDTO], error) {
+//				panic("mock out the List method")
+//			},
 //		}
 //
 //		// use mockedapiKeyStore in code that requires apiKeyStore
@@ -41,6 +45,9 @@ type apiKeyStoreMock struct {
 
 	// GetHashedApiKeyByIdFunc mocks the GetHashedApiKeyById method.
 	GetHashedApiKeyByIdFunc func(id int64) (HashedApiKey, error)
+
+	// ListFunc mocks the List method.
+	ListFunc func(filter Filter, request pagination.Request) (*pagination.Page[ApiKeyDTO], error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -61,10 +68,18 @@ type apiKeyStoreMock struct {
 			// ID is the id argument value.
 			ID int64
 		}
+		// List holds details about calls to the List method.
+		List []struct {
+			// Filter is the filter argument value.
+			Filter Filter
+			// Request is the request argument value.
+			Request pagination.Request
+		}
 	}
 	lockAddApiKey           sync.RWMutex
 	lockDeleteApiKey        sync.RWMutex
 	lockGetHashedApiKeyById sync.RWMutex
+	lockList                sync.RWMutex
 }
 
 // AddApiKey calls AddApiKeyFunc.
@@ -164,6 +179,42 @@ func (mock *apiKeyStoreMock) GetHashedApiKeyByIdCalls() []struct {
 	mock.lockGetHashedApiKeyById.RLock()
 	calls = mock.calls.GetHashedApiKeyById
 	mock.lockGetHashedApiKeyById.RUnlock()
+	return calls
+}
+
+// List calls ListFunc.
+func (mock *apiKeyStoreMock) List(filter Filter, request pagination.Request) (*pagination.Page[ApiKeyDTO], error) {
+	if mock.ListFunc == nil {
+		panic("apiKeyStoreMock.ListFunc: method is nil but apiKeyStore.List was just called")
+	}
+	callInfo := struct {
+		Filter  Filter
+		Request pagination.Request
+	}{
+		Filter:  filter,
+		Request: request,
+	}
+	mock.lockList.Lock()
+	mock.calls.List = append(mock.calls.List, callInfo)
+	mock.lockList.Unlock()
+	return mock.ListFunc(filter, request)
+}
+
+// ListCalls gets all the calls that were made to List.
+// Check the length with:
+//
+//	len(mockedapiKeyStore.ListCalls())
+func (mock *apiKeyStoreMock) ListCalls() []struct {
+	Filter  Filter
+	Request pagination.Request
+} {
+	var calls []struct {
+		Filter  Filter
+		Request pagination.Request
+	}
+	mock.lockList.RLock()
+	calls = mock.calls.List
+	mock.lockList.RUnlock()
 	return calls
 }
 

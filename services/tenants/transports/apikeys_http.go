@@ -52,7 +52,7 @@ func (t *APIKeysHTTPTransport) httpRevokeApiKey() http.HandlerFunc {
 		err := json.NewDecoder(r.Body).Decode(&params)
 		if err != nil {
 			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
-				Message: "Invalid data",
+				Message: "Invalid JSON body",
 			})
 			return
 		}

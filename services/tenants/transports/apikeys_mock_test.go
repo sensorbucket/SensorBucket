@@ -4,6 +4,8 @@
 package tenantstransports
 
 import (
+	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	"sync"
 	"time"
 )
@@ -18,8 +20,11 @@ var _ apiKeyService = &apiKeyServiceMock{}
 //
 //		// make and configure a mocked apiKeyService
 //		mockedapiKeyService := &apiKeyServiceMock{
-//			GenerateNewApiKeyFunc: func(tenantId int64, expiry *time.Time) (string, error) {
+//			GenerateNewApiKeyFunc: func(name string, tenantId int64, expiry *time.Time) (string, error) {
 //				panic("mock out the GenerateNewApiKey method")
+//			},
+//			ListAPIKeysFunc: func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
+//				panic("mock out the ListAPIKeys method")
 //			},
 //			RevokeApiKeyFunc: func(base64IdAndKeyCombination string) error {
 //				panic("mock out the RevokeApiKey method")
@@ -35,7 +40,10 @@ var _ apiKeyService = &apiKeyServiceMock{}
 //	}
 type apiKeyServiceMock struct {
 	// GenerateNewApiKeyFunc mocks the GenerateNewApiKey method.
-	GenerateNewApiKeyFunc func(tenantId int64, expiry *time.Time) (string, error)
+	GenerateNewApiKeyFunc func(name string, tenantId int64, expiry *time.Time) (string, error)
+
+	// ListAPIKeysFunc mocks the ListAPIKeys method.
+	ListAPIKeysFunc func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
 
 	// RevokeApiKeyFunc mocks the RevokeApiKey method.
 	RevokeApiKeyFunc func(base64IdAndKeyCombination string) error
@@ -47,10 +55,19 @@ type apiKeyServiceMock struct {
 	calls struct {
 		// GenerateNewApiKey holds details about calls to the GenerateNewApiKey method.
 		GenerateNewApiKey []struct {
+			// Name is the name argument value.
+			Name string
 			// TenantId is the tenantId argument value.
 			TenantId int64
 			// Expiry is the expiry argument value.
 			Expiry *time.Time
+		}
+		// ListAPIKeys holds details about calls to the ListAPIKeys method.
+		ListAPIKeys []struct {
+			// Filter is the filter argument value.
+			Filter apikeys.Filter
+			// P is the p argument value.
+			P pagination.Request
 		}
 		// RevokeApiKey holds details about calls to the RevokeApiKey method.
 		RevokeApiKey []struct {
@@ -64,26 +81,29 @@ type apiKeyServiceMock struct {
 		}
 	}
 	lockGenerateNewApiKey sync.RWMutex
+	lockListAPIKeys       sync.RWMutex
 	lockRevokeApiKey      sync.RWMutex
 	lockValidateApiKey    sync.RWMutex
 }
 
 // GenerateNewApiKey calls GenerateNewApiKeyFunc.
-func (mock *apiKeyServiceMock) GenerateNewApiKey(tenantId int64, expiry *time.Time) (string, error) {
+func (mock *apiKeyServiceMock) GenerateNewApiKey(name string, tenantId int64, expiry *time.Time) (string, error) {
 	if mock.GenerateNewApiKeyFunc == nil {
 		panic("apiKeyServiceMock.GenerateNewApiKeyFunc: method is nil but apiKeyService.GenerateNewApiKey was just called")
 	}
 	callInfo := struct {
+		Name     string
 		TenantId int64
 		Expiry   *time.Time
 	}{
+		Name:     name,
 		TenantId: tenantId,
 		Expiry:   expiry,
 	}
 	mock.lockGenerateNewApiKey.Lock()
 	mock.calls.GenerateNewApiKey = append(mock.calls.GenerateNewApiKey, callInfo)
 	mock.lockGenerateNewApiKey.Unlock()
-	return mock.GenerateNewApiKeyFunc(tenantId, expiry)
+	return mock.GenerateNewApiKeyFunc(name, tenantId, expiry)
 }
 
 // GenerateNewApiKeyCalls gets all the calls that were made to GenerateNewApiKey.
@@ -91,16 +111,54 @@ func (mock *apiKeyServiceMock) GenerateNewApiKey(tenantId int64, expiry *time.Ti
 //
 //	len(mockedapiKeyService.GenerateNewApiKeyCalls())
 func (mock *apiKeyServiceMock) GenerateNewApiKeyCalls() []struct {
+	Name     string
 	TenantId int64
 	Expiry   *time.Time
 } {
 	var calls []struct {
+		Name     string
 		TenantId int64
 		Expiry   *time.Time
 	}
 	mock.lockGenerateNewApiKey.RLock()
 	calls = mock.calls.GenerateNewApiKey
 	mock.lockGenerateNewApiKey.RUnlock()
+	return calls
+}
+
+// ListAPIKeys calls ListAPIKeysFunc.
+func (mock *apiKeyServiceMock) ListAPIKeys(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
+	if mock.ListAPIKeysFunc == nil {
+		panic("apiKeyServiceMock.ListAPIKeysFunc: method is nil but apiKeyService.ListAPIKeys was just called")
+	}
+	callInfo := struct {
+		Filter apikeys.Filter
+		P      pagination.Request
+	}{
+		Filter: filter,
+		P:      p,
+	}
+	mock.lockListAPIKeys.Lock()
+	mock.calls.ListAPIKeys = append(mock.calls.ListAPIKeys, callInfo)
+	mock.lockListAPIKeys.Unlock()
+	return mock.ListAPIKeysFunc(filter, p)
+}
+
+// ListAPIKeysCalls gets all the calls that were made to ListAPIKeys.
+// Check the length with:
+//
+//	len(mockedapiKeyService.ListAPIKeysCalls())
+func (mock *apiKeyServiceMock) ListAPIKeysCalls() []struct {
+	Filter apikeys.Filter
+	P      pagination.Request
+} {
+	var calls []struct {
+		Filter apikeys.Filter
+		P      pagination.Request
+	}
+	mock.lockListAPIKeys.RLock()
+	calls = mock.calls.ListAPIKeys
+	mock.lockListAPIKeys.RUnlock()
 	return calls
 }
 

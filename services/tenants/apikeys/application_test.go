@@ -37,7 +37,7 @@ func TestGenerateNewApiKeyCreatesNewApiKey(t *testing.T) {
 	}
 
 	// Act
-	res, err := s.GenerateNewApiKey(905, &exp)
+	res, err := s.GenerateNewApiKey("whatever", 905, &exp)
 
 	// Assert
 	assert.NoError(t, err)
@@ -71,7 +71,7 @@ func TestGenerateNewApiKeyErrorOccursWhileAddingApiKeyToStore(t *testing.T) {
 	}
 
 	// Act
-	res, err := s.GenerateNewApiKey(905, nil)
+	res, err := s.GenerateNewApiKey("whatever", 905, nil)
 
 	// Assert
 	assert.Error(t, err)
@@ -93,7 +93,7 @@ func TestGenerateNewApiKeyErrorOccursWhenRetrievingTenant(t *testing.T) {
 	}
 
 	// Act
-	res, err := s.GenerateNewApiKey(905, nil)
+	res, err := s.GenerateNewApiKey("whatever", 905, nil)
 
 	// Assert
 	assert.Error(t, err)
@@ -114,7 +114,7 @@ func TestGenerateNewApiKeyTenantDoesNotExist(t *testing.T) {
 	}
 
 	// Act
-	res, err := s.GenerateNewApiKey(334, nil)
+	res, err := s.GenerateNewApiKey("whatever", 334, nil)
 
 	// Assert
 	assert.Error(t, err)

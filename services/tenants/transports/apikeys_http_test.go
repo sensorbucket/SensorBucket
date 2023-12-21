@@ -26,21 +26,21 @@ func TestNewApiKeyInvalidJsonBody(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Equal(t, `{"message":"Invalid data"}`+"\n", rr.Body.String())
+	assert.Equal(t, `{"message":"Invalid JSON body"}`+"\n", rr.Body.String())
 	assert.Len(t, svc.GenerateNewApiKeyCalls(), 0)
 }
 
 func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(tenantId int64, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(name string, tenantId int64, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
 			assert.Nil(t, expiry)
 			return "", apikeys.ErrTenantIsNotValid
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(`{"organisation_id": 905}`))
+	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(`{"name": "whatever", "organisation_id": 905}`))
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -56,7 +56,7 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 	// Arrange
 	exp := time.Now().UTC().Add(time.Hour * 24 * 5)
 	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(tenantId int64, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(name string, tenantId int64, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
 			assert.NotNil(t, expiry)
 			assert.Equal(t, exp, *expiry)
@@ -65,7 +65,7 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 	}
 	transport := testTransport(&svc)
 	fmt.Println(exp.String())
-	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(fmt.Sprintf(`{"organisation_id": 905, "expiration_date": "%s"}`, exp.Format("2006-01-02T15:04:05.999999999Z"))))
+	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(fmt.Sprintf(`{"name": "whatever", "organisation_id": 905, "expiration_date": "%s"}`, exp.Format("2006-01-02T15:04:05.999999999Z"))))
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -80,14 +80,14 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 func TestNewApiKeyIsCreatedWithoutExpirationDate(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(tenantId int64, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(name string, tenantId int64, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
 			assert.Nil(t, expiry)
 			return "newapikey", nil
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(`{"organisation_id": 905}`))
+	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(`{"name": "whatever", "organisation_id": 905}`))
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -132,7 +132,7 @@ func TestRevokeApiKeyInvalidJsonBody(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Equal(t, `{"message":"Invalid data"}`+"\n", rr.Body.String())
+	assert.Equal(t, `{"message":"Invalid JSON body"}`+"\n", rr.Body.String())
 	assert.Len(t, svc.RevokeApiKeyCalls(), 0)
 }
 
