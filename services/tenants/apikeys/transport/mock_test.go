@@ -21,6 +21,9 @@ var _ apiKeyService = &apiKeyServiceMock{}
 //			GenerateNewApiKeyFunc: func(tenantId int64, expiry *time.Time) (int64, string, error) {
 //				panic("mock out the GenerateNewApiKey method")
 //			},
+//			RevokeApiKeyFunc: func(apiKeyId int64) error {
+//				panic("mock out the RevokeApiKey method")
+//			},
 //			ValidateApiKeyFunc: func(base64IdAndKeyCombination string) (bool, error) {
 //				panic("mock out the ValidateApiKey method")
 //			},
@@ -34,6 +37,9 @@ type apiKeyServiceMock struct {
 	// GenerateNewApiKeyFunc mocks the GenerateNewApiKey method.
 	GenerateNewApiKeyFunc func(tenantId int64, expiry *time.Time) (int64, string, error)
 
+	// RevokeApiKeyFunc mocks the RevokeApiKey method.
+	RevokeApiKeyFunc func(apiKeyId int64) error
+
 	// ValidateApiKeyFunc mocks the ValidateApiKey method.
 	ValidateApiKeyFunc func(base64IdAndKeyCombination string) (bool, error)
 
@@ -46,6 +52,11 @@ type apiKeyServiceMock struct {
 			// Expiry is the expiry argument value.
 			Expiry *time.Time
 		}
+		// RevokeApiKey holds details about calls to the RevokeApiKey method.
+		RevokeApiKey []struct {
+			// ApiKeyId is the apiKeyId argument value.
+			ApiKeyId int64
+		}
 		// ValidateApiKey holds details about calls to the ValidateApiKey method.
 		ValidateApiKey []struct {
 			// Base64IdAndKeyCombination is the base64IdAndKeyCombination argument value.
@@ -53,6 +64,7 @@ type apiKeyServiceMock struct {
 		}
 	}
 	lockGenerateNewApiKey sync.RWMutex
+	lockRevokeApiKey      sync.RWMutex
 	lockValidateApiKey    sync.RWMutex
 }
 
@@ -89,6 +101,38 @@ func (mock *apiKeyServiceMock) GenerateNewApiKeyCalls() []struct {
 	mock.lockGenerateNewApiKey.RLock()
 	calls = mock.calls.GenerateNewApiKey
 	mock.lockGenerateNewApiKey.RUnlock()
+	return calls
+}
+
+// RevokeApiKey calls RevokeApiKeyFunc.
+func (mock *apiKeyServiceMock) RevokeApiKey(apiKeyId int64) error {
+	if mock.RevokeApiKeyFunc == nil {
+		panic("apiKeyServiceMock.RevokeApiKeyFunc: method is nil but apiKeyService.RevokeApiKey was just called")
+	}
+	callInfo := struct {
+		ApiKeyId int64
+	}{
+		ApiKeyId: apiKeyId,
+	}
+	mock.lockRevokeApiKey.Lock()
+	mock.calls.RevokeApiKey = append(mock.calls.RevokeApiKey, callInfo)
+	mock.lockRevokeApiKey.Unlock()
+	return mock.RevokeApiKeyFunc(apiKeyId)
+}
+
+// RevokeApiKeyCalls gets all the calls that were made to RevokeApiKey.
+// Check the length with:
+//
+//	len(mockedapiKeyService.RevokeApiKeyCalls())
+func (mock *apiKeyServiceMock) RevokeApiKeyCalls() []struct {
+	ApiKeyId int64
+} {
+	var calls []struct {
+		ApiKeyId int64
+	}
+	mock.lockRevokeApiKey.RLock()
+	calls = mock.calls.RevokeApiKey
+	mock.lockRevokeApiKey.RUnlock()
 	return calls
 }
 

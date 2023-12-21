@@ -8,6 +8,46 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRevokeApiKey(t *testing.T) {
+	// Arrange
+	apiKeyStore := &apiKeyStoreMock{
+		DeleteApiKeyFunc: func(id int64) error {
+			assert.Equal(t, int64(665213432), id)
+			return nil
+		},
+	}
+	s := &Service{
+		apiKeyStore: apiKeyStore,
+	}
+
+	// Act
+	err := s.RevokeApiKey(665213432)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Len(t, apiKeyStore.DeleteApiKeyCalls(), 1)
+}
+
+func TestRevokeApiKeyErrorOccurs(t *testing.T) {
+	// Arrange
+	apiKeyStore := &apiKeyStoreMock{
+		DeleteApiKeyFunc: func(id int64) error {
+			assert.Equal(t, int64(4343241), id)
+			return fmt.Errorf("database error!")
+		},
+	}
+	s := &Service{
+		apiKeyStore: apiKeyStore,
+	}
+
+	// Act
+	err := s.RevokeApiKey(4343241)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Len(t, apiKeyStore.DeleteApiKeyCalls(), 1)
+}
+
 func TestValidateApiKey(t *testing.T) {
 	type scene struct {
 		Value    string

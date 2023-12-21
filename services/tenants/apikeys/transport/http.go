@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -34,14 +35,40 @@ func (t *HTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *HTTPTransport) setupRoutes(r chi.Router) {
-	r.Delete("/api-keys/revoke", t.httpRevokeApiKey())
+	r.Delete("/api-keys/revoke/{api_key_id}", t.httpRevokeApiKey())
 	r.Post("/api-keys/new", t.httpCreateApiKey())
 	r.Get("/api-keys/validate", t.httpValidateApiKey())
 }
 
 func (t *HTTPTransport) httpRevokeApiKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		apiKeyIdStr := chi.URLParam(r, "api_key_id")
+		if apiKeyIdStr == "" {
+			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
+				Message: "api_key_id must be set",
+			})
+			return
+		}
+		apiKeyId, err := strconv.ParseInt(apiKeyIdStr, 10, 32)
+		if err != nil {
+			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
+				Message: "api_key_id must be a valid int",
+			})
+			return
+		}
+		err = t.apiKeySvc.RevokeApiKey(apiKeyId)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+			Message: "API key has been revoked",
+			Data: struct {
+				ApiKeyId int64 `json:"api_key_id"`
+			}{
+				ApiKeyId: apiKeyId,
+			},
+		})
 	}
 }
 
@@ -113,4 +140,5 @@ func (t *HTTPTransport) httpValidateApiKey() http.HandlerFunc {
 type apiKeyService interface {
 	ValidateApiKey(base64IdAndKeyCombination string) (bool, error)
 	GenerateNewApiKey(tenantId int64, expiry *time.Time) (int64, string, error)
+	RevokeApiKey(apiKeyId int64) error
 }
