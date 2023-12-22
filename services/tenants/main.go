@@ -9,6 +9,7 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	tenantsinfra "sensorbucket.nl/sensorbucket/services/tenants/infrastructure"
 	"sensorbucket.nl/sensorbucket/services/tenants/migrations"
+	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 	tenantstransports "sensorbucket.nl/sensorbucket/services/tenants/transports"
 )
 
@@ -18,16 +19,27 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	apiKeyStore := tenantsinfra.NewAPIKeyStorePSQL(db)
-	apiKeySvc := apikeys.NewAPIKeyService(&tmock{}, apiKeyStore)
-	apiKeyHttp := tenantstransports.NewAPIKeysHTTP(apiKeySvc, "localhost")
+	tenantSTore := tenantsinfra.NewTenantsStorePSQL(db)
+	s := tenants.NewTenantService(tenantSTore)
+	tenantHttp := tenantstransports.NewTenantsHTTP(s, "localhost")
 	srv := &http.Server{
 		Addr:         ":3010",
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
-		Handler:      apiKeyHttp,
+		Handler:      tenantHttp,
 	}
 	srv.ListenAndServe()
+	return
+	// apiKeyStore := tenantsinfra.NewAPIKeyStorePSQL(db)
+	// apiKeySvc := apikeys.NewAPIKeyService(&tmock{}, apiKeyStore)
+	// apiKeyHttp := tenantstransports.NewAPIKeysHTTP(apiKeySvc, "localhost")
+	// srv := &http.Server{
+	// 	Addr:         ":3010",
+	// 	WriteTimeout: 5 * time.Second,
+	// 	ReadTimeout:  5 * time.Second,
+	// 	Handler:      apiKeyHttp,
+	// }
+	// srv.ListenAndServe()
 
 }
 
