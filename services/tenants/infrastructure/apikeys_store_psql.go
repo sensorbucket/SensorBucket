@@ -92,7 +92,7 @@ func (as *apiKeyStore) DeleteApiKey(id int64) (bool, error) {
 }
 
 func (as *apiKeyStore) GetHashedApiKeyById(id int64) (apikeys.HashedApiKey, error) {
-	q := sq.Select("id, value, expiration_date").From("api_keys").Where("id=?", id)
+	q := sq.Select("id, value, tenant_id, expiration_date").From("api_keys").Where("id=?", id)
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
 	if err != nil {
 		return apikeys.HashedApiKey{}, err
@@ -102,6 +102,7 @@ func (as *apiKeyStore) GetHashedApiKeyById(id int64) (apikeys.HashedApiKey, erro
 		err = rows.Scan(
 			&k.ID,
 			&k.Value,
+			&k.TenantID,
 			&k.ExpirationDate)
 		if err != nil {
 			return apikeys.HashedApiKey{}, err

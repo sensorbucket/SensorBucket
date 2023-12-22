@@ -73,33 +73,42 @@ func (s *service) GenerateNewApiKey(name string, tenantId int64, expirationDate 
 
 // Validates a given API key. Input must be 'apiKeyId:apiKey' encoded to a base64 string
 // API key is valid if it is the correct api key id and api key combination and if the attached tenant is active
-func (s *service) ValidateApiKey(base64IdAndKeyCombination string) (bool, error) {
+func (s *service) ValidateApiKey(base64IdAndKeyCombination string) (ApiKeyValidDTO, error) {
 	apiKeyId, apiKey, err := apiKeyAndIdFromBase64(base64IdAndKeyCombination)
 	if err != nil {
-		return false, ErrInvalidEncoding
+		return ApiKeyValidDTO{}, ErrInvalidEncoding
 	}
 	hashed, err := s.apiKeyStore.GetHashedApiKeyById(apiKeyId)
 	if err != nil {
-		return false, err
+		return ApiKeyValidDTO{}, err
 	}
 	if hashed.IsExpired() {
 		log.Println("[Info] detected expired API key, deleting")
 		if err := s.RevokeApiKey(base64IdAndKeyCombination); err != nil {
 			log.Printf("[Warning] couldn't cleanup expired API key: '%s'\n", err)
 		}
-		return false, nil
+		return ApiKeyValidDTO{}, nil
 	}
-	return hashed.compare(apiKey), nil
+	isValid := hashed.compare(apiKey)
+	return ApiKeyValidDTO{
+		IsValid:  isValid,
+		TenantID: hashed.TenantID,
+	}, nil
 }
 
 type Filter struct {
 	TenantID []int64 `schema:"tenant_id"`
 }
 
+type ApiKeyValidDTO struct {
+	IsValid  bool  `json:"-"`
+	TenantID int64 `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
+}
+
 type ApiKeyDTO struct {
-	Name           string
-	TenantID       int64
-	ExpirationDate *time.Time
+	Name           string     `json:"name"`
+	TenantID       int64      `json:"tenant_id"`
+	ExpirationDate *time.Time `json:"expiration_date"`
 }
 
 func apiKeyAndIdFromBase64(base64Src string) (int64, string, error) {

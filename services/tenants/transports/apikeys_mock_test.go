@@ -29,7 +29,7 @@ var _ apiKeyService = &apiKeyServiceMock{}
 //			RevokeApiKeyFunc: func(base64IdAndKeyCombination string) error {
 //				panic("mock out the RevokeApiKey method")
 //			},
-//			ValidateApiKeyFunc: func(base64IdAndKeyCombination string) (bool, error) {
+//			ValidateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyValidDTO, error) {
 //				panic("mock out the ValidateApiKey method")
 //			},
 //		}
@@ -49,7 +49,7 @@ type apiKeyServiceMock struct {
 	RevokeApiKeyFunc func(base64IdAndKeyCombination string) error
 
 	// ValidateApiKeyFunc mocks the ValidateApiKey method.
-	ValidateApiKeyFunc func(base64IdAndKeyCombination string) (bool, error)
+	ValidateApiKeyFunc func(base64IdAndKeyCombination string) (apikeys.ApiKeyValidDTO, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -195,7 +195,7 @@ func (mock *apiKeyServiceMock) RevokeApiKeyCalls() []struct {
 }
 
 // ValidateApiKey calls ValidateApiKeyFunc.
-func (mock *apiKeyServiceMock) ValidateApiKey(base64IdAndKeyCombination string) (bool, error) {
+func (mock *apiKeyServiceMock) ValidateApiKey(base64IdAndKeyCombination string) (apikeys.ApiKeyValidDTO, error) {
 	if mock.ValidateApiKeyFunc == nil {
 		panic("apiKeyServiceMock.ValidateApiKeyFunc: method is nil but apiKeyService.ValidateApiKey was just called")
 	}

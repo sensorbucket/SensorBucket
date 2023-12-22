@@ -231,7 +231,8 @@ func TestValidateApiKeyInvalidEncoding(t *testing.T) {
 			res, err := s.ValidateApiKey(input)
 
 			// Assert
-			assert.False(t, res)
+			assert.False(t, res.IsValid)
+			assert.Equal(t, int64(0), res.TenantID)
 			assert.ErrorIs(t, err, ErrInvalidEncoding)
 		})
 	}
@@ -253,7 +254,8 @@ func TestValidateApiKeyErrorOccursWhileRetrievingKey(t *testing.T) {
 	res, err := s.ValidateApiKey(asBase64("43214:somevalidapikey"))
 
 	// Assert
-	assert.False(t, res)
+	assert.False(t, res.IsValid)
+	assert.Equal(t, int64(0), res.TenantID)
 	assert.Error(t, err)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
 }
@@ -267,7 +269,8 @@ func TestValidateApiKeyInvalidKey(t *testing.T) {
 				Key: Key{
 					ID: id,
 				},
-				Value: "hash is not equal to input key!!",
+				TenantID: 823,
+				Value:    "hash is not equal to input key!!",
 			}, nil
 		},
 	}
@@ -279,7 +282,8 @@ func TestValidateApiKeyInvalidKey(t *testing.T) {
 	res, err := s.ValidateApiKey(asBase64("43214:someinvalidapikey"))
 
 	// Assert
-	assert.False(t, res)
+	assert.False(t, res.IsValid)
+	assert.Equal(t, int64(823), res.TenantID)
 	assert.NoError(t, err)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
 }
@@ -295,7 +299,8 @@ func TestValidateApiKeyKeyIsExpired(t *testing.T) {
 					ID:             id,
 					ExpirationDate: &t,
 				},
-				Value: "$2a$10$b1rIBcIIN0SgBjqIIgZp9uPFHbJ0zAcJL27Wu8/kLMlIa0KMXjLua",
+				TenantID: 678,
+				Value:    "$2a$10$b1rIBcIIN0SgBjqIIgZp9uPFHbJ0zAcJL27Wu8/kLMlIa0KMXjLua",
 			}, nil
 		},
 		DeleteApiKeyFunc: func(id int64) (bool, error) {
@@ -311,7 +316,8 @@ func TestValidateApiKeyKeyIsExpired(t *testing.T) {
 	res, err := s.ValidateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
 
 	// Assert
-	assert.False(t, res)
+	assert.False(t, res.IsValid)
+	assert.Equal(t, int64(0), res.TenantID)
 	assert.NoError(t, err)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
 	assert.Len(t, apiKeyStore.DeleteApiKeyCalls(), 1)
@@ -328,7 +334,8 @@ func TestValidateApiKeyKeyIsExpiredDeleteErrorOccurs(t *testing.T) {
 					ID:             id,
 					ExpirationDate: &t,
 				},
-				Value: "$2a$10$b1rIBcIIN0SgBjqIIgZp9uPFHbJ0zAcJL27Wu8/kLMlIa0KMXjLua",
+				TenantID: 123,
+				Value:    "$2a$10$b1rIBcIIN0SgBjqIIgZp9uPFHbJ0zAcJL27Wu8/kLMlIa0KMXjLua",
 			}, nil
 		},
 		DeleteApiKeyFunc: func(id int64) (bool, error) {
@@ -344,7 +351,8 @@ func TestValidateApiKeyKeyIsExpiredDeleteErrorOccurs(t *testing.T) {
 	res, err := s.ValidateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
 
 	// Assert
-	assert.False(t, res)
+	assert.False(t, res.IsValid)
+	assert.Equal(t, int64(0), res.TenantID)
 	assert.NoError(t, err)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
 	assert.Len(t, apiKeyStore.DeleteApiKeyCalls(), 1)
@@ -359,7 +367,8 @@ func TestValidateApiKeyValidKey(t *testing.T) {
 				Key: Key{
 					ID: id,
 				},
-				Value: "$2a$10$b1rIBcIIN0SgBjqIIgZp9uPFHbJ0zAcJL27Wu8/kLMlIa0KMXjLua",
+				TenantID: 534,
+				Value:    "$2a$10$b1rIBcIIN0SgBjqIIgZp9uPFHbJ0zAcJL27Wu8/kLMlIa0KMXjLua",
 			}, nil
 		},
 	}
@@ -371,7 +380,8 @@ func TestValidateApiKeyValidKey(t *testing.T) {
 	res, err := s.ValidateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
 
 	// Assert
-	assert.True(t, res)
+	assert.True(t, res.IsValid)
+	assert.Equal(t, int64(534), res.TenantID)
 	assert.NoError(t, err)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
 }

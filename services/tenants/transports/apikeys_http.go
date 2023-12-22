@@ -68,6 +68,11 @@ func (t *APIKeysHTTPTransport) httpRevokeApiKey() http.HandlerFunc {
 					Message: "Invalid input",
 				})
 				return
+			} else if errors.Is(err, apikeys.ErrKeyNotFound) {
+				web.HTTPResponse(w, http.StatusNotFound, web.APIResponseAny{
+					Message: "Key does not exist",
+				})
+				return
 			} else {
 				web.HTTPError(w, err)
 				return
@@ -152,7 +157,7 @@ func (t *APIKeysHTTPTransport) httpValidateApiKey() http.HandlerFunc {
 			return
 		}
 		idAndKeyCombination := strings.TrimPrefix(authHeader, "Bearer ")
-		valid, err := t.apiKeySvc.ValidateApiKey(idAndKeyCombination)
+		validResp, err := t.apiKeySvc.ValidateApiKey(idAndKeyCombination)
 		if err != nil {
 			if errors.Is(err, apikeys.ErrInvalidEncoding) {
 				web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
@@ -164,10 +169,8 @@ func (t *APIKeysHTTPTransport) httpValidateApiKey() http.HandlerFunc {
 				return
 			}
 		}
-		if valid {
-			web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
-				Message: "API Key is valid",
-			})
+		if validResp.IsValid {
+			web.HTTPResponse(w, http.StatusOK, validResp)
 			return
 		}
 		web.HTTPResponse(w, http.StatusUnauthorized, web.APIResponseAny{})
@@ -197,7 +200,7 @@ func (t *APIKeysHTTPTransport) httpGetApiKeys() http.HandlerFunc {
 }
 
 type apiKeyService interface {
-	ValidateApiKey(base64IdAndKeyCombination string) (bool, error)
+	ValidateApiKey(base64IdAndKeyCombination string) (apikeys.ApiKeyValidDTO, error)
 	GenerateNewApiKey(name string, tenantId int64, expiry *time.Time) (string, error)
 	RevokeApiKey(base64IdAndKeyCombination string) error
 	ListAPIKeys(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)

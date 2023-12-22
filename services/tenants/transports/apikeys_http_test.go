@@ -113,7 +113,6 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 		},
 	}
 	transport := testTransport(&svc)
-	fmt.Println(exp.String())
 	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(fmt.Sprintf(`{"name": "whatever", "organisation_id": 905, "expiration_date": "%s"}`, exp.Format("2006-01-02T15:04:05.999999999Z"))))
 
 	// Act
@@ -277,9 +276,9 @@ func TestValidateAuthorizationHeaderIncorrectFormat(t *testing.T) {
 func TestValidateErrorOccursWhileValidatingApiKey(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		ValidateApiKeyFunc: func(base64IdAndKeyCombination string) (bool, error) {
+		ValidateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyValidDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
-			return false, fmt.Errorf("database error!")
+			return apikeys.ApiKeyValidDTO{}, fmt.Errorf("database error!")
 		},
 	}
 	transport := testTransport(&svc)
@@ -299,9 +298,9 @@ func TestValidateErrorOccursWhileValidatingApiKey(t *testing.T) {
 func TestValidateApiKeyInvalidEncodingErrorOccurs(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		ValidateApiKeyFunc: func(base64IdAndKeyCombination string) (bool, error) {
+		ValidateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyValidDTO, error) {
 			assert.Equal(t, "blablabla", base64IdAndKeyCombination)
-			return false, apikeys.ErrInvalidEncoding
+			return apikeys.ApiKeyValidDTO{}, apikeys.ErrInvalidEncoding
 		},
 	}
 	transport := testTransport(&svc)
@@ -321,9 +320,12 @@ func TestValidateApiKeyInvalidEncodingErrorOccurs(t *testing.T) {
 func TestValidateApiKeyIsValid(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		ValidateApiKeyFunc: func(base64IdAndKeyCombination string) (bool, error) {
+		ValidateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyValidDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
-			return true, nil
+			return apikeys.ApiKeyValidDTO{
+				IsValid:  true,
+				TenantID: 431,
+			}, nil
 		},
 	}
 	transport := testTransport(&svc)
@@ -336,7 +338,7 @@ func TestValidateApiKeyIsValid(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, `{"message":"API Key is valid"}`+"\n", rr.Body.String())
+	assert.Equal(t, `{"sub":431}`+"\n", rr.Body.String())
 	assert.Len(t, svc.ValidateApiKeyCalls(), 1)
 }
 

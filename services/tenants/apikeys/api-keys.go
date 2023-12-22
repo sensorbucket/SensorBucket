@@ -36,7 +36,8 @@ type ApiKey struct {
 }
 type HashedApiKey struct {
 	Key
-	Value string
+	Value    string
+	TenantID int64
 }
 
 type Key struct {
