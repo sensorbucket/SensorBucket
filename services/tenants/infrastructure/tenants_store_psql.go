@@ -1,6 +1,7 @@
 package tenantsinfra
 
 import (
+	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -20,14 +21,14 @@ type tenantsQueryPage struct {
 	Created time.Time `pagination:"created,DESC"`
 }
 
-func (ts *tenantsStore) GetTenantById(id int64) (*tenants.Tenant, error) {
+func (ts *tenantsStore) GetTenantById(id int64) (tenants.Tenant, error) {
 	tenant := tenants.Tenant{}
 	q := sq.Select(
 		"id, name, address, zip_code, city, chamber_of_commerce_id, headquarter_id, archive_time, state, logo, parent_tenant_id").
-		From("tenants").Where("id=?", id)
+		From("tenants").Where(sq.Eq{"id": id})
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(ts.db).Query()
 	if err != nil {
-		return nil, err
+		return tenants.Tenant{}, err
 	}
 	if rows.Next() {
 		err = rows.Scan(
@@ -43,15 +44,15 @@ func (ts *tenantsStore) GetTenantById(id int64) (*tenants.Tenant, error) {
 			&tenant.Logo,
 			&tenant.ParentID)
 		if err != nil {
-			return nil, err
+			return tenants.Tenant{}, err
 		}
 	} else {
-		return nil, tenants.ErrTenantNotFound
+		return tenants.Tenant{}, tenants.ErrTenantNotFound
 	}
-	return &tenant, nil
+	return tenant, nil
 }
 
-func (as *tenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
+func (ts *tenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
 	var err error
 
 	// Pagination
@@ -59,7 +60,6 @@ func (as *tenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagi
 	if err != nil {
 		return nil, err
 	}
-
 	q := sq.Select(
 		"name",
 		"address",
@@ -74,11 +74,14 @@ func (as *tenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagi
 	if len(filter.Name) > 0 {
 		q = q.Where(sq.Eq{"name": filter.Name})
 	}
+	if len(filter.State) > 0 {
+		q = q.Where(sq.Eq{"state": filter.State})
+	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
+	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(ts.db).Query()
 	if err != nil {
 		return nil, err
 	}
@@ -101,17 +104,13 @@ func (as *tenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagi
 		if err != nil {
 			return nil, err
 		}
-		if err != nil {
-			return nil, err
-		}
-
 		list = append(list, tenant)
 	}
 	page := pagination.CreatePageT(list, cursor)
 	return &page, nil
 }
 
-func (as *tenantsStore) Create(tenant *tenants.Tenant) error {
+func (ts *tenantsStore) Create(tenant tenants.Tenant) error {
 	q := sq.Insert("tenants").
 		Columns(
 			"name",
@@ -137,11 +136,37 @@ func (as *tenantsStore) Create(tenant *tenants.Tenant) error {
 			tenant.Logo,
 			time.Now().UTC(),
 			tenant.ParentID)
-	_, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Exec()
+	_, err := q.PlaceholderFormat(sq.Dollar).RunWith(ts.db).Exec()
 	return err
 }
 
-func (ts *tenantsStore) Update(*tenants.Tenant) error { return nil }
+func (ts *tenantsStore) Update(tenant tenants.Tenant) error {
+	q := sq.Update("tenants").
+		Set("name", tenant.Name).
+		Set("address", tenant.Address).
+		Set("zip_code", tenant.ZipCode).
+		Set("city", tenant.City).
+		Set("chamber_of_commerce_id", tenant.ChamberOfCommerceID).
+		Set("headquarter_id", tenant.HeadquarterID).
+		Set("archive_time", tenant.ArchiveTime).
+		Set("state", tenant.State).
+		Set("logo", tenant.Logo).
+		Set("parent_tenant_id", tenant.ParentID).
+		Where(sq.Eq{"id": tenant.ID})
+	res, err := q.PlaceholderFormat(sq.Dollar).RunWith(ts.db).Exec()
+	if err != nil {
+		return err
+	}
+	updated, err := res.RowsAffected()
+	if updated != 1 {
+		if updated == 0 {
+			return tenants.ErrTenantNotFound
+		} else {
+			return fmt.Errorf("more than one row was updated")
+		}
+	}
+	return nil
+}
 
 type tenantsStore struct {
 	db *sqlx.DB

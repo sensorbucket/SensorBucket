@@ -122,12 +122,13 @@ func (t *TenantsHTTPTransport) httpDeleteTenant() http.HandlerFunc {
 				web.HTTPResponse(w, http.StatusNotFound, web.APIResponseAny{
 					Message: "Tenant does not exist",
 				})
+				return
 			} else {
 				web.HTTPError(w, err)
 				return
 			}
 		}
-		web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
 			Message: "Deleted tenant",
 		})
 	}
@@ -156,7 +157,7 @@ func ensureValuesNotEmptyOrZero(values map[string]interface{}) []string {
 }
 
 type tenantService interface {
-	CreateNewTenant(tenant tenants.TenantDTO) (*tenants.TenantDTO, error)
+	CreateNewTenant(tenant tenants.TenantDTO) (tenants.TenantDTO, error)
 	ArchiveTenant(tenantID int64) error
 	ListTenants(filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.TenantDTO], error)
 }

@@ -1,6 +1,7 @@
 package tenants
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -18,44 +19,48 @@ func NewTenantService(tenantStore tenantStore) *service {
 	}
 }
 
-func (s *service) GetTenantById(tenantID int64) (*TenantDTO, error) {
+func (s *service) GetTenantById(tenantID int64) (TenantDTO, error) {
 	tenant, err := s.tenantStore.GetTenantById(tenantID)
 	if err != nil {
-		return nil, err
-	}
-	if tenant == nil {
-		return nil, ErrTenantNotFound
-	}
-	res := newTenantDtoFromTenant(*tenant)
-	return &res, nil
-}
-
-func (s *service) CreateNewTenant(dto TenantDTO) (*TenantDTO, error) {
-	tenant := newTenantFromDto(dto)
-	if tenant.ParentID != nil {
-		parent, err := s.GetTenantById(*tenant.ParentID)
-		if err != nil {
-			return nil, err
-		}
-		if parent == nil {
-			return nil, ErrParentTenantNotFound
-		}
-	}
-	err := s.tenantStore.Create(&tenant)
-	if err != nil {
-		return nil, err
+		return TenantDTO{}, err
 	}
 	res := newTenantDtoFromTenant(tenant)
-	return &res, nil
+	return res, nil
 }
 
-// TODO: discuss: how should not found errors be done? Return nil pointer or error to http layer??
+// Creates a new tenant, if a parent tenant is given it must be found and have an active state,
+// otherwise ErrParentTenantNotFound is returned
+func (s *service) CreateNewTenant(dto TenantDTO) (TenantDTO, error) {
+	tenant := newTenantFromDto(dto)
+	if tenant.ParentID != nil {
+		parent, err := s.tenantStore.GetTenantById(*tenant.ParentID)
+		if err != nil {
+			if errors.Is(err, ErrTenantNotFound) {
+				return TenantDTO{}, ErrParentTenantNotFound
+			} else {
+				return TenantDTO{}, err
+			}
+		}
+		if parent.State != Active {
+			return TenantDTO{}, ErrParentTenantNotFound
+		}
+	}
+	err := s.tenantStore.Create(tenant)
+	if err != nil {
+		return TenantDTO{}, err
+	}
+	res := newTenantDtoFromTenant(tenant)
+	return res, nil
+}
+
+// Sets a tenant's state to Archived
+// ErrTenantNotFound is returned if the tenant is not found or the state has already been set to Archived
 func (s *service) ArchiveTenant(tenantID int64) error {
 	tenant, err := s.tenantStore.GetTenantById(tenantID)
 	if err != nil {
 		return err
 	}
-	if tenant == nil {
+	if tenant.State == Archived {
 		return ErrTenantNotFound
 	}
 	tenant.State = Archived
@@ -67,7 +72,8 @@ func (s *service) ListTenants(filter Filter, p pagination.Request) (*pagination.
 }
 
 type Filter struct {
-	Name []string `json:"name"`
+	Name  []string `json:"name"`
+	State []State  `json:"state"`
 }
 
 type TenantDTO struct {
@@ -86,8 +92,8 @@ type service struct {
 	tenantStore tenantStore
 }
 type tenantStore interface {
-	Create(*Tenant) error
-	Update(*Tenant) error
-	GetTenantById(id int64) (*Tenant, error)
+	Create(Tenant) error
+	Update(Tenant) error
+	GetTenantById(id int64) (Tenant, error)
 	List(Filter, pagination.Request) (*pagination.Page[TenantDTO], error)
 }
