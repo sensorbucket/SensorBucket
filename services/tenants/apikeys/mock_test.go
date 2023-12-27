@@ -21,7 +21,7 @@ var _ apiKeyStore = &apiKeyStoreMock{}
 //			AddApiKeyFunc: func(tenantID int64, hashedApiKey HashedApiKey) error {
 //				panic("mock out the AddApiKey method")
 //			},
-//			DeleteApiKeyFunc: func(id int64) (bool, error) {
+//			DeleteApiKeyFunc: func(id int64) error {
 //				panic("mock out the DeleteApiKey method")
 //			},
 //			GetHashedApiKeyByIdFunc: func(id int64) (HashedApiKey, error) {
@@ -41,7 +41,7 @@ type apiKeyStoreMock struct {
 	AddApiKeyFunc func(tenantID int64, hashedApiKey HashedApiKey) error
 
 	// DeleteApiKeyFunc mocks the DeleteApiKey method.
-	DeleteApiKeyFunc func(id int64) (bool, error)
+	DeleteApiKeyFunc func(id int64) error
 
 	// GetHashedApiKeyByIdFunc mocks the GetHashedApiKeyById method.
 	GetHashedApiKeyByIdFunc func(id int64) (HashedApiKey, error)
@@ -119,7 +119,7 @@ func (mock *apiKeyStoreMock) AddApiKeyCalls() []struct {
 }
 
 // DeleteApiKey calls DeleteApiKeyFunc.
-func (mock *apiKeyStoreMock) DeleteApiKey(id int64) (bool, error) {
+func (mock *apiKeyStoreMock) DeleteApiKey(id int64) error {
 	if mock.DeleteApiKeyFunc == nil {
 		panic("apiKeyStoreMock.DeleteApiKeyFunc: method is nil but apiKeyStore.DeleteApiKey was just called")
 	}

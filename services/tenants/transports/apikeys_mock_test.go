@@ -20,17 +20,17 @@ var _ apiKeyService = &apiKeyServiceMock{}
 //
 //		// make and configure a mocked apiKeyService
 //		mockedapiKeyService := &apiKeyServiceMock{
+//			AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
+//				panic("mock out the AuthenticateApiKey method")
+//			},
 //			GenerateNewApiKeyFunc: func(name string, tenantId int64, expiry *time.Time) (string, error) {
 //				panic("mock out the GenerateNewApiKey method")
 //			},
 //			ListAPIKeysFunc: func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
 //				panic("mock out the ListAPIKeys method")
 //			},
-//			RevokeApiKeyFunc: func(base64IdAndKeyCombination string) error {
+//			RevokeApiKeyFunc: func(id int64) error {
 //				panic("mock out the RevokeApiKey method")
-//			},
-//			ValidateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyValidDTO, error) {
-//				panic("mock out the ValidateApiKey method")
 //			},
 //		}
 //
@@ -39,6 +39,9 @@ var _ apiKeyService = &apiKeyServiceMock{}
 //
 //	}
 type apiKeyServiceMock struct {
+	// AuthenticateApiKeyFunc mocks the AuthenticateApiKey method.
+	AuthenticateApiKeyFunc func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error)
+
 	// GenerateNewApiKeyFunc mocks the GenerateNewApiKey method.
 	GenerateNewApiKeyFunc func(name string, tenantId int64, expiry *time.Time) (string, error)
 
@@ -46,13 +49,15 @@ type apiKeyServiceMock struct {
 	ListAPIKeysFunc func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
 
 	// RevokeApiKeyFunc mocks the RevokeApiKey method.
-	RevokeApiKeyFunc func(base64IdAndKeyCombination string) error
-
-	// ValidateApiKeyFunc mocks the ValidateApiKey method.
-	ValidateApiKeyFunc func(base64IdAndKeyCombination string) (apikeys.ApiKeyValidDTO, error)
+	RevokeApiKeyFunc func(id int64) error
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AuthenticateApiKey holds details about calls to the AuthenticateApiKey method.
+		AuthenticateApiKey []struct {
+			// Base64IdAndKeyCombination is the base64IdAndKeyCombination argument value.
+			Base64IdAndKeyCombination string
+		}
 		// GenerateNewApiKey holds details about calls to the GenerateNewApiKey method.
 		GenerateNewApiKey []struct {
 			// Name is the name argument value.
@@ -71,19 +76,46 @@ type apiKeyServiceMock struct {
 		}
 		// RevokeApiKey holds details about calls to the RevokeApiKey method.
 		RevokeApiKey []struct {
-			// Base64IdAndKeyCombination is the base64IdAndKeyCombination argument value.
-			Base64IdAndKeyCombination string
-		}
-		// ValidateApiKey holds details about calls to the ValidateApiKey method.
-		ValidateApiKey []struct {
-			// Base64IdAndKeyCombination is the base64IdAndKeyCombination argument value.
-			Base64IdAndKeyCombination string
+			// ID is the id argument value.
+			ID int64
 		}
 	}
-	lockGenerateNewApiKey sync.RWMutex
-	lockListAPIKeys       sync.RWMutex
-	lockRevokeApiKey      sync.RWMutex
-	lockValidateApiKey    sync.RWMutex
+	lockAuthenticateApiKey sync.RWMutex
+	lockGenerateNewApiKey  sync.RWMutex
+	lockListAPIKeys        sync.RWMutex
+	lockRevokeApiKey       sync.RWMutex
+}
+
+// AuthenticateApiKey calls AuthenticateApiKeyFunc.
+func (mock *apiKeyServiceMock) AuthenticateApiKey(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
+	if mock.AuthenticateApiKeyFunc == nil {
+		panic("apiKeyServiceMock.AuthenticateApiKeyFunc: method is nil but apiKeyService.AuthenticateApiKey was just called")
+	}
+	callInfo := struct {
+		Base64IdAndKeyCombination string
+	}{
+		Base64IdAndKeyCombination: base64IdAndKeyCombination,
+	}
+	mock.lockAuthenticateApiKey.Lock()
+	mock.calls.AuthenticateApiKey = append(mock.calls.AuthenticateApiKey, callInfo)
+	mock.lockAuthenticateApiKey.Unlock()
+	return mock.AuthenticateApiKeyFunc(base64IdAndKeyCombination)
+}
+
+// AuthenticateApiKeyCalls gets all the calls that were made to AuthenticateApiKey.
+// Check the length with:
+//
+//	len(mockedapiKeyService.AuthenticateApiKeyCalls())
+func (mock *apiKeyServiceMock) AuthenticateApiKeyCalls() []struct {
+	Base64IdAndKeyCombination string
+} {
+	var calls []struct {
+		Base64IdAndKeyCombination string
+	}
+	mock.lockAuthenticateApiKey.RLock()
+	calls = mock.calls.AuthenticateApiKey
+	mock.lockAuthenticateApiKey.RUnlock()
+	return calls
 }
 
 // GenerateNewApiKey calls GenerateNewApiKeyFunc.
@@ -163,19 +195,19 @@ func (mock *apiKeyServiceMock) ListAPIKeysCalls() []struct {
 }
 
 // RevokeApiKey calls RevokeApiKeyFunc.
-func (mock *apiKeyServiceMock) RevokeApiKey(base64IdAndKeyCombination string) error {
+func (mock *apiKeyServiceMock) RevokeApiKey(id int64) error {
 	if mock.RevokeApiKeyFunc == nil {
 		panic("apiKeyServiceMock.RevokeApiKeyFunc: method is nil but apiKeyService.RevokeApiKey was just called")
 	}
 	callInfo := struct {
-		Base64IdAndKeyCombination string
+		ID int64
 	}{
-		Base64IdAndKeyCombination: base64IdAndKeyCombination,
+		ID: id,
 	}
 	mock.lockRevokeApiKey.Lock()
 	mock.calls.RevokeApiKey = append(mock.calls.RevokeApiKey, callInfo)
 	mock.lockRevokeApiKey.Unlock()
-	return mock.RevokeApiKeyFunc(base64IdAndKeyCombination)
+	return mock.RevokeApiKeyFunc(id)
 }
 
 // RevokeApiKeyCalls gets all the calls that were made to RevokeApiKey.
@@ -183,45 +215,13 @@ func (mock *apiKeyServiceMock) RevokeApiKey(base64IdAndKeyCombination string) er
 //
 //	len(mockedapiKeyService.RevokeApiKeyCalls())
 func (mock *apiKeyServiceMock) RevokeApiKeyCalls() []struct {
-	Base64IdAndKeyCombination string
+	ID int64
 } {
 	var calls []struct {
-		Base64IdAndKeyCombination string
+		ID int64
 	}
 	mock.lockRevokeApiKey.RLock()
 	calls = mock.calls.RevokeApiKey
 	mock.lockRevokeApiKey.RUnlock()
-	return calls
-}
-
-// ValidateApiKey calls ValidateApiKeyFunc.
-func (mock *apiKeyServiceMock) ValidateApiKey(base64IdAndKeyCombination string) (apikeys.ApiKeyValidDTO, error) {
-	if mock.ValidateApiKeyFunc == nil {
-		panic("apiKeyServiceMock.ValidateApiKeyFunc: method is nil but apiKeyService.ValidateApiKey was just called")
-	}
-	callInfo := struct {
-		Base64IdAndKeyCombination string
-	}{
-		Base64IdAndKeyCombination: base64IdAndKeyCombination,
-	}
-	mock.lockValidateApiKey.Lock()
-	mock.calls.ValidateApiKey = append(mock.calls.ValidateApiKey, callInfo)
-	mock.lockValidateApiKey.Unlock()
-	return mock.ValidateApiKeyFunc(base64IdAndKeyCombination)
-}
-
-// ValidateApiKeyCalls gets all the calls that were made to ValidateApiKey.
-// Check the length with:
-//
-//	len(mockedapiKeyService.ValidateApiKeyCalls())
-func (mock *apiKeyServiceMock) ValidateApiKeyCalls() []struct {
-	Base64IdAndKeyCombination string
-} {
-	var calls []struct {
-		Base64IdAndKeyCombination string
-	}
-	mock.lockValidateApiKey.RLock()
-	calls = mock.calls.ValidateApiKey
-	mock.lockValidateApiKey.RUnlock()
 	return calls
 }

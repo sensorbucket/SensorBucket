@@ -1,7 +1,9 @@
 package apikeys
 
 import (
-	"math/rand"
+	"crypto/rand"
+	"encoding/binary"
+	"encoding/hex"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -10,7 +12,8 @@ import (
 type TenantState string
 
 var (
-	Active TenantState = "Active"
+	Active   TenantState = "Active"
+	Archived TenantState = "Archived"
 )
 
 type Tenant struct {
@@ -19,25 +22,33 @@ type Tenant struct {
 	State TenantState
 }
 
-func newApiKey(name string, expirationDate *time.Time) ApiKey {
+func newApiKey(name string, expirationDate *time.Time) (ApiKey, error) {
+	secret, err := generateRandomString()
+	if err != nil {
+		return ApiKey{}, err
+	}
+	id, err := generateRandomInt64()
+	if err != nil {
+		return ApiKey{}, err
+	}
 	return ApiKey{
 		Key: Key{
-			ID:             rand.Int63(),
+			ID:             id,
 			Name:           name,
 			ExpirationDate: expirationDate,
 		},
-		Value: generateRandomString32(),
-	}
+		Secret: secret,
+	}, nil
 }
 
 type ApiKey struct {
 	Key
-	Value string
+	Secret string
 }
 type HashedApiKey struct {
 	Key
-	Value    string
-	TenantID int64
+	SecretHash string
+	TenantID   int64
 }
 
 type Key struct {
@@ -55,27 +66,38 @@ func (k *Key) IsExpired() bool {
 }
 
 func (a *ApiKey) hash() (HashedApiKey, error) {
-	b, err := bcrypt.GenerateFromPassword([]byte(a.Value), bcrypt.DefaultCost)
+	b, err := bcrypt.GenerateFromPassword([]byte(a.Secret), bcrypt.DefaultCost)
 	if err != nil {
 		return HashedApiKey{}, err
 	}
 	return HashedApiKey{
-		Key:   a.Key,
-		Value: string(b),
+		Key:        a.Key,
+		SecretHash: string(b),
 	}, nil
 }
 
 func (a *HashedApiKey) compare(with string) bool {
-	return bcrypt.CompareHashAndPassword([]byte(a.Value), []byte(with)) == nil
+	return bcrypt.CompareHashAndPassword([]byte(a.SecretHash), []byte(with)) == nil
 }
 
-func generateRandomString32() string {
-	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	rand.Seed(time.Now().UnixNano())
-	randomString := make([]byte, 32)
-	for i := range randomString {
-		randomString[i] = charset[rand.Intn(len(charset))]
+func generateRandomString() (string, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "", nil
 	}
+	res := hex.EncodeToString(b)
+	return res, nil
+}
 
-	return string(randomString)
+func generateRandomInt64() (int64, error) {
+	randomBytes := make([]byte, 16)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return 0, err
+	}
+	res := int64(binary.BigEndian.Uint64(randomBytes[:8]))
+	if res < 0 {
+		res = -res
+	}
+	return int64(res), nil
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 )
 
@@ -18,7 +19,7 @@ func TestNewApiKeyInvalidJsonBody(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(`blablabla`))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`blablabla`))
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -26,7 +27,7 @@ func TestNewApiKeyInvalidJsonBody(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Equal(t, `{"message":"Invalid JSON body"}`+"\n", rr.Body.String())
+	assert.Equal(t, `{"message":"Invalid content type","code":"INVALID_CONTENT_TYPE"}`+"\n", rr.Body.String())
 	assert.Len(t, svc.GenerateNewApiKeyCalls(), 0)
 }
 
@@ -34,7 +35,8 @@ func TestNewApiKeyNoName(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(`{"name": "", "organisation_id": 905}`))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "", "organisation_id": 905}`))
+	req.Header.Add("content-type", "application/json")
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -50,7 +52,8 @@ func TestNewApiKeyNoOrganisationID(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(`{"name": "wasdasdas", "organisation_id": 0}`))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "wasdasdas", "organisation_id": 0}`))
+	req.Header.Add("content-type", "application/json")
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -66,8 +69,9 @@ func TestNewApiKeyExpirationDateNotInTheFuture(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys/new",
+	req, _ := http.NewRequest("POST", "/api-keys",
 		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "organisation_id": 12, "expiration_date": "%s"}`, time.Now().Add(-time.Hour*24).Format(time.RFC3339))))
+	req.Header.Add("content-type", "application/json")
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -89,7 +93,8 @@ func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(`{"name": "whatever", "organisation_id": 905}`))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "organisation_id": 905}`))
+	req.Header.Add("content-type", "application/json")
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -98,6 +103,29 @@ func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 	// Assert
 	assert.Equal(t, http.StatusNotFound, rr.Code)
 	assert.Equal(t, `{"message":"Organisation does not exist or has been archived"}`+"\n", rr.Body.String())
+	assert.Len(t, svc.GenerateNewApiKeyCalls(), 1)
+}
+
+func TestNewApiKeyErrorOccurs(t *testing.T) {
+	// Arrange
+	svc := apiKeyServiceMock{
+		GenerateNewApiKeyFunc: func(name string, tenantId int64, expiry *time.Time) (string, error) {
+			assert.Equal(t, int64(905), tenantId)
+			assert.Nil(t, expiry)
+			return "", fmt.Errorf("weird error!")
+		},
+	}
+	transport := testTransport(&svc)
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "organisation_id": 905}`))
+	req.Header.Add("content-type", "application/json")
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusInternalServerError, rr.Code)
+	assert.Equal(t, `{"message":"Internal server error"}`+"\n", rr.Body.String())
 	assert.Len(t, svc.GenerateNewApiKeyCalls(), 1)
 }
 
@@ -113,7 +141,8 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(fmt.Sprintf(`{"name": "whatever", "organisation_id": 905, "expiration_date": "%s"}`, exp.Format("2006-01-02T15:04:05.999999999Z"))))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(fmt.Sprintf(`{"name": "whatever", "organisation_id": 905, "expiration_date": "%s"}`, exp.Format("2006-01-02T15:04:05.999999999Z"))))
+	req.Header.Add("content-type", "application/json")
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -135,7 +164,8 @@ func TestNewApiKeyIsCreatedWithoutExpirationDate(t *testing.T) {
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys/new", strings.NewReader(`{"name": "whatever", "organisation_id": 905}`))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "organisation_id": 905}`))
+	req.Header.Add("content-type", "application/json")
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -147,32 +177,11 @@ func TestNewApiKeyIsCreatedWithoutExpirationDate(t *testing.T) {
 	assert.Len(t, svc.GenerateNewApiKeyCalls(), 1)
 }
 
-func TestRevokeApiKeyApiKeyInvalidEncodingErrorOccurs(t *testing.T) {
-	// Arrange
-	svc := apiKeyServiceMock{
-		RevokeApiKeyFunc: func(base64IdAndKeyCombination string) error {
-			assert.Equal(t, "blablabla", base64IdAndKeyCombination)
-			return apikeys.ErrInvalidEncoding
-		},
-	}
-	transport := testTransport(&svc)
-	req, _ := http.NewRequest("DELETE", "/api-keys/revoke", strings.NewReader(`{"api_key": "blablabla"}`))
-
-	// Act
-	rr := httptest.NewRecorder()
-	transport.ServeHTTP(rr, req)
-
-	// Assert
-	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Equal(t, `{"message":"Invalid input"}`+"\n", rr.Body.String())
-	assert.Len(t, svc.RevokeApiKeyCalls(), 1)
-}
-
-func TestRevokeApiKeyInvalidJsonBody(t *testing.T) {
+func TestRevokeApiKeyInvalidApiKeyId(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("DELETE", "/api-keys/revoke", strings.NewReader(`blablabla`))
+	req, _ := http.NewRequest("DELETE", "/api-keys/blablalb", nil)
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -180,36 +189,20 @@ func TestRevokeApiKeyInvalidJsonBody(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Equal(t, `{"message":"Invalid JSON body"}`+"\n", rr.Body.String())
-	assert.Len(t, svc.RevokeApiKeyCalls(), 0)
-}
-
-func TestRevokeApiKeyEmptyApiKey(t *testing.T) {
-	// Arrange
-	svc := apiKeyServiceMock{}
-	transport := testTransport(&svc)
-	req, _ := http.NewRequest("DELETE", "/api-keys/revoke", strings.NewReader(`{"api_key": ""}`))
-
-	// Act
-	rr := httptest.NewRecorder()
-	transport.ServeHTTP(rr, req)
-
-	// Assert
-	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Equal(t, `{"message":"API key cannot be empty"}`+"\n", rr.Body.String())
+	assert.Equal(t, `{"message":"api_key_id must be a valid int"}`+"\n", rr.Body.String())
 	assert.Len(t, svc.RevokeApiKeyCalls(), 0)
 }
 
 func TestRevokeApiKeyRevokesApiKey(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		RevokeApiKeyFunc: func(base64IdAndKeyCombination string) error {
-			assert.Equal(t, "blablablabla", base64IdAndKeyCombination)
+		RevokeApiKeyFunc: func(id int64) error {
+			assert.Equal(t, int64(123), id)
 			return nil
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("DELETE", "/api-keys/revoke", strings.NewReader(`{"api_key": "blablablabla"}`))
+	req, _ := http.NewRequest("DELETE", "/api-keys/123", nil)
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -217,20 +210,20 @@ func TestRevokeApiKeyRevokesApiKey(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, `{"message":"API key has been revoked","data":{"api_key":"blablablabla"}}`+"\n", rr.Body.String())
+	assert.Equal(t, `{"message":"API key has been revoked"}`+"\n", rr.Body.String())
 	assert.Len(t, svc.RevokeApiKeyCalls(), 1)
 }
 
 func TestRevokeApiKeyRevokeFails(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		RevokeApiKeyFunc: func(base64IdAndKeyCombination string) error {
-			assert.Equal(t, "blablablabla", base64IdAndKeyCombination)
+		RevokeApiKeyFunc: func(id int64) error {
+			assert.Equal(t, int64(12343), id)
 			return fmt.Errorf("weird error")
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("DELETE", "/api-keys/revoke", strings.NewReader(`{"api_key": "blablablabla"}`))
+	req, _ := http.NewRequest("DELETE", "/api-keys/12343", nil)
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -242,11 +235,32 @@ func TestRevokeApiKeyRevokeFails(t *testing.T) {
 	assert.Len(t, svc.RevokeApiKeyCalls(), 1)
 }
 
-func TestValidateNoAuthorizationHeaderInRequest(t *testing.T) {
+func TestRevokeApiKeyKeyDoesNotExist(t *testing.T) {
+	// Arrange
+	svc := apiKeyServiceMock{
+		RevokeApiKeyFunc: func(id int64) error {
+			assert.Equal(t, int64(12343), id)
+			return apikeys.ErrKeyNotFound
+		},
+	}
+	transport := testTransport(&svc)
+	req, _ := http.NewRequest("DELETE", "/api-keys/12343", nil)
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+	assert.Equal(t, `{"message":"Key does not exist"}`+"\n", rr.Body.String())
+	assert.Len(t, svc.RevokeApiKeyCalls(), 1)
+}
+
+func TestAuthenticateNoAuthorizationHeaderInRequest(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("GET", "/api-keys/validate", nil)
+	req, _ := http.NewRequest("GET", "/api-keys/authenticate", nil)
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -257,11 +271,11 @@ func TestValidateNoAuthorizationHeaderInRequest(t *testing.T) {
 	assert.Equal(t, `{"message":"Authorization header must be set"}`+"\n", rr.Body.String())
 }
 
-func TestValidateAuthorizationHeaderIncorrectFormat(t *testing.T) {
+func TestAuthenticateAuthorizationHeaderIncorrectFormat(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("GET", "/api-keys/validate", nil)
+	req, _ := http.NewRequest("GET", "/api-keys/authenticate", nil)
 
 	// Act
 	req.Header["Authorization"] = []string{"wrong format!!"}
@@ -273,16 +287,16 @@ func TestValidateAuthorizationHeaderIncorrectFormat(t *testing.T) {
 	assert.Equal(t, `{"message":"Authorization header must be set"}`+"\n", rr.Body.String())
 }
 
-func TestValidateErrorOccursWhileValidatingApiKey(t *testing.T) {
+func TestAuthenticateErrorOccursWhileValidatingApiKey(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		ValidateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyValidDTO, error) {
+		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
-			return apikeys.ApiKeyValidDTO{}, fmt.Errorf("database error!")
+			return apikeys.ApiKeyAuthenticationDTO{}, fmt.Errorf("database error!")
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("GET", "/api-keys/validate", nil)
+	req, _ := http.NewRequest("GET", "/api-keys/authenticate", nil)
 
 	// Act
 	req.Header["Authorization"] = []string{"Bearer MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ=="}
@@ -292,19 +306,41 @@ func TestValidateErrorOccursWhileValidatingApiKey(t *testing.T) {
 	// Assert
 	assert.Equal(t, http.StatusInternalServerError, rr.Code)
 	assert.Equal(t, `{"message":"Internal server error"}`+"\n", rr.Body.String())
-	assert.Len(t, svc.ValidateApiKeyCalls(), 1)
+	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
 }
 
-func TestValidateApiKeyInvalidEncodingErrorOccurs(t *testing.T) {
+func TestAuthenticateApiKeyIsNotFound(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		ValidateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyValidDTO, error) {
-			assert.Equal(t, "blablabla", base64IdAndKeyCombination)
-			return apikeys.ApiKeyValidDTO{}, apikeys.ErrInvalidEncoding
+		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
+			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
+			return apikeys.ApiKeyAuthenticationDTO{}, apikeys.ErrKeyNotFound
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("GET", "/api-keys/validate", nil)
+	req, _ := http.NewRequest("GET", "/api-keys/authenticate", nil)
+
+	// Act
+	req.Header["Authorization"] = []string{"Bearer MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ=="}
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusUnauthorized, rr.Code)
+	assert.Equal(t, `{}`+"\n", rr.Body.String())
+	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
+}
+
+func TestAuthenticateApiKeyInvalidEncodingErrorOccurs(t *testing.T) {
+	// Arrange
+	svc := apiKeyServiceMock{
+		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
+			assert.Equal(t, "blablabla", base64IdAndKeyCombination)
+			return apikeys.ApiKeyAuthenticationDTO{}, apikeys.ErrInvalidEncoding
+		},
+	}
+	transport := testTransport(&svc)
+	req, _ := http.NewRequest("GET", "/api-keys/authenticate", nil)
 
 	// Act
 	req.Header["Authorization"] = []string{"Bearer blablabla"}
@@ -314,22 +350,21 @@ func TestValidateApiKeyInvalidEncodingErrorOccurs(t *testing.T) {
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	assert.Equal(t, `{"message":"Invalid input"}`+"\n", rr.Body.String())
-	assert.Len(t, svc.ValidateApiKeyCalls(), 1)
+	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
 }
 
-func TestValidateApiKeyIsValid(t *testing.T) {
+func TestAuthenticateApiKeyIsValid(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		ValidateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyValidDTO, error) {
+		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
-			return apikeys.ApiKeyValidDTO{
-				IsValid:  true,
+			return apikeys.ApiKeyAuthenticationDTO{
 				TenantID: 431,
 			}, nil
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("GET", "/api-keys/validate", nil)
+	req, _ := http.NewRequest("GET", "/api-keys/authenticate", nil)
 
 	// Act
 	req.Header["Authorization"] = []string{"Bearer MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ=="}
@@ -339,7 +374,58 @@ func TestValidateApiKeyIsValid(t *testing.T) {
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Equal(t, `{"sub":431}`+"\n", rr.Body.String())
-	assert.Len(t, svc.ValidateApiKeyCalls(), 1)
+	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
+}
+
+func TestListApiKeysReturnsPaginatedList(t *testing.T) {
+	// Arrange
+	svc := apiKeyServiceMock{
+		ListAPIKeysFunc: func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
+			return &pagination.Page[apikeys.ApiKeyDTO]{
+				Cursor: "encoded_cursor",
+				Data: []apikeys.ApiKeyDTO{
+					{
+						Name: "api-key-1",
+					},
+					{
+						Name: "api-key-2",
+					},
+				},
+			}, nil
+		},
+	}
+	transport := testTransport(&svc)
+	req, _ := http.NewRequest("GET", "/api-keys/list", nil)
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t,
+		`{"links":{"previous":"","next":"/api-keys/list?cursor=encoded_cursor"},"page_size":2,"total_count":0,"data":[{"name":"api-key-1","tenant_id":0,"expiration_date":null},{"name":"api-key-2","tenant_id":0,"expiration_date":null}]}`+"\n", rr.Body.String())
+	assert.Len(t, svc.ListAPIKeysCalls(), 1)
+}
+
+func TestListApiKeysInvalidParams(t *testing.T) {
+	// Arrange
+	svc := apiKeyServiceMock{
+		ListAPIKeysFunc: func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
+			return &pagination.Page[apikeys.ApiKeyDTO]{}, nil
+		},
+	}
+	transport := testTransport(&svc)
+	req, _ := http.NewRequest("GET", "/api-keys/list?tenant_id=blablalq", nil)
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Equal(t, `{"message":"invalid params"}`+"\n", rr.Body.String())
+	assert.Len(t, svc.ListAPIKeysCalls(), 0)
 }
 
 func testTransport(svc apiKeyService) *APIKeysHTTPTransport {

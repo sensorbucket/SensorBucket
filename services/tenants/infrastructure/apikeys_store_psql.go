@@ -72,23 +72,26 @@ func (as *apiKeyStore) AddApiKey(tenantID int64, hashedKey apikeys.HashedApiKey)
 			hashedKey.Name,
 			time.Now().UTC(),
 			tenantID,
-			hashedKey.Value,
+			hashedKey.SecretHash,
 			hashedKey.ExpirationDate)
 	_, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Exec()
 	return err
 }
 
-func (as *apiKeyStore) DeleteApiKey(id int64) (bool, error) {
+func (as *apiKeyStore) DeleteApiKey(id int64) error {
 	q := sq.Delete("").From("api_keys").Where("id=?", id)
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Exec()
 	if err != nil {
-		return false, err
+		return err
 	}
 	deleted, err := rows.RowsAffected()
 	if err != nil {
-		return false, err
+		return err
 	}
-	return deleted == 1, err
+	if deleted != 1 {
+		return apikeys.ErrKeyNotFound
+	}
+	return nil
 }
 
 func (as *apiKeyStore) GetHashedApiKeyById(id int64) (apikeys.HashedApiKey, error) {
@@ -101,7 +104,7 @@ func (as *apiKeyStore) GetHashedApiKeyById(id int64) (apikeys.HashedApiKey, erro
 	for rows.Next() {
 		err = rows.Scan(
 			&k.ID,
-			&k.Value,
+			&k.SecretHash,
 			&k.TenantID,
 			&k.ExpirationDate)
 		if err != nil {
