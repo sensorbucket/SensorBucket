@@ -229,7 +229,7 @@ func TestValidateApiKeyInvalidEncoding(t *testing.T) {
 			res, err := s.AuthenticateApiKey(input)
 
 			// Assert
-			assert.Equal(t, int64(0), res.TenantID)
+			assert.Equal(t, "", res.TenantID)
 			assert.ErrorIs(t, err, ErrInvalidEncoding)
 		})
 	}
@@ -252,7 +252,7 @@ func TestValidateApiKeyErrorOccursWhileRetrievingKey(t *testing.T) {
 	res, err := s.AuthenticateApiKey(asBase64("43214:somevalidapikey"))
 
 	// Assert
-	assert.Equal(t, int64(0), res.TenantID)
+	assert.Equal(t, "", res.TenantID)
 	assert.Error(t, err)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
 }
@@ -280,7 +280,7 @@ func TestValidateApiKeyInvalidKey(t *testing.T) {
 	res, err := s.AuthenticateApiKey(asBase64("43214:someinvalidapikey"))
 
 	// Assert
-	assert.Equal(t, int64(0), res.TenantID)
+	assert.Equal(t, "", res.TenantID)
 	assert.ErrorIs(t, err, ErrKeyNotFound)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
 }
@@ -314,7 +314,7 @@ func TestValidateApiKeyKeyIsExpired(t *testing.T) {
 	res, err := s.AuthenticateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
 
 	// Assert
-	assert.Equal(t, int64(0), res.TenantID)
+	assert.Equal(t, "", res.TenantID)
 	assert.ErrorIs(t, err, ErrKeyNotFound)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
 	assert.Len(t, apiKeyStore.DeleteApiKeyCalls(), 1)
@@ -349,7 +349,7 @@ func TestValidateApiKeyKeyIsExpiredDeleteErrorOccurs(t *testing.T) {
 	res, err := s.AuthenticateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
 
 	// Assert
-	assert.Equal(t, int64(0), res.TenantID)
+	assert.Equal(t, "", res.TenantID)
 	assert.ErrorIs(t, err, ErrKeyNotFound)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
 	assert.Len(t, apiKeyStore.DeleteApiKeyCalls(), 1)
@@ -378,7 +378,7 @@ func TestValidateApiKeyValidKey(t *testing.T) {
 	res, err := s.AuthenticateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
 
 	// Assert
-	assert.Equal(t, int64(534), res.TenantID)
+	assert.Equal(t, "534", res.TenantID)
 	assert.NoError(t, err)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
 }

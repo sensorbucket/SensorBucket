@@ -359,7 +359,7 @@ func TestAuthenticateApiKeyIsValidNoExpirationDate(t *testing.T) {
 		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{
-				TenantID:   431,
+				TenantID:   "431",
 				Expiration: nil,
 			}, nil
 		},
@@ -374,7 +374,7 @@ func TestAuthenticateApiKeyIsValidNoExpirationDate(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, `{"sub":431,"expiration_date":null}`+"\n", rr.Body.String())
+	assert.Equal(t, `{"sub":"431","expiration_date":null}`+"\n", rr.Body.String())
 	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
 }
 
@@ -385,7 +385,7 @@ func TestAuthenticateApiKeyIsValidWithExpirationDate(t *testing.T) {
 		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{
-				TenantID:   431,
+				TenantID:   "431",
 				Expiration: &exp,
 			}, nil
 		},
@@ -400,7 +400,7 @@ func TestAuthenticateApiKeyIsValidWithExpirationDate(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, fmt.Sprintf(`{"sub":431,"expiration_date":%d}`+"\n", exp), rr.Body.String())
+	assert.Equal(t, fmt.Sprintf(`{"sub":"431","expiration_date":%d}`+"\n", exp), rr.Body.String())
 	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
 }
 
