@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jmoiron/sqlx"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
@@ -14,8 +17,8 @@ import (
 )
 
 var (
-	HTTP_ADDR = env.Could("HTTP_ADDR", ":3010")
-	HTTP_BASE = env.Could("HTTP_BASE", "http://localhost:3010/api")
+	HTTP_ADDR = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE = env.Could("HTTP_BASE", "http://localhost:3000/api")
 	DB_DSN    = env.Must("DB_DSN")
 )
 
@@ -27,13 +30,19 @@ func main() {
 	}
 	apiKeyStore := tenantsinfra.NewAPIKeyStorePSQL(db)
 	apiKeySvc := apikeys.NewAPIKeyService(&tmock{}, apiKeyStore)
-	apiKeyHttp := tenantstransports.NewAPIKeysHTTP(apiKeySvc, HTTP_BASE)
+
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+
+	_ = tenantstransports.NewAPIKeysHTTP(r, apiKeySvc, HTTP_BASE)
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
-		Handler:      apiKeyHttp,
+		Handler:      r,
 	}
+
+	log.Printf("[Info] Running Tenants API on %s\n", HTTP_ADDR)
 	if err := srv.ListenAndServe(); err != nil {
 		panic(err)
 	}

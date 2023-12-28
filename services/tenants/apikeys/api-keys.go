@@ -22,25 +22,6 @@ type Tenant struct {
 	State TenantState
 }
 
-func newApiKey(name string, expirationDate *time.Time) (ApiKey, error) {
-	secret, err := generateRandomString()
-	if err != nil {
-		return ApiKey{}, err
-	}
-	id, err := generateRandomInt64()
-	if err != nil {
-		return ApiKey{}, err
-	}
-	return ApiKey{
-		Key: Key{
-			ID:             id,
-			Name:           name,
-			ExpirationDate: expirationDate,
-		},
-		Secret: secret,
-	}, nil
-}
-
 type ApiKey struct {
 	Key
 	Secret string
@@ -78,6 +59,25 @@ func (a *ApiKey) hash() (HashedApiKey, error) {
 
 func (a *HashedApiKey) compare(with string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(a.SecretHash), []byte(with)) == nil
+}
+
+func newApiKey(name string, expirationDate *time.Time) (ApiKey, error) {
+	secret, err := generateRandomString()
+	if err != nil {
+		return ApiKey{}, err
+	}
+	id, err := generateRandomInt64()
+	if err != nil {
+		return ApiKey{}, err
+	}
+	return ApiKey{
+		Key: Key{
+			ID:             id,
+			Name:           name,
+			ExpirationDate: expirationDate,
+		},
+		Secret: secret,
+	}, nil
 }
 
 func generateRandomString() (string, error) {

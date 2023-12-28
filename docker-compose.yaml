@@ -57,6 +57,18 @@ services:
     - AMQP_XCHG_INGRESS=ingress
     - AMQP_XCHG_INGRESS_TOPIC=ingress.#
 
+  tenants:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - .:/workspace:cached
+    environment:
+      - APP_NAME=tenants
+      - APP_TYPE=service
+      - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/tenants?sslmode=disable
+
   userworkers:
     build: 
       context: .
