@@ -3,6 +3,7 @@ name: sensorbucket
 services:
   caddy:
     image: caddy:alpine
+    command: ["caddy", "run", "--watch", "--config", "/etc/caddy/Caddyfile"]
     ports:
       - 3000:80
     volumes:
