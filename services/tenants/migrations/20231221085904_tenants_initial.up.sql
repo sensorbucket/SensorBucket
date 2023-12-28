@@ -1,0 +1,7 @@
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS tenants (
+    id SERIAL PRIMARY KEY
+);
+
+COMMIT;
