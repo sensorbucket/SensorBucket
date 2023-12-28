@@ -1,3 +1,303 @@
 package tenants
 
-func what() {}
+import (
+	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
+)
+
+func TestCreateParentTenantDoesNotExist(t *testing.T) {
+	// Arrange
+	store := tenantStoreMock{
+		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+			assert.Equal(t, int64(132), id)
+			return Tenant{}, ErrTenantNotFound
+		},
+	}
+	s := service{
+		tenantStore: &store,
+	}
+
+	// Act
+	parent := int64(132)
+	_, err := s.CreateNewTenant(TenantDTO{
+		ParentID: &parent,
+	})
+
+	// Assert
+	assert.ErrorIs(t, err, ErrParentTenantNotFound)
+	assert.Len(t, store.GetTenantByIdCalls(), 1)
+}
+
+func TestCreateParentTenantCantBeRetrieved(t *testing.T) {
+	// Arrange
+	expErr := fmt.Errorf("some weird database error has occurred")
+	store := tenantStoreMock{
+		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+			assert.Equal(t, int64(675), id)
+			return Tenant{}, expErr
+		},
+	}
+	s := service{
+		tenantStore: &store,
+	}
+
+	// Act
+	parent := int64(675)
+	_, err := s.CreateNewTenant(TenantDTO{
+		ParentID: &parent,
+	})
+
+	// Assert
+	assert.ErrorIs(t, err, expErr)
+	assert.Len(t, store.GetTenantByIdCalls(), 1)
+}
+func TestCreateParentTenantIsNotActive(t *testing.T) {
+	// Arrange
+	store := tenantStoreMock{
+		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+			assert.Equal(t, int64(675), id)
+			return Tenant{
+				ID:    675,
+				State: Archived,
+			}, nil
+		},
+	}
+	s := service{
+		tenantStore: &store,
+	}
+
+	// Act
+	parent := int64(675)
+	_, err := s.CreateNewTenant(TenantDTO{
+		ParentID: &parent,
+	})
+
+	// Assert
+	assert.ErrorIs(t, err, ErrParentTenantNotFound)
+	assert.Len(t, store.GetTenantByIdCalls(), 1)
+}
+func TestCreateErrorOccurs(t *testing.T) {
+	// Arrange
+	expErr := fmt.Errorf("weird error!")
+	store := tenantStoreMock{
+		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+			assert.Equal(t, int64(675), id)
+			return Tenant{
+				ID:    675,
+				State: Active,
+			}, nil
+		},
+		CreateFunc: func(tenant Tenant) error {
+			return expErr
+		},
+	}
+	s := service{
+		tenantStore: &store,
+	}
+
+	// Act
+	parent := int64(675)
+	_, err := s.CreateNewTenant(TenantDTO{
+		ParentID: &parent,
+	})
+
+	// Assert
+	assert.ErrorIs(t, err, expErr)
+	assert.Len(t, store.GetTenantByIdCalls(), 1)
+	assert.Len(t, store.CreateCalls(), 1)
+}
+
+func TestCreateCreatesNewTenant(t *testing.T) {
+	// Arrange
+	store := tenantStoreMock{
+		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+			assert.Equal(t, int64(675), id)
+			return Tenant{
+				ID:    675,
+				State: Active,
+			}, nil
+		},
+		CreateFunc: func(tenant Tenant) error {
+			return nil
+		},
+	}
+	s := service{
+		tenantStore: &store,
+	}
+
+	// Act
+	parent := int64(675)
+	dto, err := s.CreateNewTenant(TenantDTO{
+		Name:                "blabla",
+		Address:             "somewhere nice",
+		ZipCode:             "no clue",
+		City:                "some place",
+		ChamberOfCommerceID: "ideee",
+		HeadquarterID:       "hqid",
+		ParentID:            &parent,
+	})
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, TenantDTO{
+		Name:                "blabla",
+		Address:             "somewhere nice",
+		ZipCode:             "no clue",
+		City:                "some place",
+		ChamberOfCommerceID: "ideee",
+		HeadquarterID:       "hqid",
+		ParentID:            &parent,
+	}, dto)
+	assert.Len(t, store.GetTenantByIdCalls(), 1)
+	assert.Len(t, store.CreateCalls(), 1)
+}
+
+func TestArchiveTenantErrorOccursWhileRetrievingTenant(t *testing.T) {
+	// Arrange
+	expErr := fmt.Errorf("weird error")
+	store := tenantStoreMock{
+		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+			assert.Equal(t, int64(43124), id)
+			return Tenant{}, expErr
+		},
+	}
+	s := service{
+		tenantStore: &store,
+	}
+
+	// Act
+	err := s.ArchiveTenant(43124)
+
+	// Assert
+	assert.ErrorIs(t, err, expErr)
+	assert.Len(t, store.GetTenantByIdCalls(), 1)
+}
+
+func TestArchiveTenantTenantIsAlreadyArchived(t *testing.T) {
+	// Arrange
+	store := tenantStoreMock{
+		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+			assert.Equal(t, int64(43124), id)
+			return Tenant{
+				State: Archived,
+			}, nil
+		},
+	}
+	s := service{
+		tenantStore: &store,
+	}
+
+	// Act
+	err := s.ArchiveTenant(43124)
+
+	// Assert
+	assert.ErrorIs(t, err, ErrTenantNotFound)
+	assert.Len(t, store.GetTenantByIdCalls(), 1)
+}
+
+func TestArchiveTenantUpdateErrors(t *testing.T) {
+	// Arrange
+	expErr := fmt.Errorf("weird error")
+	store := tenantStoreMock{
+		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+			assert.Equal(t, int64(43124), id)
+			return Tenant{
+				State: Active,
+			}, nil
+		},
+		UpdateFunc: func(tenant Tenant) error {
+			assert.Equal(t, Archived, tenant.State)
+			return expErr
+		},
+	}
+	s := service{
+		tenantStore: &store,
+	}
+
+	// Act
+	err := s.ArchiveTenant(43124)
+
+	// Assert
+	assert.ErrorIs(t, err, expErr)
+	assert.Len(t, store.GetTenantByIdCalls(), 1)
+	assert.Len(t, store.UpdateCalls(), 1)
+}
+
+func TestArchiveTenantUpdatesTenantWithArchivedState(t *testing.T) {
+	// Arrange
+	store := tenantStoreMock{
+		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+			assert.Equal(t, int64(43124), id)
+			return Tenant{
+				State: Active,
+			}, nil
+		},
+		UpdateFunc: func(tenant Tenant) error {
+			assert.Equal(t, Archived, tenant.State)
+			return nil
+		},
+	}
+	s := service{
+		tenantStore: &store,
+	}
+
+	// Act
+	err := s.ArchiveTenant(43124)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Len(t, store.GetTenantByIdCalls(), 1)
+	assert.Len(t, store.UpdateCalls(), 1)
+}
+
+func TestListTenantsReturnsList(t *testing.T) {
+	// Arrange
+	store := tenantStoreMock{
+		ListFunc: func(filter Filter, request pagination.Request) (*pagination.Page[TenantDTO], error) {
+			return &pagination.Page[TenantDTO]{
+				Cursor: "blabla",
+				Data: []TenantDTO{
+					{
+						Name: "123adsz",
+					},
+				},
+			}, nil
+		},
+	}
+	s := service{
+		tenantStore: &store,
+	}
+
+	// Act
+	res, err := s.ListTenants(Filter{}, pagination.Request{})
+
+	// Assert
+	assert.Equal(t, "blabla", res.Cursor)
+	assert.Len(t, res.Data, 1)
+	assert.Equal(t, "123adsz", res.Data[0].Name)
+	assert.NoError(t, err)
+	assert.Len(t, store.ListCalls(), 1)
+}
+func TestListTenantsErrorOccursWhileRetrievingList(t *testing.T) {
+	// Arrange
+	expErr := fmt.Errorf("weird error")
+	store := tenantStoreMock{
+		ListFunc: func(filter Filter, request pagination.Request) (*pagination.Page[TenantDTO], error) {
+			return nil, expErr
+		},
+	}
+	s := service{
+		tenantStore: &store,
+	}
+
+	// Act
+	res, err := s.ListTenants(Filter{}, pagination.Request{})
+
+	// Assert
+	assert.ErrorIs(t, err, expErr)
+	assert.Nil(t, res)
+	assert.Len(t, store.ListCalls(), 1)
+}
