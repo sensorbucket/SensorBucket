@@ -82,9 +82,17 @@ func (s *service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAu
 	}
 	isValid := hashed.compare(apiKey)
 	if isValid {
-		return ApiKeyAuthenticationDTO{
-			TenantID: hashed.TenantID,
-		}, nil
+		if hashed.ExpirationDate != nil {
+			exp := hashed.ExpirationDate.Unix()
+			return ApiKeyAuthenticationDTO{
+				TenantID:   hashed.TenantID,
+				Expiration: &exp,
+			}, nil
+		} else {
+			return ApiKeyAuthenticationDTO{
+				TenantID: hashed.TenantID,
+			}, nil
+		}
 	}
 	return ApiKeyAuthenticationDTO{}, ErrKeyNotFound
 }
@@ -94,10 +102,8 @@ type Filter struct {
 }
 
 type ApiKeyAuthenticationDTO struct {
-	TenantID   int64 `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
-	Expiration time.Duration
-	// TODO: check, how to make ory oathkeeper only use the first value and not 'refresh' this expiration each time a request is authenticated?
-	// TODO: is there a diference in flow: just check existing token or  get new token?
+	TenantID   int64  `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
+	Expiration *int64 `json:"expiration_date"`
 }
 
 type ApiKeyDTO struct {
