@@ -410,11 +410,7 @@ func TestListApiKeysReturnsPaginatedList(t *testing.T) {
 
 func TestListApiKeysInvalidParams(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
-		ListAPIKeysFunc: func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
-			return &pagination.Page[apikeys.ApiKeyDTO]{}, nil
-		},
-	}
+	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("GET", "/api-keys/list?tenant_id=blablalq", nil)
 
@@ -426,6 +422,27 @@ func TestListApiKeysInvalidParams(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	assert.Equal(t, `{"message":"invalid params"}`+"\n", rr.Body.String())
 	assert.Len(t, svc.ListAPIKeysCalls(), 0)
+}
+
+func TestListApiKeysErrorsOccursWhileRetrievingData(t *testing.T) {
+	// Arrange
+	svc := apiKeyServiceMock{
+		ListAPIKeysFunc: func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
+			return nil, fmt.Errorf("weird database error!")
+		},
+	}
+	transport := testTransport(&svc)
+	req, _ := http.NewRequest("GET", "/api-keys/list", nil)
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusInternalServerError, rr.Code)
+	assert.Equal(t,
+		`{"message":"Internal server error"}`+"\n", rr.Body.String())
+	assert.Len(t, svc.ListAPIKeysCalls(), 1)
 }
 
 func testTransport(svc apiKeyService) *APIKeysHTTPTransport {

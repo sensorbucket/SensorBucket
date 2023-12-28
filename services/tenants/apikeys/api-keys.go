@@ -9,11 +9,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type TenantState string
+type TenantState int
 
 var (
-	Active   TenantState = "Active"
-	Archived TenantState = "Archived"
+	Active   TenantState = 1
+	Archived TenantState = 2
 )
 
 type Tenant struct {

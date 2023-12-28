@@ -78,6 +78,7 @@ func (as *apiKeyStore) AddApiKey(tenantID int64, hashedKey apikeys.HashedApiKey)
 	return err
 }
 
+// Deletes an API key if found. If the key is not found, ErrKeyNotFound is returned
 func (as *apiKeyStore) DeleteApiKey(id int64) error {
 	q := sq.Delete("").From("api_keys").Where("id=?", id)
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Exec()
@@ -94,14 +95,24 @@ func (as *apiKeyStore) DeleteApiKey(id int64) error {
 	return nil
 }
 
-func (as *apiKeyStore) GetHashedApiKeyById(id int64) (apikeys.HashedApiKey, error) {
-	q := sq.Select("id, value, tenant_id, expiration_date").From("api_keys").Where("id=?", id)
+// Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.
+// Only returns the API key if the given tenant confirms to any state passed in the stateFilter
+func (as *apiKeyStore) GetHashedApiKeyById(id int64, stateFilter []apikeys.TenantState) (apikeys.HashedApiKey, error) {
+	q := sq.
+		Select("api_keys.id, api_keys.value, api_keys.tenant_id, api_keys.expiration_date").
+		From("api_keys").
+		Where(sq.Eq{"api_keys.id": id})
+	if len(stateFilter) > 0 {
+		q = q.Join("tenants on api_keys.tenant_id = tenants.id").
+			Where(sq.Eq{"tenants.state": stateFilter})
+	}
+
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
 	if err != nil {
 		return apikeys.HashedApiKey{}, err
 	}
 	k := apikeys.HashedApiKey{}
-	for rows.Next() {
+	if rows.Next() {
 		err = rows.Scan(
 			&k.ID,
 			&k.SecretHash,
@@ -110,6 +121,8 @@ func (as *apiKeyStore) GetHashedApiKeyById(id int64) (apikeys.HashedApiKey, erro
 		if err != nil {
 			return apikeys.HashedApiKey{}, err
 		}
+	} else {
+		return apikeys.HashedApiKey{}, apikeys.ErrKeyNotFound
 	}
 	return k, nil
 }

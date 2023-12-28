@@ -69,7 +69,7 @@ func (s *service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAu
 	if err != nil {
 		return ApiKeyAuthenticationDTO{}, ErrInvalidEncoding
 	}
-	hashed, err := s.apiKeyStore.GetHashedApiKeyById(apiKeyId)
+	hashed, err := s.apiKeyStore.GetHashedApiKeyById(apiKeyId, []TenantState{Active})
 	if err != nil {
 		return ApiKeyAuthenticationDTO{}, err
 	}
@@ -94,7 +94,10 @@ type Filter struct {
 }
 
 type ApiKeyAuthenticationDTO struct {
-	TenantID int64 `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
+	TenantID   int64 `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
+	Expiration time.Duration
+	// TODO: check, how to make ory oathkeeper only use the first value and not 'refresh' this expiration each time a request is authenticated?
+	// TODO: is there a diference in flow: just check existing token or  get new token?
 }
 
 type ApiKeyDTO struct {
@@ -132,7 +135,7 @@ type service struct {
 type apiKeyStore interface {
 	AddApiKey(tenantID int64, hashedApiKey HashedApiKey) error
 	DeleteApiKey(id int64) error
-	GetHashedApiKeyById(id int64) (HashedApiKey, error)
+	GetHashedApiKeyById(id int64, stateFilter []TenantState) (HashedApiKey, error)
 	List(Filter, pagination.Request) (*pagination.Page[ApiKeyDTO], error)
 }
 

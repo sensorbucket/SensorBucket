@@ -238,7 +238,8 @@ func TestValidateApiKeyInvalidEncoding(t *testing.T) {
 func TestValidateApiKeyErrorOccursWhileRetrievingKey(t *testing.T) {
 	// Arrange
 	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64) (HashedApiKey, error) {
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []TenantState) (HashedApiKey, error) {
+			assert.Equal(t, []TenantState{Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
 			return HashedApiKey{}, fmt.Errorf("database error!!")
 		},
@@ -259,7 +260,8 @@ func TestValidateApiKeyErrorOccursWhileRetrievingKey(t *testing.T) {
 func TestValidateApiKeyInvalidKey(t *testing.T) {
 	// Arrange
 	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64) (HashedApiKey, error) {
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []TenantState) (HashedApiKey, error) {
+			assert.Equal(t, []TenantState{Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
 			return HashedApiKey{
 				Key: Key{
@@ -286,7 +288,8 @@ func TestValidateApiKeyInvalidKey(t *testing.T) {
 func TestValidateApiKeyKeyIsExpired(t *testing.T) {
 	// Arrange
 	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64) (HashedApiKey, error) {
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []TenantState) (HashedApiKey, error) {
+			assert.Equal(t, []TenantState{Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
 			t := time.Date(2010, 11, 12, 8, 37, 3, 500, time.Local)
 			return HashedApiKey{
@@ -320,7 +323,8 @@ func TestValidateApiKeyKeyIsExpired(t *testing.T) {
 func TestValidateApiKeyKeyIsExpiredDeleteErrorOccurs(t *testing.T) {
 	// Arrange
 	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64) (HashedApiKey, error) {
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []TenantState) (HashedApiKey, error) {
+			assert.Equal(t, []TenantState{Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
 			t := time.Date(2010, 11, 12, 8, 37, 3, 500, time.Local)
 			return HashedApiKey{
@@ -354,7 +358,8 @@ func TestValidateApiKeyKeyIsExpiredDeleteErrorOccurs(t *testing.T) {
 func TestValidateApiKeyValidKey(t *testing.T) {
 	// Arrange
 	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64) (HashedApiKey, error) {
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []TenantState) (HashedApiKey, error) {
+			assert.Equal(t, []TenantState{Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
 			return HashedApiKey{
 				Key: Key{
