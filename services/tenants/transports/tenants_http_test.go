@@ -120,7 +120,7 @@ func TestCreateTenantModelNotValid(t *testing.T) {
 		t.Run(scene, func(t *testing.T) {
 			svc := tenantServiceMock{}
 			transport := testTenantsTransport(&svc)
-			req, _ := http.NewRequest("POST", "/tenants/create", strings.NewReader(cfg.input))
+			req, _ := http.NewRequest("POST", "/tenants", strings.NewReader(cfg.input))
 
 			// Act
 			rr := httptest.NewRecorder()
@@ -144,7 +144,7 @@ func TestCreateTenantInvalidJSONBody(t *testing.T) {
 	// Arrange
 	svc := tenantServiceMock{}
 	transport := testTenantsTransport(&svc)
-	req, _ := http.NewRequest("POST", "/tenants/create", strings.NewReader("invalid json!!"))
+	req, _ := http.NewRequest("POST", "/tenants", strings.NewReader("invalid json!!"))
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -166,7 +166,7 @@ func TestCreateTenantParentTenantDoesNotExist(t *testing.T) {
 		},
 	}
 	transport := testTenantsTransport(&svc)
-	req, _ := http.NewRequest("POST", "/tenants/create", strings.NewReader(`{
+	req, _ := http.NewRequest("POST", "/tenants", strings.NewReader(`{
 		"name": "some-org",
 		"chamber_of_commerce_id": "asdasdasd",
 		"address": "sadasdasd",
@@ -197,7 +197,7 @@ func TestCreateTenantTenantIsCreated(t *testing.T) {
 		},
 	}
 	transport := testTenantsTransport(&svc)
-	req, _ := http.NewRequest("POST", "/tenants/create", strings.NewReader(`{
+	req, _ := http.NewRequest("POST", "/tenants", strings.NewReader(`{
 		"name": "some-org",
 		"chamber_of_commerce_id": "asdasdasd",
 		"address": "sadasdasd",
@@ -221,7 +221,7 @@ func TestDeleteTenantTenantIDIsNotAnInt(t *testing.T) {
 	// Arrange
 	svc := tenantServiceMock{}
 	transport := testTenantsTransport(&svc)
-	req, _ := http.NewRequest("DELETE", "/tenants/delete/asdasd", nil)
+	req, _ := http.NewRequest("DELETE", "/tenants/asdasd", nil)
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -242,7 +242,7 @@ func TestDeleteTenantTenantDoesNotExist(t *testing.T) {
 		},
 	}
 	transport := testTenantsTransport(&svc)
-	req, _ := http.NewRequest("DELETE", "/tenants/delete/12345", nil)
+	req, _ := http.NewRequest("DELETE", "/tenants/12345", nil)
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -263,7 +263,7 @@ func TestDeleteTenantErrorOccursWhileDeleting(t *testing.T) {
 		},
 	}
 	transport := testTenantsTransport(&svc)
-	req, _ := http.NewRequest("DELETE", "/tenants/delete/12345", nil)
+	req, _ := http.NewRequest("DELETE", "/tenants/12345", nil)
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -284,7 +284,7 @@ func TestDeleteTenantTenantIsDeleted(t *testing.T) {
 		},
 	}
 	transport := testTenantsTransport(&svc)
-	req, _ := http.NewRequest("DELETE", "/tenants/delete/12345", nil)
+	req, _ := http.NewRequest("DELETE", "/tenants/12345", nil)
 
 	// Act
 	rr := httptest.NewRecorder()
