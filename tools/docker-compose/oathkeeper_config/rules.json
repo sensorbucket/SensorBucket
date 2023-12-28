@@ -1,0 +1,51 @@
+[
+    {
+        "id": "default",
+        "match": {
+            "url": "http://<127.0.0.1|localhost>:3000/<(?:(?!api/auth).)*>",
+            "methods": [
+                "GET",
+                "POST",
+                "DELETE"
+            ]
+        },
+        "authenticators": [
+            {
+                "handler": "noop"
+            }
+        ],
+        "authorizer": {
+            "handler": "allow"
+        },
+        "mutators": [
+            {
+                "handler": "id_token",
+                "config": {}
+            }
+        ]
+    },
+    {
+        "id": "authenticateincomingapitokens",
+        "match": {
+            "url": "http://<127.0.0.1|localhost>:3000/api/auth",
+            "methods": [
+                "GET"
+            ]
+        },
+        "authenticators": [
+            {
+                "handler": "bearer_token"
+            }
+        ],
+        "authorizer": {
+            "handler": "allow"
+        },
+        "mutators": [
+            {
+                "handler": "id_token",
+                "config": {}
+            }
+        ]
+    }
+
+]

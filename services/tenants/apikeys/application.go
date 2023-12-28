@@ -29,20 +29,8 @@ func (s *service) ListAPIKeys(filter Filter, p pagination.Request) (*pagination.
 }
 
 // Revokes an API key, returns ErrKeyNotFound if the given key was not found in the apiKeyStore
-func (s *service) RevokeApiKey(base64IdAndKeyCombination string) error {
-	apiKeyId, _, err := apiKeyAndIdFromBase64(base64IdAndKeyCombination)
-	if err != nil {
-		return ErrInvalidEncoding
-	}
-
-	res, err := s.apiKeyStore.DeleteApiKey(apiKeyId)
-	if err != nil {
-		return err
-	}
-	if !res {
-		return ErrKeyNotFound
-	}
-	return nil
+func (s *service) RevokeApiKey(apiKeyId int64) error {
+	return s.apiKeyStore.DeleteApiKey(apiKeyId)
 }
 
 // Creates a new API key for the given tenant and with the given expiration date.
@@ -56,7 +44,10 @@ func (s *service) GenerateNewApiKey(name string, tenantId int64, expirationDate 
 	if tenant.State != Active {
 		return "", ErrTenantIsNotValid
 	}
-	newApiKey := newApiKey(name, expirationDate)
+	newApiKey, err := newApiKey(name, expirationDate)
+	if err != nil {
+		return "", err
+	}
 	hashed, err := newApiKey.hash()
 	if err != nil {
 		return "", err
@@ -67,42 +58,52 @@ func (s *service) GenerateNewApiKey(name string, tenantId int64, expirationDate 
 	}
 	apiKey :=
 		base64.StdEncoding.WithPadding(base64.NoPadding).EncodeToString(
-			[]byte(fmt.Sprintf("%d:%s", newApiKey.ID, newApiKey.Value)))
+			[]byte(fmt.Sprintf("%d:%s", newApiKey.ID, newApiKey.Secret)))
 	return apiKey, nil
 }
 
-// Validates a given API key. Input must be 'apiKeyId:apiKey' encoded to a base64 string
+// Authenticates a given API key. Input must be 'apiKeyId:apiKey' encoded to a base64 string
 // API key is valid if it is the correct api key id and api key combination and if the attached tenant is active
-func (s *service) ValidateApiKey(base64IdAndKeyCombination string) (ApiKeyValidDTO, error) {
+func (s *service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAuthenticationDTO, error) {
 	apiKeyId, apiKey, err := apiKeyAndIdFromBase64(base64IdAndKeyCombination)
 	if err != nil {
-		return ApiKeyValidDTO{}, ErrInvalidEncoding
+		return ApiKeyAuthenticationDTO{}, ErrInvalidEncoding
 	}
-	hashed, err := s.apiKeyStore.GetHashedApiKeyById(apiKeyId)
+	hashed, err := s.apiKeyStore.GetHashedApiKeyById(apiKeyId, []TenantState{Active})
 	if err != nil {
-		return ApiKeyValidDTO{}, err
+		return ApiKeyAuthenticationDTO{}, err
 	}
 	if hashed.IsExpired() {
 		log.Println("[Info] detected expired API key, deleting")
-		if err := s.RevokeApiKey(base64IdAndKeyCombination); err != nil {
+		if err := s.RevokeApiKey(apiKeyId); err != nil {
 			log.Printf("[Warning] couldn't cleanup expired API key: '%s'\n", err)
 		}
-		return ApiKeyValidDTO{}, nil
+		return ApiKeyAuthenticationDTO{}, ErrKeyNotFound
 	}
 	isValid := hashed.compare(apiKey)
-	return ApiKeyValidDTO{
-		IsValid:  isValid,
-		TenantID: hashed.TenantID,
-	}, nil
+	if isValid {
+		if hashed.ExpirationDate != nil {
+			exp := hashed.ExpirationDate.Unix()
+			return ApiKeyAuthenticationDTO{
+				TenantID:   fmt.Sprintf("%d", hashed.TenantID),
+				Expiration: &exp,
+			}, nil
+		} else {
+			return ApiKeyAuthenticationDTO{
+				TenantID: fmt.Sprintf("%d", hashed.TenantID),
+			}, nil
+		}
+	}
+	return ApiKeyAuthenticationDTO{}, ErrKeyNotFound
 }
 
 type Filter struct {
 	TenantID []int64 `schema:"tenant_id"`
 }
 
-type ApiKeyValidDTO struct {
-	IsValid  bool  `json:"-"`
-	TenantID int64 `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
+type ApiKeyAuthenticationDTO struct {
+	TenantID   string `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
+	Expiration *int64 `json:"expiration_date"`
 }
 
 type ApiKeyDTO struct {
@@ -139,8 +140,8 @@ type service struct {
 
 type apiKeyStore interface {
 	AddApiKey(tenantID int64, hashedApiKey HashedApiKey) error
-	DeleteApiKey(id int64) (bool, error)
-	GetHashedApiKeyById(id int64) (HashedApiKey, error)
+	DeleteApiKey(id int64) error
+	GetHashedApiKeyById(id int64, stateFilter []TenantState) (HashedApiKey, error)
 	List(Filter, pagination.Request) (*pagination.Page[ApiKeyDTO], error)
 }
 
