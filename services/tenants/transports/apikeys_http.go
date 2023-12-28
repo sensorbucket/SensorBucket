@@ -36,10 +36,10 @@ func (t *APIKeysHTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
 func (t *APIKeysHTTPTransport) setupRoutes(r chi.Router) {
-	r.Get("/tenants/api-keys/list", t.httpListApiKeys())
-	r.Delete("/tenants/api-keys/{api_key_id}", t.httpRevokeApiKey())
-	r.Post("/tenants/api-keys", t.httpCreateApiKey())
-	r.Get("/tenants/api-keys/authenticate", t.httpAuthenticateApiKey())
+	r.Get("/api-keys/list", t.httpListApiKeys())
+	r.Delete("/api-keys/{api_key_id}", t.httpRevokeApiKey())
+	r.Post("/api-keys", t.httpCreateApiKey())
+	r.Get("/api-keys/authenticate", t.httpAuthenticateApiKey())
 }
 
 func (t *APIKeysHTTPTransport) httpRevokeApiKey() http.HandlerFunc {

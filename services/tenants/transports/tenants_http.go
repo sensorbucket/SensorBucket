@@ -15,9 +15,9 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
-func NewTenantsHTTP(tenantSvc tenantService, url string) *TenantsHTTPTransport {
+func NewTenantsHTTP(r chi.Router, tenantSvc tenantService, url string) *TenantsHTTPTransport {
 	t := &TenantsHTTPTransport{
-		router:    chi.NewRouter(),
+		router:    r,
 		tenantSvc: tenantSvc,
 		url:       url,
 	}
@@ -37,8 +37,8 @@ func (t *TenantsHTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 func (t *TenantsHTTPTransport) setupRoutes(r chi.Router) {
 	r.Get("/tenants/list", t.httpGetTenants())
-	r.Post("/tenants/create", t.httpCreateTenant())
-	r.Delete("/tenants/delete/{tenant_id}", t.httpDeleteTenant())
+	r.Post("/tenants", t.httpCreateTenant())
+	r.Delete("/tenants/{tenant_id}", t.httpDeleteTenant())
 }
 
 func (t *TenantsHTTPTransport) httpCreateTenant() http.HandlerFunc {

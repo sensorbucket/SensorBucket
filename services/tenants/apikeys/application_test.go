@@ -7,17 +7,18 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
 func TestGenerateNewApiKeyCreatesNewApiKey(t *testing.T) {
 	// Arrange
 	exp := time.Date(2024, 12, 9, 33, 12, 50, 300, time.UTC)
 	tenantStore := &tenantStoreMock{
-		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
 			assert.Equal(t, int64(905), id)
-			return Tenant{
+			return tenants.Tenant{
 				ID:    905,
-				State: Active,
+				State: tenants.Active,
 			}, nil
 		},
 	}
@@ -49,11 +50,11 @@ func TestGenerateNewApiKeyCreatesNewApiKey(t *testing.T) {
 func TestGenerateNewApiKeyErrorOccursWhileAddingApiKeyToStore(t *testing.T) {
 	// Arrange
 	tenantStore := &tenantStoreMock{
-		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
 			assert.Equal(t, int64(905), id)
-			return Tenant{
+			return tenants.Tenant{
 				ID:    905,
-				State: Active,
+				State: tenants.Active,
 			}, nil
 		},
 	}
@@ -83,10 +84,10 @@ func TestGenerateNewApiKeyErrorOccursWhileAddingApiKeyToStore(t *testing.T) {
 func TestGenerateNewApiKeyErrorOccursWhenRetrievingTenant(t *testing.T) {
 	// Arrange
 	tenantStore := &tenantStoreMock{
-		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
 			assert.Equal(t, int64(905), id)
-			return Tenant{
-				State: Active,
+			return tenants.Tenant{
+				State: tenants.Active,
 			}, fmt.Errorf("weird database error!")
 		},
 	}
@@ -106,9 +107,9 @@ func TestGenerateNewApiKeyErrorOccursWhenRetrievingTenant(t *testing.T) {
 func TestGenerateNewApiKeyTenantDoesNotExist(t *testing.T) {
 	// Arrange
 	tenantStore := &tenantStoreMock{
-		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
 			assert.Equal(t, int64(334), id)
-			return Tenant{}, ErrTenantIsNotValid
+			return tenants.Tenant{}, ErrTenantIsNotValid
 		},
 	}
 	s := &service{
@@ -124,13 +125,13 @@ func TestGenerateNewApiKeyTenantDoesNotExist(t *testing.T) {
 	assert.Len(t, tenantStore.GetTenantByIdCalls(), 1)
 }
 
-func TestGenerateNewApiKeyTenantIsNotActive(t *testing.T) {
+func TestGenerateNewApiKeyTenantIsNottenantsActive(t *testing.T) {
 	// Arrange
 	tenantStore := &tenantStoreMock{
-		GetTenantByIdFunc: func(id int64) (Tenant, error) {
+		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
 			assert.Equal(t, int64(334), id)
-			return Tenant{
-				State: Archived,
+			return tenants.Tenant{
+				State: tenants.Archived,
 			}, nil
 		},
 	}
@@ -238,8 +239,8 @@ func TestValidateApiKeyInvalidEncoding(t *testing.T) {
 func TestValidateApiKeyErrorOccursWhileRetrievingKey(t *testing.T) {
 	// Arrange
 	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []TenantState) (HashedApiKey, error) {
-			assert.Equal(t, []TenantState{Active}, stateFilter)
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (HashedApiKey, error) {
+			assert.Equal(t, []tenants.State{tenants.Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
 			return HashedApiKey{}, fmt.Errorf("database error!!")
 		},
@@ -260,8 +261,8 @@ func TestValidateApiKeyErrorOccursWhileRetrievingKey(t *testing.T) {
 func TestValidateApiKeyInvalidKey(t *testing.T) {
 	// Arrange
 	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []TenantState) (HashedApiKey, error) {
-			assert.Equal(t, []TenantState{Active}, stateFilter)
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (HashedApiKey, error) {
+			assert.Equal(t, []tenants.State{tenants.Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
 			return HashedApiKey{
 				Key: Key{
@@ -288,8 +289,8 @@ func TestValidateApiKeyInvalidKey(t *testing.T) {
 func TestValidateApiKeyKeyIsExpired(t *testing.T) {
 	// Arrange
 	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []TenantState) (HashedApiKey, error) {
-			assert.Equal(t, []TenantState{Active}, stateFilter)
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (HashedApiKey, error) {
+			assert.Equal(t, []tenants.State{tenants.Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
 			t := time.Date(2010, 11, 12, 8, 37, 3, 500, time.Local)
 			return HashedApiKey{
@@ -323,8 +324,8 @@ func TestValidateApiKeyKeyIsExpired(t *testing.T) {
 func TestValidateApiKeyKeyIsExpiredDeleteErrorOccurs(t *testing.T) {
 	// Arrange
 	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []TenantState) (HashedApiKey, error) {
-			assert.Equal(t, []TenantState{Active}, stateFilter)
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (HashedApiKey, error) {
+			assert.Equal(t, []tenants.State{tenants.Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
 			t := time.Date(2010, 11, 12, 8, 37, 3, 500, time.Local)
 			return HashedApiKey{
@@ -358,8 +359,8 @@ func TestValidateApiKeyKeyIsExpiredDeleteErrorOccurs(t *testing.T) {
 func TestValidateApiKeyValidKey(t *testing.T) {
 	// Arrange
 	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []TenantState) (HashedApiKey, error) {
-			assert.Equal(t, []TenantState{Active}, stateFilter)
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (HashedApiKey, error) {
+			assert.Equal(t, []tenants.State{tenants.Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
 			return HashedApiKey{
 				Key: Key{
