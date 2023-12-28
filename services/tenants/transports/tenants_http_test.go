@@ -2,6 +2,7 @@ package tenantstransports
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
@@ -157,10 +159,10 @@ func TestCreateTenantInvalidJSONBody(t *testing.T) {
 func TestCreateTenantParentTenantDoesNotExist(t *testing.T) {
 	// Arrange
 	svc := tenantServiceMock{
-		CreateNewTenantFunc: func(tenant tenants.TenantDTO) (*tenants.TenantDTO, error) {
+		CreateNewTenantFunc: func(tenant tenants.TenantDTO) (tenants.TenantDTO, error) {
 			assert.NotNil(t, tenant.ParentID)
 			assert.Equal(t, int64(345), *tenant.ParentID)
-			return nil, tenants.ErrParentTenantNotFound
+			return tenants.TenantDTO{}, tenants.ErrParentTenantNotFound
 		},
 	}
 	transport := testTenantsTransport(&svc)
@@ -187,11 +189,11 @@ func TestCreateTenantParentTenantDoesNotExist(t *testing.T) {
 func TestCreateTenantTenantIsCreated(t *testing.T) {
 	// Arrange
 	svc := tenantServiceMock{
-		CreateNewTenantFunc: func(tenant tenants.TenantDTO) (*tenants.TenantDTO, error) {
+		CreateNewTenantFunc: func(tenant tenants.TenantDTO) (tenants.TenantDTO, error) {
 			assert.NotNil(t, tenant.ParentID)
 			assert.Equal(t, int64(345), *tenant.ParentID)
 			t := tenants.TenantDTO{}
-			return &t, nil
+			return t, nil
 		},
 	}
 	transport := testTenantsTransport(&svc)
@@ -211,21 +213,153 @@ func TestCreateTenantTenantIsCreated(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusCreated, rr.Code)
-	assert.Equal(t, strings.Trim(
-		`{
-			"message":"Created new tenant", 
-			"data": {
-				"name":"",
-				"address":"",
-				"zip_code":"",
-				"city":"",
-				"chamber_of_commerce_id":"",
-				"headquarter_id":"",
-				"archive_time":null,
-				"logo":null,
-				"parent_tenant_id":null
-		}}`+"\n", rr.Body.String()), "\n")
+	assert.Equal(t, `{"message":"Created new tenant","data":{"name":"","address":"","zip_code":"","city":"","chamber_of_commerce_id":"","headquarter_id":"","archive_time":null,"logo":null,"parent_tenant_id":null}}`+"\n", rr.Body.String(), "\n")
 	assert.Len(t, svc.CreateNewTenantCalls(), 1)
+}
+
+func TestDeleteTenantTenantIDIsNotAnInt(t *testing.T) {
+	// Arrange
+	svc := tenantServiceMock{}
+	transport := testTenantsTransport(&svc)
+	req, _ := http.NewRequest("DELETE", "/tenants/delete/asdasd", nil)
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Equal(t, `{"message":"tenant_id must be a number"}`+"\n", rr.Body.String(), "\n")
+	assert.Len(t, svc.ArchiveTenantCalls(), 0)
+
+}
+func TestDeleteTenantTenantDoesNotExist(t *testing.T) {
+	// Arrange
+	svc := tenantServiceMock{
+		ArchiveTenantFunc: func(tenantID int64) error {
+			assert.Equal(t, int64(12345), tenantID)
+			return tenants.ErrTenantNotFound
+		},
+	}
+	transport := testTenantsTransport(&svc)
+	req, _ := http.NewRequest("DELETE", "/tenants/delete/12345", nil)
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+	assert.Equal(t, `{"message":"Tenant does not exist"}`+"\n", rr.Body.String(), "\n")
+	assert.Len(t, svc.ArchiveTenantCalls(), 1)
+}
+
+func TestDeleteTenantErrorOccursWhileDeleting(t *testing.T) {
+	// Arrange
+	svc := tenantServiceMock{
+		ArchiveTenantFunc: func(tenantID int64) error {
+			assert.Equal(t, int64(12345), tenantID)
+			return fmt.Errorf("weird db error!!")
+		},
+	}
+	transport := testTenantsTransport(&svc)
+	req, _ := http.NewRequest("DELETE", "/tenants/delete/12345", nil)
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusInternalServerError, rr.Code)
+	assert.Equal(t, `{"message":"Internal server error"}`+"\n", rr.Body.String(), "\n")
+	assert.Len(t, svc.ArchiveTenantCalls(), 1)
+}
+
+func TestDeleteTenantTenantIsDeleted(t *testing.T) {
+	// Arrange
+	svc := tenantServiceMock{
+		ArchiveTenantFunc: func(tenantID int64) error {
+			assert.Equal(t, int64(12345), tenantID)
+			return nil
+		},
+	}
+	transport := testTenantsTransport(&svc)
+	req, _ := http.NewRequest("DELETE", "/tenants/delete/12345", nil)
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, `{"message":"Deleted tenant"}`+"\n", rr.Body.String(), "\n")
+	assert.Len(t, svc.ArchiveTenantCalls(), 1)
+}
+
+func TestListTenantsInvalidParams(t *testing.T) {
+	// Arrange
+	svc := tenantServiceMock{}
+	transport := testTenantsTransport(&svc)
+	req, _ := http.NewRequest("GET", "/tenants/list?state=asdasd", nil)
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Equal(t, `{"message":"invalid params"}`+"\n", rr.Body.String(), "\n")
+	assert.Len(t, svc.ListTenantsCalls(), 0)
+}
+
+func TestListTenantsErrorOccursWhileRetrievingData(t *testing.T) {
+	// Arrange
+	svc := tenantServiceMock{
+		ListTenantsFunc: func(filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
+			return nil, fmt.Errorf("weird error occurred!")
+		},
+	}
+	transport := testTenantsTransport(&svc)
+	req, _ := http.NewRequest("GET", "/tenants/list", nil)
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusInternalServerError, rr.Code)
+	assert.Equal(t, `{"message":"Internal server error"}`+"\n", rr.Body.String(), "\n")
+	assert.Len(t, svc.ListTenantsCalls(), 1)
+}
+
+func TestListTenantsReturnsListOfTenants(t *testing.T) {
+	// Arrange
+	svc := tenantServiceMock{
+		ListTenantsFunc: func(filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
+			return &pagination.Page[tenants.TenantDTO]{
+				Cursor: "asdasdads",
+				Data: []tenants.TenantDTO{
+					{
+						Name: "blabla",
+					},
+					{
+						Name: "ewrtras",
+					},
+				},
+			}, nil
+		},
+	}
+	transport := testTenantsTransport(&svc)
+	req, _ := http.NewRequest("GET", "/tenants/list", nil)
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, `{"links":{"previous":"","next":"/tenants/list?cursor=asdasdads"},"page_size":2,"total_count":0,"data":[{"name":"blabla","address":"","zip_code":"","city":"","chamber_of_commerce_id":"","headquarter_id":"","archive_time":null,"logo":null,"parent_tenant_id":null},{"name":"ewrtras","address":"","zip_code":"","city":"","chamber_of_commerce_id":"","headquarter_id":"","archive_time":null,"logo":null,"parent_tenant_id":null}]}`+"\n", rr.Body.String(), "\n")
+	assert.Len(t, svc.ListTenantsCalls(), 1)
 }
 
 func testTenantsTransport(svc tenantService) *TenantsHTTPTransport {

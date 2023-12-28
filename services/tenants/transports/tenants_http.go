@@ -36,7 +36,7 @@ func (t *TenantsHTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
 func (t *TenantsHTTPTransport) setupRoutes(r chi.Router) {
-	r.Get("/tenants", t.httpGetTenants())
+	r.Get("/tenants/list", t.httpGetTenants())
 	r.Post("/tenants/create", t.httpCreateTenant())
 	r.Delete("/tenants/delete/{tenant_id}", t.httpDeleteTenant())
 }

@@ -22,7 +22,7 @@ var _ tenantService = &tenantServiceMock{}
 //			ArchiveTenantFunc: func(tenantID int64) error {
 //				panic("mock out the ArchiveTenant method")
 //			},
-//			CreateNewTenantFunc: func(tenant tenants.TenantDTO) (*tenants.TenantDTO, error) {
+//			CreateNewTenantFunc: func(tenant tenants.TenantDTO) (tenants.TenantDTO, error) {
 //				panic("mock out the CreateNewTenant method")
 //			},
 //			ListTenantsFunc: func(filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
@@ -39,7 +39,7 @@ type tenantServiceMock struct {
 	ArchiveTenantFunc func(tenantID int64) error
 
 	// CreateNewTenantFunc mocks the CreateNewTenant method.
-	CreateNewTenantFunc func(tenant tenants.TenantDTO) (*tenants.TenantDTO, error)
+	CreateNewTenantFunc func(tenant tenants.TenantDTO) (tenants.TenantDTO, error)
 
 	// ListTenantsFunc mocks the ListTenants method.
 	ListTenantsFunc func(filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.TenantDTO], error)
@@ -102,7 +102,7 @@ func (mock *tenantServiceMock) ArchiveTenantCalls() []struct {
 }
 
 // CreateNewTenant calls CreateNewTenantFunc.
-func (mock *tenantServiceMock) CreateNewTenant(tenant tenants.TenantDTO) (*tenants.TenantDTO, error) {
+func (mock *tenantServiceMock) CreateNewTenant(tenant tenants.TenantDTO) (tenants.TenantDTO, error) {
 	if mock.CreateNewTenantFunc == nil {
 		panic("tenantServiceMock.CreateNewTenantFunc: method is nil but tenantService.CreateNewTenant was just called")
 	}
