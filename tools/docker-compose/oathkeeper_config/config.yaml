@@ -56,7 +56,7 @@ authenticators:
   bearer_token:
     enabled: true
     config:
-      check_session_url: "http://tenants:3000/apikeys/validate"
+      check_session_url: "http://tenants:3000/tenants/api-keys/authenticate"
       preserve_path: true
       token_from:
         header: Authorization

@@ -85,12 +85,12 @@ func (s *service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAu
 		if hashed.ExpirationDate != nil {
 			exp := hashed.ExpirationDate.Unix()
 			return ApiKeyAuthenticationDTO{
-				TenantID:   hashed.TenantID,
+				TenantID:   fmt.Sprintf("%d", hashed.TenantID),
 				Expiration: &exp,
 			}, nil
 		} else {
 			return ApiKeyAuthenticationDTO{
-				TenantID: hashed.TenantID,
+				TenantID: fmt.Sprintf("%d", hashed.TenantID),
 			}, nil
 		}
 	}
@@ -102,7 +102,7 @@ type Filter struct {
 }
 
 type ApiKeyAuthenticationDTO struct {
-	TenantID   int64  `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
+	TenantID   string `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
 	Expiration *int64 `json:"expiration_date"`
 }
 
