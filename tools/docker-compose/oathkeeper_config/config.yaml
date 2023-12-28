@@ -1,0 +1,64 @@
+serve:
+  #  proxy:
+  #    port: 4455 # run the proxy at port 4455
+  api:
+    port: 4456 # run the api at port 4456
+
+access_rules:
+  repositories:
+    - file:///etc/config/oathkeeper/rules.json
+
+errors:
+  fallback:
+    - json
+  handlers:
+    json:
+      enabled: true
+      config:
+        verbose: true
+    redirect:
+      enabled: true
+      config:
+        to: https://www.ory.sh/docs
+
+mutators:
+  noop:
+    enabled: true
+  id_token:
+    enabled: true
+    config:
+      issuer_url: http://localhost:3000/
+      jwks_url: file:///etc/config/oathkeeper/jwks.json
+  hydrator:
+    enabled: true
+    config:
+      api:
+        url: http://tenants:3000/session/hydrate
+
+authorizers:
+  allow:
+    enabled: true
+  deny:
+    enabled: true
+
+authenticators:
+  noop:
+    enabled: true
+  cookie_session:
+    enabled: true
+    config:
+      check_session_url: http://kratos:4433/sessions/whoami
+      preserve_path: true
+      extra_from: "@this"
+      subject_from: "identity.id"
+      only:
+        - ory_kratos_session
+  bearer_token:
+    enabled: true
+    config:
+      check_session_url: "http://tenants:3000/apikeys/validate"
+      preserve_path: true
+      token_from:
+        header: Authorization
+      forward_http_headers:
+        - Authorization

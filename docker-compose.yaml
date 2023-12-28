@@ -6,7 +6,7 @@ services:
     ports:
       - 3000:80
     volumes:
-      - ./tools/caddy:/etc/caddy
+      - ./tools/docker-compose/caddy:/etc/caddy
 
   dashboard:
     build:
@@ -19,11 +19,6 @@ services:
     - STATIC_PATH=services/dashboard/static
     - HTTP_BASE=/dashboard
     - SB_API=http://caddy
-    - IMAGE_SBOX=pzld_sensorbox
-    - IMAGE_TTN=ttn
-    - IMAGE_MEAS=storage
-    - IMAGE_MFM=mfm-fijnstof
-    - IMAGE_MFM2=mfm-2
 
   core:
     build:
@@ -120,10 +115,44 @@ services:
     - AMQP_XCHG=ingress
     - AMQP_XCHG_TOPIC=ingress.httpimporter
 
+  oathkeeper:
+    image: oryd/oathkeeper:v0.40.6
+    command: serve --config=/etc/config/oathkeeper/config.yaml
+    volumes:
+      - ./tools/docker-compose/oathkeeper_config:/etc/config/oathkeeper
+    environment:
+      - LOG_LEAK_SENSITIVE_VALUES=true
+  kratos-migrate:
+    image: oryd/kratos:v0.13.0
+    environment:
+      - DSN=postgres://sensorbucket:sensorbucket@db:5432/kratos?sslmode=disable
+    volumes:
+      - type: bind
+        source: ./tools/docker-compose/kratos_config
+        target: /etc/config/kratos
+    command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
+    restart: on-failure
+  kratos:
+    depends_on:
+      - kratos-migrate
+    image: oryd/kratos:v0.13.0
+    ports:
+      - '4433:4433' # public
+      - '4434:4434' # admin
+    restart: unless-stopped
+    environment:
+      - DSN=postgres://sensorbucket:sensorbucket@db:5432/kratos?sslmode=disable
+      - LOG_LEVEL=trace
+    command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
+    volumes:
+      - type: bind
+        source: ./tools/docker-compose/kratos_config
+        target: /etc/config/kratos
+
   db:
     image: timescale/timescaledb-postgis:latest-pg12
     volumes:
-      - ./tools/postgres.d:/docker-entrypoint-initdb.d
+      - ./tools/docker-compose/postgres.d:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
     environment:
