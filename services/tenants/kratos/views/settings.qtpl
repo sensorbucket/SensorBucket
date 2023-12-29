@@ -1,0 +1,13 @@
+{% import (
+    ory "github.com/ory/client-go"
+    )
+%}
+{% code
+type SettingsPage struct {
+    Flow *ory.SettingsFlow
+} %}
+
+{% func (p SettingsPage) Body() %}
+    <h1>Settings!</h1>
+    {%= renderGroup(p.Flow.Ui, "password") %}
+{% endfunc %}

@@ -1,0 +1,10 @@
+{% import ory "github.com/ory/client-go" %}
+{% code
+type RecoveryPage struct {
+    Flow *ory.RecoveryFlow
+} %}
+
+{% func (p RecoveryPage) Body() %}
+    <h1>Recovery!</h1>
+    {%= renderGroup(p.Flow.Ui, "code") %}
+{% endfunc %}

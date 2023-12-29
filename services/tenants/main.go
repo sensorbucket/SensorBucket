@@ -13,6 +13,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	tenantsinfra "sensorbucket.nl/sensorbucket/services/tenants/infrastructure"
+	"sensorbucket.nl/sensorbucket/services/tenants/kratos"
 	"sensorbucket.nl/sensorbucket/services/tenants/migrations"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 	tenantstransports "sensorbucket.nl/sensorbucket/services/tenants/transports"
@@ -33,6 +34,7 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+	r.Mount("/auth", kratos.SetupRoutes())
 
 	// Setup Tenants service
 	tenantStore := tenantsinfra.NewTenantsStorePSQL(db)

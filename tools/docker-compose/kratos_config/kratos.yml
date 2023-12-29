@@ -1,19 +1,19 @@
-version: v0.13.0
+version: v1.0.0 
 
 dsn: memory
 
 serve:
   public:
-    base_url: http://127.0.0.1:4433/
+    base_url: http://127.0.0.1:3000/.ory
     cors:
       enabled: true
   admin:
     base_url: http://kratos:4434/
 
 selfservice:
-  default_browser_return_url: http://127.0.0.1:4455/
+  default_browser_return_url: http://127.0.0.1:3000/auth
   allowed_return_urls:
-    - http://127.0.0.1:4455
+    - http://127.0.0.1:3000/auth
 
   methods:
     password:
@@ -31,36 +31,36 @@ selfservice:
 
   flows:
     error:
-      ui_url: http://127.0.0.1:4455/error
+      ui_url: http://127.0.0.1:3000/auth/error
 
     settings:
-      ui_url: http://127.0.0.1:4455/settings
+      ui_url: http://127.0.0.1:3000/auth/settings
       privileged_session_max_age: 15m
       required_aal: highest_available
 
     recovery:
       enabled: true
-      ui_url: http://127.0.0.1:4455/recovery
+      ui_url: http://127.0.0.1:3000/auth/recovery
       use: code
 
     verification:
       enabled: true
-      ui_url: http://127.0.0.1:4455/verification
+      ui_url: http://127.0.0.1:3000/auth/verification
       use: code
       after:
-        default_browser_return_url: http://127.0.0.1:4455/
+        default_browser_return_url: http://127.0.0.1:3000/auth/
 
     logout:
       after:
-        default_browser_return_url: http://127.0.0.1:4455/login
+        default_browser_return_url: http://127.0.0.1:3000/auth/login
 
     login:
-      ui_url: http://127.0.0.1:4455/login
+      ui_url: http://127.0.0.1:3000/auth/login
       lifespan: 10m
 
     registration:
       lifespan: 10m
-      ui_url: http://127.0.0.1:4455/registration
+      ui_url: http://127.0.0.1:3000/auth/registration
       after:
         password:
           hooks:
@@ -94,4 +94,4 @@ identity:
 
 courier:
   smtp:
-    connection_uri: smtps://test:test@mailserver:1025/?skip_ssl_verify=true
+    connection_uri: smtps://test:test@mail-server:1025/?skip_ssl_verify=true

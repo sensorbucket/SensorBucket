@@ -8,6 +8,11 @@
         copy_headers Authorization
     }
 
+    handle_path /.ory/* {
+        reverse_proxy kratos:4433
+    }
+
+    redir /auth /auth/
     handle /auth/* {
         reverse_proxy tenants:3000
     }

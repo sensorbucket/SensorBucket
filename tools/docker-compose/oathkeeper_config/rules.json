@@ -4,10 +4,13 @@
         "match": {
             "url": "http://<127.0.0.1|localhost>:3000/<.*>",
             "methods": [
-                "GET"
+                "GET","POST","PATCH","PUT","DELETE"
             ]
         },
         "authenticators": [
+            {
+                "handler": "cookie_session"
+            },
             {
                 "handler": "noop"
             }

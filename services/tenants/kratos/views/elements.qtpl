@@ -1,0 +1,95 @@
+{% import (
+    ory "github.com/ory/client-go"
+    "github.com/samber/lo"
+    )
+%}
+{% func renderNode(n ory.UiNode) %}
+    {% switch attr := n.Attributes.GetActualInstance().(type) %}
+        {% case *ory.UiNodeInputAttributes %}
+            {%= renderInputNode(n, *attr) %}
+        {% case *ory.UiNodeImageAttributes %}
+            {%= renderImageNode(n, *attr) %}
+    {% endswitch %}
+{% endfunc %}
+
+{% func renderImageNode(n ory.UiNode, attr ory.UiNodeImageAttributes) %}
+    <img
+        src="{%s attr.GetSrc() %}"
+        id="{%s attr.GetId() %}"
+        width="{%dl attr.GetWidth() %}"
+        height="{%dl attr.GetHeight() %}"
+    />
+{% endfunc %}
+
+{% func renderInputNode(n ory.UiNode, attr ory.UiNodeInputAttributes) %}
+    {% if attr.GetType() == "submit" %}
+    <button 
+            {%= renderInputNodeAttributes(attr) %}>{%s n.Meta.GetLabel().Text %}</button>
+            <br/>
+    {% return %}
+    {% endif %}
+    <fieldset>
+        {% if label, ok := n.Meta.GetLabelOk(); ok %}
+        <label for="{%s attr.GetName() %}">
+            <span>{%s label.Text %}</span>
+        {% endif %}
+        <input 
+            {%= renderInputNodeAttributes(attr) %}
+            />
+        {% if n.Meta.HasLabel() %}
+        </label>
+        {% endif %}
+        {% for _, msg := range n.GetMessages() %}
+            <span style="color: red;">{%s msg.GetText() %}</span>
+        {% endfor %}
+    </fieldset>
+{% endfunc %}
+
+{% func renderInputNodeAttributes(attr ory.UiNodeInputAttributes) %}
+    name="{%s attr.GetName() %}"
+    type="{%s attr.GetType() %}"
+    {% if attr.GetAutocomplete() != "" %}
+        autocomplete="{%s attr.GetAutocomplete() %}"
+    {% endif %}
+    {% if attr.GetDisabled()  %}
+        disabled
+    {% endif %}
+    {% if attr.GetRequired() %}
+        required
+    {% endif %}
+    {% if attr.GetPattern() != "" %}
+        pattern="{%s attr.GetPattern() %}"
+    {% endif %}
+    {% if attr.GetOnclick() != "" %}
+        onclick="{%s attr.GetOnclick() %}"
+    {% endif %}
+    {% if attr.Value != nil %}
+        value="{%v attr.Value %}"
+    {% endif %}
+{% endfunc %}
+
+{% func renderGroup(ui ory.UiContainer, group string) %}
+    <form method="{%s ui.Method %}" action="{%s ui.Action %}">
+        {%= renderDefaultNodes(ui) %}
+        {% for _, n := range filterNodes(ui.Nodes,group) %}
+            {%= renderNode(n) %}
+        {% endfor %}
+        {% for _, msg := range ui.GetMessages() %}
+            <span style="color: red;">{%s msg.GetText() %}</span>
+        {% endfor %}
+    </form>
+{% endfunc %}
+
+{% func renderDefaultNodes(ui ory.UiContainer) %}
+        {% for _, n := range filterNodes(ui.Nodes, "default") %}
+            {%= renderNode(n) %}
+        {% endfor %}
+{% endfunc %}
+
+{% code 
+func filterNodes(n []ory.UiNode, group string) []ory.UiNode {
+    return lo.Filter(n, func(n ory.UiNode, _ int) bool {
+        return n.GetGroup() == group
+    })
+}
+%}

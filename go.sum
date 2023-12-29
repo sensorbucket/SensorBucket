@@ -266,6 +266,8 @@ github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417/go.m
 github.com/opencontainers/selinux v1.10.0/go.mod h1:2i0OySw99QjzBBQByd1Gr9gSjvuho1lHsJxIJ3gGbJI=
 github.com/ory/client-go v1.4.6 h1:tW9najNBiWwC3KgU2tq2kCZ1zRCDCNao60a9M1/V71k=
 github.com/ory/client-go v1.4.6/go.mod h1:DfrTIlME7tgrdgpn4UN07s4OJ1SwzHfrkz+C6C0Lbm0=
+github.com/ory/client-go v1.4.7 h1:uWPGGM5zVwpSBfcDIhvA6D+bu2YB7zF4STtpAvzkOco=
+github.com/ory/client-go v1.4.7/go.mod h1:DfrTIlME7tgrdgpn4UN07s4OJ1SwzHfrkz+C6C0Lbm0=
 github.com/pierrec/lz4/v4 v4.1.2/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
 github.com/pierrec/lz4/v4 v4.1.17 h1:kV4Ip+/hUBC+8T6+2EgburRtkE9ef4nbY3f4dFhGjMc=
 github.com/pierrec/lz4/v4 v4.1.17/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
