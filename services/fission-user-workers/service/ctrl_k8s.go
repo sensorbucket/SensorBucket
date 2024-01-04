@@ -67,7 +67,7 @@ func CreateKubernetesController(store Store, xchg string) (*KubernetesController
 		workerNamespace:    env.Must("CTRL_K8S_WORKER_NAMESPACE"),
 		prefix:             "worker",
 		mqtImage:           env.Must("CTRL_K8S_MQT_IMAGE"),
-		mqtImagePullSecret: env.Must("CTRL_K8S_PULL_SECRET"),
+		mqtImagePullSecret: env.Could("CTRL_K8S_PULL_SECRET", ""),
 		mqtSecret:          env.Must("CTRL_K8S_MQT_SECRET"),
 		mqtExchange:        xchg,
 	}, nil
@@ -268,6 +268,11 @@ func (ctrl *KubernetesController) workerToPackage(worker UserWorker) Package {
 }
 
 func (ctrl *KubernetesController) workerToMessageQueueTrigger(worker UserWorker) MessageQueueTrigger {
+	var pullSecrets []v1.LocalObjectReference
+	if ctrl.mqtImagePullSecret != "" {
+		pullSecrets = append(pullSecrets, v1.LocalObjectReference{Name: ctrl.mqtImagePullSecret})
+	}
+
 	return MessageQueueTrigger{
 		ID:       worker.ID,
 		Revision: worker.Revision,
@@ -294,11 +299,7 @@ func (ctrl *KubernetesController) workerToMessageQueueTrigger(worker UserWorker)
 					"queueName": ctrl.resourceName(worker.ID),
 				},
 				PodSpec: &v1.PodSpec{
-					ImagePullSecrets: []v1.LocalObjectReference{
-						{
-							Name: ctrl.mqtImagePullSecret,
-						},
-					},
+					ImagePullSecrets: pullSecrets,
 					Containers: []v1.Container{
 						{
 							Name:            ctrl.resourceName(worker.ID),
