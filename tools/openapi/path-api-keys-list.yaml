@@ -7,6 +7,12 @@ get:
   tags: ["ApiKeys"]
   parameters:
     - in: query
+      name: tenant_id
+      description: The id of the tenant from which to retrieve API keys
+      schema:
+        type: integer
+        format: int64
+    - in: query
       name: cursor
       description: The cursor for the current page
       schema:

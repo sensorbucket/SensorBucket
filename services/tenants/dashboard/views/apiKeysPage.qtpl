@@ -8,67 +8,53 @@
             API Keys
         </section>
         <section class="flex gap-2">
-            <button 
+            <button
                 class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                hx-get="{%s U("/api-keys/create") %}"
-                hx-target="main"
-                hx-push-url="true"
-            >
-            Create
+                hx-get="{%s U(" /api-keys/create") %}" hx-target="main" hx-push-url="true">
+                Create
             </button>
         </section>
     </header>
-    <div> {%= RenderApiKeyTable(p.ApiKeys) %}</div>
+    <div> {%= RenderApiKeyTable(p.Tenants, p.TenantsNextPage) %}</div>
 </div>
 {% endfunc %}
 
-{% func RenderApiKeyTable(keyCollection map[TenantInfo][]ApiKey) %}
-<table class="w-full text-sm border-separate border-spacing-0" id="device-table">
-    <thead class="text-left text-slate-500 sticky top-0 bg-white">
-        <tr class="h-10">
-            <th class="font-normal border-b align-middle px-4">
-                Name
-            </th>
-            <th class="font-normal border-b align-middle px-4">
-                Created
-            </th>
-            <th class="font-normal border-b align-middle px-4">
-                Expiration Date
-            </th>
-            <th class="font-normal border-b align-middle px-4">
-                Permissions
-            </th>
-            <th>
-                <!--Remove action-->
-            </th>
-        </tr>
+{% func RenderApiKeyTable(tenants []TenantInfo, tenantsNextPage string) %}
+{% for _, tenant := range tenants %}
+<table id="some-table" class="w-full text-sm border-separate border-spacing-0" id="device-table">
+    <thead>
+        {%= RenderApiKeyRowHeading(tenant) %}
     </thead>
-    <tbody>
-        {% for tenant, keys := range keyCollection %}
-            {%= RenderApiKeyRowHeading(tenant.Name) %}
-            {%= RenderApiKeyRows(keys) %}
-        {% endfor %}
+    <tbody _="init toggle the *display of me" id="tenant-table-{%d tenant.ID %}">
     </tbody>
 </table>
+{% endfor %}
 {% endfunc %}
-{% func RenderApiKeyRowHeading(tenantName string) %}
-<tr>
+
+{% func RenderApiKeyRowHeading(tenant TenantInfo) %}
+<tr class="cursor-pointer"
+    hx-trigger="click once" 
+    hx-get="/api-keys/table?tenant_id={%d tenant.ID %}" 
+    hx-target="#tenant-table-{%d tenant.ID %}"
+    hx-swap="beforeend"
+    _="on click toggle the *display of #tenant-table-{%d tenant.ID %}"
+    >
     <td class="px-4 h-10 border-b font-bold text-secondary-100 bg-secondary-400" colspan="5">
-        <label for="tenant">{%s tenantName %}</label>
+        <span>{%s tenant.Name %}</span>
     </td>
 </tr>
 {% endfunc %}
 
-{% func RenderApiKeyRows(keys []ApiKey) %}
+{% func RenderApiKeyRows(keys []ApiKey, nextPage string) %}
 {% for _, key := range keys %}
-<tr class="hover:bg-slate-50 group">
+<tr class="hover:bg-slate-50 group key">
     <td class="px-4 h-10 border-b">{%s key.Name %}</td>
     <td class="px-4 h-10 border-b">{%s key.Created.Format("02/01/2006") %}</td>
     <td class="px-4 h-10 border-b">
         {% if key.ExpirationDate != nil %}
-            {%s key.ExpirationDate.Format("02/01/2006") %}
+        {%s key.ExpirationDate.Format("02/01/2006") %}
         {% else %}
-            -
+        -
         {% endif %}
     </td>
     <td class="px-4 h-10 border-b truncate" style="max-width: 15rem;">
@@ -81,36 +67,46 @@
         </div> -->
     </td>
     <td class="px-4 h-10 border-b">
-        <button hx-delete="/api-keys/revoke/{%d key.ID %}"
-            hx-trigger="click"
-            hx-target="closest tr"
-            hx-swap="innerHTML"
-        class="text-xs bg-red-400 hover:bg-red-500 text-white border border-red-500 rounded px-2 py-1">
+        <button hx-delete="/api-keys/revoke/{%d key.ID %}" hx-trigger="click once" hx-target="closest tr" hx-swap="innerHTML"
+            class="text-xs bg-red-400 hover:bg-red-500 text-white border border-red-500 rounded px-2 py-1">
             Revoke
-        </button>  
+        </button>
     </td>
 </tr>
 {% endfor %}
+{% if nextPage != "" %}
+<tr hx-trigger="click once" hx-get="{%s nextPage %}" hx-swap="outerHTML" class="cursor-pointer key">
+    <td class="underline text-sky-600 p-1 text-center" colspan="5">
+        <span>Load more...</span>
+    </td>
+</tr>
+{% elseif len(keys) == 0 %}
+<tr>
+    <td class="italic p-3 text-center" colspan="5">
+        <span>Organisation has no API keys...</span>
+    </td>
+</tr>
+{% endif %}
 {% endfunc %}
 
 {% code
 type ApiKeysPage struct {
-    layout.BasePage
-    ApiKeysNextPage string
-    ApiKeys map[TenantInfo][]ApiKey
+layout.BasePage
+Tenants []TenantInfo
+TenantsNextPage string
 }
 
 type TenantInfo struct {
-    ID int
-    Name string
+ID int
+Name string
 }
 
 type ApiKey struct {
-    ID int
-    TenantName string
-    Name string
-    ExpirationDate *time.Time
-    Permissions []string
-    Created time.Time
+ID int
+TenantID int
+Name string
+ExpirationDate *time.Time
+Permissions []string
+Created time.Time
 }
 %}

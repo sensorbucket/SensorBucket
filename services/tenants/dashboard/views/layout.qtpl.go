@@ -205,7 +205,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="`)
 //line views/layout.qtpl:42
-	qw422016.E().S(U("static/style.css"))
+	qw422016.E().S(U("/static/style.css"))
 //line views/layout.qtpl:42
 	qw422016.N().S(`" />
     `)
@@ -225,12 +225,12 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
     <script type="text/javascript" src="`)
 //line views/layout.qtpl:54
-	qw422016.E().S(U("static/uplot.htmx.js"))
+	qw422016.E().S(U("/static/uplot.htmx.js"))
 //line views/layout.qtpl:54
 	qw422016.N().S(`"></script>
     <script type="text/javascript" src="`)
 //line views/layout.qtpl:55
-	qw422016.E().S(U("static/leaflet.htmx.js"))
+	qw422016.E().S(U("/static/leaflet.htmx.js"))
 //line views/layout.qtpl:55
 	qw422016.N().S(`"></script>
     <script src="http://SortableJS.github.io/Sortable/Sortable.js"></script>

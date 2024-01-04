@@ -35,7 +35,7 @@ func (r ApiCreateApiKeyRequest) CreateApiKeyRequest(createApiKeyRequest CreateAp
 	return r
 }
 
-func (r ApiCreateApiKeyRequest) Execute() (*http.Response, error) {
+func (r ApiCreateApiKeyRequest) Execute() (*ApiKeyCreated, *http.Response, error) {
 	return r.ApiService.CreateApiKeyExecute(r)
 }
 
@@ -56,19 +56,21 @@ func (a *ApiKeysApiService) CreateApiKey(ctx context.Context) ApiCreateApiKeyReq
 }
 
 // Execute executes the request
-func (a *ApiKeysApiService) CreateApiKeyExecute(r ApiCreateApiKeyRequest) (*http.Response, error) {
+//  @return ApiKeyCreated
+func (a *ApiKeysApiService) CreateApiKeyExecute(r ApiCreateApiKeyRequest) (*ApiKeyCreated, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
+		localVarReturnValue  *ApiKeyCreated
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApiKeysApiService.CreateApiKey")
 	if err != nil {
-		return nil, &GenericOpenAPIError{error: err.Error()}
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/tenants/api-keys/{api_key_id}"
+	localVarPath := localBasePath + "/tenants/api-keys"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -84,7 +86,7 @@ func (a *ApiKeysApiService) CreateApiKeyExecute(r ApiCreateApiKeyRequest) (*http
 	}
 
 	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{}
+	localVarHTTPHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
@@ -95,19 +97,19 @@ func (a *ApiKeysApiService) CreateApiKeyExecute(r ApiCreateApiKeyRequest) (*http
 	localVarPostBody = r.createApiKeyRequest
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -115,17 +117,33 @@ func (a *ApiKeysApiService) CreateApiKeyExecute(r ApiCreateApiKeyRequest) (*http
 			body:  localVarBody,
 			error: localVarHTTPResponse.Status,
 		}
-		return localVarHTTPResponse, newErr
+		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
-	return localVarHTTPResponse, nil
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
 type ApiListApiKeysRequest struct {
 	ctx context.Context
 	ApiService *ApiKeysApiService
+	tenantId *int64
 	cursor *string
 	limit *int32
+}
+
+// The id of the tenant from which to retrieve API keys
+func (r ApiListApiKeysRequest) TenantId(tenantId int64) ApiListApiKeysRequest {
+	r.tenantId = &tenantId
+	return r
 }
 
 // The cursor for the current page
@@ -181,6 +199,9 @@ func (a *ApiKeysApiService) ListApiKeysExecute(r ApiListApiKeysRequest) (*ListAp
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.tenantId != nil {
+		localVarQueryParams.Add("tenant_id", parameterToString(*r.tenantId, ""))
+	}
 	if r.cursor != nil {
 		localVarQueryParams.Add("cursor", parameterToString(*r.cursor, ""))
 	}

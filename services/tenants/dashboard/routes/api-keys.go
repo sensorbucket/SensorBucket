@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/pkg/layout"
 	"sensorbucket.nl/sensorbucket/services/tenants/dashboard/views"
@@ -35,49 +36,77 @@ func (h ApiKeysPageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *ApiKeysPageHandler) SetupRoutes(r chi.Router) {
 	r.Get("/", h.apiKeysListPage())
+	r.Get("/table", h.apiKeysGetTableRows())
 	r.Get("/create", h.createApiKeyView())
 	r.Post("/create", h.createApiKey())
 	r.Delete("/revoke/{api_key_id}", h.revokeApiKey())
 }
 
-func (h *ApiKeysPageHandler) apiKeysListPage() http.HandlerFunc {
+func (h *ApiKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		list, resp, err := h.client.ApiKeysApi.ListApiKeys(r.Context()).Execute()
+		req := h.client.ApiKeysApi.ListApiKeys(r.Context())
+		if r.URL.Query().Has("cursor") {
+			req = req.Cursor(r.URL.Query().Get("cursor"))
+		} else {
+			fmt.Println("no qyer")
+			// If no cursor is given, the initial state must be derived from the url params
+			req = req.Limit(15)
+			tenantId := r.URL.Query().Get("tenant_id")
+			id, err := strconv.ParseInt(tenantId, 10, 32)
+			if err != nil {
+				layout.SnackbarSomethingWentWrong(w)
+				return
+			}
+			req = req.TenantId(id)
+		}
+		res, _, err := req.Execute()
 		if err != nil {
-			log.Printf("api key list page: %v\n", err)
-			layout.SnackbarSomethingWentWrong(w)
+			web.HTTPError(w, err)
 			return
 		}
-		if resp == nil || resp.StatusCode != http.StatusOK {
-			layout.SnackbarSomethingWentWrong(w)
-			return
+
+		nextPage := ""
+		if res.Links.GetNext() != "" {
+			nextPage = views.U("/api-keys/table?cursor=" + getCursor(res.Links.GetNext()))
 		}
-		if list == nil {
-			layout.SnackbarSomethingWentWrong(w)
-			return
-		}
-		keys := map[views.TenantInfo][]views.ApiKey{}
-		for _, key := range list.Data {
-			k := views.TenantInfo{
-				ID:   int(key.TenantId),
-				Name: key.TenantName,
-			}
-			if _, ok := keys[k]; !ok {
-				keys[k] = []views.ApiKey{}
-			}
-			keys[k] = append(keys[k], views.ApiKey{
-				ID:             int(key.Id),
-				TenantName:     key.TenantName,
-				Name:           key.Name,
-				ExpirationDate: key.ExpirationDate,
-				Created:        key.Created,
+
+		fmt.Println("retrieved keys", len(res.Data))
+		viewKeys := []views.ApiKey{}
+		for _, key := range res.Data {
+			viewKeys = append(viewKeys, views.ApiKey{
+				ID:       int(key.Id),
+				TenantID: int(key.TenantId),
+				Name:     key.Name,
 			})
 		}
 
-		page := &views.ApiKeysPage{ApiKeys: keys}
-		if list.Links.GetNext() != "" {
-			page.ApiKeysNextPage = views.U("/api-keys/table?cursor=" + getCursor(list.Links.GetNext()))
-		}
+		views.WriteRenderApiKeyRows(w, viewKeys, nextPage)
+	}
+}
+
+func (h *ApiKeysPageHandler) apiKeysListPage() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// The initial page starts with an overview of different tenants
+		// req := h.client.ApiKeysApi.ListApiKeys(r.Context())
+		// list, resp, err := req.Execute()
+		// if err != nil {
+		// 	log.Printf("api key list page: %v\n", err)
+		// 	layout.SnackbarSomethingWentWrong(w)
+		// 	return
+		// }
+		// if resp == nil || resp.StatusCode != http.StatusOK {
+		// 	layout.SnackbarSomethingWentWrong(w)
+		// 	return
+		// }
+		// if list == nil {
+		// 	layout.SnackbarSomethingWentWrong(w)
+		// 	return
+		// }
+		// keys := apiKeysGrouped(list.Data)
+		page := &views.ApiKeysPage{Tenants: tenants()}
+		// if list.Links.GetNext() != "" {
+		// 	page.ApiKeysNextPage = views.U("/api-keys/table?cursor=" + getCursor(list.Links.GetNext()))
+		// }
 		if layout.IsHX(r) {
 			page.WriteBody(w)
 			return
@@ -123,52 +152,67 @@ func (h *ApiKeysPageHandler) createApiKey() http.HandlerFunc {
 		name := r.FormValue("api-key-name")
 		expiry := r.FormValue("api-key-expiry")
 		tenantId := r.FormValue("api-key-tenant")
-		parsedTime, err := time.Parse("2006-01-02", expiry)
-		if err != nil {
-			fmt.Println("CANT PARSE TIME")
-			layout.SnackbarSomethingWentWrong(w)
-			return
-		}
 		id, err := strconv.ParseInt(tenantId, 10, 32)
 		if err != nil {
-			fmt.Println("WRONG INT")
 			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
+
 		var dto api.CreateApiKeyRequest
 		dto.SetName(name)
 		dto.SetTenantId(id)
-		dto.SetExpirationDate(parsedTime)
-		res, err := h.client.ApiKeysApi.CreateApiKey(r.Context()).CreateApiKeyRequest(api.CreateApiKeyRequest{}).Execute()
-		if res.StatusCode != http.StatusOK {
-			fmt.Println("STATUS", res.StatusCode)
+
+		// Expiry is an optional value
+		if expiry != "" {
+			parsedTime, err := time.Parse("2006-01-02", expiry)
+			if err != nil {
+				layout.SnackbarSomethingWentWrong(w)
+				return
+			}
+
+			dto.SetExpirationDate(parsedTime)
+		}
+		apiKey, res, err := h.client.ApiKeysApi.CreateApiKey(r.Context()).CreateApiKeyRequest(dto).Execute()
+		if res.StatusCode != http.StatusCreated {
 			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
 
-		fmt.Println(name, expiry, tenantId)
-		fmt.Println("FORM", r.Form)
+		// Show the API key to the user
+		layout.WithSnackbarSuccess(w, "Created API Key")
+		w.Write([]byte(apiKey.ApiKey))
 
-		w.Write([]byte("stuff"))
-		layout.SnackbarSaveSuccessful(w)
 	}
 }
 
 func (h *ApiKeysPageHandler) createApiKeyView() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		page := &views.ApiKeysCreatePage{
-			Tenants: []views.TenantInfo{
-				{
-					ID:   12,
-					Name: "stuff",
-				},
-			},
+			// TODO: when tenants ticket is merged
+			Tenants: tenants(),
 		}
 		if layout.IsHX(r) {
 			page.WriteBody(w)
 			return
 		}
 		layout.WriteIndex(w, page)
+	}
+}
+
+func tenants() []views.TenantInfo {
+	return []views.TenantInfo{
+		{
+			ID:   12,
+			Name: "Pollex B.V.",
+		},
+		{
+			ID:   5,
+			Name: "Provincie Zeeland",
+		},
+		{
+			ID:   345,
+			Name: "Aannemer 1",
+		},
 	}
 }
 

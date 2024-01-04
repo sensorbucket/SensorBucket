@@ -31,22 +31,20 @@ func (p *ApiKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
         </section>
     </header>
     <div>
-        <form id="apiKeyCreateForm" class="p-4 gap-4 grid lg:grid-cols-1" 
-            hx-trigger="submit"
-            hx-target="#api-key-result"
-            hx-swap="innerHTML"
-            hx-post="/api-keys/create">
+        <form id="apiKeyCreateForm"
+            class="p-4 gap-4 grid lg:grid-cols-1" hx-trigger="submit" _="on htmx:afterSwap log 'hello'" hx-target="#api-key-result-value"
+            hx-swap="innerHTML" hx-post="/api-keys/create">
             <fieldset>
                 <label for="api-key-tenant" class="ml-1 -mb-1 block"><small
                         class="text-xs text-slate-500">Tenant</small></label>
                 <select name="api-key-tenant" id="api-key-tenant"
                     class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600">
-                        `)
-//line views/apiKeysCreatePage.qtpl:20
+                    `)
+//line views/apiKeysCreatePage.qtpl:18
 	StreamRenderTenantSelect(qw422016, p.Tenants)
-//line views/apiKeysCreatePage.qtpl:20
+//line views/apiKeysCreatePage.qtpl:18
 	qw422016.N().S(`
-                    <select/>
+                    <select />
             </fieldset>
             <fieldset>
                 <label for="api-key-name" class="ml-1 -mb-1 block"><small
@@ -63,97 +61,134 @@ func (p *ApiKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
             <div class="col-span-full">
                 <button
                     class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1">
-                    Generate
+                    Generate new API key
                 </button>
             </div>
-            <div id="api-key-result"></div>
         </form>
+        <div _="init hide me" id="api-key-create-result" class="p-3">
+            <div class="bg-orange-100 border-l-4 border-orange-400 text-orange-600 p-4" role="alert">
+                <div class="flex">
+                    <div class="py-1"><svg class="fill-current h-6 w-6 text-orange-600 mr-4"
+                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                            <path
+                                d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z" />
+                        </svg></div>
+                    <div>
+                        <p class="text-sm font-bold">This is your API Key, please copy your API Key immediately as it
+                            will not be shown again</p>
+                        <br />
+                        <div class="flex">
+                            <p id="api-key-result-value" class="text-sm max-w-5 truncate">
+                                asdkijhaslasdkijhaslidlasliashdlashdasdkijhaslidlasliashdlashdasdkijhaslidlasliashdlashdasdkijhaslidlasliashdlashdidlasliashdlashdasdkijhaslasdkijhaslidlasliashdlashdasdkijhaslidlasliashdlashdasdkijhaslidlasliashdlashdasdkijhaslidlasliashdlashdidlasliashdlashd
+                            </p>
+                            <button onclick="copyApiKeyToClipboard()"
+                                class="float-right text-sm bg-orange-400 hover:bg-orange-500 text-white border border-orange-500 rounded px-2 py-1">
+                                Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+    <script type="text/javascript">
+        function copyApiKeyToClipboard() {
+            const text = document.getElementById("api-key-result-value").innerText;
+            navigator.clipboard.writeText(text).then(
+                function () {
+                    console.log("Text copied to clipboard");
+                },
+                function (err) {
+                    console.error("Unable to copy to clipboard", err);
+                }
+            );
+        }
+    </script>
 </div>
 `)
-//line views/apiKeysCreatePage.qtpl:45
+//line views/apiKeysCreatePage.qtpl:80
 }
 
-//line views/apiKeysCreatePage.qtpl:45
+//line views/apiKeysCreatePage.qtpl:80
 func (p *ApiKeysCreatePage) WriteBody(qq422016 qtio422016.Writer) {
-//line views/apiKeysCreatePage.qtpl:45
+//line views/apiKeysCreatePage.qtpl:80
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/apiKeysCreatePage.qtpl:45
+//line views/apiKeysCreatePage.qtpl:80
 	p.StreamBody(qw422016)
-//line views/apiKeysCreatePage.qtpl:45
+//line views/apiKeysCreatePage.qtpl:80
 	qt422016.ReleaseWriter(qw422016)
-//line views/apiKeysCreatePage.qtpl:45
+//line views/apiKeysCreatePage.qtpl:80
 }
 
-//line views/apiKeysCreatePage.qtpl:45
+//line views/apiKeysCreatePage.qtpl:80
 func (p *ApiKeysCreatePage) Body() string {
-//line views/apiKeysCreatePage.qtpl:45
+//line views/apiKeysCreatePage.qtpl:80
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/apiKeysCreatePage.qtpl:45
+//line views/apiKeysCreatePage.qtpl:80
 	p.WriteBody(qb422016)
-//line views/apiKeysCreatePage.qtpl:45
+//line views/apiKeysCreatePage.qtpl:80
 	qs422016 := string(qb422016.B)
-//line views/apiKeysCreatePage.qtpl:45
+//line views/apiKeysCreatePage.qtpl:80
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/apiKeysCreatePage.qtpl:45
+//line views/apiKeysCreatePage.qtpl:80
 	return qs422016
-//line views/apiKeysCreatePage.qtpl:45
+//line views/apiKeysCreatePage.qtpl:80
 }
 
-//line views/apiKeysCreatePage.qtpl:47
+//line views/apiKeysCreatePage.qtpl:82
 func StreamRenderTenantSelect(qw422016 *qt422016.Writer, tenants []TenantInfo) {
-//line views/apiKeysCreatePage.qtpl:47
+//line views/apiKeysCreatePage.qtpl:82
 	qw422016.N().S(`
 `)
-//line views/apiKeysCreatePage.qtpl:48
+//line views/apiKeysCreatePage.qtpl:83
 	for _, tenant := range tenants {
-//line views/apiKeysCreatePage.qtpl:48
+//line views/apiKeysCreatePage.qtpl:83
 		qw422016.N().S(`
-    <option value="`)
-//line views/apiKeysCreatePage.qtpl:49
+<option value="`)
+//line views/apiKeysCreatePage.qtpl:84
 		qw422016.N().D(tenant.ID)
-//line views/apiKeysCreatePage.qtpl:49
+//line views/apiKeysCreatePage.qtpl:84
 		qw422016.N().S(`">`)
-//line views/apiKeysCreatePage.qtpl:49
+//line views/apiKeysCreatePage.qtpl:84
 		qw422016.E().S(tenant.Name)
-//line views/apiKeysCreatePage.qtpl:49
+//line views/apiKeysCreatePage.qtpl:84
 		qw422016.N().S(`</option>
 `)
-//line views/apiKeysCreatePage.qtpl:50
+//line views/apiKeysCreatePage.qtpl:85
 	}
-//line views/apiKeysCreatePage.qtpl:50
+//line views/apiKeysCreatePage.qtpl:85
 	qw422016.N().S(`
 `)
-//line views/apiKeysCreatePage.qtpl:51
+//line views/apiKeysCreatePage.qtpl:86
 }
 
-//line views/apiKeysCreatePage.qtpl:51
+//line views/apiKeysCreatePage.qtpl:86
 func WriteRenderTenantSelect(qq422016 qtio422016.Writer, tenants []TenantInfo) {
-//line views/apiKeysCreatePage.qtpl:51
+//line views/apiKeysCreatePage.qtpl:86
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/apiKeysCreatePage.qtpl:51
+//line views/apiKeysCreatePage.qtpl:86
 	StreamRenderTenantSelect(qw422016, tenants)
-//line views/apiKeysCreatePage.qtpl:51
+//line views/apiKeysCreatePage.qtpl:86
 	qt422016.ReleaseWriter(qw422016)
-//line views/apiKeysCreatePage.qtpl:51
+//line views/apiKeysCreatePage.qtpl:86
 }
 
-//line views/apiKeysCreatePage.qtpl:51
+//line views/apiKeysCreatePage.qtpl:86
 func RenderTenantSelect(tenants []TenantInfo) string {
-//line views/apiKeysCreatePage.qtpl:51
+//line views/apiKeysCreatePage.qtpl:86
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/apiKeysCreatePage.qtpl:51
+//line views/apiKeysCreatePage.qtpl:86
 	WriteRenderTenantSelect(qb422016, tenants)
-//line views/apiKeysCreatePage.qtpl:51
+//line views/apiKeysCreatePage.qtpl:86
 	qs422016 := string(qb422016.B)
-//line views/apiKeysCreatePage.qtpl:51
+//line views/apiKeysCreatePage.qtpl:86
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/apiKeysCreatePage.qtpl:51
+//line views/apiKeysCreatePage.qtpl:86
 	return qs422016
-//line views/apiKeysCreatePage.qtpl:51
+//line views/apiKeysCreatePage.qtpl:86
 }
 
-//line views/apiKeysCreatePage.qtpl:54
+//line views/apiKeysCreatePage.qtpl:89
 type ApiKeysCreatePage struct {
 	layout.BasePage
 	Tenants []TenantInfo

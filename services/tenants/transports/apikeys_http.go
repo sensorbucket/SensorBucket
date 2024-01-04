@@ -2,6 +2,7 @@ package tenantstransports
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -78,7 +79,7 @@ func (t *APIKeysHTTPTransport) httpRevokeApiKey() http.HandlerFunc {
 func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 	type Params struct {
 		Name           string     `json:"name"`
-		TenantID       int64      `json:"organisation_id"`
+		TenantID       int64      `json:"tenant_id"`
 		ExpirationDate *time.Time `json:"expiration_date"`
 	}
 	type Result struct {
@@ -100,7 +101,7 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 
 		if params.TenantID <= 0 {
 			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
-				Message: "organisation_id must be higher than 0",
+				Message: "tenant_id must be higher than 0",
 			})
 			return
 		}
@@ -166,11 +167,13 @@ func (t *APIKeysHTTPTransport) httpListApiKeys() http.HandlerFunc {
 	}
 	return func(rw http.ResponseWriter, r *http.Request) {
 		params, err := httpfilter.Parse[Params](r)
+		fmt.Println(r.URL.Query())
 		if err != nil {
 			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "invalid params", ""))
 			return
 		}
-
+		fmt.Println("a", params.TenantID)
+		fmt.Println("STUFF", params.Filter.TenantID, params.Limit)
 		page, err := t.apiKeySvc.ListAPIKeys(params.Filter, params.Request)
 		if err != nil {
 			web.HTTPError(rw, err)

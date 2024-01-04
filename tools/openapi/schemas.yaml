@@ -247,22 +247,14 @@ createApiKeyRequest:
       format: date-time
       example: 2023-05-17T15:00:00Z
 
-createApiKeyResponse:
+apiKeyCreated:
   type: object
   required:
-    - name
-    - tenant_id
+    - api_key
   properties:
-    name:
+    api_key:
       type: string
-      example: Device Beheerder
-    tenant_id:
-      type: integer
-      example: 19
-    expiration_date:
-      type: string
-      format: date-time
-      example: 2023-05-17T15:00:00Z
+      example: MjU5MzE1NDgwMjE2NTMwMTEyODo2MjY2MDdkMGViY2Q5MGRhMTRkZWE4NGY4MjEzYjRiNw
 
 trace:
   type: object

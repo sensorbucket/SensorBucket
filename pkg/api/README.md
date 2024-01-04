@@ -88,7 +88,7 @@ All URIs are relative to *https://sensorbucket.nl/api*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*ApiKeysApi* | [**CreateApiKey**](docs/ApiKeysApi.md#createapikey) | **Post** /tenants/api-keys/{api_key_id} | Creates a new API key for the given Tenant
+*ApiKeysApi* | [**CreateApiKey**](docs/ApiKeysApi.md#createapikey) | **Post** /tenants/api-keys | Creates a new API key for the given Tenant
 *ApiKeysApi* | [**ListApiKeys**](docs/ApiKeysApi.md#listapikeys) | **Get** /tenants/api-keys/list | List API Keys
 *ApiKeysApi* | [**RevokeApiKey**](docs/ApiKeysApi.md#revokeapikey) | **Delete** /tenants/api-keys/{api_key_id} | Revokes an API key
 *DevicesApi* | [**AddSensorToSensorGroup**](docs/DevicesApi.md#addsensortosensorgroup) | **Post** /sensor-groups/{id}/sensors | Add sensor to a sensor group
@@ -129,6 +129,7 @@ Class | Method | HTTP request | Description
  - [AddSensorToSensorGroup201Response](docs/AddSensorToSensorGroup201Response.md)
  - [AddSensorToSensorGroupRequest](docs/AddSensorToSensorGroupRequest.md)
  - [ApiKey](docs/ApiKey.md)
+ - [ApiKeyCreated](docs/ApiKeyCreated.md)
  - [ArchivedIngress](docs/ArchivedIngress.md)
  - [CreateApiKeyRequest](docs/CreateApiKeyRequest.md)
  - [CreateDevice201Response](docs/CreateDevice201Response.md)

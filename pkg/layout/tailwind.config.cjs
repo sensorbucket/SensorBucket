@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-	content: ['**/*.qtpl', 'style.css'],
+	content: ['**/*.qtpl', '**/*.css'],
 	theme: {
 		extend: {
 			spacing: {

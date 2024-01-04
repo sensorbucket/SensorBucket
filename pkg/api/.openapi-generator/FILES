@@ -12,6 +12,7 @@ configuration.go
 model_add_sensor_to_sensor_group_201_response.go
 model_add_sensor_to_sensor_group_request.go
 model_api_key.go
+model_api_key_created.go
 model_archived_ingress.go
 model_create_api_key_request.go
 model_create_device_201_response.go
