@@ -49,78 +49,78 @@ func StreamLayout(qw422016 *qt422016.Writer, p Page) {
 	qw422016.N().S(`" />
     </head>
     <body>
-        `)
-//line transports/webui/views/login.qtpl:17
+        <main class="mt-12 mx-auto w-full md:max-w-[420px] bg-white rounded-md overflow-hidden">
+            <header class="bg-secondary-500 h-14 py-3">
+                <img src="`)
+//line transports/webui/views/login.qtpl:19
+	qw422016.E().S(U("/static/logo-white.png"))
+//line transports/webui/views/login.qtpl:19
+	qw422016.N().S(`" alt="SensorBucket Logo" class="h-full mx-auto" />
+            </header>
+            <section class="px-6 mb-4 space-y-2">
+            `)
+//line transports/webui/views/login.qtpl:22
 	p.StreamBody(qw422016)
-//line transports/webui/views/login.qtpl:17
+//line transports/webui/views/login.qtpl:22
 	qw422016.N().S(`
+            </section>
+        </main>
     </body>
 </html>
 
 `)
-//line transports/webui/views/login.qtpl:21
+//line transports/webui/views/login.qtpl:28
 }
 
-//line transports/webui/views/login.qtpl:21
+//line transports/webui/views/login.qtpl:28
 func WriteLayout(qq422016 qtio422016.Writer, p Page) {
-//line transports/webui/views/login.qtpl:21
+//line transports/webui/views/login.qtpl:28
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/login.qtpl:21
+//line transports/webui/views/login.qtpl:28
 	StreamLayout(qw422016, p)
-//line transports/webui/views/login.qtpl:21
+//line transports/webui/views/login.qtpl:28
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/login.qtpl:21
+//line transports/webui/views/login.qtpl:28
 }
 
-//line transports/webui/views/login.qtpl:21
+//line transports/webui/views/login.qtpl:28
 func Layout(p Page) string {
-//line transports/webui/views/login.qtpl:21
+//line transports/webui/views/login.qtpl:28
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/login.qtpl:21
+//line transports/webui/views/login.qtpl:28
 	WriteLayout(qb422016, p)
-//line transports/webui/views/login.qtpl:21
+//line transports/webui/views/login.qtpl:28
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/login.qtpl:21
+//line transports/webui/views/login.qtpl:28
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/login.qtpl:21
+//line transports/webui/views/login.qtpl:28
 	return qs422016
-//line transports/webui/views/login.qtpl:21
+//line transports/webui/views/login.qtpl:28
 }
 
-//line transports/webui/views/login.qtpl:24
+//line transports/webui/views/login.qtpl:31
 type LoginPage struct {
 	Flow *ory.LoginFlow
 }
 
-//line transports/webui/views/login.qtpl:28
+//line transports/webui/views/login.qtpl:35
 func (p LoginPage) StreamBody(qw422016 *qt422016.Writer) {
-//line transports/webui/views/login.qtpl:28
+//line transports/webui/views/login.qtpl:35
 	qw422016.N().S(`
-    <main class="mt-12 mx-auto w-full md:max-w-[420px] bg-white rounded-md overflow-hidden">
-        <header class="bg-secondary-500 h-14 py-3">
-            <img src="`)
-//line transports/webui/views/login.qtpl:31
-	qw422016.E().S(U("/static/logo-white.png"))
-//line transports/webui/views/login.qtpl:31
-	qw422016.N().S(`" alt="SensorBucket Logo" class="h-full mx-auto" />
-        </header>
-        <section class="px-6 mb-4 space-y-2">
             <h1 class="text-2xl mt-4 ">Login</h1>
             `)
-//line transports/webui/views/login.qtpl:35
+//line transports/webui/views/login.qtpl:37
 	streamrenderGroup(qw422016, p.Flow.Ui, "password")
-//line transports/webui/views/login.qtpl:35
+//line transports/webui/views/login.qtpl:37
 	qw422016.N().S(`
             <a
                 href="`)
-//line transports/webui/views/login.qtpl:37
+//line transports/webui/views/login.qtpl:39
 	qw422016.E().S(U("/auth/recovery"))
-//line transports/webui/views/login.qtpl:37
+//line transports/webui/views/login.qtpl:39
 	qw422016.N().S(`"
                 class="block text-center"
             >Forgot your password?</a>
-        </section>
-    </main>
 `)
 //line transports/webui/views/login.qtpl:42
 }

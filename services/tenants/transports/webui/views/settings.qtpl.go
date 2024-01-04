@@ -31,38 +31,59 @@ type SettingsPage struct {
 func (p SettingsPage) StreamBody(qw422016 *qt422016.Writer) {
 //line transports/webui/views/settings.qtpl:10
 	qw422016.N().S(`
-    <h1>Settings!</h1>
-    `)
-//line transports/webui/views/settings.qtpl:12
+    <h1 class="text-2xl mt-4">Account Settings</h1>
+    <div class="space-y-12">
+        <section>
+            <h2 class="text-lg">Change password</h2>
+            `)
+//line transports/webui/views/settings.qtpl:15
 	streamrenderGroup(qw422016, p.Flow.Ui, "password")
-//line transports/webui/views/settings.qtpl:12
+//line transports/webui/views/settings.qtpl:15
 	qw422016.N().S(`
+        </section>
+        <section>
+            <h2 class="text-lg">2FA Backup Codes</h2>
+            `)
+//line transports/webui/views/settings.qtpl:19
+	streamrenderGroup(qw422016, p.Flow.Ui, "lookup_secret")
+//line transports/webui/views/settings.qtpl:19
+	qw422016.N().S(`
+        </section>
+        <section>
+            <h2 class="text-lg">2FA Authenticator App</h2>
+            `)
+//line transports/webui/views/settings.qtpl:23
+	streamrenderGroup(qw422016, p.Flow.Ui, "totp")
+//line transports/webui/views/settings.qtpl:23
+	qw422016.N().S(`
+        </section>
+    </div>
 `)
-//line transports/webui/views/settings.qtpl:13
+//line transports/webui/views/settings.qtpl:26
 }
 
-//line transports/webui/views/settings.qtpl:13
+//line transports/webui/views/settings.qtpl:26
 func (p SettingsPage) WriteBody(qq422016 qtio422016.Writer) {
-//line transports/webui/views/settings.qtpl:13
+//line transports/webui/views/settings.qtpl:26
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/settings.qtpl:13
+//line transports/webui/views/settings.qtpl:26
 	p.StreamBody(qw422016)
-//line transports/webui/views/settings.qtpl:13
+//line transports/webui/views/settings.qtpl:26
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/settings.qtpl:13
+//line transports/webui/views/settings.qtpl:26
 }
 
-//line transports/webui/views/settings.qtpl:13
+//line transports/webui/views/settings.qtpl:26
 func (p SettingsPage) Body() string {
-//line transports/webui/views/settings.qtpl:13
+//line transports/webui/views/settings.qtpl:26
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/settings.qtpl:13
+//line transports/webui/views/settings.qtpl:26
 	p.WriteBody(qb422016)
-//line transports/webui/views/settings.qtpl:13
+//line transports/webui/views/settings.qtpl:26
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/settings.qtpl:13
+//line transports/webui/views/settings.qtpl:26
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/settings.qtpl:13
+//line transports/webui/views/settings.qtpl:26
 	return qs422016
-//line transports/webui/views/settings.qtpl:13
+//line transports/webui/views/settings.qtpl:26
 }

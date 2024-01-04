@@ -8,6 +8,19 @@ type SettingsPage struct {
 } %}
 
 {% func (p SettingsPage) Body() %}
-    <h1>Settings!</h1>
-    {%= renderGroup(p.Flow.Ui, "password") %}
+    <h1 class="text-2xl mt-4">Account Settings</h1>
+    <div class="space-y-12">
+        <section>
+            <h2 class="text-lg">Change password</h2>
+            {%= renderGroup(p.Flow.Ui, "password") %}
+        </section>
+        <section>
+            <h2 class="text-lg">2FA Backup Codes</h2>
+            {%= renderGroup(p.Flow.Ui, "lookup_secret") %}
+        </section>
+        <section>
+            <h2 class="text-lg">2FA Authenticator App</h2>
+            {%= renderGroup(p.Flow.Ui, "totp") %}
+        </section>
+    </div>
 {% endfunc %}

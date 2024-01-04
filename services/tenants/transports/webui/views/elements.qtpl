@@ -24,18 +24,19 @@
 {% func renderInputNode(n ory.UiNode, attr ory.UiNodeInputAttributes) %}
     {% if attr.GetType() == "submit" %}
     <button 
-        class="text-center p-3 bg-secondary-500 text-white"
-        {%= renderInputNodeAttributes(attr) %}>{%s n.Meta.GetLabel().Text %}</button>
+        class="text-center p-2 bg-secondary-500 text-white"
+        {%= renderInputNodeAttributes(n, attr) %}
+        >{%s n.Meta.GetLabel().Text %}</button>
     {% return %}
     {% endif %}
     <fieldset>
         {% if label, ok := n.Meta.GetLabelOk(); ok %}
-        <label for="{%s attr.GetName() %}" class="flex flex-col">
+        <label for="{%s attr.GetName() %}" class="flex flex-col text-sm">
             <span>{%s label.Text %}</span>
         {% endif %}
         <input 
             class="border px-2 py-1"
-            {%= renderInputNodeAttributes(attr) %}
+            {%= renderInputNodeAttributes(n, attr) %}
             />
         {% if n.Meta.HasLabel() %}
         </label>
@@ -46,7 +47,7 @@
     </fieldset>
 {% endfunc %}
 
-{% func renderInputNodeAttributes(attr ory.UiNodeInputAttributes) %}
+{% func renderInputNodeAttributes(n ory.UiNode, attr ory.UiNodeInputAttributes) %}
     name="{%s attr.GetName() %}"
     type="{%s attr.GetType() %}"
     {% if attr.GetAutocomplete() != "" %}
@@ -66,6 +67,9 @@
     {% endif %}
     {% if attr.Value != nil %}
         value="{%v attr.Value %}"
+    {% endif %}
+    {% if label, ok := n.Meta.GetLabelOk(); ok && label.GetId() == 1070008 %}
+        formNoValidate
     {% endif %}
 {% endfunc %}
 

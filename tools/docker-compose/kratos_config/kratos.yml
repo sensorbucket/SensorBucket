@@ -20,7 +20,7 @@ selfservice:
       enabled: true
     totp:
       config:
-        issuer: Kratos
+        issuer: SensorBucket
       enabled: true
     lookup_secret:
       enabled: true
@@ -94,4 +94,4 @@ identity:
 
 courier:
   smtp:
-    connection_uri: smtps://test:test@mail-server:1025/?skip_ssl_verify=true
+    connection_uri: smtp://mail-server:1025?disable_starttls=true

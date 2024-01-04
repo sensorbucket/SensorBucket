@@ -14,7 +14,14 @@
         <link rel="stylesheet" href="{%s U("/static/style.css") %}" />
     </head>
     <body>
-        {%= p.Body() %}
+        <main class="mt-12 mx-auto w-full md:max-w-[420px] bg-white rounded-md overflow-hidden">
+            <header class="bg-secondary-500 h-14 py-3">
+                <img src="{%s U("/static/logo-white.png") %}" alt="SensorBucket Logo" class="h-full mx-auto" />
+            </header>
+            <section class="px-6 mb-4 space-y-2">
+            {%= p.Body() %}
+            </section>
+        </main>
     </body>
 </html>
 
@@ -26,17 +33,10 @@ type LoginPage struct {
 } %}
 
 {% func (p LoginPage) Body() %}
-    <main class="mt-12 mx-auto w-full md:max-w-[420px] bg-white rounded-md overflow-hidden">
-        <header class="bg-secondary-500 h-14 py-3">
-            <img src="{%s U("/static/logo-white.png") %}" alt="SensorBucket Logo" class="h-full mx-auto" />
-        </header>
-        <section class="px-6 mb-4 space-y-2">
             <h1 class="text-2xl mt-4 ">Login</h1>
             {%= renderGroup(p.Flow.Ui, "password") %}
             <a
                 href="{%s U("/auth/recovery") %}"
                 class="block text-center"
             >Forgot your password?</a>
-        </section>
-    </main>
 {% endfunc %}

@@ -29,7 +29,7 @@ type RecoveryPage struct {
 func (p RecoveryPage) StreamBody(qw422016 *qt422016.Writer) {
 //line transports/webui/views/recovery.qtpl:7
 	qw422016.N().S(`
-    <h1>Recovery!</h1>
+    <h1 class="text-2xl mt-4 ">Recover account</h1>
     `)
 //line transports/webui/views/recovery.qtpl:9
 	streamrenderGroup(qw422016, p.Flow.Ui, "code")

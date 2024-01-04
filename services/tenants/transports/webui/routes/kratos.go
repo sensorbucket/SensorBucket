@@ -2,6 +2,7 @@ package routes
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -30,10 +31,10 @@ func SetupKratosRoutes() *KratosRoutes {
 	k.ory = ory.NewAPIClient(oryConfig)
 
 	k.router.Get("/", k.httpDefaultPage())
-	k.router.With(requireFlow).Get("/login", k.httpLoginPage())
-	k.router.With(requireFlow).Get("/recovery", k.httpRecoveryPage())
-	k.router.With(requireFlow).Get("/settings", k.httpSettingsPage())
-	k.router.With(requireFlow).Get("/error", k.httpErrorPage())
+	k.router.With(requireFlow("login")).Get("/login", k.httpLoginPage())
+	k.router.With(requireFlow("recovery")).Get("/recovery", k.httpRecoveryPage())
+	k.router.With(requireFlow("settings")).Get("/settings", k.httpSettingsPage())
+	k.router.With(requireFlow("error")).Get("/error", k.httpErrorPage())
 
 	return k
 }
@@ -52,16 +53,18 @@ func (k KratosRoutes) httpDefaultPage() http.HandlerFunc {
 
 var ctxFlow = struct{}{}
 
-func requireFlow(next http.Handler) http.Handler {
-	mw := func(w http.ResponseWriter, r *http.Request) {
-		if !r.URL.Query().Has("flow") {
-			http.Redirect(w, r, "http://127.0.0.1:3000/.ory/self-service/login/browser", http.StatusFound)
-			return
+func requireFlow(flow string) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		mw := func(w http.ResponseWriter, r *http.Request) {
+			if !r.URL.Query().Has("flow") {
+				http.Redirect(w, r, fmt.Sprintf("http://127.0.0.1:3000/.ory/self-service/%s/browser", flow), http.StatusFound)
+				return
+			}
+			r = r.WithContext(context.WithValue(r.Context(), ctxFlow, r.URL.Query().Get("flow")))
+			next.ServeHTTP(w, r)
 		}
-		r = r.WithContext(context.WithValue(r.Context(), ctxFlow, r.URL.Query().Get("flow")))
-		next.ServeHTTP(w, r)
+		return http.HandlerFunc(mw)
 	}
-	return http.HandlerFunc(mw)
 }
 
 func flowID(r *http.Request) string {
