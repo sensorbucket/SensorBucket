@@ -1,0 +1,40 @@
+post:
+  tags: ['ApiKeys']
+  operationId: CreateApiKey
+  summary: Creates a new API key for the given Tenant
+  description: |
+    Create an API key for a tenant with an expiration date. Permissions for the API key within that organisation must be set
+  requestBody: 
+    content:
+      application/json:
+        schema:
+          $ref: 'schemas.yaml#/createApiKeyRequest'
+  responses:
+    '200':
+      $ref: './schemas.yaml#/createApiKeyResponse'
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+
+delete:
+  tags: ['ApiKeys']
+  operationId: RevokeApiKey
+  summary: Revokes an API key
+  description: |
+    Revokes an API key so that it can't be used anymore
+  parameters: 
+    - name: api_key_id
+      description: The identifier of the API key
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+  responses:
+    '200':
+      message: API key has been revoked
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'

@@ -107,9 +107,12 @@ type ApiKeyAuthenticationDTO struct {
 }
 
 type ApiKeyDTO struct {
+	ID             int64      `json:"id"`
 	Name           string     `json:"name"`
 	TenantID       int64      `json:"tenant_id"`
+	TenantName     string     `json:"tenant_name"`
 	ExpirationDate *time.Time `json:"expiration_date"`
+	Created        time.Time  `json:"created"`
 }
 
 func apiKeyAndIdFromBase64(base64Src string) (int64, string, error) {

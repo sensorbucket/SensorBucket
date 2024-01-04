@@ -197,6 +197,73 @@ sensor:
       format: date-time
       example: 2023-05-17T15:00:00Z
 
+apiKey:
+  type: object
+  required:
+    - id
+    - name
+    - tenant_id
+    - tenant_name
+    - created
+  properties:
+    id:
+      type: integer
+      format: int64
+      example: 1
+    name:
+      type: string
+      example: Provincie Zeeland
+    tenant_id:
+      type: integer
+      format: int64
+      example: 19
+    tenant_name:
+      type: string
+      example: Provincie Zeeland
+    expiration_date:
+      type: string
+      format: date-time
+      example: 2023-05-17T15:00:00Z
+    created:
+      type: string
+      format: date-time
+      example: 2022-05-17T15:00:00Z
+
+createApiKeyRequest:
+  type: object
+  required:
+    - name
+    - tenant_id
+  properties:
+    name:
+      type: string
+      example: Device Beheerder
+    tenant_id:
+      type: integer
+      format: int64
+      example: 19
+    expiration_date:
+      type: string
+      format: date-time
+      example: 2023-05-17T15:00:00Z
+
+createApiKeyResponse:
+  type: object
+  required:
+    - name
+    - tenant_id
+  properties:
+    name:
+      type: string
+      example: Device Beheerder
+    tenant_id:
+      type: integer
+      example: 19
+    expiration_date:
+      type: string
+      format: date-time
+      example: 2023-05-17T15:00:00Z
+
 trace:
   type: object
   required:

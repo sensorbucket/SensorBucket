@@ -1,0 +1,37 @@
+get:
+  x-is-paginated: true
+  operationId: ListApiKeys
+  summary: List API Keys
+  description: |
+    Lists API Keys
+  tags: ["ApiKeys"]
+  parameters:
+    - in: query
+      name: cursor
+      description: The cursor for the current page
+      schema:
+        type: string
+    - in: query
+      name: limit
+      description: |
+        The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+      schema:
+        type: integer
+  responses:
+    '200':
+      description: Fetched API keys
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: './schemas.yaml#/paginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "schemas.yaml#/apiKey"
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'

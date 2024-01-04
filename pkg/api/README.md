@@ -88,6 +88,9 @@ All URIs are relative to *https://sensorbucket.nl/api*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+*ApiKeysApi* | [**CreateApiKey**](docs/ApiKeysApi.md#createapikey) | **Post** /tenants/api-keys/{api_key_id} | Creates a new API key for the given Tenant
+*ApiKeysApi* | [**ListApiKeys**](docs/ApiKeysApi.md#listapikeys) | **Get** /tenants/api-keys/list | List API Keys
+*ApiKeysApi* | [**RevokeApiKey**](docs/ApiKeysApi.md#revokeapikey) | **Delete** /tenants/api-keys/{api_key_id} | Revokes an API key
 *DevicesApi* | [**AddSensorToSensorGroup**](docs/DevicesApi.md#addsensortosensorgroup) | **Post** /sensor-groups/{id}/sensors | Add sensor to a sensor group
 *DevicesApi* | [**CreateDevice**](docs/DevicesApi.md#createdevice) | **Post** /devices | Create device
 *DevicesApi* | [**CreateDeviceSensor**](docs/DevicesApi.md#createdevicesensor) | **Post** /devices/{device_id}/sensors | Create sensor for device
@@ -125,7 +128,9 @@ Class | Method | HTTP request | Description
 
  - [AddSensorToSensorGroup201Response](docs/AddSensorToSensorGroup201Response.md)
  - [AddSensorToSensorGroupRequest](docs/AddSensorToSensorGroupRequest.md)
+ - [ApiKey](docs/ApiKey.md)
  - [ArchivedIngress](docs/ArchivedIngress.md)
+ - [CreateApiKeyRequest](docs/CreateApiKeyRequest.md)
  - [CreateDevice201Response](docs/CreateDevice201Response.md)
  - [CreateDeviceRequest](docs/CreateDeviceRequest.md)
  - [CreateDeviceSensor201Response](docs/CreateDeviceSensor201Response.md)
@@ -150,6 +155,8 @@ Class | Method | HTTP request | Description
  - [GetWorker200Response](docs/GetWorker200Response.md)
  - [GetWorkerUserCode200Response](docs/GetWorkerUserCode200Response.md)
  - [IngressDTO](docs/IngressDTO.md)
+ - [ListApiKeys200Response](docs/ListApiKeys200Response.md)
+ - [ListApiKeys200ResponseAllOf](docs/ListApiKeys200ResponseAllOf.md)
  - [ListDatastreams200Response](docs/ListDatastreams200Response.md)
  - [ListDatastreams200ResponseAllOf](docs/ListDatastreams200ResponseAllOf.md)
  - [ListDeviceSensors200Response](docs/ListDeviceSensors200Response.md)

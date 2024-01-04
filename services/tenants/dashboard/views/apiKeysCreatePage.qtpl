@@ -1,0 +1,58 @@
+{% import "sensorbucket.nl/sensorbucket/pkg/layout" %}
+{% func (p *ApiKeysCreatePage) Body() %}
+<div class="w-full xl:w-2/3 mx-auto bg-white border rounded-md">
+    <header class="w-full flex items-center justify-between border-b py-2 px-4 text-sm text-slate-700">
+        <section>
+            Create API Key
+        </section>
+    </header>
+    <div>
+        <form id="apiKeyCreateForm" class="p-4 gap-4 grid lg:grid-cols-1" 
+            hx-trigger="submit"
+            hx-target="#api-key-result"
+            hx-swap="innerHTML"
+            hx-post="/api-keys/create">
+            <fieldset>
+                <label for="api-key-tenant" class="ml-1 -mb-1 block"><small
+                        class="text-xs text-slate-500">Tenant</small></label>
+                <select name="api-key-tenant" id="api-key-tenant"
+                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600">
+                        {%= RenderTenantSelect(p.Tenants) %}
+                    <select/>
+            </fieldset>
+            <fieldset>
+                <label for="api-key-name" class="ml-1 -mb-1 block"><small
+                        class="text-xs text-slate-500">Name</small></label>
+                <input type="text" name="api-key-name" id="api-key-name"
+                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" />
+            </fieldset>
+            <fieldset>
+                <label for="api-key-expiry" class="ml-1 -mb-1 block"><small
+                        class="text-xs text-slate-500">Expiry</small></label>
+                <input type="date" name="api-key-expiry" id="api-key-expiry"
+                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" />
+            </fieldset>
+            <div class="col-span-full">
+                <button
+                    class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1">
+                    Generate
+                </button>
+            </div>
+            <div id="api-key-result"></div>
+        </form>
+    </div>
+</div>
+{% endfunc %}
+
+{% func RenderTenantSelect(tenants []TenantInfo) %}
+{% for _, tenant := range tenants %}
+    <option value="{%d tenant.ID %}">{%s tenant.Name %}</option>
+{% endfor %}
+{% endfunc %}
+
+{% code
+type ApiKeysCreatePage struct {
+    layout.BasePage
+    Tenants []TenantInfo
+}
+%}

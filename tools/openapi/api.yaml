@@ -65,6 +65,10 @@ paths:
     $ref: 'path-workers-by-id.yaml'
   /workers/{id}/usercode:
     $ref: 'path-workers-usercode.yaml'
+  /tenants/api-keys/list:
+    $ref: 'path-api-keys-list.yaml'
+  /tenants/api-keys/{api_key_id}:
+    $ref: 'path-api-keys.yaml'
 components:
   securitySchemes:
     basicAuth:    
