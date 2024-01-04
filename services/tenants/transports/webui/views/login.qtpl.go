@@ -96,40 +96,57 @@ type LoginPage struct {
 func (p LoginPage) StreamBody(qw422016 *qt422016.Writer) {
 //line transports/webui/views/login.qtpl:28
 	qw422016.N().S(`
-    <main class="mt-12 mx-auto w-full md:max-w-[420px] bg-white p-2">
-        <h1 class="text-2xl mb-2">Hello world!</h1>
-        `)
+    <main class="mt-12 mx-auto w-full md:max-w-[420px] bg-white rounded-md overflow-hidden">
+        <header class="bg-secondary-500 h-14 py-3">
+            <img src="`)
 //line transports/webui/views/login.qtpl:31
+	qw422016.E().S(U("/static/logo-white.png"))
+//line transports/webui/views/login.qtpl:31
+	qw422016.N().S(`" alt="SensorBucket Logo" class="h-full mx-auto" />
+        </header>
+        <section class="px-6 mb-4 space-y-2">
+            <h1 class="text-2xl mt-4 ">Login</h1>
+            `)
+//line transports/webui/views/login.qtpl:35
 	streamrenderGroup(qw422016, p.Flow.Ui, "password")
-//line transports/webui/views/login.qtpl:31
+//line transports/webui/views/login.qtpl:35
 	qw422016.N().S(`
+            <a
+                href="`)
+//line transports/webui/views/login.qtpl:37
+	qw422016.E().S(U("/auth/recovery"))
+//line transports/webui/views/login.qtpl:37
+	qw422016.N().S(`"
+                class="block text-center"
+            >Forgot your password?</a>
+        </section>
     </main>
 `)
-//line transports/webui/views/login.qtpl:33
+//line transports/webui/views/login.qtpl:42
 }
 
-//line transports/webui/views/login.qtpl:33
+//line transports/webui/views/login.qtpl:42
 func (p LoginPage) WriteBody(qq422016 qtio422016.Writer) {
-//line transports/webui/views/login.qtpl:33
+//line transports/webui/views/login.qtpl:42
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/login.qtpl:33
+//line transports/webui/views/login.qtpl:42
 	p.StreamBody(qw422016)
-//line transports/webui/views/login.qtpl:33
+//line transports/webui/views/login.qtpl:42
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/login.qtpl:33
+//line transports/webui/views/login.qtpl:42
 }
 
-//line transports/webui/views/login.qtpl:33
+//line transports/webui/views/login.qtpl:42
 func (p LoginPage) Body() string {
-//line transports/webui/views/login.qtpl:33
+//line transports/webui/views/login.qtpl:42
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/login.qtpl:33
+//line transports/webui/views/login.qtpl:42
 	p.WriteBody(qb422016)
-//line transports/webui/views/login.qtpl:33
+//line transports/webui/views/login.qtpl:42
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/login.qtpl:33
+//line transports/webui/views/login.qtpl:42
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/login.qtpl:33
+//line transports/webui/views/login.qtpl:42
 	return qs422016
-//line transports/webui/views/login.qtpl:33
+//line transports/webui/views/login.qtpl:42
 }
