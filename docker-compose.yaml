@@ -56,14 +56,15 @@ services:
   tenants:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: services/tenants/Dockerfile
       target: dev
     volumes:
       - .:/workspace:cached
     environment:
-      - APP_NAME=tenants
-      - APP_TYPE=service
       - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/tenants?sslmode=disable
+      - STATIC_PATH=services/tenants/static
+      - HTTP_WEBUI_BASE=/tenants
+      - SB_API=http://caddy
 
   userworkers:
     build: 

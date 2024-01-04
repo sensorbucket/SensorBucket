@@ -12,9 +12,9 @@
         reverse_proxy kratos:4433
     }
 
-    redir /auth /auth/
-    handle /auth/* {
-        reverse_proxy tenants:3000
+    redir /tenants /tenants/
+    handle_path /tenants/* {
+        reverse_proxy tenants:3001
     }
 
     handle_path /api/* {

@@ -1,4 +1,4 @@
-package kratos
+package routes
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	ory "github.com/ory/client-go"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
-	"sensorbucket.nl/sensorbucket/services/tenants/kratos/views"
+	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/views"
 )
 
 type KratosRoutes struct {
@@ -16,7 +16,7 @@ type KratosRoutes struct {
 	router chi.Router
 }
 
-func SetupRoutes() *KratosRoutes {
+func SetupKratosRoutes() *KratosRoutes {
 	k := &KratosRoutes{
 		router: chi.NewRouter(),
 	}

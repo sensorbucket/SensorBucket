@@ -11,9 +11,9 @@ serve:
     base_url: http://kratos:4434/
 
 selfservice:
-  default_browser_return_url: http://127.0.0.1:3000/auth
+  default_browser_return_url: http://127.0.0.1:3000/tenants/auth
   allowed_return_urls:
-    - http://127.0.0.1:3000/auth
+    - http://127.0.0.1:3000/tenants/auth
 
   methods:
     password:
@@ -31,36 +31,36 @@ selfservice:
 
   flows:
     error:
-      ui_url: http://127.0.0.1:3000/auth/error
+      ui_url: http://127.0.0.1:3000/tenants/auth/error
 
     settings:
-      ui_url: http://127.0.0.1:3000/auth/settings
+      ui_url: http://127.0.0.1:3000/tenants/auth/settings
       privileged_session_max_age: 15m
       required_aal: highest_available
 
     recovery:
       enabled: true
-      ui_url: http://127.0.0.1:3000/auth/recovery
+      ui_url: http://127.0.0.1:3000/tenants/auth/recovery
       use: code
 
     verification:
       enabled: true
-      ui_url: http://127.0.0.1:3000/auth/verification
+      ui_url: http://127.0.0.1:3000/tenants/auth/verification
       use: code
       after:
-        default_browser_return_url: http://127.0.0.1:3000/auth/
+        default_browser_return_url: http://127.0.0.1:3000/tenants/auth/
 
     logout:
       after:
-        default_browser_return_url: http://127.0.0.1:3000/auth/login
+        default_browser_return_url: http://127.0.0.1:3000/tenants/auth/login
 
     login:
-      ui_url: http://127.0.0.1:3000/auth/login
+      ui_url: http://127.0.0.1:3000/tenants/auth/login
       lifespan: 10m
 
     registration:
       lifespan: 10m
-      ui_url: http://127.0.0.1:3000/auth/registration
+      ui_url: http://127.0.0.1:3000/tenants/auth/registration
       after:
         password:
           hooks:

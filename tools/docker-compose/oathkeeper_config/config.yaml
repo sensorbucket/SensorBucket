@@ -34,7 +34,7 @@ mutators:
     config:
       issuer_url: http://localhost:3000/
       jwks_url: file:///etc/config/oathkeeper/jwks.json
-      claims: '{"mai": "{{ print .Extra.identity.traits.email }}"}'
+      #claims: '{"mai": "{{ print .Extra.identity.traits.email }}"}'
 
 authorizers:
   allow:

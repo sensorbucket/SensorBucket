@@ -24,16 +24,17 @@
 {% func renderInputNode(n ory.UiNode, attr ory.UiNodeInputAttributes) %}
     {% if attr.GetType() == "submit" %}
     <button 
-            {%= renderInputNodeAttributes(attr) %}>{%s n.Meta.GetLabel().Text %}</button>
-            <br/>
+        class="text-center p-3 bg-secondary-500 text-white"
+        {%= renderInputNodeAttributes(attr) %}>{%s n.Meta.GetLabel().Text %}</button>
     {% return %}
     {% endif %}
     <fieldset>
         {% if label, ok := n.Meta.GetLabelOk(); ok %}
-        <label for="{%s attr.GetName() %}">
+        <label for="{%s attr.GetName() %}" class="flex flex-col">
             <span>{%s label.Text %}</span>
         {% endif %}
         <input 
+            class="border px-2 py-1"
             {%= renderInputNodeAttributes(attr) %}
             />
         {% if n.Meta.HasLabel() %}
@@ -69,7 +70,9 @@
 {% endfunc %}
 
 {% func renderGroup(ui ory.UiContainer, group string) %}
-    <form method="{%s ui.Method %}" action="{%s ui.Action %}">
+    <form 
+        class="flex flex-col space-y-2"
+        method="{%s ui.Method %}" action="{%s ui.Action %}">
         {%= renderDefaultNodes(ui) %}
         {% for _, n := range filterNodes(ui.Nodes,group) %}
             {%= renderNode(n) %}

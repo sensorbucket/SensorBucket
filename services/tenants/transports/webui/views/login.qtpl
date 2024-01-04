@@ -6,11 +6,12 @@
 {% func Layout(p Page) %}
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="bg-[#f8fafc]">
     <head>
         <title></title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{%s U("/static/style.css") %}" />
     </head>
     <body>
         {%= p.Body() %}
@@ -25,6 +26,8 @@ type LoginPage struct {
 } %}
 
 {% func (p LoginPage) Body() %}
-    <h1>Hello world!</h1>
-    {%= renderGroup(p.Flow.Ui, "password") %}
+    <main class="mt-12 mx-auto w-full md:max-w-[420px] bg-white p-2">
+        <h1 class="text-2xl mb-2">Hello world!</h1>
+        {%= renderGroup(p.Flow.Ui, "password") %}
+    </main>
 {% endfunc %}
