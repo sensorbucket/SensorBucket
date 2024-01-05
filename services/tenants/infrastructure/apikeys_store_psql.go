@@ -31,15 +31,6 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 		return nil, err
 	}
 
-	// 	q := sq.
-	// 	Select("api_keys.id, api_keys.value, api_keys.tenant_id, api_keys.expiration_date").
-	// 	From("api_keys").
-	// 	Where(sq.Eq{"api_keys.id": id})
-	// if len(stateFilter) > 0 {
-	// 	q = q.Join("tenants on api_keys.tenant_id = tenants.id").
-	// 		Where(sq.Eq{"tenants.state": stateFilter})
-	// }
-
 	q := sq.
 		Select("api_keys.id, api_keys.name, api_keys.expiration_date, api_keys.tenant_id, tenants.name").
 		From("api_keys").

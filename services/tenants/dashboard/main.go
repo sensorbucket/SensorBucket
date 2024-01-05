@@ -26,7 +26,7 @@ func main() {
 	cfg.Host = sbURL.Host
 	apiClient := api.NewAPIClient(cfg)
 
-	staticPath := "/home/jeffrey/projects/pollex/SensorBucket/pkg/layout/static"
+	staticPath := "/static"
 	fmt.Println("Serving static files...")
 	router.Use(middleware.GetHead)
 	fileServer := http.FileServer(http.Dir(staticPath))
