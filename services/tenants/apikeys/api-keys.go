@@ -9,19 +9,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type TenantState int
-
-var (
-	Active   TenantState = 1
-	Archived TenantState = 2
-)
-
-type Tenant struct {
-	ID    int64
-	Name  string
-	State TenantState
-}
-
 type ApiKey struct {
 	Key
 	Secret string

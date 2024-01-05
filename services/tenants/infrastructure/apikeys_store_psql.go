@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
+	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
 func NewAPIKeyStorePSQL(db *sqlx.DB) *apiKeyStore {
@@ -112,7 +113,7 @@ func (as *apiKeyStore) DeleteApiKey(id int64) error {
 
 // Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.
 // Only returns the API key if the given tenant confirms to any state passed in the stateFilter
-func (as *apiKeyStore) GetHashedApiKeyById(id int64, stateFilter []apikeys.TenantState) (apikeys.HashedApiKey, error) {
+func (as *apiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
 	q := sq.
 		Select("api_keys.id, api_keys.value, api_keys.tenant_id, api_keys.expiration_date").
 		From("api_keys").
