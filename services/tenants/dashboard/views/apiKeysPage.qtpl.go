@@ -92,7 +92,7 @@ func StreamRenderApiKeyTable(qw422016 *qt422016.Writer, tenants []TenantInfo, te
 	for _, tenant := range tenants {
 //line views/apiKeysPage.qtpl:23
 		qw422016.N().S(`
-<table id="some-table" class="w-full text-sm border-separate border-spacing-0" id="device-table">
+<table class="w-full text-sm border-separate border-spacing-0 mb-3" id="device-table">
     <thead>
         `)
 //line views/apiKeysPage.qtpl:26
@@ -146,7 +146,7 @@ func RenderApiKeyTable(tenants []TenantInfo, tenantsNextPage string) string {
 func StreamRenderApiKeyRowHeading(qw422016 *qt422016.Writer, tenant TenantInfo) {
 //line views/apiKeysPage.qtpl:34
 	qw422016.N().S(`
-<tr class="cursor-pointer"
+<tr class="cursor-pointer h-10 border-b font-bold text-secondary-100 bg-secondary-400"
     hx-trigger="click once" 
     hx-get="/api-keys/table?tenant_id=`)
 //line views/apiKeysPage.qtpl:37
@@ -163,182 +163,187 @@ func StreamRenderApiKeyRowHeading(qw422016 *qt422016.Writer, tenant TenantInfo) 
 //line views/apiKeysPage.qtpl:40
 	qw422016.N().D(tenant.ID)
 //line views/apiKeysPage.qtpl:40
+	qw422016.N().S(` then toggle .rotate-180 on #collapse-`)
+//line views/apiKeysPage.qtpl:40
+	qw422016.N().D(tenant.ID)
+//line views/apiKeysPage.qtpl:40
 	qw422016.N().S(`"
     >
-    <td class="px-4 h-10 border-b font-bold text-secondary-100 bg-secondary-400" colspan="5">
+    <td class="px-4" colspan="4">
         <span>`)
 //line views/apiKeysPage.qtpl:43
 	qw422016.E().S(tenant.Name)
 //line views/apiKeysPage.qtpl:43
 	qw422016.N().S(`</span>
     </td>
+    <td colspan="1">
+        <iconify-icon id="collapse-`)
+//line views/apiKeysPage.qtpl:46
+	qw422016.N().D(tenant.ID)
+//line views/apiKeysPage.qtpl:46
+	qw422016.N().S(`" icon="ooui:collapse" class="px-4 float-right rotate-180"></iconify-icon>
+    </td>
 </tr>
 `)
-//line views/apiKeysPage.qtpl:46
+//line views/apiKeysPage.qtpl:49
 }
 
-//line views/apiKeysPage.qtpl:46
+//line views/apiKeysPage.qtpl:49
 func WriteRenderApiKeyRowHeading(qq422016 qtio422016.Writer, tenant TenantInfo) {
-//line views/apiKeysPage.qtpl:46
+//line views/apiKeysPage.qtpl:49
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/apiKeysPage.qtpl:46
+//line views/apiKeysPage.qtpl:49
 	StreamRenderApiKeyRowHeading(qw422016, tenant)
-//line views/apiKeysPage.qtpl:46
+//line views/apiKeysPage.qtpl:49
 	qt422016.ReleaseWriter(qw422016)
-//line views/apiKeysPage.qtpl:46
+//line views/apiKeysPage.qtpl:49
 }
 
-//line views/apiKeysPage.qtpl:46
+//line views/apiKeysPage.qtpl:49
 func RenderApiKeyRowHeading(tenant TenantInfo) string {
-//line views/apiKeysPage.qtpl:46
+//line views/apiKeysPage.qtpl:49
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/apiKeysPage.qtpl:46
+//line views/apiKeysPage.qtpl:49
 	WriteRenderApiKeyRowHeading(qb422016, tenant)
-//line views/apiKeysPage.qtpl:46
+//line views/apiKeysPage.qtpl:49
 	qs422016 := string(qb422016.B)
-//line views/apiKeysPage.qtpl:46
+//line views/apiKeysPage.qtpl:49
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/apiKeysPage.qtpl:46
+//line views/apiKeysPage.qtpl:49
 	return qs422016
-//line views/apiKeysPage.qtpl:46
+//line views/apiKeysPage.qtpl:49
 }
 
-//line views/apiKeysPage.qtpl:48
+//line views/apiKeysPage.qtpl:51
 func StreamRenderApiKeyRows(qw422016 *qt422016.Writer, keys []ApiKey, nextPage string) {
-//line views/apiKeysPage.qtpl:48
+//line views/apiKeysPage.qtpl:51
 	qw422016.N().S(`
 `)
-//line views/apiKeysPage.qtpl:49
+//line views/apiKeysPage.qtpl:52
 	for _, key := range keys {
-//line views/apiKeysPage.qtpl:49
+//line views/apiKeysPage.qtpl:52
 		qw422016.N().S(`
-<tr class="hover:bg-slate-50 group key">
-    <td class="px-4 h-10 border-b">`)
-//line views/apiKeysPage.qtpl:51
+<tr class="hover:bg-slate-50 group key w-full">
+    <td title="`)
+//line views/apiKeysPage.qtpl:54
 		qw422016.E().S(key.Name)
-//line views/apiKeysPage.qtpl:51
+//line views/apiKeysPage.qtpl:54
+		qw422016.N().S(`" class="px-4 h-10 border-b w-[4em] max-w-[4em] truncate">`)
+//line views/apiKeysPage.qtpl:54
+		qw422016.E().S(key.Name)
+//line views/apiKeysPage.qtpl:54
 		qw422016.N().S(`</td>
-    <td class="px-4 h-10 border-b">`)
-//line views/apiKeysPage.qtpl:52
+    <td class="px-4 h-10 border-b w-[2em] max-w-[2em] truncate">`)
+//line views/apiKeysPage.qtpl:55
 		qw422016.E().S(key.Created.Format("02/01/2006"))
-//line views/apiKeysPage.qtpl:52
+//line views/apiKeysPage.qtpl:55
 		qw422016.N().S(`</td>
-    <td class="px-4 h-10 border-b">
+    <td class="px-4 h-10 border-b w-[2em] max-w-[2em] truncate">
         `)
-//line views/apiKeysPage.qtpl:54
+//line views/apiKeysPage.qtpl:57
 		if key.ExpirationDate != nil {
-//line views/apiKeysPage.qtpl:54
+//line views/apiKeysPage.qtpl:57
 			qw422016.N().S(`
         `)
-//line views/apiKeysPage.qtpl:55
+//line views/apiKeysPage.qtpl:58
 			qw422016.E().S(key.ExpirationDate.Format("02/01/2006"))
-//line views/apiKeysPage.qtpl:55
+//line views/apiKeysPage.qtpl:58
 			qw422016.N().S(`
         `)
-//line views/apiKeysPage.qtpl:56
+//line views/apiKeysPage.qtpl:59
 		} else {
-//line views/apiKeysPage.qtpl:56
+//line views/apiKeysPage.qtpl:59
 			qw422016.N().S(`
         -
         `)
-//line views/apiKeysPage.qtpl:58
+//line views/apiKeysPage.qtpl:61
 		}
-//line views/apiKeysPage.qtpl:58
+//line views/apiKeysPage.qtpl:61
 		qw422016.N().S(`
     </td>
-    <td class="px-4 h-10 border-b truncate" style="max-width: 15rem;">
+    <td class="px-4 h-10 border-b truncate w-[1em] max-w-[1em]">
         `)
-//line views/apiKeysPage.qtpl:61
+//line views/apiKeysPage.qtpl:64
 		qw422016.E().S(strings.Join(key.Permissions, ", "))
-//line views/apiKeysPage.qtpl:61
+//line views/apiKeysPage.qtpl:64
 		qw422016.N().S(`
-        <!-- <div class="
-            hidden hover:block group-hover:block absolute text-white bg-gray-800 bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 rounded py-1
-            after:content-['_'] after:absolute after:top-full after:-translate-y-[0.25rem] after:left-1/2 after:-translate-x-1/2 after:bg-gray-800 after:w-2 after:h-2 after:rotate-45
-        ">
-            `)
-//line views/apiKeysPage.qtpl:66
-		qw422016.E().S(strings.Join(key.Permissions, ", "))
-//line views/apiKeysPage.qtpl:66
-		qw422016.N().S(`
-        </div> -->
     </td>
-    <td class="px-4 h-10 border-b">
+    <td class="px-4 h-10 border-b w-[1em] max-w-[1em]">
         <button hx-delete="/api-keys/revoke/`)
-//line views/apiKeysPage.qtpl:70
+//line views/apiKeysPage.qtpl:67
 		qw422016.N().D(key.ID)
-//line views/apiKeysPage.qtpl:70
+//line views/apiKeysPage.qtpl:67
 		qw422016.N().S(`" hx-trigger="click once" hx-target="closest tr" hx-swap="innerHTML"
-            class="text-xs bg-red-400 hover:bg-red-500 text-white border border-red-500 rounded px-2 py-1">
+            class="float-right text-xs bg-red-400 hover:bg-red-500 text-white border border-red-500 rounded px-2 py-1">
             Revoke
         </button>
     </td>
 </tr>
 `)
-//line views/apiKeysPage.qtpl:76
+//line views/apiKeysPage.qtpl:73
 	}
-//line views/apiKeysPage.qtpl:76
+//line views/apiKeysPage.qtpl:73
 	qw422016.N().S(`
 `)
-//line views/apiKeysPage.qtpl:77
+//line views/apiKeysPage.qtpl:74
 	if nextPage != "" {
-//line views/apiKeysPage.qtpl:77
+//line views/apiKeysPage.qtpl:74
 		qw422016.N().S(`
 <tr hx-trigger="click once" hx-get="`)
-//line views/apiKeysPage.qtpl:78
+//line views/apiKeysPage.qtpl:75
 		qw422016.E().S(nextPage)
-//line views/apiKeysPage.qtpl:78
+//line views/apiKeysPage.qtpl:75
 		qw422016.N().S(`" hx-swap="outerHTML" class="cursor-pointer key">
     <td class="underline text-sky-600 p-1 text-center" colspan="5">
         <span>Load more...</span>
     </td>
 </tr>
 `)
-//line views/apiKeysPage.qtpl:83
+//line views/apiKeysPage.qtpl:80
 	} else if len(keys) == 0 {
-//line views/apiKeysPage.qtpl:83
+//line views/apiKeysPage.qtpl:80
 		qw422016.N().S(`
 <tr>
     <td class="italic p-3 text-center" colspan="5">
-        <span>Organisation has no API keys...</span>
+        <span>No more API keys for this organisation...</span>
     </td>
 </tr>
 `)
-//line views/apiKeysPage.qtpl:89
+//line views/apiKeysPage.qtpl:86
 	}
-//line views/apiKeysPage.qtpl:89
+//line views/apiKeysPage.qtpl:86
 	qw422016.N().S(`
 `)
-//line views/apiKeysPage.qtpl:90
+//line views/apiKeysPage.qtpl:87
 }
 
-//line views/apiKeysPage.qtpl:90
+//line views/apiKeysPage.qtpl:87
 func WriteRenderApiKeyRows(qq422016 qtio422016.Writer, keys []ApiKey, nextPage string) {
-//line views/apiKeysPage.qtpl:90
+//line views/apiKeysPage.qtpl:87
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/apiKeysPage.qtpl:90
+//line views/apiKeysPage.qtpl:87
 	StreamRenderApiKeyRows(qw422016, keys, nextPage)
-//line views/apiKeysPage.qtpl:90
+//line views/apiKeysPage.qtpl:87
 	qt422016.ReleaseWriter(qw422016)
-//line views/apiKeysPage.qtpl:90
+//line views/apiKeysPage.qtpl:87
 }
 
-//line views/apiKeysPage.qtpl:90
+//line views/apiKeysPage.qtpl:87
 func RenderApiKeyRows(keys []ApiKey, nextPage string) string {
-//line views/apiKeysPage.qtpl:90
+//line views/apiKeysPage.qtpl:87
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/apiKeysPage.qtpl:90
+//line views/apiKeysPage.qtpl:87
 	WriteRenderApiKeyRows(qb422016, keys, nextPage)
-//line views/apiKeysPage.qtpl:90
+//line views/apiKeysPage.qtpl:87
 	qs422016 := string(qb422016.B)
-//line views/apiKeysPage.qtpl:90
+//line views/apiKeysPage.qtpl:87
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/apiKeysPage.qtpl:90
+//line views/apiKeysPage.qtpl:87
 	return qs422016
-//line views/apiKeysPage.qtpl:90
+//line views/apiKeysPage.qtpl:87
 }
 
-//line views/apiKeysPage.qtpl:93
+//line views/apiKeysPage.qtpl:90
 type ApiKeysPage struct {
 	layout.BasePage
 	Tenants         []TenantInfo

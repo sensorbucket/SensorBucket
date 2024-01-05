@@ -32,9 +32,9 @@ func (p *ApiKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
     </header>
     <div _="on htmx:afterSwap remove .hidden from #api-key-create-result">
         <form _="on htmx:beforeRequest 
-            add @disabled to #api-key-create-button wait 5s then remove @disabled from #api-key-create-button" id="apiKeyCreateForm" class="p-4 gap-4 grid lg:grid-cols-1" hx-trigger="submit"
-            hx-target="#api-key-result-value" hx-swap="innerHTML"
-            hx-post="/api-keys/create">
+            add @disabled to #api-key-create-button wait 5s then remove @disabled from #api-key-create-button"
+            id="apiKeyCreateForm" class="p-4 gap-4 grid lg:grid-cols-1" hx-trigger="submit"
+            hx-target="#api-key-result-value" hx-swap="innerHTML" hx-post="/api-keys/create">
             <fieldset>
                 <label for="api-key-tenant" class="ml-1 -mb-1 block"><small
                         class="text-xs text-slate-500">Tenant</small></label>
@@ -56,12 +56,20 @@ func (p *ApiKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
             <fieldset>
                 <label for="api-key-expiry" class="ml-1 -mb-1 block"><small
                         class="text-xs text-slate-500">Expiry</small></label>
-                <input _="init get the new Date() then set @min to it on me" type="date" min="" name="api-key-expiry" id="api-key-expiry"
+
+                <!-- var currentDate = new Date();
+
+                        // Add one day to the current date
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    
+                        // Format the date to YYYY-MM-DD
+                        var formattedDate = currentDate.toISOString().split("T")[0]; -->
+                <input _="init get formattedDateTomorrow() then set @min to it on me" type="date" min="" name="api-key-expiry"
+                    id="api-key-expiry"
                     class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" />
             </fieldset>
             <div class="col-span-full">
-                <button
-                    id="api-key-create-button"
+                <button id="api-key-create-button"
                     class="disabled:cursor-not-allowed disabled:opacity-50 text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1">
                     Generate new API key
                 </button>
@@ -94,96 +102,103 @@ func (p *ApiKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
         </div>
     </div>
     <script type="text/javascript">
+        function formattedDateTomorrow() {
+            var currentDate = new Date();
+            currentDate.setDate(currentDate.getDate() + 1);
+            return currentDate.toISOString().split("T")[0];
+        }
+
         function copyApiKeyToClipboard() {
             const text = document.getElementById("api-key-result-value").innerText;
             navigator.clipboard.writeText(text);
+            showSnackbar("API key copied to clipboard!", snackbarSuccess);
         }
     </script>
 </div>
 `)
-//line views/apiKeysCreatePage.qtpl:75
+//line views/apiKeysCreatePage.qtpl:90
 }
 
-//line views/apiKeysCreatePage.qtpl:75
+//line views/apiKeysCreatePage.qtpl:90
 func (p *ApiKeysCreatePage) WriteBody(qq422016 qtio422016.Writer) {
-//line views/apiKeysCreatePage.qtpl:75
+//line views/apiKeysCreatePage.qtpl:90
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/apiKeysCreatePage.qtpl:75
+//line views/apiKeysCreatePage.qtpl:90
 	p.StreamBody(qw422016)
-//line views/apiKeysCreatePage.qtpl:75
+//line views/apiKeysCreatePage.qtpl:90
 	qt422016.ReleaseWriter(qw422016)
-//line views/apiKeysCreatePage.qtpl:75
+//line views/apiKeysCreatePage.qtpl:90
 }
 
-//line views/apiKeysCreatePage.qtpl:75
+//line views/apiKeysCreatePage.qtpl:90
 func (p *ApiKeysCreatePage) Body() string {
-//line views/apiKeysCreatePage.qtpl:75
+//line views/apiKeysCreatePage.qtpl:90
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/apiKeysCreatePage.qtpl:75
+//line views/apiKeysCreatePage.qtpl:90
 	p.WriteBody(qb422016)
-//line views/apiKeysCreatePage.qtpl:75
+//line views/apiKeysCreatePage.qtpl:90
 	qs422016 := string(qb422016.B)
-//line views/apiKeysCreatePage.qtpl:75
+//line views/apiKeysCreatePage.qtpl:90
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/apiKeysCreatePage.qtpl:75
+//line views/apiKeysCreatePage.qtpl:90
 	return qs422016
-//line views/apiKeysCreatePage.qtpl:75
+//line views/apiKeysCreatePage.qtpl:90
 }
 
-//line views/apiKeysCreatePage.qtpl:77
+//line views/apiKeysCreatePage.qtpl:92
 func StreamRenderTenantSelect(qw422016 *qt422016.Writer, tenants []TenantInfo) {
-//line views/apiKeysCreatePage.qtpl:77
+//line views/apiKeysCreatePage.qtpl:92
 	qw422016.N().S(`
 `)
-//line views/apiKeysCreatePage.qtpl:78
+//line views/apiKeysCreatePage.qtpl:93
 	for _, tenant := range tenants {
-//line views/apiKeysCreatePage.qtpl:78
+//line views/apiKeysCreatePage.qtpl:93
 		qw422016.N().S(`
 <option value="`)
-//line views/apiKeysCreatePage.qtpl:79
+//line views/apiKeysCreatePage.qtpl:94
 		qw422016.N().D(tenant.ID)
-//line views/apiKeysCreatePage.qtpl:79
+//line views/apiKeysCreatePage.qtpl:94
 		qw422016.N().S(`">`)
-//line views/apiKeysCreatePage.qtpl:79
+//line views/apiKeysCreatePage.qtpl:94
 		qw422016.E().S(tenant.Name)
-//line views/apiKeysCreatePage.qtpl:79
+//line views/apiKeysCreatePage.qtpl:94
 		qw422016.N().S(`</option>
 `)
-//line views/apiKeysCreatePage.qtpl:80
+//line views/apiKeysCreatePage.qtpl:95
 	}
-//line views/apiKeysCreatePage.qtpl:80
+//line views/apiKeysCreatePage.qtpl:95
 	qw422016.N().S(`
 `)
-//line views/apiKeysCreatePage.qtpl:81
+//line views/apiKeysCreatePage.qtpl:96
 }
 
-//line views/apiKeysCreatePage.qtpl:81
+//line views/apiKeysCreatePage.qtpl:96
 func WriteRenderTenantSelect(qq422016 qtio422016.Writer, tenants []TenantInfo) {
-//line views/apiKeysCreatePage.qtpl:81
+//line views/apiKeysCreatePage.qtpl:96
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/apiKeysCreatePage.qtpl:81
+//line views/apiKeysCreatePage.qtpl:96
 	StreamRenderTenantSelect(qw422016, tenants)
-//line views/apiKeysCreatePage.qtpl:81
+//line views/apiKeysCreatePage.qtpl:96
 	qt422016.ReleaseWriter(qw422016)
-//line views/apiKeysCreatePage.qtpl:81
+//line views/apiKeysCreatePage.qtpl:96
 }
 
-//line views/apiKeysCreatePage.qtpl:81
+//line views/apiKeysCreatePage.qtpl:96
 func RenderTenantSelect(tenants []TenantInfo) string {
-//line views/apiKeysCreatePage.qtpl:81
+//line views/apiKeysCreatePage.qtpl:96
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/apiKeysCreatePage.qtpl:81
+//line views/apiKeysCreatePage.qtpl:96
 	WriteRenderTenantSelect(qb422016, tenants)
-//line views/apiKeysCreatePage.qtpl:81
+//line views/apiKeysCreatePage.qtpl:96
 	qs422016 := string(qb422016.B)
-//line views/apiKeysCreatePage.qtpl:81
+//line views/apiKeysCreatePage.qtpl:96
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/apiKeysCreatePage.qtpl:81
+//line views/apiKeysCreatePage.qtpl:96
 	return qs422016
-//line views/apiKeysCreatePage.qtpl:81
+//line views/apiKeysCreatePage.qtpl:96
 }
 
-//line views/apiKeysCreatePage.qtpl:84
+//line views/apiKeysCreatePage.qtpl:99
 type ApiKeysCreatePage struct {
 	layout.BasePage
 	Tenants []TenantInfo

@@ -21,7 +21,7 @@
 
 {% func RenderApiKeyTable(tenants []TenantInfo, tenantsNextPage string) %}
 {% for _, tenant := range tenants %}
-<table id="some-table" class="w-full text-sm border-separate border-spacing-0" id="device-table">
+<table class="w-full text-sm border-separate border-spacing-0 mb-3" id="device-table">
     <thead>
         {%= RenderApiKeyRowHeading(tenant) %}
     </thead>
@@ -32,43 +32,40 @@
 {% endfunc %}
 
 {% func RenderApiKeyRowHeading(tenant TenantInfo) %}
-<tr class="cursor-pointer"
+<tr class="cursor-pointer h-10 border-b font-bold text-secondary-100 bg-secondary-400"
     hx-trigger="click once" 
     hx-get="/api-keys/table?tenant_id={%d tenant.ID %}" 
     hx-target="#tenant-table-{%d tenant.ID %}"
     hx-swap="beforeend"
-    _="on click toggle the *display of #tenant-table-{%d tenant.ID %}"
+    _="on click toggle the *display of #tenant-table-{%d tenant.ID %} then toggle .rotate-180 on #collapse-{%d tenant.ID %}"
     >
-    <td class="px-4 h-10 border-b font-bold text-secondary-100 bg-secondary-400" colspan="5">
+    <td class="px-4" colspan="4">
         <span>{%s tenant.Name %}</span>
+    </td>
+    <td colspan="1">
+        <iconify-icon id="collapse-{%d tenant.ID %}" icon="ooui:collapse" class="px-4 float-right rotate-180"></iconify-icon>
     </td>
 </tr>
 {% endfunc %}
 
 {% func RenderApiKeyRows(keys []ApiKey, nextPage string) %}
 {% for _, key := range keys %}
-<tr class="hover:bg-slate-50 group key">
-    <td class="px-4 h-10 border-b">{%s key.Name %}</td>
-    <td class="px-4 h-10 border-b">{%s key.Created.Format("02/01/2006") %}</td>
-    <td class="px-4 h-10 border-b">
+<tr class="hover:bg-slate-50 group key w-full">
+    <td title="{%s key.Name %}" class="px-4 h-10 border-b w-[4em] max-w-[4em] truncate">{%s key.Name %}</td>
+    <td class="px-4 h-10 border-b w-[2em] max-w-[2em] truncate">{%s key.Created.Format("02/01/2006") %}</td>
+    <td class="px-4 h-10 border-b w-[2em] max-w-[2em] truncate">
         {% if key.ExpirationDate != nil %}
         {%s key.ExpirationDate.Format("02/01/2006") %}
         {% else %}
         -
         {% endif %}
     </td>
-    <td class="px-4 h-10 border-b truncate" style="max-width: 15rem;">
+    <td class="px-4 h-10 border-b truncate w-[1em] max-w-[1em]">
         {%s strings.Join(key.Permissions, ", ") %}
-        <!-- <div class="
-            hidden hover:block group-hover:block absolute text-white bg-gray-800 bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 rounded py-1
-            after:content-['_'] after:absolute after:top-full after:-translate-y-[0.25rem] after:left-1/2 after:-translate-x-1/2 after:bg-gray-800 after:w-2 after:h-2 after:rotate-45
-        ">
-            {%s strings.Join(key.Permissions, ", ") %}
-        </div> -->
     </td>
-    <td class="px-4 h-10 border-b">
+    <td class="px-4 h-10 border-b w-[1em] max-w-[1em]">
         <button hx-delete="/api-keys/revoke/{%d key.ID %}" hx-trigger="click once" hx-target="closest tr" hx-swap="innerHTML"
-            class="text-xs bg-red-400 hover:bg-red-500 text-white border border-red-500 rounded px-2 py-1">
+            class="float-right text-xs bg-red-400 hover:bg-red-500 text-white border border-red-500 rounded px-2 py-1">
             Revoke
         </button>
     </td>
@@ -83,7 +80,7 @@
 {% elseif len(keys) == 0 %}
 <tr>
     <td class="italic p-3 text-center" colspan="5">
-        <span>Organisation has no API keys...</span>
+        <span>No more API keys for this organisation...</span>
     </td>
 </tr>
 {% endif %}

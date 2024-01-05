@@ -11,6 +11,7 @@
         reverse_proxy /ingresses* tracing:3000
         reverse_proxy /tracing* tracing:3000
         reverse_proxy /tenants* tenants:3000
+        reverse_proxy /api-keys* tenants:3000
         reverse_proxy /workers* userworkers:3000
         reverse_proxy core:3000
     }

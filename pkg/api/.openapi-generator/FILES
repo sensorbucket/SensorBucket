@@ -4,6 +4,7 @@ api_api_keys.go
 api_devices.go
 api_measurements.go
 api_pipelines.go
+api_tenants.go
 api_tracing.go
 api_uplink.go
 api_workers.go
@@ -53,6 +54,8 @@ model_list_pipelines_200_response.go
 model_list_pipelines_200_response_all_of.go
 model_list_sensor_groups_200_response.go
 model_list_sensor_groups_200_response_all_of.go
+model_list_tenants_200_response.go
+model_list_tenants_200_response_all_of.go
 model_list_traces_200_response.go
 model_list_traces_200_response_all_of.go
 model_list_workers_200_response.go
@@ -65,6 +68,7 @@ model_query_measurements_200_response.go
 model_query_measurements_200_response_all_of.go
 model_sensor.go
 model_sensor_group.go
+model_tenant.go
 model_trace.go
 model_trace_step.go
 model_update_device_200_response.go

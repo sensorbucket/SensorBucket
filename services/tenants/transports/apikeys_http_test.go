@@ -35,7 +35,7 @@ func TestNewApiKeyNoName(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "", "organisation_id": 905}`))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "", "tenant_id": 905}`))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -70,7 +70,7 @@ func TestNewApiKeyExpirationDateNotInTheFuture(t *testing.T) {
 	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("POST", "/api-keys",
-		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "organisation_id": 12, "expiration_date": "%s"}`, time.Now().Add(-time.Hour*24).Format(time.RFC3339))))
+		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "tenant_id": 12, "expiration_date": "%s"}`, time.Now().Add(-time.Hour*24).Format(time.RFC3339))))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -431,7 +431,7 @@ func TestListApiKeysReturnsPaginatedList(t *testing.T) {
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Equal(t,
-		`{"links":{"previous":"","next":"/api-keys/list?cursor=encoded_cursor"},"page_size":2,"total_count":0,"data":[{"name":"api-key-1","tenant_id":0,"expiration_date":null},{"name":"api-key-2","tenant_id":0,"expiration_date":null}]}`+"\n", rr.Body.String())
+		`{"links":{"previous":"","next":"/api-keys/list?cursor=encoded_cursor"},"page_size":2,"total_count":0,"data":[{"id":0,"name":"api-key-1","tenant_id":0,"tenant_name":"","expiration_date":null,"created":"0001-01-01T00:00:00Z"},{"id":0,"name":"api-key-2","tenant_id":0,"tenant_name":"","expiration_date":null,"created":"0001-01-01T00:00:00Z"}]}`+"\n", rr.Body.String())
 	assert.Len(t, svc.ListAPIKeysCalls(), 1)
 }
 

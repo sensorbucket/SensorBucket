@@ -65,15 +65,17 @@ paths:
     $ref: 'path-workers-by-id.yaml'
   /workers/{id}/usercode:
     $ref: 'path-workers-usercode.yaml'
-  /tenants/api-keys/list:
+  /tenants/list:
+    $ref: 'path-tenants-list.yaml'
+  /api-keys/list:
     $ref: 'path-api-keys-list.yaml'
-  /tenants/api-keys/{api_key_id}:
+  /api-keys/{api_key_id}:
     $ref: 'path-api-keys-by-id.yaml'
-  /tenants/api-keys:
+  /api-keys:
     $ref: 'path-api-keys.yaml'
 components:
   securitySchemes:
-    basicAuth:    
+    basicAuth:
       description: |
         Temporary default authentication method until token based authentication is implemented.
       type: http

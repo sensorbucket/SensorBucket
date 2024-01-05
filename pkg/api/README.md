@@ -88,9 +88,9 @@ All URIs are relative to *https://sensorbucket.nl/api*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*ApiKeysApi* | [**CreateApiKey**](docs/ApiKeysApi.md#createapikey) | **Post** /tenants/api-keys | Creates a new API key for the given Tenant
-*ApiKeysApi* | [**ListApiKeys**](docs/ApiKeysApi.md#listapikeys) | **Get** /tenants/api-keys/list | List API Keys
-*ApiKeysApi* | [**RevokeApiKey**](docs/ApiKeysApi.md#revokeapikey) | **Delete** /tenants/api-keys/{api_key_id} | Revokes an API key
+*ApiKeysApi* | [**CreateApiKey**](docs/ApiKeysApi.md#createapikey) | **Post** /api-keys | Creates a new API key for the given Tenant
+*ApiKeysApi* | [**ListApiKeys**](docs/ApiKeysApi.md#listapikeys) | **Get** /api-keys/list | List API Keys
+*ApiKeysApi* | [**RevokeApiKey**](docs/ApiKeysApi.md#revokeapikey) | **Delete** /api-keys/{api_key_id} | Revokes an API key
 *DevicesApi* | [**AddSensorToSensorGroup**](docs/DevicesApi.md#addsensortosensorgroup) | **Post** /sensor-groups/{id}/sensors | Add sensor to a sensor group
 *DevicesApi* | [**CreateDevice**](docs/DevicesApi.md#createdevice) | **Post** /devices | Create device
 *DevicesApi* | [**CreateDeviceSensor**](docs/DevicesApi.md#createdevicesensor) | **Post** /devices/{device_id}/sensors | Create sensor for device
@@ -114,6 +114,7 @@ Class | Method | HTTP request | Description
 *PipelinesApi* | [**GetPipeline**](docs/PipelinesApi.md#getpipeline) | **Get** /pipelines/{id} | Get pipeline
 *PipelinesApi* | [**ListPipelines**](docs/PipelinesApi.md#listpipelines) | **Get** /pipelines | List pipelines
 *PipelinesApi* | [**UpdatePipeline**](docs/PipelinesApi.md#updatepipeline) | **Patch** /pipelines/{id} | Update pipeline
+*TenantsApi* | [**ListTenants**](docs/TenantsApi.md#listtenants) | **Get** /tenants/list | Retrieves tenants
 *TracingApi* | [**ListIngresses**](docs/TracingApi.md#listingresses) | **Get** /ingresses | List ingresses
 *TracingApi* | [**ListTraces**](docs/TracingApi.md#listtraces) | **Get** /tracing | List traces
 *UplinkApi* | [**ProcessUplinkData**](docs/UplinkApi.md#processuplinkdata) | **Post** /uplinks/{pipeline_id} | Process uplink message
@@ -170,6 +171,8 @@ Class | Method | HTTP request | Description
  - [ListPipelines200ResponseAllOf](docs/ListPipelines200ResponseAllOf.md)
  - [ListSensorGroups200Response](docs/ListSensorGroups200Response.md)
  - [ListSensorGroups200ResponseAllOf](docs/ListSensorGroups200ResponseAllOf.md)
+ - [ListTenants200Response](docs/ListTenants200Response.md)
+ - [ListTenants200ResponseAllOf](docs/ListTenants200ResponseAllOf.md)
  - [ListTraces200Response](docs/ListTraces200Response.md)
  - [ListTraces200ResponseAllOf](docs/ListTraces200ResponseAllOf.md)
  - [ListWorkers200Response](docs/ListWorkers200Response.md)
@@ -182,6 +185,7 @@ Class | Method | HTTP request | Description
  - [QueryMeasurements200ResponseAllOf](docs/QueryMeasurements200ResponseAllOf.md)
  - [Sensor](docs/Sensor.md)
  - [SensorGroup](docs/SensorGroup.md)
+ - [Tenant](docs/Tenant.md)
  - [Trace](docs/Trace.md)
  - [TraceStep](docs/TraceStep.md)
  - [UpdateDevice200Response](docs/UpdateDevice200Response.md)

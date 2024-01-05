@@ -2,7 +2,6 @@ package routes
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -48,7 +47,6 @@ func (h *ApiKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 		if r.URL.Query().Has("cursor") {
 			req = req.Cursor(r.URL.Query().Get("cursor"))
 		} else {
-			fmt.Println("no qyer")
 			// If no cursor is given, the initial state must be derived from the url params
 			req = req.Limit(15)
 			tenantId := r.URL.Query().Get("tenant_id")
@@ -73,12 +71,13 @@ func (h *ApiKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 		viewKeys := []views.ApiKey{}
 		for _, key := range res.Data {
 			viewKeys = append(viewKeys, views.ApiKey{
-				ID:       int(key.Id),
-				TenantID: int(key.TenantId),
-				Name:     key.Name,
+				ID:             int(key.Id),
+				TenantID:       int(key.TenantId),
+				Created:        key.Created,
+				ExpirationDate: key.ExpirationDate,
+				Name:           key.Name,
 			})
 		}
-
 		views.WriteRenderApiKeyRows(w, viewKeys, nextPage)
 	}
 }
@@ -86,26 +85,19 @@ func (h *ApiKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 func (h *ApiKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// The initial page starts with an overview of different tenants
-		// req := h.client.ApiKeysApi.ListApiKeys(r.Context())
-		// list, resp, err := req.Execute()
-		// if err != nil {
-		// 	log.Printf("api key list page: %v\n", err)
-		// 	layout.SnackbarSomethingWentWrong(w)
-		// 	return
-		// }
-		// if resp == nil || resp.StatusCode != http.StatusOK {
-		// 	layout.SnackbarSomethingWentWrong(w)
-		// 	return
-		// }
-		// if list == nil {
-		// 	layout.SnackbarSomethingWentWrong(w)
-		// 	return
-		// }
-		// keys := apiKeysGrouped(list.Data)
-		page := &views.ApiKeysPage{Tenants: tenants()}
-		// if list.Links.GetNext() != "" {
-		// 	page.ApiKeysNextPage = views.U("/api-keys/table?cursor=" + getCursor(list.Links.GetNext()))
-		// }
+		req := h.client.TenantsApi.ListTenants(r.Context())
+		req = req.State(1) // State Active
+		list, resp, err := req.Execute()
+		if err != nil {
+			log.Printf("api key list page: %v\n", err)
+			layout.SnackbarSomethingWentWrong(w)
+			return
+		}
+		if resp == nil || resp.StatusCode != http.StatusOK {
+			layout.SnackbarSomethingWentWrong(w)
+			return
+		}
+		page := &views.ApiKeysPage{Tenants: toViewTenants(list.Data)}
 		if layout.IsHX(r) {
 			page.WriteBody(w)
 			return
@@ -145,12 +137,17 @@ func (h *ApiKeysPageHandler) revokeApiKey() http.HandlerFunc {
 func (h *ApiKeysPageHandler) createApiKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
-			layout.SnackbarSomethingWentWrong(w)
+			layout.SnackbarBadRequest(w, "Please select a tenant and enter a name")
 			return
 		}
 		name := r.FormValue("api-key-name")
 		expiry := r.FormValue("api-key-expiry")
 		tenantId := r.FormValue("api-key-tenant")
+		if name == "" || tenantId == "" {
+			layout.SnackbarBadRequest(w, "Please enter a name and select an organisation")
+			return
+		}
+
 		id, err := strconv.ParseInt(tenantId, 10, 32)
 		if err != nil {
 			layout.SnackbarBadRequest(w, "tenant_id must be a valid number")
@@ -186,9 +183,22 @@ func (h *ApiKeysPageHandler) createApiKey() http.HandlerFunc {
 
 func (h *ApiKeysPageHandler) createApiKeyView() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Retrieve the tenants for the select box in the create view
+		req := h.client.TenantsApi.ListTenants(r.Context())
+		req = req.State(1) // State Active
+		list, resp, err := req.Execute()
+		if err != nil {
+			log.Printf("api key list page: %v\n", err)
+			layout.SnackbarSomethingWentWrong(w)
+			return
+		}
+		if resp == nil || resp.StatusCode != http.StatusOK {
+			layout.SnackbarSomethingWentWrong(w)
+			return
+		}
 		page := &views.ApiKeysCreatePage{
-			// TODO: when tenants ticket is merged
-			Tenants: tenants(),
+			Tenants: toViewTenants(list.Data),
 		}
 		if layout.IsHX(r) {
 			page.WriteBody(w)
@@ -198,21 +208,15 @@ func (h *ApiKeysPageHandler) createApiKeyView() http.HandlerFunc {
 	}
 }
 
-func tenants() []views.TenantInfo {
-	return []views.TenantInfo{
-		{
-			ID:   12,
-			Name: "Pollex B.V.",
-		},
-		{
-			ID:   5,
-			Name: "Provincie Zeeland",
-		},
-		{
-			ID:   345,
-			Name: "Aannemer 1",
-		},
+func toViewTenants(tenants []api.Tenant) []views.TenantInfo {
+	viewTenants := []views.TenantInfo{}
+	for _, tenant := range tenants {
+		viewTenants = append(viewTenants, views.TenantInfo{
+			ID:   int(tenant.Id),
+			Name: tenant.Name,
+		})
 	}
+	return viewTenants
 }
 
 func getCursor(next string) string {
