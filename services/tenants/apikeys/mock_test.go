@@ -5,8 +5,75 @@ package apikeys
 
 import (
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 	"sync"
 )
+
+// Ensure, that tenantStoreMock does implement tenantStore.
+// If this is not the case, regenerate this file with moq.
+var _ tenantStore = &tenantStoreMock{}
+
+// tenantStoreMock is a mock implementation of tenantStore.
+//
+//	func TestSomethingThatUsestenantStore(t *testing.T) {
+//
+//		// make and configure a mocked tenantStore
+//		mockedtenantStore := &tenantStoreMock{
+//			GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
+//				panic("mock out the GetTenantById method")
+//			},
+//		}
+//
+//		// use mockedtenantStore in code that requires tenantStore
+//		// and then make assertions.
+//
+//	}
+type tenantStoreMock struct {
+	// GetTenantByIdFunc mocks the GetTenantById method.
+	GetTenantByIdFunc func(id int64) (tenants.Tenant, error)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetTenantById holds details about calls to the GetTenantById method.
+		GetTenantById []struct {
+			// ID is the id argument value.
+			ID int64
+		}
+	}
+	lockGetTenantById sync.RWMutex
+}
+
+// GetTenantById calls GetTenantByIdFunc.
+func (mock *tenantStoreMock) GetTenantById(id int64) (tenants.Tenant, error) {
+	if mock.GetTenantByIdFunc == nil {
+		panic("tenantStoreMock.GetTenantByIdFunc: method is nil but tenantStore.GetTenantById was just called")
+	}
+	callInfo := struct {
+		ID int64
+	}{
+		ID: id,
+	}
+	mock.lockGetTenantById.Lock()
+	mock.calls.GetTenantById = append(mock.calls.GetTenantById, callInfo)
+	mock.lockGetTenantById.Unlock()
+	return mock.GetTenantByIdFunc(id)
+}
+
+// GetTenantByIdCalls gets all the calls that were made to GetTenantById.
+// Check the length with:
+//
+//	len(mockedtenantStore.GetTenantByIdCalls())
+func (mock *tenantStoreMock) GetTenantByIdCalls() []struct {
+	ID int64
+} {
+	var calls []struct {
+		ID int64
+	}
+	mock.lockGetTenantById.RLock()
+	calls = mock.calls.GetTenantById
+	mock.lockGetTenantById.RUnlock()
+	return calls
+}
 
 // Ensure, that apiKeyStoreMock does implement apiKeyStore.
 // If this is not the case, regenerate this file with moq.
@@ -24,7 +91,7 @@ var _ apiKeyStore = &apiKeyStoreMock{}
 //			DeleteApiKeyFunc: func(id int64) error {
 //				panic("mock out the DeleteApiKey method")
 //			},
-//			GetHashedApiKeyByIdFunc: func(id int64, stateFilter []TenantState) (HashedApiKey, error) {
+//			GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (HashedApiKey, error) {
 //				panic("mock out the GetHashedApiKeyById method")
 //			},
 //			ListFunc: func(filter Filter, request pagination.Request) (*pagination.Page[ApiKeyDTO], error) {
@@ -44,7 +111,7 @@ type apiKeyStoreMock struct {
 	DeleteApiKeyFunc func(id int64) error
 
 	// GetHashedApiKeyByIdFunc mocks the GetHashedApiKeyById method.
-	GetHashedApiKeyByIdFunc func(id int64, stateFilter []TenantState) (HashedApiKey, error)
+	GetHashedApiKeyByIdFunc func(id int64, stateFilter []tenants.State) (HashedApiKey, error)
 
 	// ListFunc mocks the List method.
 	ListFunc func(filter Filter, request pagination.Request) (*pagination.Page[ApiKeyDTO], error)
@@ -68,7 +135,7 @@ type apiKeyStoreMock struct {
 			// ID is the id argument value.
 			ID int64
 			// StateFilter is the stateFilter argument value.
-			StateFilter []TenantState
+			StateFilter []tenants.State
 		}
 		// List holds details about calls to the List method.
 		List []struct {
@@ -153,13 +220,13 @@ func (mock *apiKeyStoreMock) DeleteApiKeyCalls() []struct {
 }
 
 // GetHashedApiKeyById calls GetHashedApiKeyByIdFunc.
-func (mock *apiKeyStoreMock) GetHashedApiKeyById(id int64, stateFilter []TenantState) (HashedApiKey, error) {
+func (mock *apiKeyStoreMock) GetHashedApiKeyById(id int64, stateFilter []tenants.State) (HashedApiKey, error) {
 	if mock.GetHashedApiKeyByIdFunc == nil {
 		panic("apiKeyStoreMock.GetHashedApiKeyByIdFunc: method is nil but apiKeyStore.GetHashedApiKeyById was just called")
 	}
 	callInfo := struct {
 		ID          int64
-		StateFilter []TenantState
+		StateFilter []tenants.State
 	}{
 		ID:          id,
 		StateFilter: stateFilter,
@@ -176,11 +243,11 @@ func (mock *apiKeyStoreMock) GetHashedApiKeyById(id int64, stateFilter []TenantS
 //	len(mockedapiKeyStore.GetHashedApiKeyByIdCalls())
 func (mock *apiKeyStoreMock) GetHashedApiKeyByIdCalls() []struct {
 	ID          int64
-	StateFilter []TenantState
+	StateFilter []tenants.State
 } {
 	var calls []struct {
 		ID          int64
-		StateFilter []TenantState
+		StateFilter []tenants.State
 	}
 	mock.lockGetHashedApiKeyById.RLock()
 	calls = mock.calls.GetHashedApiKeyById
@@ -221,71 +288,5 @@ func (mock *apiKeyStoreMock) ListCalls() []struct {
 	mock.lockList.RLock()
 	calls = mock.calls.List
 	mock.lockList.RUnlock()
-	return calls
-}
-
-// Ensure, that tenantStoreMock does implement tenantStore.
-// If this is not the case, regenerate this file with moq.
-var _ tenantStore = &tenantStoreMock{}
-
-// tenantStoreMock is a mock implementation of tenantStore.
-//
-//	func TestSomethingThatUsestenantStore(t *testing.T) {
-//
-//		// make and configure a mocked tenantStore
-//		mockedtenantStore := &tenantStoreMock{
-//			GetTenantByIdFunc: func(id int64) (Tenant, error) {
-//				panic("mock out the GetTenantById method")
-//			},
-//		}
-//
-//		// use mockedtenantStore in code that requires tenantStore
-//		// and then make assertions.
-//
-//	}
-type tenantStoreMock struct {
-	// GetTenantByIdFunc mocks the GetTenantById method.
-	GetTenantByIdFunc func(id int64) (Tenant, error)
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// GetTenantById holds details about calls to the GetTenantById method.
-		GetTenantById []struct {
-			// ID is the id argument value.
-			ID int64
-		}
-	}
-	lockGetTenantById sync.RWMutex
-}
-
-// GetTenantById calls GetTenantByIdFunc.
-func (mock *tenantStoreMock) GetTenantById(id int64) (Tenant, error) {
-	if mock.GetTenantByIdFunc == nil {
-		panic("tenantStoreMock.GetTenantByIdFunc: method is nil but tenantStore.GetTenantById was just called")
-	}
-	callInfo := struct {
-		ID int64
-	}{
-		ID: id,
-	}
-	mock.lockGetTenantById.Lock()
-	mock.calls.GetTenantById = append(mock.calls.GetTenantById, callInfo)
-	mock.lockGetTenantById.Unlock()
-	return mock.GetTenantByIdFunc(id)
-}
-
-// GetTenantByIdCalls gets all the calls that were made to GetTenantById.
-// Check the length with:
-//
-//	len(mockedtenantStore.GetTenantByIdCalls())
-func (mock *tenantStoreMock) GetTenantByIdCalls() []struct {
-	ID int64
-} {
-	var calls []struct {
-		ID int64
-	}
-	mock.lockGetTenantById.RLock()
-	calls = mock.calls.GetTenantById
-	mock.lockGetTenantById.RUnlock()
 	return calls
 }

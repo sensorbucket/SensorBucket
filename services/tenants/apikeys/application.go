@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
 var (
@@ -41,7 +42,7 @@ func (s *service) GenerateNewApiKey(name string, tenantId int64, expirationDate 
 	if err != nil {
 		return "", err
 	}
-	if tenant.State != Active {
+	if tenant.State != tenants.Active {
 		return "", ErrTenantIsNotValid
 	}
 	newApiKey, err := newApiKey(name, expirationDate)
@@ -69,7 +70,7 @@ func (s *service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAu
 	if err != nil {
 		return ApiKeyAuthenticationDTO{}, ErrInvalidEncoding
 	}
-	hashed, err := s.apiKeyStore.GetHashedApiKeyById(apiKeyId, []TenantState{Active})
+	hashed, err := s.apiKeyStore.GetHashedApiKeyById(apiKeyId, []tenants.State{tenants.Active})
 	if err != nil {
 		return ApiKeyAuthenticationDTO{}, err
 	}
@@ -141,10 +142,10 @@ type service struct {
 type apiKeyStore interface {
 	AddApiKey(tenantID int64, hashedApiKey HashedApiKey) error
 	DeleteApiKey(id int64) error
-	GetHashedApiKeyById(id int64, stateFilter []TenantState) (HashedApiKey, error)
+	GetHashedApiKeyById(id int64, stateFilter []tenants.State) (HashedApiKey, error)
 	List(Filter, pagination.Request) (*pagination.Page[ApiKeyDTO], error)
 }
 
 type tenantStore interface {
-	GetTenantById(id int64) (Tenant, error)
+	GetTenantById(id int64) (tenants.Tenant, error)
 }

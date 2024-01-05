@@ -13,6 +13,7 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	tenantsinfra "sensorbucket.nl/sensorbucket/services/tenants/infrastructure"
 	"sensorbucket.nl/sensorbucket/services/tenants/migrations"
+	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 	tenantstransports "sensorbucket.nl/sensorbucket/services/tenants/transports"
 )
 
@@ -23,18 +24,26 @@ var (
 )
 
 func main() {
-	// Setup API keys service
+	// Setup DB connection
 	db, err := createDB()
 	if err != nil {
 		panic(err)
 	}
-	apiKeyStore := tenantsinfra.NewAPIKeyStorePSQL(db)
-	apiKeySvc := apikeys.NewAPIKeyService(&tmock{}, apiKeyStore)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
+	// Setup Tenants service
+	tenantStore := tenantsinfra.NewTenantsStorePSQL(db)
+	tenantSvc := tenants.NewTenantService(tenantStore)
+	_ = tenantstransports.NewTenantsHTTP(r, tenantSvc, HTTP_BASE)
+
+	// Setup API keys service
+	apiKeyStore := tenantsinfra.NewAPIKeyStorePSQL(db)
+	apiKeySvc := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 	_ = tenantstransports.NewAPIKeysHTTP(r, apiKeySvc, HTTP_BASE)
+
+	// Run the HTTP Server
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
 		WriteTimeout: 5 * time.Second,
@@ -46,15 +55,6 @@ func main() {
 	if err := srv.ListenAndServe(); err != nil {
 		panic(err)
 	}
-}
-
-type tmock struct{}
-
-func (t *tmock) GetTenantById(id int64) (apikeys.Tenant, error) {
-	return apikeys.Tenant{
-		ID:    5,
-		State: apikeys.Active,
-	}, nil
 }
 
 func createDB() (*sqlx.DB, error) {
