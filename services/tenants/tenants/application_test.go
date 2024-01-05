@@ -16,7 +16,7 @@ func TestCreateParentTenantDoesNotExist(t *testing.T) {
 			return Tenant{}, ErrTenantNotFound
 		},
 	}
-	s := service{
+	s := TenantService{
 		tenantStore: &store,
 	}
 
@@ -27,7 +27,7 @@ func TestCreateParentTenantDoesNotExist(t *testing.T) {
 	})
 
 	// Assert
-	assert.ErrorIs(t, err, ErrParentTenantNotFound)
+	assert.ErrorIs(t, err, ErrTenantNotFound)
 	assert.Len(t, store.GetTenantByIdCalls(), 1)
 }
 
@@ -40,7 +40,7 @@ func TestCreateParentTenantCantBeRetrieved(t *testing.T) {
 			return Tenant{}, expErr
 		},
 	}
-	s := service{
+	s := TenantService{
 		tenantStore: &store,
 	}
 
@@ -65,7 +65,7 @@ func TestCreateParentTenantIsNotActive(t *testing.T) {
 			}, nil
 		},
 	}
-	s := service{
+	s := TenantService{
 		tenantStore: &store,
 	}
 
@@ -76,7 +76,7 @@ func TestCreateParentTenantIsNotActive(t *testing.T) {
 	})
 
 	// Assert
-	assert.ErrorIs(t, err, ErrParentTenantNotFound)
+	assert.ErrorIs(t, err, ErrTenantNotActive)
 	assert.Len(t, store.GetTenantByIdCalls(), 1)
 }
 func TestCreateErrorOccurs(t *testing.T) {
@@ -90,11 +90,11 @@ func TestCreateErrorOccurs(t *testing.T) {
 				State: Active,
 			}, nil
 		},
-		CreateFunc: func(tenant Tenant) error {
+		CreateFunc: func(tenant *Tenant) error {
 			return expErr
 		},
 	}
-	s := service{
+	s := TenantService{
 		tenantStore: &store,
 	}
 
@@ -120,36 +120,36 @@ func TestCreateCreatesNewTenant(t *testing.T) {
 				State: Active,
 			}, nil
 		},
-		CreateFunc: func(tenant Tenant) error {
+		CreateFunc: func(tenant *Tenant) error {
 			return nil
 		},
 	}
-	s := service{
+	s := TenantService{
 		tenantStore: &store,
 	}
 
 	// Act
 	parent := int64(675)
 	dto, err := s.CreateNewTenant(TenantDTO{
-		Name:                "blabla",
-		Address:             "somewhere nice",
-		ZipCode:             "no clue",
-		City:                "some place",
-		ChamberOfCommerceID: "ideee",
-		HeadquarterID:       "hqid",
-		ParentID:            &parent,
+		Name:    "blabla",
+		Address: "somewhere nice",
+		ZipCode: "no clue",
+		City:    "some place",
+		// ChamberOfCommerceID: "ideee",
+		// HeadquarterID:       "hqid",
+		ParentID: &parent,
 	})
 
 	// Assert
 	assert.NoError(t, err)
 	assert.Equal(t, TenantDTO{
-		Name:                "blabla",
-		Address:             "somewhere nice",
-		ZipCode:             "no clue",
-		City:                "some place",
-		ChamberOfCommerceID: "ideee",
-		HeadquarterID:       "hqid",
-		ParentID:            &parent,
+		Name:    "blabla",
+		Address: "somewhere nice",
+		ZipCode: "no clue",
+		City:    "some place",
+		// ChamberOfCommerceID: "ideee",
+		// HeadquarterID:       "hqid",
+		ParentID: &parent,
 	}, dto)
 	assert.Len(t, store.GetTenantByIdCalls(), 1)
 	assert.Len(t, store.CreateCalls(), 1)
@@ -164,7 +164,7 @@ func TestArchiveTenantErrorOccursWhileRetrievingTenant(t *testing.T) {
 			return Tenant{}, expErr
 		},
 	}
-	s := service{
+	s := TenantService{
 		tenantStore: &store,
 	}
 
@@ -186,7 +186,7 @@ func TestArchiveTenantTenantIsAlreadyArchived(t *testing.T) {
 			}, nil
 		},
 	}
-	s := service{
+	s := TenantService{
 		tenantStore: &store,
 	}
 
@@ -194,7 +194,7 @@ func TestArchiveTenantTenantIsAlreadyArchived(t *testing.T) {
 	err := s.ArchiveTenant(43124)
 
 	// Assert
-	assert.ErrorIs(t, err, ErrTenantNotFound)
+	assert.ErrorIs(t, err, ErrTenantNotActive)
 	assert.Len(t, store.GetTenantByIdCalls(), 1)
 }
 
@@ -213,7 +213,7 @@ func TestArchiveTenantUpdateErrors(t *testing.T) {
 			return expErr
 		},
 	}
-	s := service{
+	s := TenantService{
 		tenantStore: &store,
 	}
 
@@ -240,7 +240,7 @@ func TestArchiveTenantUpdatesTenantWithArchivedState(t *testing.T) {
 			return nil
 		},
 	}
-	s := service{
+	s := TenantService{
 		tenantStore: &store,
 	}
 
@@ -267,7 +267,7 @@ func TestListTenantsReturnsList(t *testing.T) {
 			}, nil
 		},
 	}
-	s := service{
+	s := TenantService{
 		tenantStore: &store,
 	}
 
@@ -289,7 +289,7 @@ func TestListTenantsErrorOccursWhileRetrievingList(t *testing.T) {
 			return nil, expErr
 		},
 	}
-	s := service{
+	s := TenantService{
 		tenantStore: &store,
 	}
 

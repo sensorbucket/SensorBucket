@@ -11,8 +11,12 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
-func NewTenantsStorePSQL(db *sqlx.DB) *tenantsStore {
-	return &tenantsStore{
+type TenantsStore struct {
+	db *sqlx.DB
+}
+
+func NewTenantsStorePSQL(db *sqlx.DB) *TenantsStore {
+	return &TenantsStore{
 		db: db,
 	}
 }
@@ -21,7 +25,7 @@ type tenantsQueryPage struct {
 	Created time.Time `pagination:"created,DESC"`
 }
 
-func (ts *tenantsStore) GetTenantById(id int64) (tenants.Tenant, error) {
+func (ts *TenantsStore) GetTenantById(id int64) (tenants.Tenant, error) {
 	tenant := tenants.Tenant{}
 	q := sq.Select(
 		"id, name, address, zip_code, city, chamber_of_commerce_id, headquarter_id, archive_time, state, logo, parent_tenant_id").
@@ -52,7 +56,7 @@ func (ts *tenantsStore) GetTenantById(id int64) (tenants.Tenant, error) {
 	return tenant, nil
 }
 
-func (ts *tenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
+func (ts *TenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
 	var err error
 
 	// Pagination
@@ -61,6 +65,7 @@ func (ts *tenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagi
 		return nil, err
 	}
 	q := sq.Select(
+		"id",
 		"name",
 		"address",
 		"zip_code",
@@ -70,7 +75,7 @@ func (ts *tenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagi
 		"archive_time",
 		"logo",
 		"parent_tenant_id",
-	).Distinct().From("tenants")
+	).From("tenants")
 	if len(filter.Name) > 0 {
 		q = q.Where(sq.Eq{"name": filter.Name})
 	}
@@ -90,6 +95,7 @@ func (ts *tenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagi
 	for rows.Next() {
 		tenant := tenants.TenantDTO{}
 		err = rows.Scan(
+			&tenant.ID,
 			&tenant.Name,
 			&tenant.Address,
 			&tenant.ZipCode,
@@ -110,7 +116,7 @@ func (ts *tenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagi
 	return &page, nil
 }
 
-func (ts *tenantsStore) Create(tenant tenants.Tenant) error {
+func (ts *TenantsStore) Create(tenant *tenants.Tenant) error {
 	q := sq.Insert("tenants").
 		Columns(
 			"name",
@@ -136,11 +142,11 @@ func (ts *tenantsStore) Create(tenant tenants.Tenant) error {
 			tenant.Logo,
 			time.Now().UTC(),
 			tenant.ParentID)
-	_, err := q.PlaceholderFormat(sq.Dollar).RunWith(ts.db).Exec()
-	return err
+	q = q.PlaceholderFormat(sq.Dollar).Suffix("RETURNING \"id\"").RunWith(ts.db)
+	return q.QueryRow().Scan(&tenant.ID)
 }
 
-func (ts *tenantsStore) Update(tenant tenants.Tenant) error {
+func (ts *TenantsStore) Update(tenant tenants.Tenant) error {
 	q := sq.Update("tenants").
 		Set("name", tenant.Name).
 		Set("address", tenant.Address).
@@ -166,8 +172,4 @@ func (ts *tenantsStore) Update(tenant tenants.Tenant) error {
 		}
 	}
 	return nil
-}
-
-type tenantsStore struct {
-	db *sqlx.DB
 }

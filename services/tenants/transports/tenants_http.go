@@ -1,8 +1,6 @@
 package tenantstransports
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -44,22 +42,16 @@ func (t *TenantsHTTPTransport) setupRoutes(r chi.Router) {
 func (t *TenantsHTTPTransport) httpCreateTenant() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dto := tenants.TenantDTO{}
-		defer r.Body.Close()
-		err := json.NewDecoder(r.Body).Decode(&dto)
-		if err != nil {
-			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
-				Message: "Invalid JSON body",
-			})
+		if err := web.DecodeJSON(r, &dto); err != nil {
+			web.HTTPError(w, err)
 			return
 		}
-		if validationErrors := ensureValuesNotEmptyOrZero(
-			map[string]interface{}{
-				"name":                   dto.Name,
-				"address":                dto.Address,
-				"zip_code":               dto.ZipCode,
-				"city":                   dto.City,
-				"chamber_of_commerce_id": dto.ChamberOfCommerceID,
-				"headquarter_id":         dto.HeadquarterID,
+		if validationErrors := ensureValuesNotEmpty(
+			map[string]string{
+				"name":     dto.Name,
+				"address":  dto.Address,
+				"zip_code": dto.ZipCode,
+				"city":     dto.City,
 			},
 		); len(validationErrors) > 0 {
 			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
@@ -70,15 +62,8 @@ func (t *TenantsHTTPTransport) httpCreateTenant() http.HandlerFunc {
 		}
 		created, err := t.tenantSvc.CreateNewTenant(dto)
 		if err != nil {
-			if errors.Is(err, tenants.ErrParentTenantNotFound) {
-				web.HTTPResponse(w, http.StatusNotFound, web.APIResponseAny{
-					Message: "Parent tenant could not be found",
-				})
-				return
-			} else {
-				web.HTTPError(w, err)
-				return
-			}
+			web.HTTPError(w, err)
+			return
 		}
 		web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
 			Message: "Created new tenant",
@@ -118,15 +103,8 @@ func (t *TenantsHTTPTransport) httpDeleteTenant() http.HandlerFunc {
 			return
 		}
 		if err := t.tenantSvc.ArchiveTenant(tenantID); err != nil {
-			if errors.Is(err, tenants.ErrTenantNotFound) {
-				web.HTTPResponse(w, http.StatusNotFound, web.APIResponseAny{
-					Message: "Tenant does not exist",
-				})
-				return
-			} else {
-				web.HTTPError(w, err)
-				return
-			}
+			web.HTTPError(w, err)
+			return
 		}
 		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
 			Message: "Deleted tenant",
@@ -134,23 +112,15 @@ func (t *TenantsHTTPTransport) httpDeleteTenant() http.HandlerFunc {
 	}
 }
 
-func ensureValuesNotEmptyOrZero(values map[string]interface{}) []string {
+func ensureValuesNotEmpty[T comparable](values map[string]T) []string {
 	validationErrorMsg := func(name string) string {
 		return fmt.Sprintf("%s must be set", name)
 	}
 	validationErrors := []string{}
 	for name, val := range values {
-		switch val.(type) {
-		case string:
-			if val == "" {
-				validationErrors = append(validationErrors, validationErrorMsg(name))
-			}
-		case int64:
-			if val == int64(0) {
-				validationErrors = append(validationErrors, validationErrorMsg(name))
-			}
-		default:
-			validationErrors = append(validationErrors, fmt.Sprintf("%s is of invalid type", name))
+		empty := *new(T)
+		if val == empty {
+			validationErrors = append(validationErrors, validationErrorMsg(name))
 		}
 	}
 	return validationErrors

@@ -1,13 +1,23 @@
 package tenants
 
-import "time"
+import (
+	"net/http"
+	"time"
+
+	"sensorbucket.nl/sensorbucket/internal/web"
+)
 
 type State int
 
 var (
+	// Tenant States
 	Unknown  State = 0
 	Active   State = 1
 	Archived State = 2
+
+	// Errors
+	ErrTenantNotActive = web.NewError(http.StatusNotFound, "Tenant could not be found", "TENANT_NOT_FOUND")
+	ErrTenantNotFound  = web.NewError(http.StatusNotFound, "Tenant could not be found", "TENANT_NOT_FOUND")
 )
 
 type Tenant struct {
@@ -16,8 +26,8 @@ type Tenant struct {
 	Address             string
 	ZipCode             string
 	City                string
-	ChamberOfCommerceID string
-	HeadquarterID       string
+	ChamberOfCommerceID *string
+	HeadquarterID       *string
 	ArchiveTime         *time.Duration
 	State               State
 	Logo                *string
@@ -41,6 +51,7 @@ func newTenantFromDto(dto TenantDTO) Tenant {
 
 func newTenantDtoFromTenant(tenant Tenant) TenantDTO {
 	return TenantDTO{
+		ID:                  tenant.ID,
 		Name:                tenant.Name,
 		Address:             tenant.Address,
 		ZipCode:             tenant.ZipCode,

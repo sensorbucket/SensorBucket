@@ -18,7 +18,7 @@ var _ tenantStore = &tenantStoreMock{}
 //
 //		// make and configure a mocked tenantStore
 //		mockedtenantStore := &tenantStoreMock{
-//			CreateFunc: func(tenant Tenant) error {
+//			CreateFunc: func(tenant *Tenant) error {
 //				panic("mock out the Create method")
 //			},
 //			GetTenantByIdFunc: func(id int64) (Tenant, error) {
@@ -38,7 +38,7 @@ var _ tenantStore = &tenantStoreMock{}
 //	}
 type tenantStoreMock struct {
 	// CreateFunc mocks the Create method.
-	CreateFunc func(tenant Tenant) error
+	CreateFunc func(tenant *Tenant) error
 
 	// GetTenantByIdFunc mocks the GetTenantById method.
 	GetTenantByIdFunc func(id int64) (Tenant, error)
@@ -54,7 +54,7 @@ type tenantStoreMock struct {
 		// Create holds details about calls to the Create method.
 		Create []struct {
 			// Tenant is the tenant argument value.
-			Tenant Tenant
+			Tenant *Tenant
 		}
 		// GetTenantById holds details about calls to the GetTenantById method.
 		GetTenantById []struct {
@@ -81,12 +81,12 @@ type tenantStoreMock struct {
 }
 
 // Create calls CreateFunc.
-func (mock *tenantStoreMock) Create(tenant Tenant) error {
+func (mock *tenantStoreMock) Create(tenant *Tenant) error {
 	if mock.CreateFunc == nil {
 		panic("tenantStoreMock.CreateFunc: method is nil but tenantStore.Create was just called")
 	}
 	callInfo := struct {
-		Tenant Tenant
+		Tenant *Tenant
 	}{
 		Tenant: tenant,
 	}
@@ -101,10 +101,10 @@ func (mock *tenantStoreMock) Create(tenant Tenant) error {
 //
 //	len(mockedtenantStore.CreateCalls())
 func (mock *tenantStoreMock) CreateCalls() []struct {
-	Tenant Tenant
+	Tenant *Tenant
 } {
 	var calls []struct {
-		Tenant Tenant
+		Tenant *Tenant
 	}
 	mock.lockCreate.RLock()
 	calls = mock.calls.Create
