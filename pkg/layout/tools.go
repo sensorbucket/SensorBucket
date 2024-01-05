@@ -42,6 +42,10 @@ func SnackbarSaveSuccessful(w http.ResponseWriter) http.ResponseWriter {
 	return WithSnackbarSuccess(w, "Save successful")
 }
 
+func SnackbarBadRequest(w http.ResponseWriter, reason string) http.ResponseWriter {
+	return WithSnackbarError(w, reason, http.StatusBadRequest)
+}
+
 func SnackbarSomethingWentWrong(w http.ResponseWriter) http.ResponseWriter {
 	return WithSnackbarError(w, "Something went wrong", http.StatusInternalServerError)
 }

@@ -54,7 +54,7 @@ func (h *ApiKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 			tenantId := r.URL.Query().Get("tenant_id")
 			id, err := strconv.ParseInt(tenantId, 10, 32)
 			if err != nil {
-				layout.SnackbarSomethingWentWrong(w)
+				layout.SnackbarBadRequest(w, "tenant_id must be a valid number")
 				return
 			}
 			req = req.TenantId(id)
@@ -70,7 +70,6 @@ func (h *ApiKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 			nextPage = views.U("/api-keys/table?cursor=" + getCursor(res.Links.GetNext()))
 		}
 
-		fmt.Println("retrieved keys", len(res.Data))
 		viewKeys := []views.ApiKey{}
 		for _, key := range res.Data {
 			viewKeys = append(viewKeys, views.ApiKey{
@@ -124,7 +123,7 @@ func (h *ApiKeysPageHandler) revokeApiKey() http.HandlerFunc {
 		}
 		id, err := strconv.ParseInt(apiKeyId, 10, 64)
 		if err != nil {
-			layout.WithSnackbarError(w, "api_key_id must be a number", http.StatusBadRequest)
+			layout.SnackbarBadRequest(w, "api_key_id must be a number")
 			return
 		}
 		req := h.client.ApiKeysApi.RevokeApiKey(context.Background(), id)
@@ -154,7 +153,7 @@ func (h *ApiKeysPageHandler) createApiKey() http.HandlerFunc {
 		tenantId := r.FormValue("api-key-tenant")
 		id, err := strconv.ParseInt(tenantId, 10, 32)
 		if err != nil {
-			layout.SnackbarSomethingWentWrong(w)
+			layout.SnackbarBadRequest(w, "tenant_id must be a valid number")
 			return
 		}
 
@@ -166,7 +165,7 @@ func (h *ApiKeysPageHandler) createApiKey() http.HandlerFunc {
 		if expiry != "" {
 			parsedTime, err := time.Parse("2006-01-02", expiry)
 			if err != nil {
-				layout.SnackbarSomethingWentWrong(w)
+				layout.SnackbarBadRequest(w, "expiration_date must be a valid time format")
 				return
 			}
 

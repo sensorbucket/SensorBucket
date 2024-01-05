@@ -578,10 +578,6 @@ video {
   grid-column: 1 / -1;
 }
 
-.float-right {
-  float: right;
-}
-
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
@@ -1153,6 +1149,14 @@ video {
 .hover\:text-white:hover {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
+.disabled\:cursor-not-allowed:disabled {
+  cursor: not-allowed;
+}
+
+.disabled\:opacity-50:disabled {
+  opacity: 0.5;
 }
 
 .group:hover .group-hover\:block {
