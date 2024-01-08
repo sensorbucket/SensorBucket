@@ -16,6 +16,5 @@ var (
 
 	// Request and server errors
 	ErrNoPermissionsToCheck    = web.NewError(http.StatusInternalServerError, "No permissions to check", "PERMISSIONS_NOT_CONFIGURED")
-	ErrAuthHeaderMissing       = web.NewError(http.StatusBadRequest, "Authorization header must be set", "AUTH_HEADER_MISSING")
 	ErrAuthHeaderInvalidFormat = web.NewError(http.StatusBadRequest, "Authorization header must be formatted as 'Bearer {token}'", "AUTH_HEADER_INVALID_FORMAT")
 )

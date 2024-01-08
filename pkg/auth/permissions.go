@@ -23,17 +23,11 @@ var (
 	// User worker permissions
 	READ_USER_WORKERS  permission = "READ_USER_WORKERS"
 	WRITE_USER_WORKERS permission = "WRITE_USER_WORKERS"
-
-	// Roles
-	DEVICE_MANAGER role = role([]permission{
-		READ_DEVICES,
-		WRITE_DEVICES,
-	})
-	API_KEY_MANAGER role = role([]permission{
-		READ_API_KEYS,
-		WRITE_API_KEYS,
-	})
 )
+
+func NewRole(permissions ...permission) role {
+	return role(permissions)
+}
 
 type permission string
 
@@ -43,11 +37,7 @@ func (p permission) String() string {
 
 type role []permission
 
-func (r role) Permissions() []permission {
-	return []permission(r)
-}
-
-func (r role) Contains(permissions []permission) bool {
+func (r role) contains(permissions []permission) bool {
 	for _, rolePermission := range r {
 		found := false
 		for _, p := range permissions {

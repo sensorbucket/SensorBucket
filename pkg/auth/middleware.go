@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -16,53 +18,68 @@ var (
 	PermissionsKey     = "permissions"
 )
 
-// Authentication middleware for checking the validity of a JWT
+// TODO: one endpoint should optionally fill the context
+// Otherone ensures context is filled with the information
+
+// 	// TODO:
+// 	// - alg header
+// 	// - checks
+// 	// - sb002-poc
+// 	return secret, nil
+// })
+
+func Protect() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, tenantIdPresent := fromRequestContext[[]int64](r.Context(), CurrentTenantIdKey)
+			_, permissionsPresent := fromRequestContext[[]permission](r.Context(), PermissionsKey)
+			_, userIdPresent := fromRequestContext[int64](r.Context(), UserIdKey)
+			if tenantIdPresent && permissionsPresent && userIdPresent {
+				// All required authentication values are present, allow the request
+				next.ServeHTTP(w, r)
+				return
+			}
+			web.HTTPError(w, ErrUnauthorized)
+		})
+	}
+}
+
+// Authentication middleware for checking the validity of any present JWT
 // Checks if the JWT is signed using the given secret
-// Serves the next HTTP handler if all is OK
-func Protect(secret []byte) func(http.Handler) http.Handler {
+// Serves the next HTTP handler if there is no JWT or if the JWT is OK
+// Anonymous requests are allowed by this handler
+func Authenticate(secret []byte) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			auth := r.Header.Get("Authorization")
 			if auth == "" {
-				web.HTTPError(w, ErrAuthHeaderMissing)
+				// No authorization header present, return OK since there is no info to extract
+				// anonymous requests are allowed
 				return
 			}
-			if !strings.Contains(auth, "Bearer ") {
+			tokenStr, ok := strings.CutPrefix(auth, "Bearer ")
+			if !ok {
 				web.HTTPError(w, ErrAuthHeaderInvalidFormat)
 				return
 			}
-			tokenStr := strings.TrimPrefix(auth, "Bearer ")
 
 			// Retrieve the JWT and ensure it was signed by us
-			token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-				return secret, nil
-			})
+			c := claims{}
+			token, err := jwt.ParseWithClaims(tokenStr, &c, validateJwt)
+			// token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+
+			// TODO: test if expired is relevant
 			if err == nil && token.Valid && token.Claims.Valid() == nil {
 				if claims, ok := token.Claims.(jwt.MapClaims); ok {
 					expired := !claims.VerifyExpiresAt(time.Now().Unix(), true)
 					if !expired {
-						tenantId, ok := currentTenantFromClaims(claims)
-						if !ok {
-							web.HTTPError(w, ErrNoTenantIdFound)
-							return
-						}
-						permissions, ok := permissionsFromClaims(claims)
-						if !ok {
-							web.HTTPError(w, ErrNoPermissions)
-							return
-						}
-						userId, ok := userFromClaims(claims)
-						if !ok {
-							web.HTTPError(w, ErrNoUserId)
-							return
-						}
 
 						// JWT itself is validated, pass it to the actual endpoint for further authorization
 						// First fill the context with user information
 						next.ServeHTTP(w, r.WithContext(contextWithValues(r.Context(), map[string]interface{}{
-							CurrentTenantIdKey: tenantId,
-							UserIdKey:          userId,
-							PermissionsKey:     permissions,
+							CurrentTenantIdKey: []int64{c.TenantId},
+							UserIdKey:          c.UserId,
+							PermissionsKey:     c.Permissions,
 						})))
 						return
 					}
@@ -74,6 +91,35 @@ func Protect(secret []byte) func(http.Handler) http.Handler {
 	}
 }
 
+func validateJwt(token *jwt.Token) (any, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	}
+
+	// Fetch jwks
+	res, err := http.Get("http://ok:4467/.well-known/jwks.json")
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch jwks: %w", err)
+	}
+	var jwks jose.JSONWebKeySet
+	if err := json.NewDecoder(res.Body).Decode(&jwks); err != nil {
+		return nil, fmt.Errorf("failed to decode jwks: %w", err)
+	}
+	kid, ok := token.Header["kid"].(string)
+	if !ok {
+		return nil, fmt.Errorf("no kid in token")
+	}
+	keys := jwks.Key(kid)
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("no keys found for token")
+	}
+	key := keys[0]
+	if key.Algorithm != token.Method.Alg() {
+		return nil, fmt.Errorf("key alg differs from token alg: %s vs %s", key.Algorithm, token.Method.Alg())
+	}
+	return key.Public().Key, nil
+}
+
 func contextWithValues(ctx context.Context, values map[string]interface{}) context.Context {
 	for key, val := range values {
 		ctx = context.WithValue(ctx, key, val)
@@ -81,44 +127,15 @@ func contextWithValues(ctx context.Context, values map[string]interface{}) conte
 	return ctx
 }
 
-func currentTenantFromClaims(claims jwt.MapClaims) (int64, bool) {
-	return int64FromClaims(claims, CurrentTenantIdKey)
+type claims struct {
+	TenantId    int64    `json:"current_tenant_id"`
+	Permissions []string `json:"permissions"`
+	UserId      int64    `json:"user_id"`
 }
 
-func userFromClaims(claims jwt.MapClaims) (int64, bool) {
-	return int64FromClaims(claims, UserIdKey)
-}
-
-func int64FromClaims(claims jwt.MapClaims, key string) (int64, bool) {
-	val, ok := claims[key]
-	if ok {
-		// The JWT library converts the value to a float64 before it does to an int64
-		asFl, ok := val.(float64)
-		if ok {
-			return int64(asFl), true
-		}
+func (c *claims) Valid() error {
+	if c.TenantId > 0 && c.UserId > 0 {
+		return nil
 	}
-	return -1, false
-}
-
-func permissionsFromClaims(claims jwt.MapClaims) ([]permission, bool) {
-	permissions, ok := claims[PermissionsKey]
-	if ok {
-
-		// Permissions are given as a slice
-		if asSlice, ok := permissions.([]interface{}); ok {
-
-			// Each permission in the slice is of type interface but should be able to be converted to a string
-			res := []permission{}
-			for _, perm := range asSlice {
-				if val, ok := perm.(string); ok {
-					res = append(res, permission(val))
-				} else {
-					return nil, false
-				}
-			}
-			return res, true
-		}
-	}
-	return nil, false
+	return fmt.Errorf("claims not valid")
 }

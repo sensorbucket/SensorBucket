@@ -17,7 +17,7 @@ func main() {
 	r := chi.NewRouter()
 
 	// Use middleware to validate JWT
-	r.Use(auth.Protect(secretKey))
+	r.Use(auth.Authenticate(secretKey))
 
 	t, err := createToken()
 	if err != nil {
@@ -58,36 +58,40 @@ func someProtectedEndpoint() http.HandlerFunc {
 		filter := Filter{
 			Tenants: []int64{11},
 		}
-		grant, err := auth.MustHavePermissions(r.Context(),
+		err := auth.MustHavePermissions(r.Context(),
 			auth.READ_DEVICES,
 			auth.WRITE_DEVICES)
 		if err != nil {
 			// unauthorized!
+			fmt.Println("must have permissions", err)
 			web.HTTPError(w, err)
 			return
 		}
 
 		if len(filter.Tenants) == 0 {
 			// In case the filter is left empty, the desired output is data of all tenants this user has access to
-			filter.Tenants = grant.GetTenants()
+			filter.Tenants, err = auth.GetTenants(r.Context())
+			fmt.Println(err)
 		}
 
-		if !grant.HasPermissionsFor(filter.Tenants...) {
+		if !auth.HasPermissionsFor(r.Context(), filter.Tenants...) {
 			// unauthorized!
+			fmt.Println("no permis")
 			web.HTTPError(w, auth.ErrUnauthorized)
 			return
 		}
 
-		fmt.Println("Role API_KEY_MANAGER:", grant.HasRole(auth.API_KEY_MANAGER)) // should be false
-		fmt.Println("Role DEVICE_MANAGER:", grant.HasRole(auth.DEVICE_MANAGER))   // should be true
+		apiKeyManagerRole := auth.NewRole(
+			auth.READ_API_KEYS,
+			auth.WRITE_API_KEYS)
+
+		fmt.Println("Role API_KEY_MANAGER:", auth.HasRole(r.Context(), apiKeyManagerRole)) // should be false
 
 		// Authorized!
 		// Both authorized to read and write and access
 		// to all tenants the user has permissions for or just the ones that were inputted by the user
 		fmt.Println("Filter", filter)
-		fmt.Println("Authorized!", grant)
-		fmt.Println("> User ID", grant.GetUser())
-		fmt.Println("> Tenants", grant.GetTenants())
+		fmt.Println("Authorized!")
 		// fmt.Println("> Permissions", grant.permissions)
 	}
 }
@@ -99,10 +103,10 @@ func createToken() (string, error) {
 			"permissions": []string{
 				auth.READ_DEVICES.String(),
 				auth.READ_API_KEYS.String(),
+				auth.WRITE_API_KEYS.String(),
 				auth.WRITE_DEVICES.String(),
 				"asdsad",
 			},
-			"roles": []string{}, // ??
 			// tenant:123,
 			// device:541
 			"user_id": 431,
