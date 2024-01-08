@@ -16,77 +16,6 @@ var (
 	PermissionsKey     = "permissions"
 )
 
-type Grant struct {
-	user        int64
-	tenants     []int64
-	permissions []permission
-}
-
-func (g *Grant) GetUser() int64 {
-	return g.user
-}
-
-func (g *Grant) GetTenants() []int64 {
-	return g.tenants
-}
-
-func (g *Grant) HasPermissionsFor(tenantIds ...int64) bool {
-	if len(tenantIds) == 0 {
-		return false
-	}
-	for _, t := range g.tenants {
-		found := false
-		for _, reqTenant := range tenantIds {
-			if t == reqTenant {
-				// Found tenant in the grant
-				found = true
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-	return true
-}
-
-// Checks if the given context contains said permissions, returns the tenant id for which the context is given the permissions
-// returns nil if all is OK
-func MustHavePermissions(c context.Context, permissions ...permission) (Grant, error) {
-	if len(permissions) == 0 {
-		return Grant{}, ErrNoPermissionsToCheck
-	}
-	tenantId, ok := fromRequestContext[int64](c, CurrentTenantIdKey)
-	if !ok {
-		return Grant{}, ErrNoTenantIdFound
-	}
-	permissionsFromContext, ok := fromRequestContext[[]permission](c, PermissionsKey)
-	if !ok {
-		return Grant{}, ErrNoPermissions
-	}
-	userId, ok := fromRequestContext[int64](c, UserIdKey)
-	if !ok {
-		return Grant{}, ErrNoUserId
-	}
-	for _, p := range permissions {
-		found := false
-		for _, fromContext := range permissionsFromContext {
-			if p == fromContext {
-				found = true
-			}
-		}
-		if !found {
-			return Grant{}, ErrPermissionsNotGranted
-		}
-	}
-	return Grant{
-		user: userId,
-		tenants: []int64{
-			tenantId,
-		},
-		permissions: permissionsFromContext,
-	}, nil
-}
-
 // Authentication middleware for checking the validity of a JWT
 // Checks if the JWT is signed using the given secret
 // Serves the next HTTP handler if all is OK
@@ -192,9 +121,4 @@ func permissionsFromClaims(claims jwt.MapClaims) ([]permission, bool) {
 		}
 	}
 	return nil, false
-}
-
-func fromRequestContext[T any](c context.Context, key string) (T, bool) {
-	val, ok := c.Value(key).(T)
-	return val, ok
 }
