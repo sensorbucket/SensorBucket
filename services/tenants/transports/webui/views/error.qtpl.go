@@ -31,9 +31,9 @@ func (p ErrorPage) StreamBody(qw422016 *qt422016.Writer) {
 //line transports/webui/views/error.qtpl:8
 	qw422016.N().S(`
     <h1>Error!</h1>
-    <span style="color: red;">`)
+    <span class="text-rose-500">`)
 //line transports/webui/views/error.qtpl:10
-	qw422016.E().S(p.Flow.GetError()["reason"].(string))
+	qw422016.E().V(p.Flow.GetError())
 //line transports/webui/views/error.qtpl:10
 	qw422016.N().S(`</span>
 `)

@@ -58,4 +58,5 @@ type LoginPage struct {
             {%= renderSubmit(p.Flow.Ui, "totp") %}
         {%= formEnd() %}
     {% endif %}
+    {%= renderMessage(p.Flow.Ui) %}
 {% endfunc %}

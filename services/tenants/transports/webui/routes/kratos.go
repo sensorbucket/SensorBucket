@@ -19,6 +19,7 @@ const (
 	FlowSettings KratosFlow = "settings"
 	FlowRecovery KratosFlow = "recovery"
 	FlowError    KratosFlow = "error"
+	FlowLogout   KratosFlow = "logout"
 )
 
 type KratosRoutes struct {
@@ -44,6 +45,7 @@ func SetupKratosRoutes() *KratosRoutes {
 	k.router.With(k.extractFlow(FlowRecovery)).Get("/recovery", k.httpRecoveryPage())
 	k.router.With(k.extractFlow(FlowSettings)).Get("/settings", k.httpSettingsPage())
 	k.router.With(k.extractFlow(FlowError)).Get("/error", k.httpErrorPage())
+	k.router.With(k.extractFlow(FlowLogout)).Get("/logout", k.httpLogoutPage())
 
 	return k
 }
@@ -69,11 +71,12 @@ func (k KratosRoutes) redirectStartFlow(w http.ResponseWriter, r *http.Request, 
 func (k KratosRoutes) extractFlow(flow KratosFlow) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		mw := func(w http.ResponseWriter, r *http.Request) {
-			if !r.URL.Query().Has("flow") {
+			if !r.URL.Query().Has("flow") && flow != FlowLogout && flow != FlowError {
 				k.redirectStartFlow(w, r, flow)
 				return
 			}
 			flowID := r.URL.Query().Get("flow")
+			errorID := r.URL.Query().Get("id")
 			cookie := r.Header.Get("Cookie")
 
 			var flowData any
@@ -87,10 +90,12 @@ func (k KratosRoutes) extractFlow(flow KratosFlow) func(next http.Handler) http.
 			case FlowSettings:
 				flowData, resp, err = k.ory.FrontendAPI.GetSettingsFlow(r.Context()).Id(flowID).Cookie(cookie).Execute()
 			case FlowError:
-				flowData, resp, err = k.ory.FrontendAPI.GetFlowError(r.Context()).Id(flowID).Execute()
+				flowData, resp, err = k.ory.FrontendAPI.GetFlowError(r.Context()).Id(errorID).Execute()
+			case FlowLogout:
+				flowData, resp, err = k.ory.FrontendAPI.CreateBrowserLogoutFlow(r.Context()).Cookie(cookie).Execute()
 			}
 			if err != nil {
-				if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized {
+				if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusGone {
 					k.redirectStartFlow(w, r, flow)
 					return
 				}
@@ -108,6 +113,12 @@ func (k KratosRoutes) extractFlow(flow KratosFlow) func(next http.Handler) http.
 func (k KratosRoutes) httpLoginPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		views.WriteLayout(w, views.LoginPage{Flow: loginFlow(r)})
+	}
+}
+
+func (k KratosRoutes) httpLogoutPage() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, logoutFlow(r).GetLogoutUrl(), http.StatusSeeOther)
 	}
 }
 
@@ -135,6 +146,10 @@ func flowAs[T any](r *http.Request) *T {
 
 func loginFlow(r *http.Request) *ory.LoginFlow {
 	return flowAs[ory.LoginFlow](r)
+}
+
+func logoutFlow(r *http.Request) *ory.LogoutFlow {
+	return flowAs[ory.LogoutFlow](r)
 }
 
 func recoveryFlow(r *http.Request) *ory.RecoveryFlow {

@@ -227,32 +227,37 @@ func (p LoginPage) StreamBody(qw422016 *qt422016.Writer) {
 	}
 //line transports/webui/views/login.qtpl:60
 	qw422016.N().S(`
+    `)
+//line transports/webui/views/login.qtpl:61
+	streamrenderMessage(qw422016, p.Flow.Ui)
+//line transports/webui/views/login.qtpl:61
+	qw422016.N().S(`
 `)
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:62
 }
 
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:62
 func (p LoginPage) WriteBody(qq422016 qtio422016.Writer) {
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:62
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:62
 	p.StreamBody(qw422016)
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:62
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:62
 }
 
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:62
 func (p LoginPage) Body() string {
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:62
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:62
 	p.WriteBody(qb422016)
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:62
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:62
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:62
 	return qs422016
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:62
 }
