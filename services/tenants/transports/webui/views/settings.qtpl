@@ -12,15 +12,24 @@ type SettingsPage struct {
     <div class="space-y-12">
         <section>
             <h2 class="text-lg">Change password</h2>
-            {%= renderGroup(p.Flow.Ui, "password") %}
+            {%= formStart(p.Flow.Ui) %}
+                {%= renderGroup(p.Flow.Ui, "password") %}
+                {%= renderSubmit(p.Flow.Ui, "password") %}
+            {%= formEnd() %}
         </section>
         <section>
             <h2 class="text-lg">2FA Backup Codes</h2>
-            {%= renderGroup(p.Flow.Ui, "lookup_secret") %}
+            {%= formStart(p.Flow.Ui) %}
+                {%= renderGroup(p.Flow.Ui, "lookup_secret") %}
+                {%= renderSubmit(p.Flow.Ui, "lookup_secret") %}
+            {%= formEnd() %}
         </section>
         <section>
             <h2 class="text-lg">2FA Authenticator App</h2>
-            {%= renderGroup(p.Flow.Ui, "totp") %}
+            {%= formStart(p.Flow.Ui) %}
+                {%= renderGroup(p.Flow.Ui, "totp") %}
+                {%= renderSubmit(p.Flow.Ui, "totp") %}
+            {%= formEnd() %}
         </section>
     </div>
 {% endfunc %}

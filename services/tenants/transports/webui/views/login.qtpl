@@ -33,10 +33,18 @@ type LoginPage struct {
 } %}
 
 {% func (p LoginPage) Body() %}
-            <h1 class="text-2xl mt-4 ">Login</h1>
+    {% if !isMFA(p.Flow) %}
+        <h1 class="text-2xl mt-4 ">Login</h1>
+        {%= formStart(p.Flow.Ui) %}
+            {%= renderGroup(p.Flow.Ui, "default") %}
             {%= renderGroup(p.Flow.Ui, "password") %}
-            <a
-                href="{%s U("/auth/recovery") %}"
-                class="block text-center"
-            >Forgot your password?</a>
+            {%= renderSubmit(p.Flow.Ui, "submit") %}
+        {%= formEnd() %}
+    {% else %}
+        <h1 class="text-2xl mt-4 ">Verify login with</h1>
+        {%= formStart(p.Flow.Ui) %}
+            {%= renderGroup(p.Flow.Ui, "totp") %}
+            {%= renderSubmit(p.Flow.Ui, "totp") %}
+        {%= formEnd() %}
+    {% endif %}
 {% endfunc %}

@@ -107,46 +107,94 @@ type LoginPage struct {
 func (p LoginPage) StreamBody(qw422016 *qt422016.Writer) {
 //line transports/webui/views/login.qtpl:35
 	qw422016.N().S(`
-            <h1 class="text-2xl mt-4 ">Login</h1>
+    `)
+//line transports/webui/views/login.qtpl:36
+	if !isMFA(p.Flow) {
+//line transports/webui/views/login.qtpl:36
+		qw422016.N().S(`
+        <h1 class="text-2xl mt-4 ">Login</h1>
+        `)
+//line transports/webui/views/login.qtpl:38
+		streamformStart(qw422016, p.Flow.Ui)
+//line transports/webui/views/login.qtpl:38
+		qw422016.N().S(`
             `)
-//line transports/webui/views/login.qtpl:37
-	streamrenderGroup(qw422016, p.Flow.Ui, "password")
-//line transports/webui/views/login.qtpl:37
+//line transports/webui/views/login.qtpl:39
+		streamrenderGroup(qw422016, p.Flow.Ui, "default")
+//line transports/webui/views/login.qtpl:39
+		qw422016.N().S(`
+            `)
+//line transports/webui/views/login.qtpl:40
+		streamrenderGroup(qw422016, p.Flow.Ui, "password")
+//line transports/webui/views/login.qtpl:40
+		qw422016.N().S(`
+            `)
+//line transports/webui/views/login.qtpl:41
+		streamrenderSubmit(qw422016, p.Flow.Ui, "submit")
+//line transports/webui/views/login.qtpl:41
+		qw422016.N().S(`
+        `)
+//line transports/webui/views/login.qtpl:42
+		streamformEnd(qw422016)
+//line transports/webui/views/login.qtpl:42
+		qw422016.N().S(`
+    `)
+//line transports/webui/views/login.qtpl:43
+	} else {
+//line transports/webui/views/login.qtpl:43
+		qw422016.N().S(`
+        <h1 class="text-2xl mt-4 ">Verify login with</h1>
+        `)
+//line transports/webui/views/login.qtpl:45
+		streamformStart(qw422016, p.Flow.Ui)
+//line transports/webui/views/login.qtpl:45
+		qw422016.N().S(`
+            `)
+//line transports/webui/views/login.qtpl:46
+		streamrenderGroup(qw422016, p.Flow.Ui, "totp")
+//line transports/webui/views/login.qtpl:46
+		qw422016.N().S(`
+            `)
+//line transports/webui/views/login.qtpl:47
+		streamrenderSubmit(qw422016, p.Flow.Ui, "totp")
+//line transports/webui/views/login.qtpl:47
+		qw422016.N().S(`
+        `)
+//line transports/webui/views/login.qtpl:48
+		streamformEnd(qw422016)
+//line transports/webui/views/login.qtpl:48
+		qw422016.N().S(`
+    `)
+//line transports/webui/views/login.qtpl:49
+	}
+//line transports/webui/views/login.qtpl:49
 	qw422016.N().S(`
-            <a
-                href="`)
-//line transports/webui/views/login.qtpl:39
-	qw422016.E().S(U("/auth/recovery"))
-//line transports/webui/views/login.qtpl:39
-	qw422016.N().S(`"
-                class="block text-center"
-            >Forgot your password?</a>
 `)
-//line transports/webui/views/login.qtpl:42
+//line transports/webui/views/login.qtpl:50
 }
 
-//line transports/webui/views/login.qtpl:42
+//line transports/webui/views/login.qtpl:50
 func (p LoginPage) WriteBody(qq422016 qtio422016.Writer) {
-//line transports/webui/views/login.qtpl:42
+//line transports/webui/views/login.qtpl:50
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/login.qtpl:42
+//line transports/webui/views/login.qtpl:50
 	p.StreamBody(qw422016)
-//line transports/webui/views/login.qtpl:42
+//line transports/webui/views/login.qtpl:50
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/login.qtpl:42
+//line transports/webui/views/login.qtpl:50
 }
 
-//line transports/webui/views/login.qtpl:42
+//line transports/webui/views/login.qtpl:50
 func (p LoginPage) Body() string {
-//line transports/webui/views/login.qtpl:42
+//line transports/webui/views/login.qtpl:50
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/login.qtpl:42
+//line transports/webui/views/login.qtpl:50
 	p.WriteBody(qb422016)
-//line transports/webui/views/login.qtpl:42
+//line transports/webui/views/login.qtpl:50
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/login.qtpl:42
+//line transports/webui/views/login.qtpl:50
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/login.qtpl:42
+//line transports/webui/views/login.qtpl:50
 	return qs422016
-//line transports/webui/views/login.qtpl:42
+//line transports/webui/views/login.qtpl:50
 }

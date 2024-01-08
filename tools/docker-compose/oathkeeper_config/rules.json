@@ -1,8 +1,31 @@
 [
     {
+        "id": "authentication",
+        "match": {
+            "url": "http://<127.0.0.1|localhost>:3000/<\\.ory/.*|tenants/auth/.*|tenants/static/.*>",
+            "methods": [
+                "GET","POST","PATCH","PUT","DELETE"
+            ]
+        },
+        "authenticators": [
+            {
+                "handler": "noop"
+            }
+        ],
+        "authorizer": {
+            "handler": "allow"
+        },
+        "mutators": [
+            {
+                "handler": "id_token",
+                "config": {}
+            }
+        ]
+    },
+    {
         "id": "default",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<.*>",
+            "url": "http://<127.0.0.1|localhost>:3000/<api|dev>/<.*>",
             "methods": [
                 "GET","POST","PATCH","PUT","DELETE"
             ]

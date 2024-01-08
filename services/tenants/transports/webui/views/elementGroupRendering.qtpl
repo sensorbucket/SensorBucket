@@ -1,0 +1,31 @@
+{% import (
+    ory "github.com/ory/client-go"
+    )
+%}
+
+{% func renderSubmit(ui ory.UiContainer, group string) %}
+    {%= _renderNodes(
+        filter.Group("default").InputType("hidden").ContinueWithoutThese().
+            Group(group).InputType("submit").GetWithThese(ui.Nodes))%}
+{% endfunc %}
+
+{% func renderGroup(ui ory.UiContainer, group string) %}
+    {%= _renderNodes(
+        filter.Group("default").InputType("hidden").ContinueWithoutThese().
+            Group(group).InputType("submit").ContinueWithoutThese().
+            Group(group).GetWithThese(ui.Nodes))%}
+{% endfunc %}
+
+{% func _renderDefaults(ui ory.UiContainer) %}
+    {%= _renderNodes(filter.Group("default").InputType("hidden").GetWithThese(ui.Nodes)) %}
+{% endfunc %}
+
+{% func formStart(ui ory.UiContainer) %}
+    <form
+        action="{%s ui.Action %}" method="{%s ui.Method %}"/>
+        {%= _renderDefaults(ui) %}
+{% endfunc %}
+
+{% func formEnd() %}
+    </form>
+{% endfunc %}

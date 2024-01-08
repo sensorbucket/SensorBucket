@@ -6,5 +6,8 @@ type RecoveryPage struct {
 
 {% func (p RecoveryPage) Body() %}
     <h1 class="text-2xl mt-4 ">Recover account</h1>
-    {%= renderGroup(p.Flow.Ui, "code") %}
+    {%= formStart(p.Flow.Ui) %}
+        {%= renderGroup(p.Flow.Ui, "code") %}
+        {%= renderSubmit(p.Flow.Ui, "code") %}
+    {%= formEnd() %}
 {% endfunc %}

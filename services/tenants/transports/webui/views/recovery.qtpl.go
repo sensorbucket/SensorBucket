@@ -32,35 +32,50 @@ func (p RecoveryPage) StreamBody(qw422016 *qt422016.Writer) {
     <h1 class="text-2xl mt-4 ">Recover account</h1>
     `)
 //line transports/webui/views/recovery.qtpl:9
-	streamrenderGroup(qw422016, p.Flow.Ui, "code")
+	streamformStart(qw422016, p.Flow.Ui)
 //line transports/webui/views/recovery.qtpl:9
 	qw422016.N().S(`
+        `)
+//line transports/webui/views/recovery.qtpl:10
+	streamrenderGroup(qw422016, p.Flow.Ui, "code")
+//line transports/webui/views/recovery.qtpl:10
+	qw422016.N().S(`
+        `)
+//line transports/webui/views/recovery.qtpl:11
+	streamrenderSubmit(qw422016, p.Flow.Ui, "code")
+//line transports/webui/views/recovery.qtpl:11
+	qw422016.N().S(`
+    `)
+//line transports/webui/views/recovery.qtpl:12
+	streamformEnd(qw422016)
+//line transports/webui/views/recovery.qtpl:12
+	qw422016.N().S(`
 `)
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:13
 }
 
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:13
 func (p RecoveryPage) WriteBody(qq422016 qtio422016.Writer) {
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:13
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:13
 	p.StreamBody(qw422016)
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:13
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:13
 }
 
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:13
 func (p RecoveryPage) Body() string {
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:13
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:13
 	p.WriteBody(qb422016)
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:13
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:13
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:13
 	return qs422016
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:13
 }

@@ -133,7 +133,6 @@ services:
         source: ./tools/docker-compose/kratos_config
         target: /etc/config/kratos
     command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
-    restart: on-failure
   kratos:
     depends_on:
       - kratos-migrate
@@ -141,7 +140,6 @@ services:
     ports:
       - '4433:4433' # public
       - '4434:4434' # admin
-    restart: unless-stopped
     environment:
       - DSN=postgres://sensorbucket:sensorbucket@db:5432/kratos?sslmode=disable
       - LOG_LEVEL=trace

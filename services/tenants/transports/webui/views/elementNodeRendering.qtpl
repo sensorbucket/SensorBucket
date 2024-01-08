@@ -1,18 +1,18 @@
 {% import (
     ory "github.com/ory/client-go"
-    "github.com/samber/lo"
     )
 %}
-{% func renderNode(n ory.UiNode) %}
+
+{% func _renderNode(n ory.UiNode) %}
     {% switch attr := n.Attributes.GetActualInstance().(type) %}
         {% case *ory.UiNodeInputAttributes %}
-            {%= renderInputNode(n, *attr) %}
+            {%= _renderInputNode(n, *attr) %}
         {% case *ory.UiNodeImageAttributes %}
-            {%= renderImageNode(n, *attr) %}
+            {%= _renderImageNode(n, *attr) %}
     {% endswitch %}
 {% endfunc %}
 
-{% func renderImageNode(n ory.UiNode, attr ory.UiNodeImageAttributes) %}
+{% func _renderImageNode(n ory.UiNode, attr ory.UiNodeImageAttributes) %}
     <img
         src="{%s attr.GetSrc() %}"
         id="{%s attr.GetId() %}"
@@ -21,12 +21,24 @@
     />
 {% endfunc %}
 
-{% func renderInputNode(n ory.UiNode, attr ory.UiNodeInputAttributes) %}
+{% func _renderNodes(nodes []ory.UiNode) %}
+    {% for _, n := range nodes %}
+        {%= _renderNode(n) %}
+    {% endfor %}
+{% endfunc %}
+
+{% func _renderInputNode(n ory.UiNode, attr ory.UiNodeInputAttributes) %}
     {% if attr.GetType() == "submit" %}
     <button 
         class="text-center p-2 bg-secondary-500 text-white"
-        {%= renderInputNodeAttributes(n, attr) %}
+        {%= _renderInputNodeAttributes(n, attr) %}
         >{%s n.Meta.GetLabel().Text %}</button>
+    {% if label, ok := n.Meta.GetLabelOk(); ok && label.GetId() == 1010001 %}
+        <a
+            href="{%s U("/auth/recovery") %}"
+            class="block text-center"
+        >Forgot your password?</a>
+    {% endif %}
     {% return %}
     {% endif %}
     <fieldset>
@@ -36,7 +48,7 @@
         {% endif %}
         <input 
             class="border px-2 py-1"
-            {%= renderInputNodeAttributes(n, attr) %}
+            {%= _renderInputNodeAttributes(n, attr) %}
             />
         {% if n.Meta.HasLabel() %}
         </label>
@@ -47,7 +59,7 @@
     </fieldset>
 {% endfunc %}
 
-{% func renderInputNodeAttributes(n ory.UiNode, attr ory.UiNodeInputAttributes) %}
+{% func _renderInputNodeAttributes(n ory.UiNode, attr ory.UiNodeInputAttributes) %}
     name="{%s attr.GetName() %}"
     type="{%s attr.GetType() %}"
     {% if attr.GetAutocomplete() != "" %}
@@ -73,30 +85,3 @@
     {% endif %}
 {% endfunc %}
 
-{% func renderGroup(ui ory.UiContainer, group string) %}
-    <form 
-        class="flex flex-col space-y-2"
-        method="{%s ui.Method %}" action="{%s ui.Action %}">
-        {%= renderDefaultNodes(ui) %}
-        {% for _, n := range filterNodes(ui.Nodes,group) %}
-            {%= renderNode(n) %}
-        {% endfor %}
-        {% for _, msg := range ui.GetMessages() %}
-            <span style="color: red;">{%s msg.GetText() %}</span>
-        {% endfor %}
-    </form>
-{% endfunc %}
-
-{% func renderDefaultNodes(ui ory.UiContainer) %}
-        {% for _, n := range filterNodes(ui.Nodes, "default") %}
-            {%= renderNode(n) %}
-        {% endfor %}
-{% endfunc %}
-
-{% code 
-func filterNodes(n []ory.UiNode, group string) []ory.UiNode {
-    return lo.Filter(n, func(n ory.UiNode, _ int) bool {
-        return n.GetGroup() == group
-    })
-}
-%}
