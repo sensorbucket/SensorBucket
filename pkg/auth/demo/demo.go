@@ -60,7 +60,6 @@ func someProtectedEndpoint() http.HandlerFunc {
 		}
 		grant, err := auth.MustHavePermissions(r.Context(),
 			auth.READ_DEVICES,
-			auth.READ_API_KEYS,
 			auth.WRITE_DEVICES)
 		if err != nil {
 			// unauthorized!
@@ -103,6 +102,7 @@ func createToken() (string, error) {
 				auth.WRITE_DEVICES.String(),
 				"asdsad",
 			},
+			"roles": []string{}, // ??
 			// tenant:123,
 			// device:541
 			"user_id": 431,
