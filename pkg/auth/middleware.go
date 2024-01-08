@@ -1,8 +1,7 @@
-package main
+package auth
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -11,17 +10,62 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
-func MustHavePermissions(c context.Context, permissions ...string) error {
+var (
+	UserIdKey          = "user_id"
+	CurrentTenantIdKey = "current_tenant_id"
+	PermissionsKey     = "permissions"
+)
+
+type Grant struct {
+	user        int64
+	tenants     []int64
+	permissions []permission
+}
+
+func (g *Grant) GetUser() int64 {
+	return g.user
+}
+
+func (g *Grant) GetTenants() []int64 {
+	return g.tenants
+}
+
+func (g *Grant) HasPermissionsFor(tenantIds ...int64) bool {
+	if len(tenantIds) == 0 {
+		return false
+	}
+	for _, t := range g.tenants {
+		found := false
+		for _, reqTenant := range tenantIds {
+			if t == reqTenant {
+				// Found tenant in the grant
+				found = true
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+// Checks if the given context contains said permissions, returns the tenant id for which the context is given the permissions
+// returns nil if all is OK
+func MustHavePermissions(c context.Context, permissions ...permission) (Grant, error) {
 	if len(permissions) == 0 {
-		return ErrNoPermissionsToCheck
+		return Grant{}, ErrNoPermissionsToCheck
 	}
-	_, err := tenantIdFromRequestContext(c)
-	if err != nil {
-		return err
+	tenantId, ok := fromRequestContext[int64](c, CurrentTenantIdKey)
+	if !ok {
+		return Grant{}, ErrNoTenantIdFound
 	}
-	permissionsFromContext, err := permissionsFromRequestContext(c)
-	if err != nil {
-		return err
+	permissionsFromContext, ok := fromRequestContext[[]permission](c, PermissionsKey)
+	if !ok {
+		return Grant{}, ErrNoPermissions
+	}
+	userId, ok := fromRequestContext[int64](c, UserIdKey)
+	if !ok {
+		return Grant{}, ErrNoUserId
 	}
 	for _, p := range permissions {
 		found := false
@@ -31,12 +75,21 @@ func MustHavePermissions(c context.Context, permissions ...string) error {
 			}
 		}
 		if !found {
-			return ErrPermissionsNotGranted
+			return Grant{}, ErrPermissionsNotGranted
 		}
 	}
-	return nil
+	return Grant{
+		user: userId,
+		tenants: []int64{
+			tenantId,
+		},
+		permissions: permissionsFromContext,
+	}, nil
 }
 
+// Authentication middleware for checking the validity of a JWT
+// Checks if the JWT is signed using the given secret
+// Serves the next HTTP handler if all is OK
 func Protect(secret []byte) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -59,28 +112,29 @@ func Protect(secret []byte) func(http.Handler) http.Handler {
 				if claims, ok := token.Claims.(jwt.MapClaims); ok {
 					expired := !claims.VerifyExpiresAt(time.Now().Unix(), true)
 					if !expired {
-						tenantId, err := currentTenantFromClaims(claims)
-						if err != nil {
-							web.HTTPError(w, err)
+						tenantId, ok := currentTenantFromClaims(claims)
+						if !ok {
+							web.HTTPError(w, ErrNoTenantIdFound)
 							return
 						}
-						permissions, err := permissionsFromClaims(claims)
-						if err != nil {
-							web.HTTPError(w, err)
+						permissions, ok := permissionsFromClaims(claims)
+						if !ok {
+							web.HTTPError(w, ErrNoPermissions)
+							return
+						}
+						userId, ok := userFromClaims(claims)
+						if !ok {
+							web.HTTPError(w, ErrNoUserId)
 							return
 						}
 
 						// JWT itself is validated, pass it to the actual endpoint for further authorization
 						// First fill the context with user information
-						next.ServeHTTP(w, r.WithContext(
-							context.
-								WithValue(
-									context.WithValue(r.Context(),
-										"current_tenant_id", tenantId),
-									"permissions",
-									permissions,
-								),
-						))
+						next.ServeHTTP(w, r.WithContext(contextWithValues(r.Context(), map[string]interface{}{
+							CurrentTenantIdKey: tenantId,
+							UserIdKey:          userId,
+							PermissionsKey:     permissions,
+						})))
 						return
 					}
 
@@ -91,50 +145,56 @@ func Protect(secret []byte) func(http.Handler) http.Handler {
 	}
 }
 
-func currentTenantFromClaims(claims jwt.MapClaims) (int64, error) {
-	tenant, ok := claims["current_tenant_id"]
-	if ok {
-		// The JWT library converts the value to a float64 before it does to an int64
-		asFl, ok := tenant.(float64)
-		if ok {
-			return int64(asFl), nil
-		}
+func contextWithValues(ctx context.Context, values map[string]interface{}) context.Context {
+	for key, val := range values {
+		ctx = context.WithValue(ctx, key, val)
 	}
-	return -1, ErrNoTenantIdFound
+	return ctx
 }
 
-func permissionsFromClaims(claims jwt.MapClaims) ([]string, error) {
-	permissions, ok := claims["permissions"]
+func currentTenantFromClaims(claims jwt.MapClaims) (int64, bool) {
+	return int64FromClaims(claims, CurrentTenantIdKey)
+}
+
+func userFromClaims(claims jwt.MapClaims) (int64, bool) {
+	return int64FromClaims(claims, UserIdKey)
+}
+
+func int64FromClaims(claims jwt.MapClaims, key string) (int64, bool) {
+	val, ok := claims[key]
+	if ok {
+		// The JWT library converts the value to a float64 before it does to an int64
+		asFl, ok := val.(float64)
+		if ok {
+			return int64(asFl), true
+		}
+	}
+	return -1, false
+}
+
+func permissionsFromClaims(claims jwt.MapClaims) ([]permission, bool) {
+	permissions, ok := claims[PermissionsKey]
 	if ok {
 
 		// Permissions are given as a slice
 		if asSlice, ok := permissions.([]interface{}); ok {
 
 			// Each permission in the slice is of type interface but should be able to be converted to a string
-			res := []string{}
+			res := []permission{}
 			for _, perm := range asSlice {
 				if val, ok := perm.(string); ok {
-					res = append(res, val)
+					res = append(res, permission(val))
 				} else {
-					return nil, fmt.Errorf("permission could not be converted to string")
+					return nil, false
 				}
 			}
-			return res, nil
+			return res, true
 		}
 	}
-	return nil, ErrNoPermissions
+	return nil, false
 }
 
-func permissionsFromRequestContext(c context.Context) ([]string, error) {
-	if permissions, ok := c.Value("permissions").([]string); ok {
-		return permissions, nil
-	}
-	return nil, ErrNoPermissions
-}
-
-func tenantIdFromRequestContext(c context.Context) (int64, error) {
-	if tenantId, ok := c.Value("current_tenant_id").(int64); ok {
-		return tenantId, nil
-	}
-	return -1, ErrNoTenantIdFound
+func fromRequestContext[T any](c context.Context, key string) (T, bool) {
+	val, ok := c.Value(key).(T)
+	return val, ok
 }
