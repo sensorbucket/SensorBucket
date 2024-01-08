@@ -28,15 +28,23 @@ func hasGroup(n []ory.UiNode, group string) bool {
 
 type predicate func(ory.UiNode) bool
 
-type filterChain []predicate
+type filterChain struct {
+	nodes      []ory.UiNode
+	predicates []predicate
+}
 
-var filter filterChain
+func filter(n []ory.UiNode) filterChain {
+	return filterChain{
+		nodes:      n,
+		predicates: make([]predicate, 0),
+	}
+}
 
 func (fc filterChain) Group(g string) filterChain {
 	p := func(n ory.UiNode) bool {
 		return n.GetGroup() == g
 	}
-	fc = append(fc, p)
+	fc.predicates = append(fc.predicates, p)
 	return fc
 }
 
@@ -44,7 +52,7 @@ func (fc filterChain) InputType(t string) filterChain {
 	p := func(n ory.UiNode) bool {
 		return n.Attributes.UiNodeInputAttributes != nil && n.Attributes.UiNodeInputAttributes.GetType() == t
 	}
-	fc = append(fc, p)
+	fc.predicates = append(fc.predicates, p)
 	return fc
 }
 
@@ -52,23 +60,23 @@ func (fc filterChain) InputName(name string) filterChain {
 	p := func(n ory.UiNode) bool {
 		return n.Attributes.UiNodeInputAttributes != nil && n.Attributes.UiNodeInputAttributes.GetName() == name
 	}
-	fc = append(fc, p)
+	fc.predicates = append(fc.predicates, p)
 	return fc
 }
 
-func (fc filterChain) GetWithThese(n []ory.UiNode) []ory.UiNode {
-	for _, p := range fc {
-		n = lo.Filter(n, func(item ory.UiNode, _ int) bool {
+func (fc filterChain) GetWithThese() []ory.UiNode {
+	for _, p := range fc.predicates {
+		fc.nodes = lo.Filter(fc.nodes, func(item ory.UiNode, _ int) bool {
 			return p(item)
 		})
 	}
-	return n
+	return fc.nodes
 }
 
-func (fc filterChain) GetWithoutThese(n []ory.UiNode) []ory.UiNode {
+func (fc filterChain) GetWithoutThese() []ory.UiNode {
 	applicables := []ory.UiNode{}
-	for _, p := range fc {
-		n = lo.Filter(n, func(item ory.UiNode, _ int) bool {
+	for _, p := range fc.predicates {
+		fc.nodes = lo.Filter(fc.nodes, func(item ory.UiNode, _ int) bool {
 			if p(item) {
 				return true
 			}
@@ -80,15 +88,9 @@ func (fc filterChain) GetWithoutThese(n []ory.UiNode) []ory.UiNode {
 }
 
 func (fc filterChain) ContinueWithThese() filterChain {
-	p := func(item ory.UiNode) bool {
-		return len(fc.GetWithThese([]ory.UiNode{item})) > 0
-	}
-	return filterChain{p}
+	return filter(fc.GetWithThese())
 }
 
 func (fc filterChain) ContinueWithoutThese() filterChain {
-	p := func(item ory.UiNode) bool {
-		return len(fc.GetWithoutThese([]ory.UiNode{item})) > 0
-	}
-	return filterChain{p}
+	return filter(fc.GetWithoutThese())
 }

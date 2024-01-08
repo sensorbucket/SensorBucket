@@ -22,210 +22,276 @@ var (
 	_ = qt422016.AcquireByteBuffer
 )
 
-//line transports/webui/views/elementGroupRendering.qtpl:6
-func streamrenderSubmit(qw422016 *qt422016.Writer, ui ory.UiContainer, group string) {
-//line transports/webui/views/elementGroupRendering.qtpl:6
-	qw422016.N().S(`
-    `)
 //line transports/webui/views/elementGroupRendering.qtpl:7
-	stream_renderNodes(qw422016,
-		filter.Group("default").InputType("hidden").ContinueWithoutThese().
-			Group(group).InputType("submit").GetWithThese(ui.Nodes))
-//line transports/webui/views/elementGroupRendering.qtpl:9
-	qw422016.N().S(`
-`)
-//line transports/webui/views/elementGroupRendering.qtpl:10
-}
-
-//line transports/webui/views/elementGroupRendering.qtpl:10
-func writerenderSubmit(qq422016 qtio422016.Writer, ui ory.UiContainer, group string) {
-//line transports/webui/views/elementGroupRendering.qtpl:10
-	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementGroupRendering.qtpl:10
-	streamrenderSubmit(qw422016, ui, group)
-//line transports/webui/views/elementGroupRendering.qtpl:10
-	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementGroupRendering.qtpl:10
-}
-
-//line transports/webui/views/elementGroupRendering.qtpl:10
-func renderSubmit(ui ory.UiContainer, group string) string {
-//line transports/webui/views/elementGroupRendering.qtpl:10
-	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementGroupRendering.qtpl:10
-	writerenderSubmit(qb422016, ui, group)
-//line transports/webui/views/elementGroupRendering.qtpl:10
-	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementGroupRendering.qtpl:10
-	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementGroupRendering.qtpl:10
-	return qs422016
-//line transports/webui/views/elementGroupRendering.qtpl:10
+func filterWithoutDefaults(n []ory.UiNode) filterChain {
+	return filter(n).Group("default").InputType("hidden").ContinueWithoutThese()
 }
 
 //line transports/webui/views/elementGroupRendering.qtpl:12
-func streamrenderGroup(qw422016 *qt422016.Writer, ui ory.UiContainer, group string) {
+func streamrenderSubmit(qw422016 *qt422016.Writer, ui ory.UiContainer, group string) {
 //line transports/webui/views/elementGroupRendering.qtpl:12
 	qw422016.N().S(`
     `)
 //line transports/webui/views/elementGroupRendering.qtpl:13
 	stream_renderNodes(qw422016,
-		filter.Group("default").InputType("hidden").ContinueWithoutThese().
-			Group(group).InputType("submit").ContinueWithoutThese().
-			Group(group).GetWithThese(ui.Nodes))
-//line transports/webui/views/elementGroupRendering.qtpl:16
+		filterWithoutDefaults(ui.Nodes).Group(group).InputType("submit").GetWithThese())
+//line transports/webui/views/elementGroupRendering.qtpl:14
 	qw422016.N().S(`
 `)
-//line transports/webui/views/elementGroupRendering.qtpl:17
+//line transports/webui/views/elementGroupRendering.qtpl:15
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:17
-func writerenderGroup(qq422016 qtio422016.Writer, ui ory.UiContainer, group string) {
-//line transports/webui/views/elementGroupRendering.qtpl:17
+//line transports/webui/views/elementGroupRendering.qtpl:15
+func writerenderSubmit(qq422016 qtio422016.Writer, ui ory.UiContainer, group string) {
+//line transports/webui/views/elementGroupRendering.qtpl:15
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementGroupRendering.qtpl:17
-	streamrenderGroup(qw422016, ui, group)
-//line transports/webui/views/elementGroupRendering.qtpl:17
+//line transports/webui/views/elementGroupRendering.qtpl:15
+	streamrenderSubmit(qw422016, ui, group)
+//line transports/webui/views/elementGroupRendering.qtpl:15
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementGroupRendering.qtpl:17
+//line transports/webui/views/elementGroupRendering.qtpl:15
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:17
-func renderGroup(ui ory.UiContainer, group string) string {
-//line transports/webui/views/elementGroupRendering.qtpl:17
+//line transports/webui/views/elementGroupRendering.qtpl:15
+func renderSubmit(ui ory.UiContainer, group string) string {
+//line transports/webui/views/elementGroupRendering.qtpl:15
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementGroupRendering.qtpl:17
-	writerenderGroup(qb422016, ui, group)
-//line transports/webui/views/elementGroupRendering.qtpl:17
+//line transports/webui/views/elementGroupRendering.qtpl:15
+	writerenderSubmit(qb422016, ui, group)
+//line transports/webui/views/elementGroupRendering.qtpl:15
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementGroupRendering.qtpl:17
+//line transports/webui/views/elementGroupRendering.qtpl:15
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementGroupRendering.qtpl:17
+//line transports/webui/views/elementGroupRendering.qtpl:15
 	return qs422016
-//line transports/webui/views/elementGroupRendering.qtpl:17
+//line transports/webui/views/elementGroupRendering.qtpl:15
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:19
-func stream_renderDefaults(qw422016 *qt422016.Writer, ui ory.UiContainer) {
-//line transports/webui/views/elementGroupRendering.qtpl:19
+//line transports/webui/views/elementGroupRendering.qtpl:17
+func streamrenderGroup(qw422016 *qt422016.Writer, ui ory.UiContainer, group string) {
+//line transports/webui/views/elementGroupRendering.qtpl:17
 	qw422016.N().S(`
     `)
-//line transports/webui/views/elementGroupRendering.qtpl:20
-	stream_renderNodes(qw422016, filter.Group("default").InputType("hidden").GetWithThese(ui.Nodes))
-//line transports/webui/views/elementGroupRendering.qtpl:20
+//line transports/webui/views/elementGroupRendering.qtpl:18
+	stream_renderNodes(qw422016,
+		filterWithoutDefaults(ui.Nodes).
+			Group(group).InputType("submit").ContinueWithoutThese().
+			Group(group).GetWithThese())
+//line transports/webui/views/elementGroupRendering.qtpl:21
 	qw422016.N().S(`
 `)
-//line transports/webui/views/elementGroupRendering.qtpl:21
+//line transports/webui/views/elementGroupRendering.qtpl:22
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:21
-func write_renderDefaults(qq422016 qtio422016.Writer, ui ory.UiContainer) {
-//line transports/webui/views/elementGroupRendering.qtpl:21
+//line transports/webui/views/elementGroupRendering.qtpl:22
+func writerenderGroup(qq422016 qtio422016.Writer, ui ory.UiContainer, group string) {
+//line transports/webui/views/elementGroupRendering.qtpl:22
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementGroupRendering.qtpl:21
-	stream_renderDefaults(qw422016, ui)
-//line transports/webui/views/elementGroupRendering.qtpl:21
+//line transports/webui/views/elementGroupRendering.qtpl:22
+	streamrenderGroup(qw422016, ui, group)
+//line transports/webui/views/elementGroupRendering.qtpl:22
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementGroupRendering.qtpl:21
+//line transports/webui/views/elementGroupRendering.qtpl:22
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:21
-func _renderDefaults(ui ory.UiContainer) string {
-//line transports/webui/views/elementGroupRendering.qtpl:21
+//line transports/webui/views/elementGroupRendering.qtpl:22
+func renderGroup(ui ory.UiContainer, group string) string {
+//line transports/webui/views/elementGroupRendering.qtpl:22
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementGroupRendering.qtpl:21
-	write_renderDefaults(qb422016, ui)
-//line transports/webui/views/elementGroupRendering.qtpl:21
+//line transports/webui/views/elementGroupRendering.qtpl:22
+	writerenderGroup(qb422016, ui, group)
+//line transports/webui/views/elementGroupRendering.qtpl:22
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementGroupRendering.qtpl:21
+//line transports/webui/views/elementGroupRendering.qtpl:22
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementGroupRendering.qtpl:21
+//line transports/webui/views/elementGroupRendering.qtpl:22
 	return qs422016
-//line transports/webui/views/elementGroupRendering.qtpl:21
+//line transports/webui/views/elementGroupRendering.qtpl:22
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:23
+//line transports/webui/views/elementGroupRendering.qtpl:24
+func stream_renderDefaults(qw422016 *qt422016.Writer, ui ory.UiContainer) {
+//line transports/webui/views/elementGroupRendering.qtpl:24
+	qw422016.N().S(`
+    `)
+//line transports/webui/views/elementGroupRendering.qtpl:25
+	stream_renderNodes(qw422016, filter(ui.Nodes).Group("default").InputType("hidden").GetWithThese())
+//line transports/webui/views/elementGroupRendering.qtpl:25
+	qw422016.N().S(`
+`)
+//line transports/webui/views/elementGroupRendering.qtpl:26
+}
+
+//line transports/webui/views/elementGroupRendering.qtpl:26
+func write_renderDefaults(qq422016 qtio422016.Writer, ui ory.UiContainer) {
+//line transports/webui/views/elementGroupRendering.qtpl:26
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line transports/webui/views/elementGroupRendering.qtpl:26
+	stream_renderDefaults(qw422016, ui)
+//line transports/webui/views/elementGroupRendering.qtpl:26
+	qt422016.ReleaseWriter(qw422016)
+//line transports/webui/views/elementGroupRendering.qtpl:26
+}
+
+//line transports/webui/views/elementGroupRendering.qtpl:26
+func _renderDefaults(ui ory.UiContainer) string {
+//line transports/webui/views/elementGroupRendering.qtpl:26
+	qb422016 := qt422016.AcquireByteBuffer()
+//line transports/webui/views/elementGroupRendering.qtpl:26
+	write_renderDefaults(qb422016, ui)
+//line transports/webui/views/elementGroupRendering.qtpl:26
+	qs422016 := string(qb422016.B)
+//line transports/webui/views/elementGroupRendering.qtpl:26
+	qt422016.ReleaseByteBuffer(qb422016)
+//line transports/webui/views/elementGroupRendering.qtpl:26
+	return qs422016
+//line transports/webui/views/elementGroupRendering.qtpl:26
+}
+
+//line transports/webui/views/elementGroupRendering.qtpl:28
+func streamrenderMessage(qw422016 *qt422016.Writer, ui ory.UiContainer) {
+//line transports/webui/views/elementGroupRendering.qtpl:28
+	qw422016.N().S(`
+    `)
+//line transports/webui/views/elementGroupRendering.qtpl:29
+	for _, msg := range ui.Messages {
+//line transports/webui/views/elementGroupRendering.qtpl:29
+		qw422016.N().S(`
+        `)
+//line transports/webui/views/elementGroupRendering.qtpl:31
+		classes := ""
+		if msg.GetType() == "error" {
+			classes += " text-rose-500"
+		}
+
+//line transports/webui/views/elementGroupRendering.qtpl:35
+		qw422016.N().S(`
+        <p class="text-xs py-2 `)
+//line transports/webui/views/elementGroupRendering.qtpl:36
+		qw422016.E().S(classes)
+//line transports/webui/views/elementGroupRendering.qtpl:36
+		qw422016.N().S(`">`)
+//line transports/webui/views/elementGroupRendering.qtpl:36
+		qw422016.E().S(msg.GetText())
+//line transports/webui/views/elementGroupRendering.qtpl:36
+		qw422016.N().S(`</p>
+    `)
+//line transports/webui/views/elementGroupRendering.qtpl:37
+	}
+//line transports/webui/views/elementGroupRendering.qtpl:37
+	qw422016.N().S(`
+`)
+//line transports/webui/views/elementGroupRendering.qtpl:38
+}
+
+//line transports/webui/views/elementGroupRendering.qtpl:38
+func writerenderMessage(qq422016 qtio422016.Writer, ui ory.UiContainer) {
+//line transports/webui/views/elementGroupRendering.qtpl:38
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line transports/webui/views/elementGroupRendering.qtpl:38
+	streamrenderMessage(qw422016, ui)
+//line transports/webui/views/elementGroupRendering.qtpl:38
+	qt422016.ReleaseWriter(qw422016)
+//line transports/webui/views/elementGroupRendering.qtpl:38
+}
+
+//line transports/webui/views/elementGroupRendering.qtpl:38
+func renderMessage(ui ory.UiContainer) string {
+//line transports/webui/views/elementGroupRendering.qtpl:38
+	qb422016 := qt422016.AcquireByteBuffer()
+//line transports/webui/views/elementGroupRendering.qtpl:38
+	writerenderMessage(qb422016, ui)
+//line transports/webui/views/elementGroupRendering.qtpl:38
+	qs422016 := string(qb422016.B)
+//line transports/webui/views/elementGroupRendering.qtpl:38
+	qt422016.ReleaseByteBuffer(qb422016)
+//line transports/webui/views/elementGroupRendering.qtpl:38
+	return qs422016
+//line transports/webui/views/elementGroupRendering.qtpl:38
+}
+
+//line transports/webui/views/elementGroupRendering.qtpl:40
 func streamformStart(qw422016 *qt422016.Writer, ui ory.UiContainer) {
-//line transports/webui/views/elementGroupRendering.qtpl:23
+//line transports/webui/views/elementGroupRendering.qtpl:40
 	qw422016.N().S(`
     <form
         action="`)
-//line transports/webui/views/elementGroupRendering.qtpl:25
+//line transports/webui/views/elementGroupRendering.qtpl:42
 	qw422016.E().S(ui.Action)
-//line transports/webui/views/elementGroupRendering.qtpl:25
+//line transports/webui/views/elementGroupRendering.qtpl:42
 	qw422016.N().S(`" method="`)
-//line transports/webui/views/elementGroupRendering.qtpl:25
+//line transports/webui/views/elementGroupRendering.qtpl:42
 	qw422016.E().S(ui.Method)
-//line transports/webui/views/elementGroupRendering.qtpl:25
+//line transports/webui/views/elementGroupRendering.qtpl:42
 	qw422016.N().S(`"
         class="space-y-2 flex flex-col"
         />
         `)
-//line transports/webui/views/elementGroupRendering.qtpl:28
+//line transports/webui/views/elementGroupRendering.qtpl:45
 	stream_renderDefaults(qw422016, ui)
-//line transports/webui/views/elementGroupRendering.qtpl:28
+//line transports/webui/views/elementGroupRendering.qtpl:45
 	qw422016.N().S(`
 `)
-//line transports/webui/views/elementGroupRendering.qtpl:29
+//line transports/webui/views/elementGroupRendering.qtpl:46
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:29
+//line transports/webui/views/elementGroupRendering.qtpl:46
 func writeformStart(qq422016 qtio422016.Writer, ui ory.UiContainer) {
-//line transports/webui/views/elementGroupRendering.qtpl:29
+//line transports/webui/views/elementGroupRendering.qtpl:46
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementGroupRendering.qtpl:29
+//line transports/webui/views/elementGroupRendering.qtpl:46
 	streamformStart(qw422016, ui)
-//line transports/webui/views/elementGroupRendering.qtpl:29
+//line transports/webui/views/elementGroupRendering.qtpl:46
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementGroupRendering.qtpl:29
+//line transports/webui/views/elementGroupRendering.qtpl:46
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:29
+//line transports/webui/views/elementGroupRendering.qtpl:46
 func formStart(ui ory.UiContainer) string {
-//line transports/webui/views/elementGroupRendering.qtpl:29
+//line transports/webui/views/elementGroupRendering.qtpl:46
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementGroupRendering.qtpl:29
+//line transports/webui/views/elementGroupRendering.qtpl:46
 	writeformStart(qb422016, ui)
-//line transports/webui/views/elementGroupRendering.qtpl:29
+//line transports/webui/views/elementGroupRendering.qtpl:46
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementGroupRendering.qtpl:29
+//line transports/webui/views/elementGroupRendering.qtpl:46
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementGroupRendering.qtpl:29
+//line transports/webui/views/elementGroupRendering.qtpl:46
 	return qs422016
-//line transports/webui/views/elementGroupRendering.qtpl:29
+//line transports/webui/views/elementGroupRendering.qtpl:46
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:31
+//line transports/webui/views/elementGroupRendering.qtpl:48
 func streamformEnd(qw422016 *qt422016.Writer) {
-//line transports/webui/views/elementGroupRendering.qtpl:31
+//line transports/webui/views/elementGroupRendering.qtpl:48
 	qw422016.N().S(`
     </form>
 `)
-//line transports/webui/views/elementGroupRendering.qtpl:33
+//line transports/webui/views/elementGroupRendering.qtpl:50
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:33
+//line transports/webui/views/elementGroupRendering.qtpl:50
 func writeformEnd(qq422016 qtio422016.Writer) {
-//line transports/webui/views/elementGroupRendering.qtpl:33
+//line transports/webui/views/elementGroupRendering.qtpl:50
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementGroupRendering.qtpl:33
+//line transports/webui/views/elementGroupRendering.qtpl:50
 	streamformEnd(qw422016)
-//line transports/webui/views/elementGroupRendering.qtpl:33
+//line transports/webui/views/elementGroupRendering.qtpl:50
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementGroupRendering.qtpl:33
+//line transports/webui/views/elementGroupRendering.qtpl:50
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:33
+//line transports/webui/views/elementGroupRendering.qtpl:50
 func formEnd() string {
-//line transports/webui/views/elementGroupRendering.qtpl:33
+//line transports/webui/views/elementGroupRendering.qtpl:50
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementGroupRendering.qtpl:33
+//line transports/webui/views/elementGroupRendering.qtpl:50
 	writeformEnd(qb422016)
-//line transports/webui/views/elementGroupRendering.qtpl:33
+//line transports/webui/views/elementGroupRendering.qtpl:50
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementGroupRendering.qtpl:33
+//line transports/webui/views/elementGroupRendering.qtpl:50
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementGroupRendering.qtpl:33
+//line transports/webui/views/elementGroupRendering.qtpl:50
 	return qs422016
-//line transports/webui/views/elementGroupRendering.qtpl:33
+//line transports/webui/views/elementGroupRendering.qtpl:50
 }
