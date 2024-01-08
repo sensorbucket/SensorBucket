@@ -23,59 +23,60 @@ var (
 //line transports/webui/views/recovery.qtpl:3
 type RecoveryPage struct {
 	Flow *ory.RecoveryFlow
+	Base
 }
 
-//line transports/webui/views/recovery.qtpl:7
+//line transports/webui/views/recovery.qtpl:8
 func (p RecoveryPage) StreamBody(qw422016 *qt422016.Writer) {
-//line transports/webui/views/recovery.qtpl:7
+//line transports/webui/views/recovery.qtpl:8
 	qw422016.N().S(`
     <h1 class="text-2xl mt-4 ">Recover account</h1>
     `)
-//line transports/webui/views/recovery.qtpl:9
+//line transports/webui/views/recovery.qtpl:10
 	streamformStart(qw422016, p.Flow.Ui)
-//line transports/webui/views/recovery.qtpl:9
+//line transports/webui/views/recovery.qtpl:10
 	qw422016.N().S(`
         `)
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:11
 	streamrenderGroup(qw422016, p.Flow.Ui, "code")
-//line transports/webui/views/recovery.qtpl:10
+//line transports/webui/views/recovery.qtpl:11
 	qw422016.N().S(`
         `)
-//line transports/webui/views/recovery.qtpl:11
+//line transports/webui/views/recovery.qtpl:12
 	streamrenderSubmit(qw422016, p.Flow.Ui, "code")
-//line transports/webui/views/recovery.qtpl:11
+//line transports/webui/views/recovery.qtpl:12
 	qw422016.N().S(`
     `)
-//line transports/webui/views/recovery.qtpl:12
+//line transports/webui/views/recovery.qtpl:13
 	streamformEnd(qw422016)
-//line transports/webui/views/recovery.qtpl:12
+//line transports/webui/views/recovery.qtpl:13
 	qw422016.N().S(`
 `)
-//line transports/webui/views/recovery.qtpl:13
+//line transports/webui/views/recovery.qtpl:14
 }
 
-//line transports/webui/views/recovery.qtpl:13
+//line transports/webui/views/recovery.qtpl:14
 func (p RecoveryPage) WriteBody(qq422016 qtio422016.Writer) {
-//line transports/webui/views/recovery.qtpl:13
+//line transports/webui/views/recovery.qtpl:14
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/recovery.qtpl:13
+//line transports/webui/views/recovery.qtpl:14
 	p.StreamBody(qw422016)
-//line transports/webui/views/recovery.qtpl:13
+//line transports/webui/views/recovery.qtpl:14
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/recovery.qtpl:13
+//line transports/webui/views/recovery.qtpl:14
 }
 
-//line transports/webui/views/recovery.qtpl:13
+//line transports/webui/views/recovery.qtpl:14
 func (p RecoveryPage) Body() string {
-//line transports/webui/views/recovery.qtpl:13
+//line transports/webui/views/recovery.qtpl:14
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/recovery.qtpl:13
+//line transports/webui/views/recovery.qtpl:14
 	p.WriteBody(qb422016)
-//line transports/webui/views/recovery.qtpl:13
+//line transports/webui/views/recovery.qtpl:14
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/recovery.qtpl:13
+//line transports/webui/views/recovery.qtpl:14
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/recovery.qtpl:13
+//line transports/webui/views/recovery.qtpl:14
 	return qs422016
-//line transports/webui/views/recovery.qtpl:13
+//line transports/webui/views/recovery.qtpl:14
 }

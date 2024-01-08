@@ -2,6 +2,7 @@
 {% code
 type RecoveryPage struct {
     Flow *ory.RecoveryFlow
+    Base
 } %}
 
 {% func (p RecoveryPage) Body() %}

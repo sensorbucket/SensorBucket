@@ -28,133 +28,221 @@ type SettingsPage struct {
 }
 
 //line transports/webui/views/settings.qtpl:10
-func (p SettingsPage) StreamBody(qw422016 *qt422016.Writer) {
+func (p SettingsPage) StreamTemplate(qw422016 *qt422016.Writer, _ignored PageBody) {
 //line transports/webui/views/settings.qtpl:10
 	qw422016.N().S(`
-    <h1 class="text-center text-2xl my-4">Account Settings</h1>
-    <div class="space-y-6">
-        <section>
-            <h2 class="text-lg">Change profile</h2>
+    <main class="mt-12 mx-auto w-full md:max-w-screen-lg bg-white rounded-md overflow-hidden">
+        <header class="bg-secondary-500 h-14 py-3">
+            <img src="`)
+//line transports/webui/views/settings.qtpl:13
+	qw422016.E().S(U("/static/logo-white.png"))
+//line transports/webui/views/settings.qtpl:13
+	qw422016.N().S(`" alt="SensorBucket Logo" class="h-full mx-auto" />
+        </header>
+        <div class="grid grid-cols-[1fr_4fr]">
+            <section class="flex flex-col border-r">
+                <h1 class="p-6 text-lg text-center">Settings</h1>
+                <hr class="px-6 py-1">
+                <ul class="flex flex-col">
+                    <li>
+                        <a
+                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                            href="#profile">Profile</a>
+                    </li>
+                    <li>
+                        <a
+                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                            href="#password">password</a>
+                    </li>
+                    <li>
+                        <a
+                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                            href="#backupcodes">Backup Codes</a>
+                    </li>
+                    <li>
+                        <a
+                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                            href="#2fa">2FA Authenticator</a>
+                    </li>
+                    <li class="py-3"></li>
+                    <li>
+                        <a
+                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                            href="`)
+//line transports/webui/views/settings.qtpl:44
+	qw422016.E().S(U("/auth/logout"))
+//line transports/webui/views/settings.qtpl:44
+	qw422016.N().S(`">Logout</a>
+                    </li>
+                </ul>
+            </section>
+            <section class="px-6 mb-4 space-y-2">
             `)
-//line transports/webui/views/settings.qtpl:15
+//line transports/webui/views/settings.qtpl:49
+	p.StreamBody(qw422016)
+//line transports/webui/views/settings.qtpl:49
+	qw422016.N().S(`
+            </section>
+        </div>
+    </main>
+`)
+//line transports/webui/views/settings.qtpl:53
+}
+
+//line transports/webui/views/settings.qtpl:53
+func (p SettingsPage) WriteTemplate(qq422016 qtio422016.Writer, _ignored PageBody) {
+//line transports/webui/views/settings.qtpl:53
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line transports/webui/views/settings.qtpl:53
+	p.StreamTemplate(qw422016, _ignored)
+//line transports/webui/views/settings.qtpl:53
+	qt422016.ReleaseWriter(qw422016)
+//line transports/webui/views/settings.qtpl:53
+}
+
+//line transports/webui/views/settings.qtpl:53
+func (p SettingsPage) Template(_ignored PageBody) string {
+//line transports/webui/views/settings.qtpl:53
+	qb422016 := qt422016.AcquireByteBuffer()
+//line transports/webui/views/settings.qtpl:53
+	p.WriteTemplate(qb422016, _ignored)
+//line transports/webui/views/settings.qtpl:53
+	qs422016 := string(qb422016.B)
+//line transports/webui/views/settings.qtpl:53
+	qt422016.ReleaseByteBuffer(qb422016)
+//line transports/webui/views/settings.qtpl:53
+	return qs422016
+//line transports/webui/views/settings.qtpl:53
+}
+
+//line transports/webui/views/settings.qtpl:55
+func (p SettingsPage) StreamBody(qw422016 *qt422016.Writer) {
+//line transports/webui/views/settings.qtpl:55
+	qw422016.N().S(`
+    <h1 class="text-center text-xl p-6">Account Settings</h1>
+    <div class="space-y-8">
+        <section>
+            <h2 class="text-lg" id="profile">Change profile</h2>
+            `)
+//line transports/webui/views/settings.qtpl:60
 	streamformStart(qw422016, p.Flow.Ui)
-//line transports/webui/views/settings.qtpl:15
+//line transports/webui/views/settings.qtpl:60
 	qw422016.N().S(`
                 `)
-//line transports/webui/views/settings.qtpl:16
+//line transports/webui/views/settings.qtpl:61
 	streamrenderGroup(qw422016, p.Flow.Ui, "profile")
-//line transports/webui/views/settings.qtpl:16
+//line transports/webui/views/settings.qtpl:61
 	qw422016.N().S(`
                 `)
-//line transports/webui/views/settings.qtpl:17
+//line transports/webui/views/settings.qtpl:62
 	streamrenderSubmit(qw422016, p.Flow.Ui, "profile")
-//line transports/webui/views/settings.qtpl:17
+//line transports/webui/views/settings.qtpl:62
 	qw422016.N().S(`
             `)
-//line transports/webui/views/settings.qtpl:18
+//line transports/webui/views/settings.qtpl:63
 	streamformEnd(qw422016)
-//line transports/webui/views/settings.qtpl:18
+//line transports/webui/views/settings.qtpl:63
 	qw422016.N().S(`
         </section>
         <hr>
         <section>
-            <h2 class="text-lg">Change password</h2>
+            <h2 class="text-lg" id="password">Change password</h2>
             `)
-//line transports/webui/views/settings.qtpl:23
+//line transports/webui/views/settings.qtpl:68
 	streamformStart(qw422016, p.Flow.Ui)
-//line transports/webui/views/settings.qtpl:23
+//line transports/webui/views/settings.qtpl:68
 	qw422016.N().S(`
                 `)
-//line transports/webui/views/settings.qtpl:24
+//line transports/webui/views/settings.qtpl:69
 	streamrenderGroup(qw422016, p.Flow.Ui, "password")
-//line transports/webui/views/settings.qtpl:24
+//line transports/webui/views/settings.qtpl:69
 	qw422016.N().S(`
                 `)
-//line transports/webui/views/settings.qtpl:25
+//line transports/webui/views/settings.qtpl:70
 	streamrenderSubmit(qw422016, p.Flow.Ui, "password")
-//line transports/webui/views/settings.qtpl:25
+//line transports/webui/views/settings.qtpl:70
 	qw422016.N().S(`
             `)
-//line transports/webui/views/settings.qtpl:26
+//line transports/webui/views/settings.qtpl:71
 	streamformEnd(qw422016)
-//line transports/webui/views/settings.qtpl:26
+//line transports/webui/views/settings.qtpl:71
 	qw422016.N().S(`
         </section>
         <hr>
         <section>
-            <h2 class="text-lg">2FA Backup Codes</h2>
+            <h2 class="text-lg" id="backupcodes">2FA Backup Codes</h2>
             `)
-//line transports/webui/views/settings.qtpl:31
+//line transports/webui/views/settings.qtpl:76
 	streamformStart(qw422016, p.Flow.Ui)
-//line transports/webui/views/settings.qtpl:31
+//line transports/webui/views/settings.qtpl:76
 	qw422016.N().S(`
                 `)
-//line transports/webui/views/settings.qtpl:32
+//line transports/webui/views/settings.qtpl:77
 	streamrenderGroup(qw422016, p.Flow.Ui, "lookup_secret")
-//line transports/webui/views/settings.qtpl:32
+//line transports/webui/views/settings.qtpl:77
 	qw422016.N().S(`
                 `)
-//line transports/webui/views/settings.qtpl:33
+//line transports/webui/views/settings.qtpl:78
 	streamrenderSubmit(qw422016, p.Flow.Ui, "lookup_secret")
-//line transports/webui/views/settings.qtpl:33
+//line transports/webui/views/settings.qtpl:78
 	qw422016.N().S(`
             `)
-//line transports/webui/views/settings.qtpl:34
+//line transports/webui/views/settings.qtpl:79
 	streamformEnd(qw422016)
-//line transports/webui/views/settings.qtpl:34
+//line transports/webui/views/settings.qtpl:79
 	qw422016.N().S(`
         </section>
         <hr>
         <section>
-            <h2 class="text-lg">2FA Authenticator App</h2>
+            <h2 class="text-lg" id="2fa">2FA Authenticator App</h2>
             `)
-//line transports/webui/views/settings.qtpl:39
+//line transports/webui/views/settings.qtpl:84
 	streamformStart(qw422016, p.Flow.Ui)
-//line transports/webui/views/settings.qtpl:39
+//line transports/webui/views/settings.qtpl:84
 	qw422016.N().S(`
                 `)
-//line transports/webui/views/settings.qtpl:40
+//line transports/webui/views/settings.qtpl:85
 	streamrenderGroup(qw422016, p.Flow.Ui, "totp")
-//line transports/webui/views/settings.qtpl:40
+//line transports/webui/views/settings.qtpl:85
 	qw422016.N().S(`
                 `)
-//line transports/webui/views/settings.qtpl:41
+//line transports/webui/views/settings.qtpl:86
 	streamrenderSubmit(qw422016, p.Flow.Ui, "totp")
-//line transports/webui/views/settings.qtpl:41
+//line transports/webui/views/settings.qtpl:86
 	qw422016.N().S(`
             `)
-//line transports/webui/views/settings.qtpl:42
+//line transports/webui/views/settings.qtpl:87
 	streamformEnd(qw422016)
-//line transports/webui/views/settings.qtpl:42
+//line transports/webui/views/settings.qtpl:87
 	qw422016.N().S(`
         </section>
     </div>
 `)
-//line transports/webui/views/settings.qtpl:45
+//line transports/webui/views/settings.qtpl:90
 }
 
-//line transports/webui/views/settings.qtpl:45
+//line transports/webui/views/settings.qtpl:90
 func (p SettingsPage) WriteBody(qq422016 qtio422016.Writer) {
-//line transports/webui/views/settings.qtpl:45
+//line transports/webui/views/settings.qtpl:90
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/settings.qtpl:45
+//line transports/webui/views/settings.qtpl:90
 	p.StreamBody(qw422016)
-//line transports/webui/views/settings.qtpl:45
+//line transports/webui/views/settings.qtpl:90
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/settings.qtpl:45
+//line transports/webui/views/settings.qtpl:90
 }
 
-//line transports/webui/views/settings.qtpl:45
+//line transports/webui/views/settings.qtpl:90
 func (p SettingsPage) Body() string {
-//line transports/webui/views/settings.qtpl:45
+//line transports/webui/views/settings.qtpl:90
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/settings.qtpl:45
+//line transports/webui/views/settings.qtpl:90
 	p.WriteBody(qb422016)
-//line transports/webui/views/settings.qtpl:45
+//line transports/webui/views/settings.qtpl:90
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/settings.qtpl:45
+//line transports/webui/views/settings.qtpl:90
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/settings.qtpl:45
+//line transports/webui/views/settings.qtpl:90
 	return qs422016
-//line transports/webui/views/settings.qtpl:45
+//line transports/webui/views/settings.qtpl:90
 }

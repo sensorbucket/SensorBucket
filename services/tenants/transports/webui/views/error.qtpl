@@ -2,6 +2,7 @@
 {% code
 type ErrorPage struct {
     Flow *ory.FlowError
+    Base
 } %}
 
 {% func (p ErrorPage) Body() %}

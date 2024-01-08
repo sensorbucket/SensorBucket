@@ -23,44 +23,45 @@ var (
 //line transports/webui/views/error.qtpl:3
 type ErrorPage struct {
 	Flow *ory.FlowError
+	Base
 }
 
-//line transports/webui/views/error.qtpl:7
+//line transports/webui/views/error.qtpl:8
 func (p ErrorPage) StreamBody(qw422016 *qt422016.Writer) {
-//line transports/webui/views/error.qtpl:7
+//line transports/webui/views/error.qtpl:8
 	qw422016.N().S(`
     <h1>Error!</h1>
     <span style="color: red;">`)
-//line transports/webui/views/error.qtpl:9
+//line transports/webui/views/error.qtpl:10
 	qw422016.E().S(p.Flow.GetError()["reason"].(string))
-//line transports/webui/views/error.qtpl:9
+//line transports/webui/views/error.qtpl:10
 	qw422016.N().S(`</span>
 `)
-//line transports/webui/views/error.qtpl:10
+//line transports/webui/views/error.qtpl:11
 }
 
-//line transports/webui/views/error.qtpl:10
+//line transports/webui/views/error.qtpl:11
 func (p ErrorPage) WriteBody(qq422016 qtio422016.Writer) {
-//line transports/webui/views/error.qtpl:10
+//line transports/webui/views/error.qtpl:11
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/error.qtpl:10
+//line transports/webui/views/error.qtpl:11
 	p.StreamBody(qw422016)
-//line transports/webui/views/error.qtpl:10
+//line transports/webui/views/error.qtpl:11
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/error.qtpl:10
+//line transports/webui/views/error.qtpl:11
 }
 
-//line transports/webui/views/error.qtpl:10
+//line transports/webui/views/error.qtpl:11
 func (p ErrorPage) Body() string {
-//line transports/webui/views/error.qtpl:10
+//line transports/webui/views/error.qtpl:11
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/error.qtpl:10
+//line transports/webui/views/error.qtpl:11
 	p.WriteBody(qb422016)
-//line transports/webui/views/error.qtpl:10
+//line transports/webui/views/error.qtpl:11
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/error.qtpl:10
+//line transports/webui/views/error.qtpl:11
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/error.qtpl:10
+//line transports/webui/views/error.qtpl:11
 	return qs422016
-//line transports/webui/views/error.qtpl:10
+//line transports/webui/views/error.qtpl:11
 }
