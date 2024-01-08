@@ -30,7 +30,8 @@
 {% func _renderInputNode(n ory.UiNode, attr ory.UiNodeInputAttributes) %}
     {% if attr.GetType() == "submit" %}
     <button 
-        class="text-center p-2 bg-secondary-500 text-white"
+        class="text-center p-2 border-2 border-secondary-500 text-secondary-500
+        transition-colors duration-150 hover:bg-secondary-500 hover:text-white"
         {%= _renderInputNodeAttributes(n, attr) %}
         >{%s n.Meta.GetLabel().Text %}</button>
     {% if label, ok := n.Meta.GetLabelOk(); ok && label.GetId() == 1010001 %}

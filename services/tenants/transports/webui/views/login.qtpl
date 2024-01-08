@@ -38,7 +38,7 @@ type LoginPage struct {
         {%= formStart(p.Flow.Ui) %}
             {%= renderGroup(p.Flow.Ui, "default") %}
             {%= renderGroup(p.Flow.Ui, "password") %}
-            {%= renderSubmit(p.Flow.Ui, "submit") %}
+            {%= renderSubmit(p.Flow.Ui, "password") %}
         {%= formEnd() %}
     {% else %}
         <h1 class="text-2xl mt-4 ">Verify login with</h1>

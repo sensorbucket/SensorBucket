@@ -130,7 +130,7 @@ func (p LoginPage) StreamBody(qw422016 *qt422016.Writer) {
 		qw422016.N().S(`
             `)
 //line transports/webui/views/login.qtpl:41
-		streamrenderSubmit(qw422016, p.Flow.Ui, "submit")
+		streamrenderSubmit(qw422016, p.Flow.Ui, "password")
 //line transports/webui/views/login.qtpl:41
 		qw422016.N().S(`
         `)

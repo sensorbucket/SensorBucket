@@ -22,7 +22,9 @@
 
 {% func formStart(ui ory.UiContainer) %}
     <form
-        action="{%s ui.Action %}" method="{%s ui.Method %}"/>
+        action="{%s ui.Action %}" method="{%s ui.Method %}"
+        class="space-y-2 flex flex-col"
+        />
         {%= _renderDefaults(ui) %}
 {% endfunc %}
 
