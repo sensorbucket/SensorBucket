@@ -64,7 +64,7 @@ func someProtectedEndpoint() http.HandlerFunc {
 			auth.WRITE_DEVICES)
 		if err != nil {
 			// unauthorized!
-			web.HTTPError(w, auth.ErrUnauthorized)
+			web.HTTPError(w, err)
 			return
 		}
 
@@ -78,6 +78,9 @@ func someProtectedEndpoint() http.HandlerFunc {
 			web.HTTPError(w, auth.ErrUnauthorized)
 			return
 		}
+
+		fmt.Println("Role API_KEY_MANAGER:", grant.HasRole(auth.API_KEY_MANAGER)) // should be false
+		fmt.Println("Role DEVICE_MANAGER:", grant.HasRole(auth.DEVICE_MANAGER))   // should be true
 
 		// Authorized!
 		// Both authorized to read and write and access
@@ -100,6 +103,8 @@ func createToken() (string, error) {
 				auth.WRITE_DEVICES.String(),
 				"asdsad",
 			},
+			// tenant:123,
+			// device:541
 			"user_id": 431,
 			"exp":     time.Now().Add(time.Hour * 24).Unix(),
 		})

@@ -54,6 +54,10 @@ func (g *Grant) GetTenants() []int64 {
 	return g.tenants
 }
 
+func (g *Grant) HasRole(r role) bool {
+	return r.Contains(g.permissions)
+}
+
 func (g *Grant) HasPermissionsFor(tenantIds ...int64) bool {
 	if len(tenantIds) == 0 {
 		return false
