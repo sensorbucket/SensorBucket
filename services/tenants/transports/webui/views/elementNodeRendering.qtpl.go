@@ -48,412 +48,512 @@ func stream_renderNode(qw422016 *qt422016.Writer, n ory.UiNode) {
 		stream_renderImageNode(qw422016, n, *attr)
 //line transports/webui/views/elementNodeRendering.qtpl:11
 		qw422016.N().S(`
+        `)
+//line transports/webui/views/elementNodeRendering.qtpl:12
+	case *ory.UiNodeTextAttributes:
+//line transports/webui/views/elementNodeRendering.qtpl:12
+		qw422016.N().S(`
+            `)
+//line transports/webui/views/elementNodeRendering.qtpl:13
+		stream_renderTextNode(qw422016, n, *attr)
+//line transports/webui/views/elementNodeRendering.qtpl:13
+		qw422016.N().S(`
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:12
+//line transports/webui/views/elementNodeRendering.qtpl:14
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:12
+//line transports/webui/views/elementNodeRendering.qtpl:14
 	qw422016.N().S(`
 `)
-//line transports/webui/views/elementNodeRendering.qtpl:13
+//line transports/webui/views/elementNodeRendering.qtpl:15
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:13
+//line transports/webui/views/elementNodeRendering.qtpl:15
 func write_renderNode(qq422016 qtio422016.Writer, n ory.UiNode) {
-//line transports/webui/views/elementNodeRendering.qtpl:13
+//line transports/webui/views/elementNodeRendering.qtpl:15
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementNodeRendering.qtpl:13
+//line transports/webui/views/elementNodeRendering.qtpl:15
 	stream_renderNode(qw422016, n)
-//line transports/webui/views/elementNodeRendering.qtpl:13
+//line transports/webui/views/elementNodeRendering.qtpl:15
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementNodeRendering.qtpl:13
+//line transports/webui/views/elementNodeRendering.qtpl:15
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:13
+//line transports/webui/views/elementNodeRendering.qtpl:15
 func _renderNode(n ory.UiNode) string {
-//line transports/webui/views/elementNodeRendering.qtpl:13
+//line transports/webui/views/elementNodeRendering.qtpl:15
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementNodeRendering.qtpl:13
+//line transports/webui/views/elementNodeRendering.qtpl:15
 	write_renderNode(qb422016, n)
-//line transports/webui/views/elementNodeRendering.qtpl:13
+//line transports/webui/views/elementNodeRendering.qtpl:15
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementNodeRendering.qtpl:13
+//line transports/webui/views/elementNodeRendering.qtpl:15
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementNodeRendering.qtpl:13
+//line transports/webui/views/elementNodeRendering.qtpl:15
 	return qs422016
-//line transports/webui/views/elementNodeRendering.qtpl:13
+//line transports/webui/views/elementNodeRendering.qtpl:15
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:15
+//line transports/webui/views/elementNodeRendering.qtpl:17
+func stream_renderTextNode(qw422016 *qt422016.Writer, n ory.UiNode, attr ory.UiNodeTextAttributes) {
+//line transports/webui/views/elementNodeRendering.qtpl:17
+	qw422016.N().S(`
+    <label><span class="text-sm">`)
+//line transports/webui/views/elementNodeRendering.qtpl:18
+	qw422016.E().S(n.Meta.Label.GetText())
+//line transports/webui/views/elementNodeRendering.qtpl:18
+	qw422016.N().S(`</span>
+    `)
+//line transports/webui/views/elementNodeRendering.qtpl:19
+	switch attr.Text.GetId() {
+//line transports/webui/views/elementNodeRendering.qtpl:20
+	case 1050015:
+//line transports/webui/views/elementNodeRendering.qtpl:20
+		qw422016.N().S(`
+        <div class="grid grid-cols-3 gap-3 text-center my-4 font-mono">
+            `)
+//line transports/webui/views/elementNodeRendering.qtpl:22
+		if secrets, ok := attr.Text.GetContext()["secrets"]; ok {
+//line transports/webui/views/elementNodeRendering.qtpl:22
+			qw422016.N().S(`
+                `)
+//line transports/webui/views/elementNodeRendering.qtpl:23
+			for _, secret := range secrets.([]any) {
+//line transports/webui/views/elementNodeRendering.qtpl:23
+				qw422016.N().S(`
+                <span class="">`)
+//line transports/webui/views/elementNodeRendering.qtpl:24
+				qw422016.E().S(secret.(map[string]any)["text"].(string))
+//line transports/webui/views/elementNodeRendering.qtpl:24
+				qw422016.N().S(`</span>
+                `)
+//line transports/webui/views/elementNodeRendering.qtpl:25
+			}
+//line transports/webui/views/elementNodeRendering.qtpl:25
+			qw422016.N().S(`
+            `)
+//line transports/webui/views/elementNodeRendering.qtpl:26
+		}
+//line transports/webui/views/elementNodeRendering.qtpl:26
+		qw422016.N().S(`
+        </div>
+        `)
+//line transports/webui/views/elementNodeRendering.qtpl:28
+	default:
+//line transports/webui/views/elementNodeRendering.qtpl:28
+		qw422016.N().S(`
+        <p class="font-mono py-4 text-center">`)
+//line transports/webui/views/elementNodeRendering.qtpl:29
+		qw422016.E().S(attr.Text.GetText())
+//line transports/webui/views/elementNodeRendering.qtpl:29
+		qw422016.N().S(`</p>
+    `)
+//line transports/webui/views/elementNodeRendering.qtpl:30
+	}
+//line transports/webui/views/elementNodeRendering.qtpl:30
+	qw422016.N().S(`
+    </label>
+`)
+//line transports/webui/views/elementNodeRendering.qtpl:32
+}
+
+//line transports/webui/views/elementNodeRendering.qtpl:32
+func write_renderTextNode(qq422016 qtio422016.Writer, n ory.UiNode, attr ory.UiNodeTextAttributes) {
+//line transports/webui/views/elementNodeRendering.qtpl:32
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line transports/webui/views/elementNodeRendering.qtpl:32
+	stream_renderTextNode(qw422016, n, attr)
+//line transports/webui/views/elementNodeRendering.qtpl:32
+	qt422016.ReleaseWriter(qw422016)
+//line transports/webui/views/elementNodeRendering.qtpl:32
+}
+
+//line transports/webui/views/elementNodeRendering.qtpl:32
+func _renderTextNode(n ory.UiNode, attr ory.UiNodeTextAttributes) string {
+//line transports/webui/views/elementNodeRendering.qtpl:32
+	qb422016 := qt422016.AcquireByteBuffer()
+//line transports/webui/views/elementNodeRendering.qtpl:32
+	write_renderTextNode(qb422016, n, attr)
+//line transports/webui/views/elementNodeRendering.qtpl:32
+	qs422016 := string(qb422016.B)
+//line transports/webui/views/elementNodeRendering.qtpl:32
+	qt422016.ReleaseByteBuffer(qb422016)
+//line transports/webui/views/elementNodeRendering.qtpl:32
+	return qs422016
+//line transports/webui/views/elementNodeRendering.qtpl:32
+}
+
+//line transports/webui/views/elementNodeRendering.qtpl:34
 func stream_renderImageNode(qw422016 *qt422016.Writer, n ory.UiNode, attr ory.UiNodeImageAttributes) {
-//line transports/webui/views/elementNodeRendering.qtpl:15
+//line transports/webui/views/elementNodeRendering.qtpl:34
 	qw422016.N().S(`
     <img
         src="`)
-//line transports/webui/views/elementNodeRendering.qtpl:17
+//line transports/webui/views/elementNodeRendering.qtpl:36
 	qw422016.E().S(attr.GetSrc())
-//line transports/webui/views/elementNodeRendering.qtpl:17
+//line transports/webui/views/elementNodeRendering.qtpl:36
 	qw422016.N().S(`"
         id="`)
-//line transports/webui/views/elementNodeRendering.qtpl:18
+//line transports/webui/views/elementNodeRendering.qtpl:37
 	qw422016.E().S(attr.GetId())
-//line transports/webui/views/elementNodeRendering.qtpl:18
+//line transports/webui/views/elementNodeRendering.qtpl:37
 	qw422016.N().S(`"
         width="`)
-//line transports/webui/views/elementNodeRendering.qtpl:19
+//line transports/webui/views/elementNodeRendering.qtpl:38
 	qw422016.N().DL(attr.GetWidth())
-//line transports/webui/views/elementNodeRendering.qtpl:19
+//line transports/webui/views/elementNodeRendering.qtpl:38
 	qw422016.N().S(`"
         height="`)
-//line transports/webui/views/elementNodeRendering.qtpl:20
+//line transports/webui/views/elementNodeRendering.qtpl:39
 	qw422016.N().DL(attr.GetHeight())
-//line transports/webui/views/elementNodeRendering.qtpl:20
+//line transports/webui/views/elementNodeRendering.qtpl:39
 	qw422016.N().S(`"
+        class="mx-auto"
     />
 `)
-//line transports/webui/views/elementNodeRendering.qtpl:22
+//line transports/webui/views/elementNodeRendering.qtpl:42
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:22
+//line transports/webui/views/elementNodeRendering.qtpl:42
 func write_renderImageNode(qq422016 qtio422016.Writer, n ory.UiNode, attr ory.UiNodeImageAttributes) {
-//line transports/webui/views/elementNodeRendering.qtpl:22
+//line transports/webui/views/elementNodeRendering.qtpl:42
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementNodeRendering.qtpl:22
+//line transports/webui/views/elementNodeRendering.qtpl:42
 	stream_renderImageNode(qw422016, n, attr)
-//line transports/webui/views/elementNodeRendering.qtpl:22
+//line transports/webui/views/elementNodeRendering.qtpl:42
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementNodeRendering.qtpl:22
+//line transports/webui/views/elementNodeRendering.qtpl:42
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:22
+//line transports/webui/views/elementNodeRendering.qtpl:42
 func _renderImageNode(n ory.UiNode, attr ory.UiNodeImageAttributes) string {
-//line transports/webui/views/elementNodeRendering.qtpl:22
+//line transports/webui/views/elementNodeRendering.qtpl:42
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementNodeRendering.qtpl:22
+//line transports/webui/views/elementNodeRendering.qtpl:42
 	write_renderImageNode(qb422016, n, attr)
-//line transports/webui/views/elementNodeRendering.qtpl:22
+//line transports/webui/views/elementNodeRendering.qtpl:42
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementNodeRendering.qtpl:22
+//line transports/webui/views/elementNodeRendering.qtpl:42
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementNodeRendering.qtpl:22
+//line transports/webui/views/elementNodeRendering.qtpl:42
 	return qs422016
-//line transports/webui/views/elementNodeRendering.qtpl:22
+//line transports/webui/views/elementNodeRendering.qtpl:42
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:24
+//line transports/webui/views/elementNodeRendering.qtpl:44
 func stream_renderNodes(qw422016 *qt422016.Writer, nodes []ory.UiNode) {
-//line transports/webui/views/elementNodeRendering.qtpl:24
+//line transports/webui/views/elementNodeRendering.qtpl:44
 	qw422016.N().S(`
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:25
+//line transports/webui/views/elementNodeRendering.qtpl:45
 	for _, n := range nodes {
-//line transports/webui/views/elementNodeRendering.qtpl:25
+//line transports/webui/views/elementNodeRendering.qtpl:45
 		qw422016.N().S(`
         `)
-//line transports/webui/views/elementNodeRendering.qtpl:26
+//line transports/webui/views/elementNodeRendering.qtpl:46
 		stream_renderNode(qw422016, n)
-//line transports/webui/views/elementNodeRendering.qtpl:26
+//line transports/webui/views/elementNodeRendering.qtpl:46
 		qw422016.N().S(`
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:27
+//line transports/webui/views/elementNodeRendering.qtpl:47
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:27
+//line transports/webui/views/elementNodeRendering.qtpl:47
 	qw422016.N().S(`
 `)
-//line transports/webui/views/elementNodeRendering.qtpl:28
+//line transports/webui/views/elementNodeRendering.qtpl:48
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:28
+//line transports/webui/views/elementNodeRendering.qtpl:48
 func write_renderNodes(qq422016 qtio422016.Writer, nodes []ory.UiNode) {
-//line transports/webui/views/elementNodeRendering.qtpl:28
+//line transports/webui/views/elementNodeRendering.qtpl:48
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementNodeRendering.qtpl:28
+//line transports/webui/views/elementNodeRendering.qtpl:48
 	stream_renderNodes(qw422016, nodes)
-//line transports/webui/views/elementNodeRendering.qtpl:28
+//line transports/webui/views/elementNodeRendering.qtpl:48
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementNodeRendering.qtpl:28
+//line transports/webui/views/elementNodeRendering.qtpl:48
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:28
+//line transports/webui/views/elementNodeRendering.qtpl:48
 func _renderNodes(nodes []ory.UiNode) string {
-//line transports/webui/views/elementNodeRendering.qtpl:28
+//line transports/webui/views/elementNodeRendering.qtpl:48
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementNodeRendering.qtpl:28
+//line transports/webui/views/elementNodeRendering.qtpl:48
 	write_renderNodes(qb422016, nodes)
-//line transports/webui/views/elementNodeRendering.qtpl:28
+//line transports/webui/views/elementNodeRendering.qtpl:48
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementNodeRendering.qtpl:28
+//line transports/webui/views/elementNodeRendering.qtpl:48
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementNodeRendering.qtpl:28
+//line transports/webui/views/elementNodeRendering.qtpl:48
 	return qs422016
-//line transports/webui/views/elementNodeRendering.qtpl:28
+//line transports/webui/views/elementNodeRendering.qtpl:48
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:30
+//line transports/webui/views/elementNodeRendering.qtpl:50
 func stream_renderInputNode(qw422016 *qt422016.Writer, n ory.UiNode, attr ory.UiNodeInputAttributes) {
-//line transports/webui/views/elementNodeRendering.qtpl:30
+//line transports/webui/views/elementNodeRendering.qtpl:50
 	qw422016.N().S(`
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:31
+//line transports/webui/views/elementNodeRendering.qtpl:51
 	if attr.GetType() == "submit" {
-//line transports/webui/views/elementNodeRendering.qtpl:31
+//line transports/webui/views/elementNodeRendering.qtpl:51
 		qw422016.N().S(`
     <button 
         class="text-center p-2 border-2 border-secondary-500 text-secondary-500
         transition-colors duration-150 hover:bg-secondary-500 hover:text-white"
         `)
-//line transports/webui/views/elementNodeRendering.qtpl:35
+//line transports/webui/views/elementNodeRendering.qtpl:55
 		stream_renderInputNodeAttributes(qw422016, n, attr)
-//line transports/webui/views/elementNodeRendering.qtpl:35
+//line transports/webui/views/elementNodeRendering.qtpl:55
 		qw422016.N().S(`
         >`)
-//line transports/webui/views/elementNodeRendering.qtpl:36
+//line transports/webui/views/elementNodeRendering.qtpl:56
 		qw422016.E().S(n.Meta.GetLabel().Text)
-//line transports/webui/views/elementNodeRendering.qtpl:36
+//line transports/webui/views/elementNodeRendering.qtpl:56
 		qw422016.N().S(`</button>
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:37
+//line transports/webui/views/elementNodeRendering.qtpl:57
 		if label, ok := n.Meta.GetLabelOk(); ok && label.GetId() == 1010001 {
-//line transports/webui/views/elementNodeRendering.qtpl:37
+//line transports/webui/views/elementNodeRendering.qtpl:57
 			qw422016.N().S(`
         <a
             href="`)
-//line transports/webui/views/elementNodeRendering.qtpl:39
+//line transports/webui/views/elementNodeRendering.qtpl:59
 			qw422016.E().S(U("/auth/recovery"))
-//line transports/webui/views/elementNodeRendering.qtpl:39
+//line transports/webui/views/elementNodeRendering.qtpl:59
 			qw422016.N().S(`"
             class="block text-center"
         >Forgot your password?</a>
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:42
+//line transports/webui/views/elementNodeRendering.qtpl:62
 		}
-//line transports/webui/views/elementNodeRendering.qtpl:42
+//line transports/webui/views/elementNodeRendering.qtpl:62
 		qw422016.N().S(`
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:43
+//line transports/webui/views/elementNodeRendering.qtpl:63
 		return
-//line transports/webui/views/elementNodeRendering.qtpl:44
+//line transports/webui/views/elementNodeRendering.qtpl:64
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:44
+//line transports/webui/views/elementNodeRendering.qtpl:64
 	qw422016.N().S(`
     <fieldset>
         `)
-//line transports/webui/views/elementNodeRendering.qtpl:46
+//line transports/webui/views/elementNodeRendering.qtpl:66
 	if label, ok := n.Meta.GetLabelOk(); ok {
-//line transports/webui/views/elementNodeRendering.qtpl:46
+//line transports/webui/views/elementNodeRendering.qtpl:66
 		qw422016.N().S(`
         <label for="`)
-//line transports/webui/views/elementNodeRendering.qtpl:47
+//line transports/webui/views/elementNodeRendering.qtpl:67
 		qw422016.E().S(attr.GetName())
-//line transports/webui/views/elementNodeRendering.qtpl:47
+//line transports/webui/views/elementNodeRendering.qtpl:67
 		qw422016.N().S(`" class="flex flex-col text-sm">
             <span>`)
-//line transports/webui/views/elementNodeRendering.qtpl:48
+//line transports/webui/views/elementNodeRendering.qtpl:68
 		qw422016.E().S(label.Text)
-//line transports/webui/views/elementNodeRendering.qtpl:48
+//line transports/webui/views/elementNodeRendering.qtpl:68
 		qw422016.N().S(`</span>
         `)
-//line transports/webui/views/elementNodeRendering.qtpl:49
+//line transports/webui/views/elementNodeRendering.qtpl:69
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:49
+//line transports/webui/views/elementNodeRendering.qtpl:69
 	qw422016.N().S(`
         <input 
             class="border px-2 py-1"
             `)
-//line transports/webui/views/elementNodeRendering.qtpl:52
+//line transports/webui/views/elementNodeRendering.qtpl:72
 	stream_renderInputNodeAttributes(qw422016, n, attr)
-//line transports/webui/views/elementNodeRendering.qtpl:52
+//line transports/webui/views/elementNodeRendering.qtpl:72
 	qw422016.N().S(`
             />
         `)
-//line transports/webui/views/elementNodeRendering.qtpl:54
+//line transports/webui/views/elementNodeRendering.qtpl:74
 	if n.Meta.HasLabel() {
-//line transports/webui/views/elementNodeRendering.qtpl:54
+//line transports/webui/views/elementNodeRendering.qtpl:74
 		qw422016.N().S(`
         </label>
         `)
-//line transports/webui/views/elementNodeRendering.qtpl:56
+//line transports/webui/views/elementNodeRendering.qtpl:76
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:56
+//line transports/webui/views/elementNodeRendering.qtpl:76
 	qw422016.N().S(`
         `)
-//line transports/webui/views/elementNodeRendering.qtpl:57
+//line transports/webui/views/elementNodeRendering.qtpl:77
 	for _, msg := range n.GetMessages() {
-//line transports/webui/views/elementNodeRendering.qtpl:57
+//line transports/webui/views/elementNodeRendering.qtpl:77
 		qw422016.N().S(`
             <span style="color: red;">`)
-//line transports/webui/views/elementNodeRendering.qtpl:58
+//line transports/webui/views/elementNodeRendering.qtpl:78
 		qw422016.E().S(msg.GetText())
-//line transports/webui/views/elementNodeRendering.qtpl:58
+//line transports/webui/views/elementNodeRendering.qtpl:78
 		qw422016.N().S(`</span>
         `)
-//line transports/webui/views/elementNodeRendering.qtpl:59
+//line transports/webui/views/elementNodeRendering.qtpl:79
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:59
+//line transports/webui/views/elementNodeRendering.qtpl:79
 	qw422016.N().S(`
     </fieldset>
 `)
-//line transports/webui/views/elementNodeRendering.qtpl:61
+//line transports/webui/views/elementNodeRendering.qtpl:81
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:61
+//line transports/webui/views/elementNodeRendering.qtpl:81
 func write_renderInputNode(qq422016 qtio422016.Writer, n ory.UiNode, attr ory.UiNodeInputAttributes) {
-//line transports/webui/views/elementNodeRendering.qtpl:61
+//line transports/webui/views/elementNodeRendering.qtpl:81
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementNodeRendering.qtpl:61
+//line transports/webui/views/elementNodeRendering.qtpl:81
 	stream_renderInputNode(qw422016, n, attr)
-//line transports/webui/views/elementNodeRendering.qtpl:61
+//line transports/webui/views/elementNodeRendering.qtpl:81
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementNodeRendering.qtpl:61
+//line transports/webui/views/elementNodeRendering.qtpl:81
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:61
+//line transports/webui/views/elementNodeRendering.qtpl:81
 func _renderInputNode(n ory.UiNode, attr ory.UiNodeInputAttributes) string {
-//line transports/webui/views/elementNodeRendering.qtpl:61
+//line transports/webui/views/elementNodeRendering.qtpl:81
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementNodeRendering.qtpl:61
+//line transports/webui/views/elementNodeRendering.qtpl:81
 	write_renderInputNode(qb422016, n, attr)
-//line transports/webui/views/elementNodeRendering.qtpl:61
+//line transports/webui/views/elementNodeRendering.qtpl:81
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementNodeRendering.qtpl:61
+//line transports/webui/views/elementNodeRendering.qtpl:81
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementNodeRendering.qtpl:61
+//line transports/webui/views/elementNodeRendering.qtpl:81
 	return qs422016
-//line transports/webui/views/elementNodeRendering.qtpl:61
+//line transports/webui/views/elementNodeRendering.qtpl:81
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:63
+//line transports/webui/views/elementNodeRendering.qtpl:83
 func stream_renderInputNodeAttributes(qw422016 *qt422016.Writer, n ory.UiNode, attr ory.UiNodeInputAttributes) {
-//line transports/webui/views/elementNodeRendering.qtpl:63
+//line transports/webui/views/elementNodeRendering.qtpl:83
 	qw422016.N().S(`
     name="`)
-//line transports/webui/views/elementNodeRendering.qtpl:64
+//line transports/webui/views/elementNodeRendering.qtpl:84
 	qw422016.E().S(attr.GetName())
-//line transports/webui/views/elementNodeRendering.qtpl:64
+//line transports/webui/views/elementNodeRendering.qtpl:84
 	qw422016.N().S(`"
     type="`)
-//line transports/webui/views/elementNodeRendering.qtpl:65
+//line transports/webui/views/elementNodeRendering.qtpl:85
 	qw422016.E().S(attr.GetType())
-//line transports/webui/views/elementNodeRendering.qtpl:65
+//line transports/webui/views/elementNodeRendering.qtpl:85
 	qw422016.N().S(`"
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:66
+//line transports/webui/views/elementNodeRendering.qtpl:86
 	if attr.GetAutocomplete() != "" {
-//line transports/webui/views/elementNodeRendering.qtpl:66
+//line transports/webui/views/elementNodeRendering.qtpl:86
 		qw422016.N().S(`
         autocomplete="`)
-//line transports/webui/views/elementNodeRendering.qtpl:67
+//line transports/webui/views/elementNodeRendering.qtpl:87
 		qw422016.E().S(attr.GetAutocomplete())
-//line transports/webui/views/elementNodeRendering.qtpl:67
+//line transports/webui/views/elementNodeRendering.qtpl:87
 		qw422016.N().S(`"
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:68
+//line transports/webui/views/elementNodeRendering.qtpl:88
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:68
+//line transports/webui/views/elementNodeRendering.qtpl:88
 	qw422016.N().S(`
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:69
+//line transports/webui/views/elementNodeRendering.qtpl:89
 	if attr.GetDisabled() {
-//line transports/webui/views/elementNodeRendering.qtpl:69
+//line transports/webui/views/elementNodeRendering.qtpl:89
 		qw422016.N().S(`
         disabled
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:71
+//line transports/webui/views/elementNodeRendering.qtpl:91
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:71
+//line transports/webui/views/elementNodeRendering.qtpl:91
 	qw422016.N().S(`
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:72
+//line transports/webui/views/elementNodeRendering.qtpl:92
 	if attr.GetRequired() {
-//line transports/webui/views/elementNodeRendering.qtpl:72
+//line transports/webui/views/elementNodeRendering.qtpl:92
 		qw422016.N().S(`
         required
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:74
+//line transports/webui/views/elementNodeRendering.qtpl:94
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:74
+//line transports/webui/views/elementNodeRendering.qtpl:94
 	qw422016.N().S(`
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:75
+//line transports/webui/views/elementNodeRendering.qtpl:95
 	if attr.GetPattern() != "" {
-//line transports/webui/views/elementNodeRendering.qtpl:75
+//line transports/webui/views/elementNodeRendering.qtpl:95
 		qw422016.N().S(`
         pattern="`)
-//line transports/webui/views/elementNodeRendering.qtpl:76
+//line transports/webui/views/elementNodeRendering.qtpl:96
 		qw422016.E().S(attr.GetPattern())
-//line transports/webui/views/elementNodeRendering.qtpl:76
+//line transports/webui/views/elementNodeRendering.qtpl:96
 		qw422016.N().S(`"
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:77
+//line transports/webui/views/elementNodeRendering.qtpl:97
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:77
+//line transports/webui/views/elementNodeRendering.qtpl:97
 	qw422016.N().S(`
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:78
+//line transports/webui/views/elementNodeRendering.qtpl:98
 	if attr.GetOnclick() != "" {
-//line transports/webui/views/elementNodeRendering.qtpl:78
+//line transports/webui/views/elementNodeRendering.qtpl:98
 		qw422016.N().S(`
         onclick="`)
-//line transports/webui/views/elementNodeRendering.qtpl:79
+//line transports/webui/views/elementNodeRendering.qtpl:99
 		qw422016.E().S(attr.GetOnclick())
-//line transports/webui/views/elementNodeRendering.qtpl:79
+//line transports/webui/views/elementNodeRendering.qtpl:99
 		qw422016.N().S(`"
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:80
+//line transports/webui/views/elementNodeRendering.qtpl:100
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:80
+//line transports/webui/views/elementNodeRendering.qtpl:100
 	qw422016.N().S(`
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:81
+//line transports/webui/views/elementNodeRendering.qtpl:101
 	if attr.Value != nil {
-//line transports/webui/views/elementNodeRendering.qtpl:81
+//line transports/webui/views/elementNodeRendering.qtpl:101
 		qw422016.N().S(`
         value="`)
-//line transports/webui/views/elementNodeRendering.qtpl:82
+//line transports/webui/views/elementNodeRendering.qtpl:102
 		qw422016.E().V(attr.Value)
-//line transports/webui/views/elementNodeRendering.qtpl:82
+//line transports/webui/views/elementNodeRendering.qtpl:102
 		qw422016.N().S(`"
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:83
+//line transports/webui/views/elementNodeRendering.qtpl:103
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:83
+//line transports/webui/views/elementNodeRendering.qtpl:103
 	qw422016.N().S(`
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:84
+//line transports/webui/views/elementNodeRendering.qtpl:104
 	if label, ok := n.Meta.GetLabelOk(); ok && label.GetId() == 1070008 {
-//line transports/webui/views/elementNodeRendering.qtpl:84
+//line transports/webui/views/elementNodeRendering.qtpl:104
 		qw422016.N().S(`
         formNoValidate
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:86
+//line transports/webui/views/elementNodeRendering.qtpl:106
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:86
+//line transports/webui/views/elementNodeRendering.qtpl:106
 	qw422016.N().S(`
 `)
-//line transports/webui/views/elementNodeRendering.qtpl:87
+//line transports/webui/views/elementNodeRendering.qtpl:107
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:87
+//line transports/webui/views/elementNodeRendering.qtpl:107
 func write_renderInputNodeAttributes(qq422016 qtio422016.Writer, n ory.UiNode, attr ory.UiNodeInputAttributes) {
-//line transports/webui/views/elementNodeRendering.qtpl:87
+//line transports/webui/views/elementNodeRendering.qtpl:107
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementNodeRendering.qtpl:87
+//line transports/webui/views/elementNodeRendering.qtpl:107
 	stream_renderInputNodeAttributes(qw422016, n, attr)
-//line transports/webui/views/elementNodeRendering.qtpl:87
+//line transports/webui/views/elementNodeRendering.qtpl:107
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementNodeRendering.qtpl:87
+//line transports/webui/views/elementNodeRendering.qtpl:107
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:87
+//line transports/webui/views/elementNodeRendering.qtpl:107
 func _renderInputNodeAttributes(n ory.UiNode, attr ory.UiNodeInputAttributes) string {
-//line transports/webui/views/elementNodeRendering.qtpl:87
+//line transports/webui/views/elementNodeRendering.qtpl:107
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementNodeRendering.qtpl:87
+//line transports/webui/views/elementNodeRendering.qtpl:107
 	write_renderInputNodeAttributes(qb422016, n, attr)
-//line transports/webui/views/elementNodeRendering.qtpl:87
+//line transports/webui/views/elementNodeRendering.qtpl:107
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementNodeRendering.qtpl:87
+//line transports/webui/views/elementNodeRendering.qtpl:107
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementNodeRendering.qtpl:87
+//line transports/webui/views/elementNodeRendering.qtpl:107
 	return qs422016
-//line transports/webui/views/elementNodeRendering.qtpl:87
+//line transports/webui/views/elementNodeRendering.qtpl:107
 }

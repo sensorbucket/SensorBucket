@@ -9,7 +9,26 @@
             {%= _renderInputNode(n, *attr) %}
         {% case *ory.UiNodeImageAttributes %}
             {%= _renderImageNode(n, *attr) %}
+        {% case *ory.UiNodeTextAttributes %}
+            {%= _renderTextNode(n, *attr) %}
     {% endswitch %}
+{% endfunc %}
+
+{% func _renderTextNode(n ory.UiNode, attr ory.UiNodeTextAttributes) %}
+    <label><span class="text-sm">{%s n.Meta.Label.GetText() %}</span>
+    {% switch attr.Text.GetId() %}
+        {% case 1050015 %}
+        <div class="grid grid-cols-3 gap-3 text-center my-4 font-mono">
+            {% if secrets, ok := attr.Text.GetContext()["secrets"]; ok %}
+                {% for _, secret := range secrets.([]any) %}
+                <span class="">{%s secret.(map[string]any)["text"].(string) %}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+        {% default %}
+        <p class="font-mono py-4 text-center">{%s attr.Text.GetText() %}</p>
+    {% endswitch %}
+    </label>
 {% endfunc %}
 
 {% func _renderImageNode(n ory.UiNode, attr ory.UiNodeImageAttributes) %}
@@ -18,6 +37,7 @@
         id="{%s attr.GetId() %}"
         width="{%dl attr.GetWidth() %}"
         height="{%dl attr.GetHeight() %}"
+        class="mx-auto"
     />
 {% endfunc %}
 
