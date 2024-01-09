@@ -64,7 +64,7 @@ func (p *ApiKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
                 <label></label>
                 `)
 //line views/apiKeysCreatePage.qtpl:37
-	StreamRenderPermissionTables(qw422016, nil)
+	StreamRenderPermissionTables(qw422016, p.Permissions)
 //line views/apiKeysCreatePage.qtpl:37
 	qw422016.N().S(`
             </fieldset>
@@ -197,87 +197,116 @@ func RenderTenantSelect(tenants []TenantInfo) string {
 }
 
 //line views/apiKeysCreatePage.qtpl:92
-func StreamRenderPermissionTables(qw422016 *qt422016.Writer, permissions []ApiKeysCreatePermission) {
+func StreamRenderPermissionTables(qw422016 *qt422016.Writer, permissions map[string][]ApiKeysCreatePermission) {
 //line views/apiKeysCreatePage.qtpl:92
 	qw422016.N().S(`
-<table class="min-w-full bg-white border border-gray-300">
+`)
+//line views/apiKeysCreatePage.qtpl:93
+	for category, permissions := range permissions {
+//line views/apiKeysCreatePage.qtpl:93
+		qw422016.N().S(`
+<table class="min-w-full bg-white border border-gray-300 mb-2">
     <thead>
         <tr class="bg-secondary-400 text-secondary-100">
             <th class="py-2 px-4" colspan="2">
-                <span class="ml-2 float-left">Device Permissions</span>
-
+                <span class="ml-2 float-left">`)
+//line views/apiKeysCreatePage.qtpl:98
+		qw422016.E().S(category)
+//line views/apiKeysCreatePage.qtpl:98
+		qw422016.N().S(`</span>
             </th>
-            </th class="py-2 px-4">
-            <th>
-                <input type="checkbox" _="on changed toggle @checked on <input/>"
-                    class="form-checkbox h-4 w-4 text-secondary-500 cursor-pointer">
+            <th class="py-2 px-4">
+                <input type="checkbox"
+                    _ = "on click set .checkbox-`)
+//line views/apiKeysCreatePage.qtpl:102
+		qw422016.E().S(category)
+//line views/apiKeysCreatePage.qtpl:102
+		qw422016.N().S(`.checked to my.checked"
+                    class="h-4 w-4 text-secondary-500 cursor-pointer float-right">
             </th>
         </tr>
     </thead>
     <tbody>
+        `)
+//line views/apiKeysCreatePage.qtpl:108
+		for _, permission := range permissions {
+//line views/apiKeysCreatePage.qtpl:108
+			qw422016.N().S(`
         <tr>
-            <td class="py-2 px-4">
-                READ_DEVICES
+            <td class="py-2 px-4 w-1/6">
+                `)
+//line views/apiKeysCreatePage.qtpl:111
+			qw422016.E().S(permission.Name)
+//line views/apiKeysCreatePage.qtpl:111
+			qw422016.N().S(`
             </td>
-            <td class="py-2 px-4">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ac justo ut ex fermentum vulputate ac ac
-                libero. Vestibulum nec quam at orci tincidunt consectetur. Fusce nec sapien in metus convallis luctus.
+            <td class="py-2 px-4 w-4/6">
+                `)
+//line views/apiKeysCreatePage.qtpl:114
+			qw422016.E().S(permission.Description)
+//line views/apiKeysCreatePage.qtpl:114
+			qw422016.N().S(`
             </td>
-            <td class="py-2 px-4">
-                <input type="checkbox" id="checkbox1" class="form-checkbox h-4 w-4 text-secondary-500 cursor-pointer">
+            <td class="py-2 px-4 w-1/6">
+                <input type="checkbox" name="api-key-permissions" value="`)
+//line views/apiKeysCreatePage.qtpl:117
+			qw422016.E().S(permission.Name)
+//line views/apiKeysCreatePage.qtpl:117
+			qw422016.N().S(`"
+                    class="h-4 w-4 text-secondary-500 cursor-pointer float-right checkbox-`)
+//line views/apiKeysCreatePage.qtpl:118
+			qw422016.E().S(category)
+//line views/apiKeysCreatePage.qtpl:118
+			qw422016.N().S(`">
             </td>
         </tr>
-        <tr>
-            <td class="py-2 px-4">
-                WRITE_DEVICES
-            </td>
-            <td class="py-2 px-4">
-                Sed ac justo ut ex fermentum vulputate ac ac libero. Vestibulum nec quam at orci tincidunt consectetur.
-                Fusce nec sapien in metus convallis luctus. Integer commodo, dolor a gravida luctus, odio turpis commodo
-                nisi.
-            </td>
-            <td class="py-2 px-4">
-                <label for="checkbox2" class="cursor-pointer">
-                    <input type="checkbox" id="checkbox2" class="form-checkbox h-4 w-4 text-blue-500 cursor-pointer">
-                </label>
-            </td>
-        </tr>
+        `)
+//line views/apiKeysCreatePage.qtpl:121
+		}
+//line views/apiKeysCreatePage.qtpl:121
+		qw422016.N().S(`
     </tbody>
 </table>
 `)
-//line views/apiKeysCreatePage.qtpl:137
+//line views/apiKeysCreatePage.qtpl:124
+	}
+//line views/apiKeysCreatePage.qtpl:124
+	qw422016.N().S(`
+`)
+//line views/apiKeysCreatePage.qtpl:125
 }
 
-//line views/apiKeysCreatePage.qtpl:137
-func WriteRenderPermissionTables(qq422016 qtio422016.Writer, permissions []ApiKeysCreatePermission) {
-//line views/apiKeysCreatePage.qtpl:137
+//line views/apiKeysCreatePage.qtpl:125
+func WriteRenderPermissionTables(qq422016 qtio422016.Writer, permissions map[string][]ApiKeysCreatePermission) {
+//line views/apiKeysCreatePage.qtpl:125
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/apiKeysCreatePage.qtpl:137
+//line views/apiKeysCreatePage.qtpl:125
 	StreamRenderPermissionTables(qw422016, permissions)
-//line views/apiKeysCreatePage.qtpl:137
+//line views/apiKeysCreatePage.qtpl:125
 	qt422016.ReleaseWriter(qw422016)
-//line views/apiKeysCreatePage.qtpl:137
+//line views/apiKeysCreatePage.qtpl:125
 }
 
-//line views/apiKeysCreatePage.qtpl:137
-func RenderPermissionTables(permissions []ApiKeysCreatePermission) string {
-//line views/apiKeysCreatePage.qtpl:137
+//line views/apiKeysCreatePage.qtpl:125
+func RenderPermissionTables(permissions map[string][]ApiKeysCreatePermission) string {
+//line views/apiKeysCreatePage.qtpl:125
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/apiKeysCreatePage.qtpl:137
+//line views/apiKeysCreatePage.qtpl:125
 	WriteRenderPermissionTables(qb422016, permissions)
-//line views/apiKeysCreatePage.qtpl:137
+//line views/apiKeysCreatePage.qtpl:125
 	qs422016 := string(qb422016.B)
-//line views/apiKeysCreatePage.qtpl:137
+//line views/apiKeysCreatePage.qtpl:125
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/apiKeysCreatePage.qtpl:137
+//line views/apiKeysCreatePage.qtpl:125
 	return qs422016
-//line views/apiKeysCreatePage.qtpl:137
+//line views/apiKeysCreatePage.qtpl:125
 }
 
-//line views/apiKeysCreatePage.qtpl:140
+//line views/apiKeysCreatePage.qtpl:128
 type ApiKeysCreatePage struct {
 	layout.BasePage
-	Tenants []TenantInfo
+	Tenants     []TenantInfo
+	Permissions map[string][]ApiKeysCreatePermission
 }
 
 type ApiKeysCreatePermission struct {

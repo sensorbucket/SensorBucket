@@ -143,8 +143,9 @@ func (h *ApiKeysPageHandler) createApiKey() http.HandlerFunc {
 		name := r.FormValue("api-key-name")
 		expiry := r.FormValue("api-key-expiry")
 		tenantId := r.FormValue("api-key-tenant")
-		if name == "" || tenantId == "" {
-			layout.SnackbarBadRequest(w, "Please enter a name and select an organisation")
+		permissions, ok := r.Form["api-key-permissions"]
+		if name == "" || tenantId == "" || !ok || len(permissions) == 0 {
+			layout.SnackbarBadRequest(w, "Please enter a name, select an organisation and at least 1 permission")
 			return
 		}
 
@@ -198,13 +199,37 @@ func (h *ApiKeysPageHandler) createApiKeyView() http.HandlerFunc {
 			return
 		}
 		page := &views.ApiKeysCreatePage{
-			Tenants: toViewTenants(list.Data),
+			Tenants:     toViewTenants(list.Data),
+			Permissions: toViewPermissions(),
 		}
 		if layout.IsHX(r) {
 			page.WriteBody(w)
 			return
 		}
 		layout.WriteIndex(w, page)
+	}
+}
+
+// TODO: should be replaced with actual auth package values once auth package is done
+// https://github.com/sensorbucket/SensorBucket/issues/70
+func toViewPermissions() map[string][]views.ApiKeysCreatePermission {
+	return map[string][]views.ApiKeysCreatePermission{
+		"Devices": {
+			{
+				Name:        "READ_DEVICES",
+				Description: "Allows the API key to read information regarding devices of the selected organisation",
+			},
+			{
+				Name:        "WRITE_DEVICES",
+				Description: "Allows the API key to write information regarding devices of the selected organisation",
+			},
+		},
+		"Uplinks": {
+			{
+				Name:        "WRITE_UPLINKS",
+				Description: "Allows the API key create uplinks",
+			},
+		},
 	}
 }
 

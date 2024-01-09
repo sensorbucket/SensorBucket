@@ -34,7 +34,7 @@
             </fieldset>
             <fieldset>
                 <label></label>
-                {%= RenderPermissionTables(nil) %}
+                {%= RenderPermissionTables(p.Permissions) %}
             </fieldset>
             <div class="col-span-full">
                 <button id="api-key-create-button"
@@ -89,57 +89,46 @@
 {% endfor %}
 {% endfunc %}
 
-{% func RenderPermissionTables(permissions []ApiKeysCreatePermission) %}
-<table class="min-w-full bg-white border border-gray-300">
+{% func RenderPermissionTables(permissions map[string][]ApiKeysCreatePermission) %}
+{% for category, permissions := range permissions %}
+<table class="min-w-full bg-white border border-gray-300 mb-2">
     <thead>
         <tr class="bg-secondary-400 text-secondary-100">
             <th class="py-2 px-4" colspan="2">
-                <span class="ml-2 float-left">Device Permissions</span>
-
+                <span class="ml-2 float-left">{%s category %}</span>
             </th>
-            </th class="py-2 px-4">
-            <th>
-                <input type="checkbox" _="on changed toggle @checked on <input/>"
-                    class="form-checkbox h-4 w-4 text-secondary-500 cursor-pointer">
+            <th class="py-2 px-4">
+                <input type="checkbox"
+                    _ = "on click set .checkbox-{%s category %}.checked to my.checked"
+                    class="h-4 w-4 text-secondary-500 cursor-pointer float-right">
             </th>
         </tr>
     </thead>
     <tbody>
+        {% for _, permission := range permissions %}
         <tr>
-            <td class="py-2 px-4">
-                READ_DEVICES
+            <td class="py-2 px-4 w-1/6">
+                {%s permission.Name %}
             </td>
-            <td class="py-2 px-4">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ac justo ut ex fermentum vulputate ac ac
-                libero. Vestibulum nec quam at orci tincidunt consectetur. Fusce nec sapien in metus convallis luctus.
+            <td class="py-2 px-4 w-4/6">
+                {%s permission.Description %}
             </td>
-            <td class="py-2 px-4">
-                <input type="checkbox" id="checkbox1" class="form-checkbox h-4 w-4 text-secondary-500 cursor-pointer">
+            <td class="py-2 px-4 w-1/6">
+                <input type="checkbox" name="api-key-permissions" value="{%s permission.Name %}"
+                    class="h-4 w-4 text-secondary-500 cursor-pointer float-right checkbox-{%s category %}">
             </td>
         </tr>
-        <tr>
-            <td class="py-2 px-4">
-                WRITE_DEVICES
-            </td>
-            <td class="py-2 px-4">
-                Sed ac justo ut ex fermentum vulputate ac ac libero. Vestibulum nec quam at orci tincidunt consectetur.
-                Fusce nec sapien in metus convallis luctus. Integer commodo, dolor a gravida luctus, odio turpis commodo
-                nisi.
-            </td>
-            <td class="py-2 px-4">
-                <label for="checkbox2" class="cursor-pointer">
-                    <input type="checkbox" id="checkbox2" class="form-checkbox h-4 w-4 text-blue-500 cursor-pointer">
-                </label>
-            </td>
-        </tr>
+        {% endfor %}
     </tbody>
 </table>
+{% endfor %}
 {% endfunc %}
 
 {% code
 type ApiKeysCreatePage struct {
 layout.BasePage
 Tenants []TenantInfo
+Permissions map[string][]ApiKeysCreatePermission
 }
 
 type ApiKeysCreatePermission struct {
