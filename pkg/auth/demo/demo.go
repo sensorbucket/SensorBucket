@@ -1,11 +1,17 @@
 package main
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"math/big"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/go-jose/go-jose/v3"
 	"github.com/golang-jwt/jwt"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
@@ -17,7 +23,8 @@ func main() {
 	r := chi.NewRouter()
 
 	// Use middleware to validate JWT
-	r.Use(auth.Authenticate(secretKey))
+	r.Use(auth.Authenticate("http://localhost:4467"))
+	r.Use(auth.Protect())
 
 	t, err := createToken()
 	if err != nil {
@@ -97,7 +104,21 @@ func someProtectedEndpoint() http.HandlerFunc {
 }
 
 func createToken() (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
+	res, err := http.Get(fmt.Sprintf("http://localhost:4467/.well-known/jwks.json"))
+	if err != nil {
+		fmt.Print("f err", err)
+		panic(fmt.Errorf("failed to fetch jwks: %w", err))
+	}
+	fmt.Println("f stuff", res.StatusCode)
+	var jwks jose.JSONWebKeySet
+	if err := json.NewDecoder(res.Body).Decode(&jwks); err != nil {
+		panic(fmt.Errorf("failed to decode jwks: %w", err))
+	}
+	keys := jwks.Key("387e4978-078b-4664-afb4-cf9142161610")
+	if len(keys) == 0 {
+		panic(fmt.Errorf("no keys found for token"))
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256,
 		jwt.MapClaims{
 			"current_tenant_id": 11,
 			"permissions": []string{
@@ -113,10 +134,41 @@ func createToken() (string, error) {
 			"exp":     time.Now().Add(time.Hour * 24).Unix(),
 		})
 
-	tokenString, err := token.SignedString(secretKey)
+	tokenString, err := token.SignedString(key())
 	if err != nil {
+		fmt.Println("cant create token", err)
 		return "", err
 	}
 
 	return tokenString, nil
+}
+
+func decodeBase64(input string) []byte {
+	decoded, err := base64.RawURLEncoding.DecodeString(input)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return decoded
+}
+
+// Function to decode a base64-encoded integer
+func decodeBase64Int(input string) int64 {
+	decoded, err := base64.RawURLEncoding.DecodeString(input)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return int64(new(big.Int).SetBytes(decoded).Uint64())
+}
+
+func key() interface{} {
+	privateKeyBytes, err := ioutil.ReadFile("")
+	if err != nil {
+		panic(err)
+	}
+	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKeyBytes)
+	if err != nil {
+		fmt.Println("Error parsing private key:", err)
+		panic(err)
+	}
+	return privateKey
 }

@@ -60,11 +60,10 @@ func HasPermissionsFor(ctx context.Context, tenantIds ...int64) bool {
 	if len(tenantIds) == 0 {
 		return false
 	}
-	for _, t := range tenants {
+	for _, requestedTenant := range tenantIds {
 		found := false
-		for _, reqTenant := range tenantIds {
-			if t == reqTenant {
-				// Found tenant in the grant
+		for _, tenantInCtx := range tenants {
+			if requestedTenant == tenantInCtx {
 				found = true
 			}
 		}
