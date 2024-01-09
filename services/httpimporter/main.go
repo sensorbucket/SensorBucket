@@ -10,12 +10,14 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/health"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/httpimporter/service"
 )
 
 var (
 	HTTP_ADDR       = env.Could("HTTP_ADDR", ":3000")
+	HEALTH_ADDR     = env.Could("HEALTH_ADDR", ":3030")
 	AMQP_HOST       = env.Could("AMQP_HOST", "amqp://guest:guest@localhost/")
 	AMQP_XCHG       = env.Could("AMQP_XCHG", "ingress")
 	AMQP_XCHG_TOPIC = env.Could("AMQP_XCHG_TOPIC", "ingress.httpimporter")
@@ -51,6 +53,19 @@ func Run() error {
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
 	}
+
+	go health.NewHealthEndpoint(nil).
+		WithReadyChecks(
+			map[string]health.Check{
+				"mqconn-ready": mqConn.Ready,
+			},
+		).
+		WithLiveChecks(
+			map[string]health.Check{
+				"mqqonn-healthy": mqConn.Healthy,
+			},
+		).
+		Start(HEALTH_ADDR)
 
 	log.Printf("HTTP Server listening on: %s\n", srv.Addr)
 	return srv.ListenAndServe()
