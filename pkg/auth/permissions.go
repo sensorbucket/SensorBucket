@@ -1,5 +1,7 @@
 package auth
 
+import "fmt"
+
 var (
 	// Device permissions
 	READ_DEVICES  permission = "READ_DEVICES"
@@ -25,6 +27,20 @@ var (
 	WRITE_USER_WORKERS permission = "WRITE_USER_WORKERS"
 )
 
+var allowedPermissions = []permission{
+	READ_DEVICES,
+	WRITE_DEVICES,
+	READ_API_KEYS,
+	WRITE_API_KEYS,
+	READ_TENANTS,
+	WRITE_TENANTS,
+	READ_MEASUREMENTS,
+	WRITE_MEASUREMENTS,
+	READ_TRACING,
+	READ_USER_WORKERS,
+	WRITE_USER_WORKERS,
+}
+
 func NewRole(permissions ...permission) role {
 	return role(permissions)
 }
@@ -33,6 +49,15 @@ type permission string
 
 func (p permission) String() string {
 	return string(p)
+}
+
+func (p permission) Valid() error {
+	for _, allowed := range allowedPermissions {
+		if allowed == p {
+			return nil
+		}
+	}
+	return fmt.Errorf("%s is not a valid permission", p)
 }
 
 type role []permission
