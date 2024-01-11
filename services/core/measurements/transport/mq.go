@@ -3,6 +3,7 @@ package measurementtransport
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -25,13 +26,17 @@ func StartMQ(
 	consume := mq.Consume(conn, measurementQueue, func(c *amqp091.Channel) error {
 		q, err := c.QueueDeclare(measurementQueue, true, false, false, false, nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("error declaring amqp queue: %w", err)
 		}
 		err = c.ExchangeDeclare(pipelineMessagesExchange, "topic", true, false, false, false, nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("error declaring amqp exchange: %w", err)
 		}
-		return c.QueueBind(q.Name, measurementStorageTopic, pipelineMessagesExchange, false, amqp091.Table{})
+		err = c.QueueBind(q.Name, measurementStorageTopic, pipelineMessagesExchange, false, nil)
+		if err != nil {
+			return fmt.Errorf("error binding amqp queue to exchange: %w", err)
+		}
+		return nil
 	})
 	publish := mq.Publisher(conn, pipelineMessagesExchange, func(c *amqp091.Channel) error {
 		err := c.ExchangeDeclare(pipelineMessagesExchange, "topic", true, false, false, false, nil)

@@ -2,6 +2,7 @@ package tracingtransport
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -76,16 +77,16 @@ func setupFunc(queue, xchg, topic string) mq.AMQPSetupFunc {
 	return func(c *amqp091.Channel) error {
 		_, err := c.QueueDeclare(queue, true, false, false, false, nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("error declaring amqp queue: %w", err)
 		}
 		err = c.ExchangeDeclare(xchg, "topic", true, false, false, false, nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("error declaring amqp exchange: %w", err)
 		}
 		err = c.QueueBind(queue, topic, xchg, false, nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("error binding amqp queue to exchange: %w", err)
 		}
-		return err
+		return nil
 	}
 }
