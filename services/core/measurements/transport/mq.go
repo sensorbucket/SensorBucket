@@ -13,14 +13,28 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 )
 
-func StartMQ(svc *measurements.Service, conn *mq.AMQPConnection, queue, xchg, errorTopic string) func() {
+func StartMQ(
+	svc *measurements.Service,
+	conn *mq.AMQPConnection,
+	pipelineMessagesExchange,
+	measurementQueue,
+	measurementStorageTopic,
+	measurementErrorTopic string,
+) func() {
 	done := make(chan struct{})
-	consume := mq.Consume(conn, queue, func(c *amqp091.Channel) error {
-		_, err := c.QueueDeclare(queue, true, false, false, false, nil)
-		return err
+	consume := mq.Consume(conn, measurementQueue, func(c *amqp091.Channel) error {
+		q, err := c.QueueDeclare(measurementQueue, true, false, false, false, nil)
+		if err != nil {
+			return err
+		}
+		err = c.ExchangeDeclare(pipelineMessagesExchange, "topic", true, false, false, false, nil)
+		if err != nil {
+			return err
+		}
+		return c.QueueBind(q.Name, measurementStorageTopic, pipelineMessagesExchange, false, amqp091.Table{})
 	})
-	publish := mq.Publisher(conn, xchg, func(c *amqp091.Channel) error {
-		err := c.ExchangeDeclare(xchg, "topic", true, false, false, false, nil)
+	publish := mq.Publisher(conn, pipelineMessagesExchange, func(c *amqp091.Channel) error {
+		err := c.ExchangeDeclare(pipelineMessagesExchange, "topic", true, false, false, false, nil)
 		return err
 	})
 
@@ -52,7 +66,7 @@ func StartMQ(svc *measurements.Service, conn *mq.AMQPConnection, queue, xchg, er
 						continue
 					}
 					publish <- mq.PublishMessage{
-						Topic: errorTopic,
+						Topic: measurementErrorTopic,
 						Publishing: amqp091.Publishing{
 							Body: msgErrorBytes,
 						},
@@ -62,7 +76,7 @@ func StartMQ(svc *measurements.Service, conn *mq.AMQPConnection, queue, xchg, er
 				}
 				msg.Ack(false)
 			case <-done:
-				break
+				return
 			}
 		}
 	}()
