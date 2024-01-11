@@ -13,6 +13,7 @@ The Core service performs multiple core functions in SensorBucket:
 | DB_DSN                      | The PostgreSQL connection string                                                                      | yes      |                           |
 | AMQP_HOST                   | The RabbitMQ host                                                                                     | yes      |                           |
 | AMQP_QUEUE_MEASUREMENTS     | Queue from which to read measurements that need to be stored                                          | no       | measurements              |
+| AMQP_XCHG_MEASUREMENTS_TOPIC| The RabbitMQ exchange topic for incoming measurement storage                                          | no       | storage                   |
 | AMQP_QUEUE_INGRESS          | Queue from which to read new incoming raw data                                                        | no       | core-ingress              |
 | AMQP_XCHG_INGRESS           | The RabbitMQ exchange for incoming raw data                                                           | no       | ingress                   |
 | AMQP_XCHG_INGRESS_TOPIC     | The RabbitMQ exchange topic for incoming raw data                                                     | no       | ingress.*                 |

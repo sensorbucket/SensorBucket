@@ -31,17 +31,18 @@ import (
 )
 
 var (
-	DB_DSN                      = env.Must("DB_DSN")
-	AMQP_HOST                   = env.Must("AMQP_HOST")
-	AMQP_QUEUE_MEASUREMENTS     = env.Could("AMQP_QUEUE_MEASUREMENTS", "measurements")
-	AMQP_QUEUE_INGRESS          = env.Could("AMQP_QUEUE_INGRESS", "core-ingress")
-	AMQP_QUEUE_ERRORS           = env.Could("AMQP_QUEUE_ERRORS", "errors")
-	AMQP_XCHG_INGRESS           = env.Could("AMQP_XCHG_INGRESS", "ingress")
-	AMQP_XCHG_INGRESS_TOPIC     = env.Could("AMQP_XCHG_INGRESS_TOPIC", "ingress.*")
-	AMQP_XCHG_PIPELINE_MESSAGES = env.Could("AMQP_XCHG_PIPELINE_MESSAGES", "pipeline.messages")
-	HTTP_ADDR                   = env.Could("HTTP_ADDR", ":3000")
-	HTTP_BASE                   = env.Could("HTTP_BASE", "http://localhost:3000/api")
-	SYS_ARCHIVE_TIME            = env.Could("SYS_ARCHIVE_TIME", "30")
+	DB_DSN                       = env.Must("DB_DSN")
+	AMQP_HOST                    = env.Must("AMQP_HOST")
+	AMQP_XCHG_INGRESS_TOPIC      = env.Could("AMQP_XCHG_INGRESS_TOPIC", "ingress.*")
+	AMQP_XCHG_PIPELINE_MESSAGES  = env.Could("AMQP_XCHG_PIPELINE_MESSAGES", "pipeline.messages")
+	AMQP_QUEUE_MEASUREMENTS      = env.Could("AMQP_QUEUE_MEASUREMENTS", "measurements")
+	AMQP_XCHG_MEASUREMENTS_TOPIC = env.Could("AMQP_XCHG_MEASUREMENTS_TOPIC", "storage")
+	AMQP_QUEUE_INGRESS           = env.Could("AMQP_QUEUE_INGRESS", "core-ingress")
+	AMQP_XCHG_INGRESS            = env.Could("AMQP_XCHG_INGRESS", "ingress")
+	AMQP_QUEUE_ERRORS            = env.Could("AMQP_QUEUE_ERRORS", "errors")
+	HTTP_ADDR                    = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE                    = env.Could("HTTP_BASE", "http://localhost:3000/api")
+	SYS_ARCHIVE_TIME             = env.Could("SYS_ARCHIVE_TIME", "30")
 )
 
 func main() {
@@ -92,7 +93,14 @@ func Run() error {
 	log.Printf("HTTP Listening: %s\n", httpsrv.Addr)
 
 	// Setup MQ Transports
-	measurementtransport.StartMQ(measurementservice, amqpConn, AMQP_QUEUE_MEASUREMENTS, AMQP_XCHG_PIPELINE_MESSAGES, AMQP_QUEUE_ERRORS)
+	measurementtransport.StartMQ(
+		measurementservice,
+		amqpConn,
+		AMQP_XCHG_PIPELINE_MESSAGES,
+		AMQP_QUEUE_MEASUREMENTS,
+		AMQP_XCHG_MEASUREMENTS_TOPIC,
+		AMQP_QUEUE_ERRORS,
+	)
 	go processingtransport.StartIngressDTOConsumer(
 		amqpConn,
 		processingservice,
