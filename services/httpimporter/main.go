@@ -54,7 +54,7 @@ func Run() error {
 		ReadTimeout:  5 * time.Second,
 	}
 
-	go health.NewHealthEndpoint(nil).
+	go health.NewHealthEndpoint().
 		WithReadyChecks(
 			map[string]health.Check{
 				"mqconn-ready": mqConn.Ready,
@@ -65,7 +65,7 @@ func Run() error {
 				"mqqonn-healthy": mqConn.Healthy,
 			},
 		).
-		Start(HEALTH_ADDR)
+		RunAsServer(HEALTH_ADDR)
 
 	log.Printf("HTTP Server listening on: %s\n", srv.Addr)
 	return srv.ListenAndServe()
