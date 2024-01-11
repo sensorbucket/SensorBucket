@@ -65,12 +65,48 @@ func TestNewApiKeyNoOrganisationID(t *testing.T) {
 	assert.Len(t, svc.GenerateNewApiKeyCalls(), 0)
 }
 
+func TestNewApiKeyPermissionsNotGiven(t *testing.T) {
+	// Arrange
+	svc := apiKeyServiceMock{}
+	transport := testTransport(&svc)
+	req, _ := http.NewRequest("POST", "/api-keys",
+		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "organisation_id": 12, "expiration_date": "%s"}`, time.Now().Add(time.Hour*24).Format(time.RFC3339))))
+	req.Header.Add("content-type", "application/json")
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Equal(t, `{"message":"at least one permission is required"}`+"\n", rr.Body.String())
+	assert.Len(t, svc.GenerateNewApiKeyCalls(), 0)
+}
+
+func TestNewApiKeyPermissionsEmptyList(t *testing.T) {
+	// Arrange
+	svc := apiKeyServiceMock{}
+	transport := testTransport(&svc)
+	req, _ := http.NewRequest("POST", "/api-keys",
+		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "organisation_id": 12, "permissions":[], "expiration_date": "%s"}`, time.Now().Add(time.Hour*24).Format(time.RFC3339))))
+	req.Header.Add("content-type", "application/json")
+
+	// Act
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Equal(t, `{"message":"at least one permission is required"}`+"\n", rr.Body.String())
+	assert.Len(t, svc.GenerateNewApiKeyCalls(), 0)
+}
+
 func TestNewApiKeyExpirationDateNotInTheFuture(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("POST", "/api-keys",
-		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "tenant_id": 12, "expiration_date": "%s"}`, time.Now().Add(-time.Hour*24).Format(time.RFC3339))))
+		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "organisation_id": 12, "permissions":["some_permission"], "expiration_date": "%s"}`, time.Now().Add(-time.Hour*24).Format(time.RFC3339))))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -86,14 +122,15 @@ func TestNewApiKeyExpirationDateNotInTheFuture(t *testing.T) {
 func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(_ string, tenantId int64, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(name string, tenantId int64, permissions []string, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
+			assert.Equal(t, []string{"some_permission"}, permissions)
 			assert.Nil(t, expiry)
 			return "", apikeys.ErrTenantIsNotValid
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "tenant_id": 905}`))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "permissions":["some_permission"], "organisation_id": 905}`))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -109,14 +146,15 @@ func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 func TestNewApiKeyErrorOccurs(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(_ string, tenantId int64, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(name string, tenantId int64, permissions []string, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
+			assert.Equal(t, []string{"some_permission"}, permissions)
 			assert.Nil(t, expiry)
 			return "", fmt.Errorf("weird error!")
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "tenant_id": 905}`))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "permissions":["some_permission"], "organisation_id": 905}`))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -133,15 +171,16 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 	// Arrange
 	exp := time.Now().UTC().Add(time.Hour * 24 * 5)
 	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(_ string, tenantId int64, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(name string, tenantId int64, permissions []string, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
+			assert.Equal(t, []string{"some_permission"}, permissions)
 			assert.NotNil(t, expiry)
 			assert.Equal(t, exp, *expiry)
 			return "newapikey", nil
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(fmt.Sprintf(`{"name": "whatever", "tenant_id": 905, "expiration_date": "%s"}`, exp.Format("2006-01-02T15:04:05.999999999Z"))))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(fmt.Sprintf(`{"name": "whatever", "permissions":["some_permission"], "organisation_id": 905, "expiration_date": "%s"}`, exp.Format("2006-01-02T15:04:05.999999999Z"))))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -157,14 +196,15 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 func TestNewApiKeyIsCreatedWithoutExpirationDate(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(_ string, tenantId int64, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(name string, tenantId int64, permissions []string, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
+			assert.Equal(t, []string{"some_permission"}, permissions)
 			assert.Nil(t, expiry)
 			return "newapikey", nil
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "tenant_id": 905}`))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "permissions":["some_permission"], "organisation_id": 905}`))
 	req.Header.Add("content-type", "application/json")
 
 	// Act

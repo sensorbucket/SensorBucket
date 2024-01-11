@@ -48,6 +48,15 @@ type Role interface {
 	HasPermissions(permission permission, permissions ...permission) bool
 }
 
+func PermissionsValid(permissionStrings []string) bool {
+	for _, perm := range permissionStrings {
+		if permission(perm).Valid() != nil {
+			return false
+		}
+	}
+	return len(permissionStrings) > 0
+}
+
 type permission string
 
 func (p permission) String() string {

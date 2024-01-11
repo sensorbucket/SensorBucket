@@ -11,6 +11,7 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
@@ -40,7 +41,10 @@ func (s *Service) RevokeApiKey(apiKeyId int64) error {
 // Creates a new API key for the given tenant and with the given expiration date.
 // Returns the api key as: 'apiKeyId:apiKey' encoded to a base64 string.
 // Fails if the tenant is not active
-func (s *Service) GenerateNewApiKey(name string, tenantId int64, expirationDate *time.Time) (string, error) {
+func (s *Service) GenerateNewApiKey(name string, tenantId int64, permissions []string, expirationDate *time.Time) (string, error) {
+	if valid := auth.PermissionsValid(permissions); !valid {
+		return "", ErrPermissionsInvalid
+	}
 	tenant, err := s.tenantStore.GetTenantById(tenantId)
 	if err != nil {
 		return "", err
@@ -63,7 +67,7 @@ func (s *Service) GenerateNewApiKey(name string, tenantId int64, expirationDate 
 	if err != nil {
 		return "", err
 	}
-	err = s.apiKeyStore.AddApiKey(tenant.ID, hashed)
+	err = s.apiKeyStore.AddApiKey(tenant.ID, permissions, hashed)
 	if err != nil {
 		return "", err
 	}
@@ -152,7 +156,7 @@ type Service struct {
 }
 
 type apiKeyStore interface {
-	AddApiKey(tenantID int64, hashedApiKey HashedApiKey) error
+	AddApiKey(tenantID int64, permissions []string, hashedApiKey HashedApiKey) error
 	DeleteApiKey(id int64) error
 	GetHashedApiKeyById(id int64, stateFilter []tenants.State) (HashedApiKey, error)
 	GetHashedAPIKeyByNameAndTenantID(name string, tenantID int64) (HashedApiKey, error)

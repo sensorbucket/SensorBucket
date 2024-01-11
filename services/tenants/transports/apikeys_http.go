@@ -80,6 +80,7 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 		Name           string     `json:"name"`
 		TenantID       int64      `json:"tenant_id"`
 		ExpirationDate *time.Time `json:"expiration_date"`
+		Permissions    []string   `json:"permissions"`
 	}
 	type Result struct {
 		ApiKey string `json:"api_key"`
@@ -111,7 +112,15 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 			})
 			return
 		}
-		apiKey, err := t.apiKeySvc.GenerateNewApiKey(params.Name, params.TenantID, params.ExpirationDate)
+
+		if len(params.Permissions) == 0 {
+			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
+				Message: "at least one permission is required",
+			})
+			return
+		}
+
+		apiKey, err := t.apiKeySvc.GenerateNewApiKey(params.Name, params.TenantID, params.Permissions, params.ExpirationDate)
 		if err != nil {
 			if errors.Is(err, apikeys.ErrTenantIsNotValid) {
 				web.HTTPResponse(w, http.StatusNotFound, web.APIResponseAny{
@@ -181,7 +190,7 @@ func (t *APIKeysHTTPTransport) httpListApiKeys() http.HandlerFunc {
 
 type apiKeyService interface {
 	AuthenticateApiKey(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error)
-	GenerateNewApiKey(name string, tenantId int64, expiry *time.Time) (string, error)
+	GenerateNewApiKey(name string, tenantId int64, permissions []string, expiry *time.Time) (string, error)
 	RevokeApiKey(id int64) error
 	ListAPIKeys(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
 }

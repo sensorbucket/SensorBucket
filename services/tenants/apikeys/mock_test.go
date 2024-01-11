@@ -85,7 +85,7 @@ var _ apiKeyStore = &apiKeyStoreMock{}
 //
 //		// make and configure a mocked apiKeyStore
 //		mockedapiKeyStore := &apiKeyStoreMock{
-//			AddApiKeyFunc: func(tenantID int64, hashedApiKey HashedApiKey) error {
+//			AddApiKeyFunc: func(tenantID int64, permissions []string, hashedApiKey HashedApiKey) error {
 //				panic("mock out the AddApiKey method")
 //			},
 //			DeleteApiKeyFunc: func(id int64) error {
@@ -108,7 +108,7 @@ var _ apiKeyStore = &apiKeyStoreMock{}
 //	}
 type apiKeyStoreMock struct {
 	// AddApiKeyFunc mocks the AddApiKey method.
-	AddApiKeyFunc func(tenantID int64, hashedApiKey HashedApiKey) error
+	AddApiKeyFunc func(tenantID int64, permissions []string, hashedApiKey HashedApiKey) error
 
 	// DeleteApiKeyFunc mocks the DeleteApiKey method.
 	DeleteApiKeyFunc func(id int64) error
@@ -128,6 +128,8 @@ type apiKeyStoreMock struct {
 		AddApiKey []struct {
 			// TenantID is the tenantID argument value.
 			TenantID int64
+			// Permissions is the permissions argument value.
+			Permissions []string
 			// HashedApiKey is the hashedApiKey argument value.
 			HashedApiKey HashedApiKey
 		}
@@ -166,21 +168,23 @@ type apiKeyStoreMock struct {
 }
 
 // AddApiKey calls AddApiKeyFunc.
-func (mock *apiKeyStoreMock) AddApiKey(tenantID int64, hashedApiKey HashedApiKey) error {
+func (mock *apiKeyStoreMock) AddApiKey(tenantID int64, permissions []string, hashedApiKey HashedApiKey) error {
 	if mock.AddApiKeyFunc == nil {
 		panic("apiKeyStoreMock.AddApiKeyFunc: method is nil but apiKeyStore.AddApiKey was just called")
 	}
 	callInfo := struct {
 		TenantID     int64
+		Permissions  []string
 		HashedApiKey HashedApiKey
 	}{
 		TenantID:     tenantID,
+		Permissions:  permissions,
 		HashedApiKey: hashedApiKey,
 	}
 	mock.lockAddApiKey.Lock()
 	mock.calls.AddApiKey = append(mock.calls.AddApiKey, callInfo)
 	mock.lockAddApiKey.Unlock()
-	return mock.AddApiKeyFunc(tenantID, hashedApiKey)
+	return mock.AddApiKeyFunc(tenantID, permissions, hashedApiKey)
 }
 
 // AddApiKeyCalls gets all the calls that were made to AddApiKey.
@@ -189,10 +193,12 @@ func (mock *apiKeyStoreMock) AddApiKey(tenantID int64, hashedApiKey HashedApiKey
 //	len(mockedapiKeyStore.AddApiKeyCalls())
 func (mock *apiKeyStoreMock) AddApiKeyCalls() []struct {
 	TenantID     int64
+	Permissions  []string
 	HashedApiKey HashedApiKey
 } {
 	var calls []struct {
 		TenantID     int64
+		Permissions  []string
 		HashedApiKey HashedApiKey
 	}
 	mock.lockAddApiKey.RLock()
