@@ -23,7 +23,7 @@ var _ apiKeyService = &apiKeyServiceMock{}
 //			AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 //				panic("mock out the AuthenticateApiKey method")
 //			},
-//			GenerateNewApiKeyFunc: func(name string, tenantId int64, expiry *time.Time) (string, error) {
+//			GenerateNewApiKeyFunc: func(name string, tenantId int64, permissions []string, expiry *time.Time) (string, error) {
 //				panic("mock out the GenerateNewApiKey method")
 //			},
 //			ListAPIKeysFunc: func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
@@ -43,7 +43,7 @@ type apiKeyServiceMock struct {
 	AuthenticateApiKeyFunc func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error)
 
 	// GenerateNewApiKeyFunc mocks the GenerateNewApiKey method.
-	GenerateNewApiKeyFunc func(name string, tenantId int64, expiry *time.Time) (string, error)
+	GenerateNewApiKeyFunc func(name string, tenantId int64, permissions []string, expiry *time.Time) (string, error)
 
 	// ListAPIKeysFunc mocks the ListAPIKeys method.
 	ListAPIKeysFunc func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
@@ -64,6 +64,8 @@ type apiKeyServiceMock struct {
 			Name string
 			// TenantId is the tenantId argument value.
 			TenantId int64
+			// Permissions is the permissions argument value.
+			Permissions []string
 			// Expiry is the expiry argument value.
 			Expiry *time.Time
 		}
@@ -119,23 +121,25 @@ func (mock *apiKeyServiceMock) AuthenticateApiKeyCalls() []struct {
 }
 
 // GenerateNewApiKey calls GenerateNewApiKeyFunc.
-func (mock *apiKeyServiceMock) GenerateNewApiKey(name string, tenantId int64, expiry *time.Time) (string, error) {
+func (mock *apiKeyServiceMock) GenerateNewApiKey(name string, tenantId int64, permissions []string, expiry *time.Time) (string, error) {
 	if mock.GenerateNewApiKeyFunc == nil {
 		panic("apiKeyServiceMock.GenerateNewApiKeyFunc: method is nil but apiKeyService.GenerateNewApiKey was just called")
 	}
 	callInfo := struct {
-		Name     string
-		TenantId int64
-		Expiry   *time.Time
+		Name        string
+		TenantId    int64
+		Permissions []string
+		Expiry      *time.Time
 	}{
-		Name:     name,
-		TenantId: tenantId,
-		Expiry:   expiry,
+		Name:        name,
+		TenantId:    tenantId,
+		Permissions: permissions,
+		Expiry:      expiry,
 	}
 	mock.lockGenerateNewApiKey.Lock()
 	mock.calls.GenerateNewApiKey = append(mock.calls.GenerateNewApiKey, callInfo)
 	mock.lockGenerateNewApiKey.Unlock()
-	return mock.GenerateNewApiKeyFunc(name, tenantId, expiry)
+	return mock.GenerateNewApiKeyFunc(name, tenantId, permissions, expiry)
 }
 
 // GenerateNewApiKeyCalls gets all the calls that were made to GenerateNewApiKey.
@@ -143,14 +147,16 @@ func (mock *apiKeyServiceMock) GenerateNewApiKey(name string, tenantId int64, ex
 //
 //	len(mockedapiKeyService.GenerateNewApiKeyCalls())
 func (mock *apiKeyServiceMock) GenerateNewApiKeyCalls() []struct {
-	Name     string
-	TenantId int64
-	Expiry   *time.Time
+	Name        string
+	TenantId    int64
+	Permissions []string
+	Expiry      *time.Time
 } {
 	var calls []struct {
-		Name     string
-		TenantId int64
-		Expiry   *time.Time
+		Name        string
+		TenantId    int64
+		Permissions []string
+		Expiry      *time.Time
 	}
 	mock.lockGenerateNewApiKey.RLock()
 	calls = mock.calls.GenerateNewApiKey

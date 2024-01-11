@@ -4,9 +4,19 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
+	"net/http"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+	"sensorbucket.nl/sensorbucket/internal/web"
+)
+
+var (
+	ErrTenantIsNotValid   = fmt.Errorf("tenant is not valid")
+	ErrKeyNotFound        = fmt.Errorf("couldnt find key")
+	ErrInvalidEncoding    = fmt.Errorf("API key was sent using an invalid encoding")
+	ErrPermissionsInvalid = web.NewError(http.StatusBadRequest, "Some permissions were not valid", "INVALID_PERMISSIONS")
 )
 
 type ApiKey struct {
@@ -15,8 +25,9 @@ type ApiKey struct {
 }
 type HashedApiKey struct {
 	Key
-	SecretHash string
-	TenantID   int64
+	SecretHash  string
+	TenantID    int64
+	Permissions []string
 }
 
 type Key struct {

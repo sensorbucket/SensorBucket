@@ -41,11 +41,17 @@ var allowedPermissions = []permission{
 	WRITE_USER_WORKERS,
 }
 
-var SuperUserRole = role(allowedPermissions)
+func PermissionsValid(permissionStrings []string) bool {
+	for _, perm := range permissionStrings {
+		if permission(perm).Valid() != nil {
+			return false
+		}
+	}
+	return len(permissionStrings) > 0
+}
 
-type Role interface {
-	Permissions() []permission
-	HasPermissions(permission permission, permissions ...permission) bool
+func NewRole(permissions ...permission) role {
+	return role(permissions)
 }
 
 type permission string

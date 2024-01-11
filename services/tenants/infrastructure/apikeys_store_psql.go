@@ -71,7 +71,16 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 	return &page, nil
 }
 
-func (as *apiKeyStore) AddApiKey(tenantID int64, hashedKey apikeys.HashedApiKey) error {
+func (as *apiKeyStore) AddApiKey(tenantID int64, permissions []string, hashedKey apikeys.HashedApiKey) error {
+
+	// Create the insert statement for the permissions which must ran with the insert API key query
+	apiKeyPermissionsQ := sq.Insert("api_key_permissions").
+		Columns("permission", "api_key_id")
+	for _, permission := range permissions {
+		apiKeyPermissionsQ = apiKeyPermissionsQ.Values(permission, sq.Select("id").From("new_api_key").Prefix("(").Suffix(")"))
+	}
+
+	// Create the insert API key query
 	q := sq.Insert("api_keys").
 		Columns("id", "name", "created", "tenant_id", "value", "expiration_date").
 		Values(
@@ -80,8 +89,16 @@ func (as *apiKeyStore) AddApiKey(tenantID int64, hashedKey apikeys.HashedApiKey)
 			time.Now().UTC(),
 			tenantID,
 			hashedKey.SecretHash,
-			hashedKey.ExpirationDate)
+			hashedKey.ExpirationDate).
+		Prefix("WITH new_api_key AS (").
+		Suffix("RETURNING \"id\")").
+
+		// Run the API key permission query along with the insert API key query
+		SuffixExpr(apiKeyPermissionsQ)
 	_, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Exec()
+	if err != nil {
+		return err
+	}
 	return err
 }
 
