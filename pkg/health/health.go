@@ -1,111 +1,27 @@
 package health
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
+
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
 type Check func() bool
 
-type HealthChecker struct {
-	livelinessChecks map[string]Check
-	readinessChecks  map[string]Check
-	router           *chi.Mux
-	cancelToken      chan interface{}
-}
+type checks map[string]Check
 
-func NewHealthEndpoint(cancelToken chan interface{}) *HealthChecker {
-	r := chi.NewRouter()
-	hc := HealthChecker{
-		router:           r,
-		livelinessChecks: map[string]Check{},
-		readinessChecks:  map[string]Check{},
+func (checks checks) Perform() checksResult {
+	if len(checks) == 0 {
+		return checksResult{Success: false}
 	}
-	hc.setupRoutes(hc.router)
-	return &hc
-}
 
-func (hc *HealthChecker) setupRoutes(r chi.Router) {
-	r.Get("/livez", hc.livelinessCheck)
-	r.Get("/readyz", hc.readinessCheck)
-}
-
-func (hc *HealthChecker) WithLiveChecks(checks map[string]Check) *HealthChecker {
-	for name, c := range checks {
-		hc.livelinessChecks[name] = c
-	}
-	return hc
-}
-
-func (hc *HealthChecker) WithReadyChecks(checks map[string]Check) *HealthChecker {
-	for name, c := range checks {
-		hc.readinessChecks[name] = c
-	}
-	return hc
-}
-
-func (hc *HealthChecker) Start(addr string) {
-	server := &http.Server{
-		Addr:    addr,
-		Handler: hc.router,
-	}
-	log.Printf("[Info] Started Health endpoint on %s", addr)
-	err := server.ListenAndServe()
-	if err != nil {
-		log.Printf("[Error] Health endpoint stopped running: %v, shutting down...\n", err)
-		if hc.cancelToken != nil {
-			hc.cancelToken <- true
-		}
-	}
-}
-
-func (hc *HealthChecker) readinessCheck(w http.ResponseWriter, r *http.Request) {
-	if len(hc.readinessChecks) == 0 {
-		web.HTTPResponse(w, http.StatusOK, web.APIResponse[checksResult]{
-			Message: fmt.Sprintf("WARNING: no readiness checks configured"),
-		})
-		return
-	}
-	res := performChecks(hc.readinessChecks)
-	if res.Success {
-		web.HTTPResponse(w, http.StatusOK, web.APIResponse[checksResult]{
-			Message: fmt.Sprintf("%d/%d readiness checks passed", len(res.ChecksSucess), len(hc.readinessChecks)),
-			Data:    res,
-		})
-		return
-	}
-	web.HTTPResponse(w, http.StatusInternalServerError, web.APIResponse[checksResult]{
-		Message: fmt.Sprintf("%d/%d readiness checks passed", len(res.ChecksSucess), len(hc.readinessChecks)),
-		Data:    res,
-	})
-}
-
-func (hc *HealthChecker) livelinessCheck(w http.ResponseWriter, r *http.Request) {
-	if len(hc.livelinessChecks) == 0 {
-		web.HTTPResponse(w, http.StatusOK, web.APIResponse[checksResult]{
-			Message: fmt.Sprintf("WARNING: no liveliness checks configured"),
-		})
-		return
-	}
-	res := performChecks(hc.livelinessChecks)
-	if res.Success {
-		web.HTTPResponse(w, http.StatusOK, web.APIResponse[checksResult]{
-			Message: fmt.Sprintf("%d/%d liveliness checks passed", len(res.ChecksSucess), len(hc.livelinessChecks)),
-			Data:    res,
-		})
-		return
-	}
-	web.HTTPResponse(w, http.StatusInternalServerError, web.APIResponse[checksResult]{
-		Message: fmt.Sprintf("%d/%d liveliness checks passed", len(hc.livelinessChecks)-len(res.ChecksFailed), len(hc.livelinessChecks)),
-		Data:    res,
-	})
-}
-
-func performChecks(checks map[string]Check) checksResult {
 	success := []string{}
 	failed := []string{}
 	for name, check := range checks {
@@ -120,6 +36,82 @@ func performChecks(checks map[string]Check) checksResult {
 		ChecksSucess: success,
 		ChecksFailed: failed,
 	}
+}
+
+type HealthChecker struct {
+	livelinessChecks checks
+	readinessChecks  checks
+	router           chi.Router
+}
+
+func NewHealthEndpoint() *HealthChecker {
+	hc := HealthChecker{
+		router:           chi.NewRouter(),
+		livelinessChecks: checks{},
+		readinessChecks:  checks{},
+	}
+	hc.setupRoutes(hc.router)
+	return &hc
+}
+
+func (hc *HealthChecker) WithLiveChecks(checks checks) *HealthChecker {
+	for name, c := range checks {
+		hc.livelinessChecks[name] = c
+	}
+	return hc
+}
+
+func (hc *HealthChecker) WithReadyChecks(checks checks) *HealthChecker {
+	for name, c := range checks {
+		hc.readinessChecks[name] = c
+	}
+	return hc
+}
+
+func (hc *HealthChecker) setupRoutes(r chi.Router) {
+	r.Get("/livez", hc.httpLivelinessCheck)
+	r.Get("/readyz", hc.httpReadinessCheck)
+}
+
+func (hc HealthChecker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	hc.router.ServeHTTP(w, r)
+}
+
+func (hc *HealthChecker) httpReadinessCheck(w http.ResponseWriter, r *http.Request) {
+	checksResponse(w, hc.readinessChecks)
+}
+
+func (hc *HealthChecker) httpLivelinessCheck(w http.ResponseWriter, r *http.Request) {
+	checksResponse(w, hc.livelinessChecks)
+}
+
+func (hc *HealthChecker) RunAsServer(address string) func(context.Context) error {
+	srv := &http.Server{
+		Addr:         address,
+		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  5 * time.Second,
+		Handler:      hc,
+	}
+	go func() {
+		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) && err != nil {
+			log.Printf("HealthChecker server closed unexpectedly: %s\n", err.Error())
+		}
+	}()
+	return func(ctx context.Context) error {
+		return srv.Shutdown(ctx)
+	}
+}
+
+func checksResponse(w http.ResponseWriter, checks checks) {
+	results := checks.Perform()
+	statusCode := http.StatusOK
+	if !results.Success {
+		statusCode = http.StatusServiceUnavailable
+	}
+	web.HTTPResponse(w, statusCode, web.APIResponse[checksResult]{
+		Message: fmt.Sprintf("%d/%d checks passed", len(results.ChecksSucess), len(checks)),
+		Data:    results,
+	})
 }
 
 type checksResult struct {

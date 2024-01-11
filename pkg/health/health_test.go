@@ -7,12 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestReadyEndpoint(t *testing.T) {
-
 	type scenario struct {
 		checks         map[string]Check
 		expected       result
@@ -24,58 +23,58 @@ func TestReadyEndpoint(t *testing.T) {
 		"only 1 out of 3 checks succeed": {
 			checks: map[string]Check{"failing-1": func() bool { return false }, "failing-2": func() bool { return false }, "success-1": func() bool { return true }},
 			expected: result{
-				Message: "1/3 readiness checks passed",
+				Message: "1/3 checks passed",
 				Data: resultData{
 					Success:      false,
 					ChecksSucess: []string{"success-1"},
 					ChecksFailed: []string{"failing-1", "failing-2"},
 				},
 			},
-			expectedStatus: 500,
+			expectedStatus: http.StatusServiceUnavailable,
 		},
 		"all checks fail": {
 			checks: map[string]Check{"failing-1": func() bool { return false }, "failing-2": func() bool { return false }, "failing-3": func() bool { return false }},
 			expected: result{
-				Message: "0/3 readiness checks passed",
+				Message: "0/3 checks passed",
 				Data: resultData{
 					Success:      false,
 					ChecksSucess: []string{},
 					ChecksFailed: []string{"failing-1", "failing-2", "failing-3"},
 				},
 			},
-			expectedStatus: 500,
+			expectedStatus: http.StatusServiceUnavailable,
 		},
 		"all checks succeed": {
 			checks: map[string]Check{"success-1": func() bool { return true }, "success-2": func() bool { return true }, "success-3": func() bool { return true }, "success-4": func() bool { return true }},
 			expected: result{
-				Message: "4/4 readiness checks passed",
+				Message: "4/4 checks passed",
 				Data: resultData{
 					Success:      true,
 					ChecksSucess: []string{"success-1", "success-2", "success-3", "success-4"},
 					ChecksFailed: []string{},
 				},
 			},
-			expectedStatus: 200,
+			expectedStatus: http.StatusOK,
 		},
 		"only 1 check fails": {
 			checks: map[string]Check{"failing-1": func() bool { return false }, "success-1": func() bool { return true }, "success-2": func() bool { return true }, "success-3": func() bool { return true }, "success-4": func() bool { return true }},
 			expected: result{
-				Message: "4/5 readiness checks passed",
+				Message: "4/5 checks passed",
 				Data: resultData{
 					Success:      false,
 					ChecksSucess: []string{"success-1", "success-2", "success-3", "success-4"},
 					ChecksFailed: []string{"failing-1"},
 				},
 			},
-			expectedStatus: 500,
+			expectedStatus: http.StatusServiceUnavailable,
 		},
 		"no checks configured": {
 			checks: map[string]Check{},
 			expected: result{
-				Message: "WARNING: no readiness checks configured",
+				Message: "0/0 checks passed",
 				Data:    resultData{},
 			},
-			expectedStatus: 200,
+			expectedStatus: http.StatusServiceUnavailable,
 		},
 	}
 
@@ -100,7 +99,6 @@ func TestReadyEndpoint(t *testing.T) {
 }
 
 func TestLivelinessEndpoint(t *testing.T) {
-
 	type scenario struct {
 		checks         map[string]Check
 		expected       result
@@ -112,58 +110,58 @@ func TestLivelinessEndpoint(t *testing.T) {
 		"only 1 out of 3 checks succeed": {
 			checks: map[string]Check{"failing-1": func() bool { return false }, "failing-2": func() bool { return false }, "success-1": func() bool { return true }},
 			expected: result{
-				Message: "1/3 liveliness checks passed",
+				Message: "1/3 checks passed",
 				Data: resultData{
 					Success:      false,
 					ChecksSucess: []string{"success-1"},
 					ChecksFailed: []string{"failing-1", "failing-2"},
 				},
 			},
-			expectedStatus: 500,
+			expectedStatus: http.StatusServiceUnavailable,
 		},
 		"all checks fail": {
 			checks: map[string]Check{"failing-1": func() bool { return false }, "failing-2": func() bool { return false }, "failing-3": func() bool { return false }},
 			expected: result{
-				Message: "0/3 liveliness checks passed",
+				Message: "0/3 checks passed",
 				Data: resultData{
 					Success:      false,
 					ChecksSucess: []string{},
 					ChecksFailed: []string{"failing-1", "failing-2", "failing-3"},
 				},
 			},
-			expectedStatus: 500,
+			expectedStatus: http.StatusServiceUnavailable,
 		},
 		"all checks succeed": {
 			checks: map[string]Check{"success-1": func() bool { return true }, "success-2": func() bool { return true }, "success-3": func() bool { return true }, "success-4": func() bool { return true }},
 			expected: result{
-				Message: "4/4 liveliness checks passed",
+				Message: "4/4 checks passed",
 				Data: resultData{
 					Success:      true,
 					ChecksSucess: []string{"success-1", "success-2", "success-3", "success-4"},
 					ChecksFailed: []string{},
 				},
 			},
-			expectedStatus: 200,
+			expectedStatus: http.StatusOK,
 		},
 		"only 1 check fails": {
 			checks: map[string]Check{"failing-1": func() bool { return false }, "success-1": func() bool { return true }, "success-2": func() bool { return true }, "success-3": func() bool { return true }, "success-4": func() bool { return true }},
 			expected: result{
-				Message: "4/5 liveliness checks passed",
+				Message: "4/5 checks passed",
 				Data: resultData{
 					Success:      false,
 					ChecksSucess: []string{"success-1", "success-2", "success-3", "success-4"},
 					ChecksFailed: []string{"failing-1"},
 				},
 			},
-			expectedStatus: 500,
+			expectedStatus: http.StatusServiceUnavailable,
 		},
 		"no checks configured": {
 			checks: map[string]Check{},
 			expected: result{
-				Message: "WARNING: no liveliness checks configured",
+				Message: "0/0 checks passed",
 				Data:    resultData{},
 			},
-			expectedStatus: 200,
+			expectedStatus: http.StatusServiceUnavailable,
 		},
 	}
 
@@ -258,7 +256,7 @@ func testHealthEndpoint(liveChecks, readyChecks map[string]Check) *HealthChecker
 	hc := HealthChecker{
 		livelinessChecks: liveChecks,
 		readinessChecks:  readyChecks,
-		router:           chi.NewMux(),
+		router:           chi.NewRouter(),
 	}
 	hc.setupRoutes(hc.router)
 	return &hc
