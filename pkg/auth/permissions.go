@@ -41,6 +41,15 @@ var allowedPermissions = []permission{
 	WRITE_USER_WORKERS,
 }
 
+func PermissionsValid(permissionStrings []string) bool {
+	for _, perm := range permissionStrings {
+		if permission(perm).Valid() != nil {
+			return false
+		}
+	}
+	return len(permissionStrings) > 0
+}
+
 func NewRole(permissions ...permission) role {
 	return role(permissions)
 }
