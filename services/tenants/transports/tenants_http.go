@@ -36,6 +36,8 @@ func (t *TenantsHTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request)
 func (t *TenantsHTTPTransport) setupRoutes(r chi.Router) {
 	r.Get("/tenants/list", t.httpGetTenants())
 	r.Post("/tenants", t.httpCreateTenant())
+	r.Post("/tenants/member-permissions", t.httpAddMemberPermission())
+	// r.Delete("/tenants/members-permissions", t.httpRevokeMemberPermission())
 	r.Delete("/tenants/{tenant_id}", t.httpDeleteTenant())
 }
 
@@ -55,8 +57,14 @@ func (t *TenantsHTTPTransport) httpCreateTenant() http.HandlerFunc {
 			},
 		); len(validationErrors) > 0 {
 			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
-				Message: "model not valid",
+				Message: "Model not valid",
 				Data:    validationErrors,
+			})
+			return
+		}
+		if len(dto.Permissions) == 0 {
+			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
+				Message: "Tenant should have at least 1 permission",
 			})
 			return
 		}
@@ -67,6 +75,45 @@ func (t *TenantsHTTPTransport) httpCreateTenant() http.HandlerFunc {
 		}
 		web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
 			Message: "Created new tenant",
+			Data:    created,
+		})
+	}
+}
+
+// TODO: check if user_id exists by asking ory kratos?
+func (t *TenantsHTTPTransport) httpAddMemberPermission() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		dto := tenants.AddMemberPermissionsDTO{}
+		if err := web.DecodeJSON(r, &dto); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		if validationErrors := ensureValuesNotEmpty(
+			map[string]int64{
+				"tenant_id": dto.TenantID,
+				"user_id":   dto.UserID,
+			},
+		); len(validationErrors) > 0 {
+			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
+				Message: "model not valid",
+				Data:    validationErrors,
+			})
+			return
+		}
+		if len(dto.Permissions) == 0 {
+			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
+				Message: "at least 1 permission must be set",
+			})
+			return
+		}
+		fmt.Println(dto)
+		created, err := t.tenantSvc.AddMemberPermissions(dto)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
+			Message: "Added permissions",
 			Data:    created,
 		})
 	}
@@ -128,6 +175,7 @@ func ensureValuesNotEmpty[T comparable](values map[string]T) []string {
 
 type tenantService interface {
 	CreateNewTenant(tenant tenants.TenantDTO) (tenants.TenantDTO, error)
+	AddMemberPermissions(memberPermissions tenants.AddMemberPermissionsDTO) (tenants.MemberPermissionsAddedDTO, error)
 	ArchiveTenant(tenantID int64) error
 	ListTenants(filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.TenantDTO], error)
 }
