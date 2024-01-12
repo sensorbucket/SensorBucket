@@ -1,7 +1,6 @@
 package tenantsinfra
 
 import (
-	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -34,7 +33,7 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 	}
 
 	q := sq.
-		Select("keys.id", "keys.name", "keys.expiration_date", "keys.tenant_id", "tenant.name", "permissions.permission").
+		Select("keys.id", "keys.name", "keys.expiration_date", "keys.created_at", "keys.tenant_id", "tenant.name", "permissions.permission").
 		From("api_keys keys").
 		LeftJoin("permissions on keys.id = permissions.api_key_id").
 		RightJoin("tenants on keys.tenant_id = tenants.id")
@@ -50,6 +49,11 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 		return nil, err
 	}
 	defer rows.Close()
+
+	// TODO: limit wont work with the way permissois are joined now
+
+	// For each key there are multiple records so all the permissions can be listed
+	// Track at which API key the rows are currently so we can add the correct permissions and move to the next key
 	list := make([]apikeys.ApiKeyDTO, 0, cursor.Limit)
 	currentId := -1
 	lastId := -1
@@ -58,46 +62,39 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 		key := apikeys.ApiKeyDTO{}
 		permission := ""
 		err = rows.Scan(
-<<<<<<< HEAD
 			&key.ID,
 			&key.Name,
 			&key.ExpirationDate,
+			&key.Created,
 			&key.TenantID,
 			&key.TenantName,
-			&cursor.Columns.Tenant,
-			&key.Created,
-=======
-			&currentId,
-			&key.Name,
-			&key.ExpirationDate,
-			&key.TenantID,
 			&permission,
+			&cursor.Columns.Tenant,
 			&cursor.Columns.Created,
->>>>>>> 7875bad (update)
 		)
 		if err != nil {
 			return nil, err
 		}
-<<<<<<< HEAD
-
-		cursor.Columns.Created = key.Created
-
-=======
 		if lastId != currentId {
 			// Started scanning new API key record
 			currentPermissions = []string{}
 		}
 		currentPermissions = append(currentPermissions, permission)
 		lastId = currentId
->>>>>>> 7875bad (update)
-		list = append(list, key)
+		if len(list) > 0 && list[len(list)-1].ID == key.ID {
+			// Still at the same key, append the permission to the last key
+			list[len(list)-1].Permissions = append(list[len(list)-1].Permissions, permission)
+		} else {
+			// Otherwise the result set arrived at a new api key
+			key.Permissions = []string{permission}
+			list = append(list, key)
+		}
 	}
 	page := pagination.CreatePageT(list, cursor)
 	return &page, nil
 }
 
 func (as *apiKeyStore) AddApiKey(tenantID int64, permissions []string, hashedKey apikeys.HashedApiKey) error {
-
 	// Create the insert statement for the permissions which must ran with the insert API key query
 	apiKeyPermissionsQ := sq.Insert("api_key_permissions").
 		Columns("permission", "api_key_id")
@@ -147,10 +144,12 @@ func (as *apiKeyStore) DeleteApiKey(id int64) error {
 // Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.
 // Only returns the API key if the given tenant confirms to any state passed in the stateFilter
 func (as *apiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
+	// TODO: how secure is this query?
 	q := sq.
-		Select("api_keys.id, api_keys.value, api_keys.tenant_id, api_keys.expiration_date").
+		Select("api_keys.id, api_keys.value, api_keys.tenant_id, api_keys.expiration_date", "api_key_permissions.permission").
 		From("api_keys").
-		Where(sq.Eq{"api_keys.id": id})
+		Where(sq.Eq{"api_keys.id": id}).
+		Join("api_key_permissions on api_keys.id = api_key_permissions.api_key_id")
 	if len(stateFilter) > 0 {
 		q = q.Join("tenants on api_keys.tenant_id = tenants.id").
 			Where(sq.Eq{"tenants.state": stateFilter})
@@ -191,16 +190,21 @@ func (as *apiKeyStore) GetHashedAPIKeyByNameAndTenantID(name string, tenantID in
 	}
 	defer rows.Close()
 	k := apikeys.HashedApiKey{}
-	if rows.Next() {
+	for rows.Next() {
+		permission := ""
 		err = rows.Scan(
 			&k.ID,
 			&k.SecretHash,
 			&k.TenantID,
-			&k.ExpirationDate)
+			&k.ExpirationDate,
+			&permission,
+		)
 		if err != nil {
 			return apikeys.HashedApiKey{}, err
 		}
-	} else {
+		k.Permissions = append(k.Permissions, permission)
+	}
+	if k.ID == 0 {
 		return apikeys.HashedApiKey{}, apikeys.ErrKeyNotFound
 	}
 	return k, nil

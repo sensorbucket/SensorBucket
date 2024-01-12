@@ -96,17 +96,15 @@ func (s *Service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAu
 	}
 	isValid := hashed.compare(apiKey)
 	if isValid {
+		dto := ApiKeyAuthenticationDTO{
+			TenantID:    fmt.Sprintf("%d", hashed.TenantID),
+			Permissions: hashed.Permissions,
+		}
 		if hashed.ExpirationDate != nil {
 			exp := hashed.ExpirationDate.Unix()
-			return ApiKeyAuthenticationDTO{
-				TenantID:   fmt.Sprintf("%d", hashed.TenantID),
-				Expiration: &exp,
-			}, nil
-		} else {
-			return ApiKeyAuthenticationDTO{
-				TenantID: fmt.Sprintf("%d", hashed.TenantID),
-			}, nil
+			dto.Expiration = &exp
 		}
+		return dto, nil
 	}
 	return ApiKeyAuthenticationDTO{}, ErrKeyNotFound
 }
@@ -116,8 +114,9 @@ type Filter struct {
 }
 
 type ApiKeyAuthenticationDTO struct {
-	TenantID   string `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
-	Expiration *int64 `json:"expiration_date"`
+	TenantID    string   `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
+	Expiration  *int64   `json:"expiration_date"`
+	Permissions []string `json:"permissions"`
 }
 
 type ApiKeyDTO struct {
@@ -127,6 +126,7 @@ type ApiKeyDTO struct {
 	TenantName     string     `json:"tenant_name"`
 	ExpirationDate *time.Time `json:"expiration_date"`
 	Created        time.Time  `json:"created"`
+	Permissions    []string   `json:"permissions"`
 }
 
 func apiKeyAndIdFromBase64(base64Src string) (int64, string, error) {
