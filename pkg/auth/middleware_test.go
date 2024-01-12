@@ -375,7 +375,6 @@ func TestAuthenticate(t *testing.T) {
 			next := HandlerMock{
 				ServeHTTPFunc: func(responseWriter http.ResponseWriter, request *http.Request) {
 					assert.Equal(t, cfg.expectedContext, request.Context())
-					fmt.Println("CONTEXT", request.Context())
 				},
 			}
 
