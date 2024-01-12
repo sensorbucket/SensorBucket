@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"time"
 
 	"github.com/rs/cors"
@@ -36,6 +40,9 @@ func main() {
 }
 
 func Run() error {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
 	// Create AMQP Message Queue
 	mqConn := mq.NewConnection(AMQP_HOST)
 	go mqConn.Start()
@@ -54,7 +61,7 @@ func Run() error {
 		ReadTimeout:  5 * time.Second,
 	}
 
-	go health.NewHealthEndpoint().
+	shutdownHealthEndpoint := health.NewHealthEndpoint().
 		WithReadyChecks(
 			map[string]health.Check{
 				"mqconn-ready": mqConn.Ready,
@@ -62,11 +69,30 @@ func Run() error {
 		).
 		WithLiveChecks(
 			map[string]health.Check{
-				"mqqonn-healthy": mqConn.Healthy,
+				"mqconn-healthy": mqConn.Healthy,
 			},
 		).
 		RunAsServer(HEALTH_ADDR)
 
-	log.Printf("HTTP Server listening on: %s\n", srv.Addr)
-	return srv.ListenAndServe()
+	errC := make(chan error)
+	go func() {
+		log.Printf("HTTP Server listening on: %s\n", srv.Addr)
+		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) && err != nil {
+			errC <- err
+		}
+	}()
+
+	var err error
+	select {
+	case <-ctx.Done():
+	case err = <-errC:
+	}
+
+	ctxTO, cancelTO := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelTO()
+
+	srv.Shutdown(ctxTO)
+	shutdownHealthEndpoint(ctxTO)
+
+	return err
 }

@@ -93,6 +93,7 @@ func (hc *HealthChecker) RunAsServer(address string) func(context.Context) error
 		Handler:      hc,
 	}
 	go func() {
+		log.Printf("HealthChecker endpoint available at: %s\n", srv.Addr)
 		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) && err != nil {
 			log.Printf("HealthChecker server closed unexpectedly: %s\n", err.Error())
 		}

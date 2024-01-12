@@ -8,7 +8,6 @@ require (
 	github.com/docker/docker v24.0.5+incompatible
 	github.com/fission/fission v1.19.0
 	github.com/fxamacker/cbor/v2 v2.4.0
-	github.com/go-chi/chi v1.5.5
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/google/uuid v1.3.0
