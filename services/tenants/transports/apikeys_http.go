@@ -2,7 +2,6 @@ package tenantstransports
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -167,13 +166,10 @@ func (t *APIKeysHTTPTransport) httpListApiKeys() http.HandlerFunc {
 	}
 	return func(rw http.ResponseWriter, r *http.Request) {
 		params, err := httpfilter.Parse[Params](r)
-		fmt.Println(r.URL.Query())
 		if err != nil {
 			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "invalid params", ""))
 			return
 		}
-		fmt.Println("a", params.TenantID)
-		fmt.Println("STUFF", params.Filter.TenantID, params.Limit)
 		page, err := t.apiKeySvc.ListAPIKeys(params.Filter, params.Request)
 		if err != nil {
 			web.HTTPError(rw, err)
