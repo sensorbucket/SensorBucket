@@ -1,7 +1,6 @@
 package tenantsinfra
 
 import (
-	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -33,13 +32,13 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 	}
 
 	q := sq.
-		Select("api_keys.id, api_keys.name, api_keys.expiration_date, api_keys.tenant_id, tenants.name").
+		Select("api_keys.id, api_keys.name, api_keys.expiration_date, api_keys.tenant_id, tenants.name", "api_key_permissions.permission").
 		From("api_keys").
-		Join("tenants on api_keys.tenant_id = tenants.id")
+		Join("tenants on api_keys.tenant_id = tenants.id").
+		Join("api_key_permissions on api_keys.id = api_key_permissions.api_key_id")
 	if len(filter.TenantID) > 0 {
 		q = q.Where(sq.Eq{"api_keys.tenant_id": filter.TenantID})
 	}
-	fmt.Println(q.ToSql())
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, err
@@ -49,6 +48,11 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 		return nil, err
 	}
 	defer rows.Close()
+
+	// TODO: limit wont work with the way permissois are joined now
+
+	// For each key there are multiple records so all the permissions can be listed
+	// Track at which API key the rows are currently so we can add the correct permissions and move to the next key
 	list := make([]apikeys.ApiKeyDTO, 0, cursor.Limit)
 	currentId := -1
 	lastId := -1
@@ -58,7 +62,6 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 		permission := ""
 		err = rows.Scan(
 			&key.ID,
-			&currentId,
 			&key.Name,
 			&key.ExpirationDate,
 			&key.TenantID,
@@ -70,13 +73,14 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 		if err != nil {
 			return nil, err
 		}
-		if lastId != currentId {
-			// Started scanning new API key record
-			currentPermissions = []string{}
+		if len(list) > 0 && list[len(list)-1].ID == key.ID {
+			// Still at the same key, append the permission to the last key
+			list[len(list)-1].Permissions = append(list[len(list)-1].Permissions, permission)
+		} else {
+			// Otherwise the result set arrived at a new api key
+			key.Permissions = []string{permission}
+			list = append(list, key)
 		}
-		currentPermissions = append(currentPermissions, permission)
-		lastId = currentId
-		list = append(list, key)
 	}
 	page := pagination.CreatePageT(list, cursor)
 	return &page, nil
@@ -133,10 +137,12 @@ func (as *apiKeyStore) DeleteApiKey(id int64) error {
 // Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.
 // Only returns the API key if the given tenant confirms to any state passed in the stateFilter
 func (as *apiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
+	// TODO: how secure is this query?
 	q := sq.
-		Select("api_keys.id, api_keys.value, api_keys.tenant_id, api_keys.expiration_date").
+		Select("api_keys.id, api_keys.value, api_keys.tenant_id, api_keys.expiration_date", "api_key_permissions.permission").
 		From("api_keys").
-		Where(sq.Eq{"api_keys.id": id})
+		Where(sq.Eq{"api_keys.id": id}).
+		Join("api_key_permissions on api_keys.id = api_key_permissions.api_key_id")
 	if len(stateFilter) > 0 {
 		q = q.Join("tenants on api_keys.tenant_id = tenants.id").
 			Where(sq.Eq{"tenants.state": stateFilter})
@@ -180,11 +186,47 @@ func (as *apiKeyStore) GetHashedAPIKeyByNameAndTenantID(name string, tenantID in
 			&k.ID,
 			&k.SecretHash,
 			&k.TenantID,
-			&k.ExpirationDate)
+			&k.ExpirationDate,
+			&permission,
+		)
 		if err != nil {
 			return apikeys.HashedApiKey{}, err
 		}
-	} else {
+		k.Permissions = append(k.Permissions, permission)
+	}
+	if k.ID == 0 {
+		return apikeys.HashedApiKey{}, apikeys.ErrKeyNotFound
+	}
+	return k, nil
+}
+
+// Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.
+func (as *apiKeyStore) GetHashedAPIKeyByNameAndTenantID(name string, tenantID int64) (apikeys.HashedApiKey, error) {
+	q := sq.
+		Select("id, value,  tenant_id,  expiration_date").
+		From("api_keys").
+		Where(sq.Eq{"name": name, "tenant_id": tenantID})
+	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
+	if err != nil {
+		return apikeys.HashedApiKey{}, err
+	}
+	defer rows.Close()
+	k := apikeys.HashedApiKey{}
+	for rows.Next() {
+		permission := ""
+		err = rows.Scan(
+			&k.ID,
+			&k.SecretHash,
+			&k.TenantID,
+			&k.ExpirationDate,
+			&permission,
+		)
+		if err != nil {
+			return apikeys.HashedApiKey{}, err
+		}
+		k.Permissions = append(k.Permissions, permission)
+	}
+	if k.ID == 0 {
 		return apikeys.HashedApiKey{}, apikeys.ErrKeyNotFound
 	}
 	return k, nil

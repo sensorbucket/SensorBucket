@@ -52,7 +52,7 @@ func TestNewApiKeyNoOrganisationID(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "wasdasdas", "organisation_id": 0}`))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "wasdasdas", "tenant_id": 0}`))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -61,7 +61,7 @@ func TestNewApiKeyNoOrganisationID(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Equal(t, `{"message":"organisation_id must be higher than 0"}`+"\n", rr.Body.String())
+	assert.Equal(t, `{"message":"tenant_id must be higher than 0"}`+"\n", rr.Body.String())
 	assert.Len(t, svc.GenerateNewApiKeyCalls(), 0)
 }
 
@@ -70,7 +70,7 @@ func TestNewApiKeyPermissionsNotGiven(t *testing.T) {
 	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("POST", "/api-keys",
-		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "organisation_id": 12, "expiration_date": "%s"}`, time.Now().Add(time.Hour*24).Format(time.RFC3339))))
+		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "tenant_id": 12, "expiration_date": "%s"}`, time.Now().Add(time.Hour*24).Format(time.RFC3339))))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -88,7 +88,7 @@ func TestNewApiKeyPermissionsEmptyList(t *testing.T) {
 	svc := apiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("POST", "/api-keys",
-		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "organisation_id": 12, "permissions":[], "expiration_date": "%s"}`, time.Now().Add(time.Hour*24).Format(time.RFC3339))))
+		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "tenant_id": 12, "permissions":[], "expiration_date": "%s"}`, time.Now().Add(time.Hour*24).Format(time.RFC3339))))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -399,8 +399,9 @@ func TestAuthenticateApiKeyIsValidNoExpirationDate(t *testing.T) {
 		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{
-				TenantID:   "431",
-				Expiration: nil,
+				TenantID:    "431",
+				Expiration:  nil,
+				Permissions: nil,
 			}, nil
 		},
 	}
@@ -414,7 +415,33 @@ func TestAuthenticateApiKeyIsValidNoExpirationDate(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, `{"sub":"431","expiration_date":null}`+"\n", rr.Body.String())
+	assert.Equal(t, `{"sub":"431","expiration_date":null,"permissions":null}`+"\n", rr.Body.String())
+	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
+}
+
+func TestAuthenticateApiKeyWithPermissions(t *testing.T) {
+	// Arrange
+	svc := apiKeyServiceMock{
+		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
+			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
+			return apikeys.ApiKeyAuthenticationDTO{
+				TenantID:    "431",
+				Expiration:  nil,
+				Permissions: []string{"READ_DEVICES", "WRITE_DEVICES", "READ_API_KEYS", "WRITE_API_KEYS"},
+			}, nil
+		},
+	}
+	transport := testTransport(&svc)
+	req, _ := http.NewRequest("GET", "/api-keys/authenticate", nil)
+
+	// Act
+	req.Header["Authorization"] = []string{"Bearer MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ=="}
+	rr := httptest.NewRecorder()
+	transport.ServeHTTP(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, `{"sub":"431","expiration_date":null,"permissions":["READ_DEVICES","WRITE_DEVICES","READ_API_KEYS","WRITE_API_KEYS"]}`+"\n", rr.Body.String())
 	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
 }
 
@@ -425,8 +452,9 @@ func TestAuthenticateApiKeyIsValidWithExpirationDate(t *testing.T) {
 		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{
-				TenantID:   "431",
-				Expiration: &exp,
+				TenantID:    "431",
+				Expiration:  &exp,
+				Permissions: nil,
 			}, nil
 		},
 	}
@@ -440,7 +468,7 @@ func TestAuthenticateApiKeyIsValidWithExpirationDate(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, fmt.Sprintf(`{"sub":"431","expiration_date":%d}`+"\n", exp), rr.Body.String())
+	assert.Equal(t, fmt.Sprintf(`{"sub":"431","expiration_date":%d,"permissions":null}`+"\n", exp), rr.Body.String())
 	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
 }
 
@@ -452,10 +480,12 @@ func TestListApiKeysReturnsPaginatedList(t *testing.T) {
 				Cursor: "encoded_cursor",
 				Data: []apikeys.ApiKeyDTO{
 					{
-						Name: "api-key-1",
+						Name:        "api-key-1",
+						Permissions: []string{"READ_API_KEYS"},
 					},
 					{
-						Name: "api-key-2",
+						Name:        "api-key-2",
+						Permissions: []string{"READ_DEVICES", "WRITE_DEVICES"},
 					},
 				},
 			}, nil
@@ -471,7 +501,7 @@ func TestListApiKeysReturnsPaginatedList(t *testing.T) {
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Equal(t,
-		`{"links":{"previous":"","next":"/api-keys/list?cursor=encoded_cursor"},"page_size":2,"total_count":0,"data":[{"id":0,"name":"api-key-1","tenant_id":0,"tenant_name":"","expiration_date":null,"created":"0001-01-01T00:00:00Z"},{"id":0,"name":"api-key-2","tenant_id":0,"tenant_name":"","expiration_date":null,"created":"0001-01-01T00:00:00Z"}]}`+"\n", rr.Body.String())
+		`{"links":{"previous":"","next":"/api-keys/list?cursor=encoded_cursor"},"page_size":2,"total_count":0,"data":[{"id":0,"name":"api-key-1","tenant_id":0,"tenant_name":"","expiration_date":null,"created":"0001-01-01T00:00:00Z","permissions":["READ_API_KEYS"]},{"id":0,"name":"api-key-2","tenant_id":0,"tenant_name":"","expiration_date":null,"created":"0001-01-01T00:00:00Z","permissions":["READ_DEVICES","WRITE_DEVICES"]}]}`+"\n", rr.Body.String())
 	assert.Len(t, svc.ListAPIKeysCalls(), 1)
 }
 
