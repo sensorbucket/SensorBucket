@@ -1,6 +1,7 @@
 package tenantsinfra
 
 import (
+	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -19,7 +20,7 @@ func NewAPIKeyStorePSQL(db *sqlx.DB) *apiKeyStore {
 
 type apiKeyQueryPage struct {
 	Tenant  int64     `pagination:"api_keys.tenant_id,DESC"`
-	Created time.Time `pagination:"api_keys.created,DESC"`
+	Created time.Time `pagination:"api_keys.api_keys.created,DESC"`
 }
 
 func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
@@ -38,6 +39,7 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 	if len(filter.TenantID) > 0 {
 		q = q.Where(sq.Eq{"api_keys.tenant_id": filter.TenantID})
 	}
+	fmt.Println(q.ToSql())
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
 		return nil, err
@@ -48,23 +50,32 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 	}
 	defer rows.Close()
 	list := make([]apikeys.ApiKeyDTO, 0, cursor.Limit)
+	currentId := -1
+	lastId := -1
+	currentPermissions := []string{}
 	for rows.Next() {
 		key := apikeys.ApiKeyDTO{}
+		permission := ""
 		err = rows.Scan(
 			&key.ID,
+			&currentId,
 			&key.Name,
 			&key.ExpirationDate,
 			&key.TenantID,
 			&key.TenantName,
+			&permission,
 			&cursor.Columns.Tenant,
 			&key.Created,
 		)
 		if err != nil {
 			return nil, err
 		}
-
-		cursor.Columns.Created = key.Created
-
+		if lastId != currentId {
+			// Started scanning new API key record
+			currentPermissions = []string{}
+		}
+		currentPermissions = append(currentPermissions, permission)
+		lastId = currentId
 		list = append(list, key)
 	}
 	page := pagination.CreatePageT(list, cursor)
