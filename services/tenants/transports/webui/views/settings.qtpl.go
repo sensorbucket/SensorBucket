@@ -47,7 +47,7 @@ func (p SettingsPage) StreamTemplate(qw422016 *qt422016.Writer, _ignored PageBod
                     <li>
                         <a
                             class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            href="#profile">Profile</a>
+                            href="#profile">Change Profile</a>
                     </li>
                     <li>
                         <a

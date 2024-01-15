@@ -272,37 +272,52 @@ func (p LoginPage) StreamBody(qw422016 *qt422016.Writer) {
 	}
 //line transports/webui/views/login.qtpl:73
 	qw422016.N().S(`
-    `)
+    <span class="block text-center">`)
 //line transports/webui/views/login.qtpl:74
 	streamrenderMessage(qw422016, p.Flow.Ui)
 //line transports/webui/views/login.qtpl:74
+	qw422016.N().S(`</span>
+    `)
+//line transports/webui/views/login.qtpl:75
+	if isMFA(p.Flow) {
+//line transports/webui/views/login.qtpl:75
+		qw422016.N().S(`
+        <a href="`)
+//line transports/webui/views/login.qtpl:76
+		qw422016.E().S(U("/auth/logout"))
+//line transports/webui/views/login.qtpl:76
+		qw422016.N().S(`" class="block mt-2 text-center border-gray-200 py-1 text-gray-500 text-xs hover:underline">Something not working? Click to logout</a>
+    `)
+//line transports/webui/views/login.qtpl:77
+	}
+//line transports/webui/views/login.qtpl:77
 	qw422016.N().S(`
 `)
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:78
 }
 
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:78
 func (p LoginPage) WriteBody(qq422016 qtio422016.Writer) {
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:78
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:78
 	p.StreamBody(qw422016)
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:78
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:78
 }
 
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:78
 func (p LoginPage) Body() string {
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:78
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:78
 	p.WriteBody(qb422016)
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:78
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:78
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:78
 	return qs422016
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:78
 }

@@ -71,5 +71,8 @@ type LoginPage struct {
         </section>
         {% endif %}
     {% endif %}
-    {%= renderMessage(p.Flow.Ui) %}
+    <span class="block text-center">{%= renderMessage(p.Flow.Ui) %}</span>
+    {%if isMFA(p.Flow) %}
+        <a href="{%s U("/auth/logout") %}" class="block mt-2 text-center border-gray-200 py-1 text-gray-500 text-xs hover:underline">Something not working? Click to logout</a>
+    {% endif %}
 {% endfunc %}
