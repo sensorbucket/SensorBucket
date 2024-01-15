@@ -30,7 +30,7 @@ type TenantDTO struct {
 	Permissions         []string       `json:"permissions"`
 }
 
-type AddMemberPermissionsDTO struct {
+type MemberPermissionsMutationDTO struct {
 	UserID      int64    `json:"user_id"`
 	TenantID    int64    `json:"tenant_id"`
 	Permissions []string `json:"permissions"`
@@ -43,6 +43,7 @@ type MemberPermissionsAddedDTO struct {
 }
 
 type MemberPermissionDTO struct {
+	ID         int64     `json:"id"`
 	Permission string    `json:"permission"`
 	Created    time.Time `json:"created"`
 }
@@ -77,6 +78,11 @@ func (s *TenantService) CreateNewTenant(dto TenantDTO) (TenantDTO, error) {
 	return res, nil
 }
 
+// Deletes the permission of a member, errors if no permissions could be found
+func (s *TenantService) DeleteMemberPermissions(dto MemberPermissionsMutationDTO) error {
+	return s.tenantStore.DeleteMemberPermissions(dto.UserID, dto.TenantID, dto.Permissions)
+}
+
 // Sets a tenant's state to Archived
 // ErrTenantNotFound is returned if the tenant is not found or the state has already been set to Archived
 func (s *TenantService) ArchiveTenant(tenantID int64) error {
@@ -102,7 +108,7 @@ func (s *TenantService) ListTenants(filter Filter, p pagination.Request) (*pagin
 
 // Adds the given permissions for the user_id and tenant_id combination. Errors if the permissions are not valid, if
 // the tenant doesn't have the requested permissions or of the member already has the permission
-func (s *TenantService) AddMemberPermissions(memberPermissions AddMemberPermissionsDTO) (MemberPermissionsAddedDTO, error) {
+func (s *TenantService) AddMemberPermissions(memberPermissions MemberPermissionsMutationDTO) (MemberPermissionsAddedDTO, error) {
 	if !auth.PermissionsValid(memberPermissions.Permissions) {
 		return MemberPermissionsAddedDTO{}, auth.ErrGivenPermissionsNotValid
 	}
@@ -141,5 +147,6 @@ type tenantStore interface {
 	GetTenantById(id int64) (Tenant, error)
 	List(Filter, pagination.Request) (*pagination.Page[TenantDTO], error)
 	CreateMemberPermissions(*MemberPermissions) error
+	DeleteMemberPermissions(userId int64, tenantId int64, permissions []string) error
 	GetMemberPermissions(userId int64, tenantId int64) (MemberPermissions, error)
 }

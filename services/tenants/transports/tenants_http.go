@@ -37,7 +37,7 @@ func (t *TenantsHTTPTransport) setupRoutes(r chi.Router) {
 	r.Get("/tenants/list", t.httpGetTenants())
 	r.Post("/tenants", t.httpCreateTenant())
 	r.Post("/tenants/member-permissions", t.httpAddMemberPermission())
-	// r.Delete("/tenants/members-permissions", t.httpRevokeMemberPermission())
+	r.Delete("/tenants/members-permissions", t.httpRevokeMemberPermission())
 	r.Delete("/tenants/{tenant_id}", t.httpDeleteTenant())
 }
 
@@ -80,10 +80,47 @@ func (t *TenantsHTTPTransport) httpCreateTenant() http.HandlerFunc {
 	}
 }
 
+func (t *TenantsHTTPTransport) httpRevokeMemberPermission() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		dto := tenants.MemberPermissionsMutationDTO{}
+		if err := web.DecodeJSON(r, &dto); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		if validationErrors := ensureValuesNotEmpty(
+			map[string]int64{
+				"tenant_id": dto.TenantID,
+				"user_id":   dto.UserID,
+			},
+		); len(validationErrors) > 0 {
+			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
+				Message: "model not valid",
+				Data:    validationErrors,
+			})
+			return
+		}
+		if len(dto.Permissions) == 0 {
+			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
+				Message: "at least 1 permission must be set",
+			})
+			return
+		}
+
+		err := t.tenantSvc.DeleteMemberPermissions(dto)
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+		web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
+			Message: "Revoked permissions",
+		})
+	}
+}
+
 // TODO: check if user_id exists by asking ory kratos?
 func (t *TenantsHTTPTransport) httpAddMemberPermission() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		dto := tenants.AddMemberPermissionsDTO{}
+		dto := tenants.MemberPermissionsMutationDTO{}
 		if err := web.DecodeJSON(r, &dto); err != nil {
 			web.HTTPError(w, err)
 			return
@@ -175,7 +212,8 @@ func ensureValuesNotEmpty[T comparable](values map[string]T) []string {
 
 type tenantService interface {
 	CreateNewTenant(tenant tenants.TenantDTO) (tenants.TenantDTO, error)
-	AddMemberPermissions(memberPermissions tenants.AddMemberPermissionsDTO) (tenants.MemberPermissionsAddedDTO, error)
+	AddMemberPermissions(memberPermissions tenants.MemberPermissionsMutationDTO) (tenants.MemberPermissionsAddedDTO, error)
+	DeleteMemberPermissions(memberPermissions tenants.MemberPermissionsMutationDTO) error
 	ArchiveTenant(tenantID int64) error
 	ListTenants(filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.TenantDTO], error)
 }

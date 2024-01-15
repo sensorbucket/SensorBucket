@@ -281,3 +281,7 @@ func (ts *TenantsStore) CreateMemberPermissions(memberPermissions *tenants.Membe
 	*memberPermissions = insertedPermissions
 	return nil
 }
+
+func DeleteMemberPermissions(userId int64, tenantId int64, permissions []string) error {
+	q := sq.Delete("member_permissions").Where(sq.Eq{})
+}

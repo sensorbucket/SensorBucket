@@ -103,7 +103,7 @@ func newTenantDtoFromTenant(tenant Tenant) TenantDTO {
 	}
 }
 
-func memberPermissionsFromDTO(dto AddMemberPermissionsDTO) MemberPermissions {
+func memberPermissionsFromDTO(dto MemberPermissionsMutationDTO) MemberPermissions {
 	mp := MemberPermissions{}
 	for _, perm := range dto.Permissions {
 		mp = append(mp, MemberPermission{
@@ -121,6 +121,7 @@ func memberPermissionsAddedDTOFromMemberPermissions(permissions []MemberPermissi
 		dto.TenantID = perm.TenantID
 		dto.UserID = perm.UserID
 		dto.Permissions = append(dto.Permissions, MemberPermissionDTO{
+			ID:         perm.ID,
 			Permission: perm.Permission,
 			Created:    perm.Created,
 		})
