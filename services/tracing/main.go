@@ -24,15 +24,16 @@ import (
 )
 
 var (
-	HTTP_ADDR                   = env.Could("HTTP_ADDR", ":3000")
-	HTTP_BASE                   = env.Could("HTTP_BASE", "http://localhost:3000/api")
-	DB_DSN                      = env.Must("DB_DSN")
-	AMQP_HOST                   = env.Must("AMQP_HOST")
-	AMQP_QUEUE_PIPELINEMESSAGES = env.Must("AMQP_QUEUE_PIPELINEMESSAGES")
-	AMQP_QUEUE_ERRORS           = env.Must("AMQP_QUEUE_ERRORS")
-	AMQP_QUEUE_INGRESS          = env.Could("AMQP_QUEUE_INGRESS", "archive-ingress")
-	AMQP_XCHG_INGRESS           = env.Could("AMQP_XCHG_INGRESS", "ingress")
-	AMQP_XCHG_INGRESS_TOPIC     = env.Could("AMQP_XCHG_INGRESS_TOPIC", "ingress.*")
+	HTTP_ADDR                        = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE                        = env.Could("HTTP_BASE", "http://localhost:3000/api")
+	DB_DSN                           = env.Must("DB_DSN")
+	AMQP_HOST                        = env.Must("AMQP_HOST")
+	AMQP_QUEUE_PIPELINEMESSAGES      = env.Could("AMQP_QUEUE_PIPELINEMESSAGES", "tracing_pipeline_messages")
+	AMQP_XCHG_PIPELINEMESSAGES       = env.Could("AMQP_XCHG_PIPELINEMESSAGES", "pipeline.messages")
+	AMQP_XCHG_PIPELINEMESSAGES_TOPIC = env.Could("AMQP_XCHG_PIPELINEMESSAGES_TOPIC", "#")
+	AMQP_QUEUE_INGRESS               = env.Could("AMQP_QUEUE_INGRESS", "archive-ingress")
+	AMQP_XCHG_INGRESS                = env.Could("AMQP_XCHG_INGRESS", "ingress")
+	AMQP_XCHG_INGRESS_TOPIC          = env.Could("AMQP_XCHG_INGRESS_TOPIC", "ingress.*")
 )
 
 func main() {
@@ -66,7 +67,13 @@ func main() {
 	go func() {
 		tracingStepStore := tracinginfra.NewStorePSQL(db)
 		tracingService := tracing.New(tracingStepStore)
-		go tracingtransport.StartMQ(tracingService, mqConn, AMQP_QUEUE_ERRORS, AMQP_QUEUE_PIPELINEMESSAGES)
+		go tracingtransport.StartMQ(
+			tracingService,
+			mqConn,
+			AMQP_QUEUE_PIPELINEMESSAGES,
+			AMQP_XCHG_PIPELINEMESSAGES,
+			AMQP_XCHG_PIPELINEMESSAGES_TOPIC,
+		)
 		tracinghttp := tracingtransport.NewHTTP(tracingService, HTTP_BASE)
 		tracinghttp.SetupRoutes(r)
 	}()

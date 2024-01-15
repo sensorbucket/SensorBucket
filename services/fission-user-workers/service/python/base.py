@@ -26,6 +26,9 @@ class MissingRequiredEnvironmentVariable(Exception):
 class PropertiesMatchedNotExactlyOneDevice(Exception):
     pass
 
+class ErrUserCodeFailure(Exception):
+    pass
+
 
 if "ENDPOINT_DEVICES" not in os.environ:
     raise MissingRequiredEnvironmentVariable("Environment variable: ENDPOINT_DEVICES must be set")
@@ -124,7 +127,7 @@ class Message:
         except IndexError:
             raise ErrMessageNoSteps("pipeline message has no steps remaining")
 
-    @ classmethod
+    @classmethod
     def from_json(cls, json_str: str):
         data = json.loads(json_str)
         required_fields = ['tracing_id', 'owner_id', 'received_at',
@@ -218,23 +221,31 @@ class PipelineError:
 
 
 def main():
+    topic = request.headers.get("X-Amqp-Topic", "No Topic")
     message: Message = None
+    original_message: Message = None
     try:
-        original_message = Message.from_json(request.get_data(as_text=True))
-        message = deepcopy(original_message)
+        message = Message.from_json(request.get_data(as_text=True))
+        original_message = deepcopy(message)
         message = usercode.process(message)
-        next_step = message.next_step()
 
+        if not isinstance(message, Message):
+            raise ErrUserCodeFailure("usercode return value must be Message object")
+
+        next_step = message.next_step()
         res = flask.Response(json.dumps(message, cls=Serializer), content_type="application/json")
-        res.headers["X-AMQP-Topic"] = next_step
+        res.headers["X-Amqp-Topic"] = next_step
         return res
     except BaseException as e:
-        print(f"exception occured for id: {message.tracing_id}:\n {e}")
+        tracing_id = "NO TRACE ID"
+        if original_message is not None:
+            tracing_id = original_message.tracing_id
+        print(f"exception occured for id: {tracing_id}:\n {e}")
         pipeline_error = PipelineError(
             received_by_worker=original_message,
             processing_attempt=message,
-            worker="your_worker_name",
-            queue="your_queue_name",
+            worker=topic,
+            queue=topic,
             timestamp=int(datetime.now().timestamp()),
             error=traceback.format_exc()
         )
