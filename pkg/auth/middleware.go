@@ -23,6 +23,18 @@ type claims struct {
 	Expiration  int64        `json:"exp"`
 }
 
+func (c *claims) Valid() error {
+	for _, permission := range c.Permissions {
+		if permission.Valid() != nil {
+			return fmt.Errorf("invalid permissions")
+		}
+	}
+	if c.TenantID > 0 && c.UserID > 0 && c.Expiration > time.Now().Unix() {
+		return nil
+	}
+	return fmt.Errorf("claims not valid")
+}
+
 type jwksClient interface {
 	Get() (jose.JSONWebKeySet, error)
 }
@@ -32,8 +44,30 @@ type jwksHttpClient struct {
 	httpClient http.Client
 }
 
+func (c *jwksHttpClient) Get() (jose.JSONWebKeySet, error) {
+	res, err := c.httpClient.Get(fmt.Sprintf("%s/.well-known/jwks.json", c.issuer))
+
+	if err != nil {
+		return jose.JSONWebKeySet{}, fmt.Errorf("failed to fetch jwks: %w", err)
+	}
+	var jwks jose.JSONWebKeySet
+	if err := json.NewDecoder(res.Body).Decode(&jwks); err != nil {
+		return jose.JSONWebKeySet{}, fmt.Errorf("failed to decode jwks: %w", err)
+	}
+	return jwks, nil
+}
+
 type contextBuilder struct {
 	c context.Context
+}
+
+func (cb *contextBuilder) With(key ctxKey, value any) *contextBuilder {
+	cb.c = context.WithValue(cb.c, key, value)
+	return cb
+}
+
+func (cb *contextBuilder) Finish() context.Context {
+	return cb.c
 }
 
 const (
@@ -41,6 +75,13 @@ const (
 	ctxCurrentTenantID
 	ctxPermissions
 )
+
+func NewJWKSHttpClient(issuer string) *jwksHttpClient {
+	return &jwksHttpClient{
+		issuer:     issuer,
+		httpClient: http.Client{},
+	}
+}
 
 func Protect() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -96,47 +137,6 @@ func Authenticate(keyClient jwksClient) func(http.Handler) http.Handler {
 			web.HTTPError(w, ErrUnauthorized)
 		})
 	}
-}
-
-func NewJWKSHttpClient(issuer string) *jwksHttpClient {
-	return &jwksHttpClient{
-		issuer:     issuer,
-		httpClient: http.Client{},
-	}
-}
-
-func (c *claims) Valid() error {
-	for _, permission := range c.Permissions {
-		if permission.Valid() != nil {
-			return fmt.Errorf("invalid permissions")
-		}
-	}
-	if c.TenantID > 0 && c.UserID > 0 && c.Expiration > time.Now().Unix() {
-		return nil
-	}
-	return fmt.Errorf("claims not valid")
-}
-
-func (c *jwksHttpClient) Get() (jose.JSONWebKeySet, error) {
-	res, err := c.httpClient.Get(fmt.Sprintf("%s/.well-known/jwks.json", c.issuer))
-
-	if err != nil {
-		return jose.JSONWebKeySet{}, fmt.Errorf("failed to fetch jwks: %w", err)
-	}
-	var jwks jose.JSONWebKeySet
-	if err := json.NewDecoder(res.Body).Decode(&jwks); err != nil {
-		return jose.JSONWebKeySet{}, fmt.Errorf("failed to decode jwks: %w", err)
-	}
-	return jwks, nil
-}
-
-func (cb *contextBuilder) With(key ctxKey, value any) *contextBuilder {
-	cb.c = context.WithValue(cb.c, key, value)
-	return cb
-}
-
-func (cb *contextBuilder) Finish() context.Context {
-	return cb.c
 }
 
 func validateJWTFunc(jwksClient jwksClient) func(token *jwt.Token) (any, error) {
