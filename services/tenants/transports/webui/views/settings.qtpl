@@ -64,7 +64,8 @@ type SettingsPage struct {
 {% endfunc %}
 
 {% func (p SettingsPage) Body() %}
-    <h1 class="text-center text-xl p-6">Account Settings</h1>
+    <h1 class="text-center text-xl m-6">Account Settings</h1>
+    <span class="block text-center">{%= renderMessage(p.Flow.Ui) %}</span>
     <div class="space-y-8">
         <section>
             <h2 class="text-lg" id="profile">Change profile</h2>

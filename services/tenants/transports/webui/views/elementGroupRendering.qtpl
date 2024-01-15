@@ -32,6 +32,9 @@
             if msg.GetType() == "error" {
                 classes += " text-rose-500"
             }
+            if msg.GetType() == "success" {
+                classes += " text-emerald-700"
+            }
         %}
         <p class="text-xs py-2 {%s classes %}">{%s msg.GetText() %}</p>
     {% endfor %}

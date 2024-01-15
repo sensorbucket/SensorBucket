@@ -163,135 +163,138 @@ func streamrenderMessage(qw422016 *qt422016.Writer, ui ory.UiContainer) {
 		if msg.GetType() == "error" {
 			classes += " text-rose-500"
 		}
+		if msg.GetType() == "success" {
+			classes += " text-emerald-700"
+		}
 
-//line transports/webui/views/elementGroupRendering.qtpl:35
+//line transports/webui/views/elementGroupRendering.qtpl:38
 		qw422016.N().S(`
         <p class="text-xs py-2 `)
-//line transports/webui/views/elementGroupRendering.qtpl:36
+//line transports/webui/views/elementGroupRendering.qtpl:39
 		qw422016.E().S(classes)
-//line transports/webui/views/elementGroupRendering.qtpl:36
+//line transports/webui/views/elementGroupRendering.qtpl:39
 		qw422016.N().S(`">`)
-//line transports/webui/views/elementGroupRendering.qtpl:36
+//line transports/webui/views/elementGroupRendering.qtpl:39
 		qw422016.E().S(msg.GetText())
-//line transports/webui/views/elementGroupRendering.qtpl:36
+//line transports/webui/views/elementGroupRendering.qtpl:39
 		qw422016.N().S(`</p>
     `)
-//line transports/webui/views/elementGroupRendering.qtpl:37
+//line transports/webui/views/elementGroupRendering.qtpl:40
 	}
-//line transports/webui/views/elementGroupRendering.qtpl:37
+//line transports/webui/views/elementGroupRendering.qtpl:40
 	qw422016.N().S(`
 `)
-//line transports/webui/views/elementGroupRendering.qtpl:38
+//line transports/webui/views/elementGroupRendering.qtpl:41
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:38
+//line transports/webui/views/elementGroupRendering.qtpl:41
 func writerenderMessage(qq422016 qtio422016.Writer, ui ory.UiContainer) {
-//line transports/webui/views/elementGroupRendering.qtpl:38
+//line transports/webui/views/elementGroupRendering.qtpl:41
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementGroupRendering.qtpl:38
+//line transports/webui/views/elementGroupRendering.qtpl:41
 	streamrenderMessage(qw422016, ui)
-//line transports/webui/views/elementGroupRendering.qtpl:38
+//line transports/webui/views/elementGroupRendering.qtpl:41
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementGroupRendering.qtpl:38
+//line transports/webui/views/elementGroupRendering.qtpl:41
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:38
+//line transports/webui/views/elementGroupRendering.qtpl:41
 func renderMessage(ui ory.UiContainer) string {
-//line transports/webui/views/elementGroupRendering.qtpl:38
+//line transports/webui/views/elementGroupRendering.qtpl:41
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementGroupRendering.qtpl:38
+//line transports/webui/views/elementGroupRendering.qtpl:41
 	writerenderMessage(qb422016, ui)
-//line transports/webui/views/elementGroupRendering.qtpl:38
+//line transports/webui/views/elementGroupRendering.qtpl:41
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementGroupRendering.qtpl:38
+//line transports/webui/views/elementGroupRendering.qtpl:41
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementGroupRendering.qtpl:38
+//line transports/webui/views/elementGroupRendering.qtpl:41
 	return qs422016
-//line transports/webui/views/elementGroupRendering.qtpl:38
+//line transports/webui/views/elementGroupRendering.qtpl:41
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:40
+//line transports/webui/views/elementGroupRendering.qtpl:43
 func streamformStart(qw422016 *qt422016.Writer, ui ory.UiContainer) {
-//line transports/webui/views/elementGroupRendering.qtpl:40
+//line transports/webui/views/elementGroupRendering.qtpl:43
 	qw422016.N().S(`
     <form
         action="`)
-//line transports/webui/views/elementGroupRendering.qtpl:42
+//line transports/webui/views/elementGroupRendering.qtpl:45
 	qw422016.E().S(ui.Action)
-//line transports/webui/views/elementGroupRendering.qtpl:42
+//line transports/webui/views/elementGroupRendering.qtpl:45
 	qw422016.N().S(`" method="`)
-//line transports/webui/views/elementGroupRendering.qtpl:42
+//line transports/webui/views/elementGroupRendering.qtpl:45
 	qw422016.E().S(ui.Method)
-//line transports/webui/views/elementGroupRendering.qtpl:42
+//line transports/webui/views/elementGroupRendering.qtpl:45
 	qw422016.N().S(`"
         class="space-y-2 flex flex-col"
         />
         `)
-//line transports/webui/views/elementGroupRendering.qtpl:45
+//line transports/webui/views/elementGroupRendering.qtpl:48
 	stream_renderDefaults(qw422016, ui)
-//line transports/webui/views/elementGroupRendering.qtpl:45
+//line transports/webui/views/elementGroupRendering.qtpl:48
 	qw422016.N().S(`
 `)
-//line transports/webui/views/elementGroupRendering.qtpl:46
+//line transports/webui/views/elementGroupRendering.qtpl:49
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:46
+//line transports/webui/views/elementGroupRendering.qtpl:49
 func writeformStart(qq422016 qtio422016.Writer, ui ory.UiContainer) {
-//line transports/webui/views/elementGroupRendering.qtpl:46
+//line transports/webui/views/elementGroupRendering.qtpl:49
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementGroupRendering.qtpl:46
+//line transports/webui/views/elementGroupRendering.qtpl:49
 	streamformStart(qw422016, ui)
-//line transports/webui/views/elementGroupRendering.qtpl:46
+//line transports/webui/views/elementGroupRendering.qtpl:49
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementGroupRendering.qtpl:46
+//line transports/webui/views/elementGroupRendering.qtpl:49
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:46
+//line transports/webui/views/elementGroupRendering.qtpl:49
 func formStart(ui ory.UiContainer) string {
-//line transports/webui/views/elementGroupRendering.qtpl:46
+//line transports/webui/views/elementGroupRendering.qtpl:49
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementGroupRendering.qtpl:46
+//line transports/webui/views/elementGroupRendering.qtpl:49
 	writeformStart(qb422016, ui)
-//line transports/webui/views/elementGroupRendering.qtpl:46
+//line transports/webui/views/elementGroupRendering.qtpl:49
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementGroupRendering.qtpl:46
+//line transports/webui/views/elementGroupRendering.qtpl:49
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementGroupRendering.qtpl:46
+//line transports/webui/views/elementGroupRendering.qtpl:49
 	return qs422016
-//line transports/webui/views/elementGroupRendering.qtpl:46
+//line transports/webui/views/elementGroupRendering.qtpl:49
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:48
+//line transports/webui/views/elementGroupRendering.qtpl:51
 func streamformEnd(qw422016 *qt422016.Writer) {
-//line transports/webui/views/elementGroupRendering.qtpl:48
+//line transports/webui/views/elementGroupRendering.qtpl:51
 	qw422016.N().S(`
     </form>
 `)
-//line transports/webui/views/elementGroupRendering.qtpl:50
+//line transports/webui/views/elementGroupRendering.qtpl:53
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:50
+//line transports/webui/views/elementGroupRendering.qtpl:53
 func writeformEnd(qq422016 qtio422016.Writer) {
-//line transports/webui/views/elementGroupRendering.qtpl:50
+//line transports/webui/views/elementGroupRendering.qtpl:53
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementGroupRendering.qtpl:50
+//line transports/webui/views/elementGroupRendering.qtpl:53
 	streamformEnd(qw422016)
-//line transports/webui/views/elementGroupRendering.qtpl:50
+//line transports/webui/views/elementGroupRendering.qtpl:53
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementGroupRendering.qtpl:50
+//line transports/webui/views/elementGroupRendering.qtpl:53
 }
 
-//line transports/webui/views/elementGroupRendering.qtpl:50
+//line transports/webui/views/elementGroupRendering.qtpl:53
 func formEnd() string {
-//line transports/webui/views/elementGroupRendering.qtpl:50
+//line transports/webui/views/elementGroupRendering.qtpl:53
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementGroupRendering.qtpl:50
+//line transports/webui/views/elementGroupRendering.qtpl:53
 	writeformEnd(qb422016)
-//line transports/webui/views/elementGroupRendering.qtpl:50
+//line transports/webui/views/elementGroupRendering.qtpl:53
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementGroupRendering.qtpl:50
+//line transports/webui/views/elementGroupRendering.qtpl:53
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementGroupRendering.qtpl:50
+//line transports/webui/views/elementGroupRendering.qtpl:53
 	return qs422016
-//line transports/webui/views/elementGroupRendering.qtpl:50
+//line transports/webui/views/elementGroupRendering.qtpl:53
 }
