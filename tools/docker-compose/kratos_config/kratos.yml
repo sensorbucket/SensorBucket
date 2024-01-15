@@ -28,6 +28,16 @@ selfservice:
       enabled: true
     code:
       enabled: true
+    # Note: WebAuthn does not work in local environments (ie localhost)
+    webauthn:
+      enabled: true
+      config:
+        passwordless: false
+        rp:
+          id: http://localhost:3000
+          origins:
+            - http://localhost:3000
+          display_name: SensorBucket
 
   flows:
     error:

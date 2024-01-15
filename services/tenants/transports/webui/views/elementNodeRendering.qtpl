@@ -11,7 +11,23 @@
             {%= _renderImageNode(n, *attr) %}
         {% case *ory.UiNodeTextAttributes %}
             {%= _renderTextNode(n, *attr) %}
+        {% case *ory.UiNodeScriptAttributes %}
+            {%= _renderScriptNode(n, *attr) %}
     {% endswitch %}
+{% endfunc %}
+
+{% func _renderScriptNode(n ory.UiNode, attr ory.UiNodeScriptAttributes) %}
+<script
+    src="{%s attr.Src %}"
+    crossorigin="{%s attr.Crossorigin %}"
+    id="{%s attr.Id %}"
+    integrity="{%s attr.Integrity %}"
+    nonce="{%s attr.Nonce %}"
+    referrerpolicy="{%s attr.Referrerpolicy %}"
+    {% if attr.Async %}
+    async
+    {% endif %}
+    ></script>
 {% endfunc %}
 
 {% func _renderTextNode(n ory.UiNode, attr ory.UiNodeTextAttributes) %}
@@ -48,7 +64,7 @@
 {% endfunc %}
 
 {% func _renderInputNode(n ory.UiNode, attr ory.UiNodeInputAttributes) %}
-    {% if attr.GetType() == "submit" %}
+    {% if attr.GetType() == "submit" || attr.GetType() == "button" %}
     <button 
         class="text-center p-2 border-2 border-secondary-500 text-secondary-500
         transition-colors duration-150 hover:bg-secondary-500 hover:text-white"

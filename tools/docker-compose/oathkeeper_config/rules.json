@@ -2,7 +2,7 @@
     {
         "id": "passthrough-authentication",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<\\.ory/self-service/.*>",
+            "url": "http://<127.0.0.1|localhost>:3000/<\\.ory(/.+)?>",
             "methods": [
                 "GET","POST","PATCH","PUT","DELETE"
             ]

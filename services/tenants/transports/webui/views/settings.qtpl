@@ -25,18 +25,29 @@ type SettingsPage struct {
                     <li>
                         <a
                             class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            href="#password">password</a>
+                            href="#password">Password</a>
                     </li>
+                    {% if hasGroup(p.Flow.Ui, "lookup_secret") %}
                     <li>
                         <a
                             class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
                             href="#backupcodes">Backup Codes</a>
                     </li>
+                    {% endif %}
+                    {% if hasGroup(p.Flow.Ui, "totp") %}
                     <li>
                         <a
                             class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
                             href="#2fa">2FA Authenticator</a>
                     </li>
+                    {% endif %}
+                    {% if hasGroup(p.Flow.Ui, "webauthn") %}
+                    <li>
+                        <a
+                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                            href="#webauthn">WebAuthentication</a>
+                    </li>
+                    {% endif %}
                     <li class="py-3"></li>
                     <li>
                         <a
@@ -70,6 +81,7 @@ type SettingsPage struct {
                 {%= renderSubmit(p.Flow.Ui, "password") %}
             {%= formEnd() %}
         </section>
+        {% if hasGroup(p.Flow.Ui, "lookup_secret") %}
         <hr>
         <section>
             <h2 class="text-lg" id="backupcodes">2FA Backup Codes</h2>
@@ -78,6 +90,8 @@ type SettingsPage struct {
                 {%= renderSubmit(p.Flow.Ui, "lookup_secret") %}
             {%= formEnd() %}
         </section>
+        {% endif %}
+        {% if hasGroup(p.Flow.Ui, "totp") %}
         <hr>
         <section>
             <h2 class="text-lg" id="2fa">2FA Authenticator App</h2>
@@ -86,5 +100,16 @@ type SettingsPage struct {
                 {%= renderSubmit(p.Flow.Ui, "totp") %}
             {%= formEnd() %}
         </section>
+        {% endif %}
+        {% if hasGroup(p.Flow.Ui, "webauthn") %}
+        <hr>
+        <section>
+            <h2 class="text-lg" id="webauthn">Web Authentication</h2>
+            {%= formStart(p.Flow.Ui) %}
+                {%= renderGroup(p.Flow.Ui, "webauthn") %}
+                {%= renderSubmit(p.Flow.Ui, "webauthn") %}
+            {%= formEnd() %}
+        </section>
+        {% endif %}
     </div>
 {% endfunc %}

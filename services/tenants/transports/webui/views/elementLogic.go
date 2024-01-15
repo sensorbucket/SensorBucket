@@ -6,18 +6,18 @@ import (
 )
 
 func isMFA(flow *ory.LoginFlow) bool {
-	nodes := flow.Ui.GetNodes()
-	return isLoggedIn(flow) && (hasGroup(nodes, "totp") ||
-		hasGroup(nodes, "webauthn") ||
-		hasGroup(nodes, "lookup_secret"))
+	ui := flow.Ui
+	return isLoggedIn(flow) && (hasGroup(ui, "totp") ||
+		hasGroup(ui, "webauthn") ||
+		hasGroup(ui, "lookup_secret"))
 }
 
 func isLoggedIn(flow *ory.LoginFlow) bool {
 	return flow.GetRequestedAal() == "aal2" || flow.GetRefresh()
 }
 
-func hasGroup(n []ory.UiNode, group string) bool {
-	return lo.ContainsBy(n, func(item ory.UiNode) bool {
+func hasGroup(ui ory.UiContainer, group string) bool {
+	return lo.ContainsBy(ui.GetNodes(), func(item ory.UiNode) bool {
 		return item.Group == group
 	})
 }
@@ -75,8 +75,9 @@ func (fc filterChain) GetWithThese() []ory.UiNode {
 
 func (fc filterChain) GetWithoutThese() []ory.UiNode {
 	applicables := []ory.UiNode{}
+	nodes := fc.nodes
 	for _, p := range fc.predicates {
-		fc.nodes = lo.Filter(fc.nodes, func(item ory.UiNode, _ int) bool {
+		nodes = lo.Filter(nodes, func(item ory.UiNode, _ int) bool {
 			if p(item) {
 				return true
 			}
