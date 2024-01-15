@@ -201,110 +201,108 @@ func (p LoginPage) StreamBody(qw422016 *qt422016.Writer) {
 	} else {
 //line transports/webui/views/login.qtpl:54
 		qw422016.N().S(`
-        `)
-//line transports/webui/views/login.qtpl:55
-		if hasGroup(p.Flow.Ui, "webauthn") {
-//line transports/webui/views/login.qtpl:55
-			qw422016.N().S(`
         <h1 class="text-2xl mt-4 ">Verify login with</h1>
+        `)
+//line transports/webui/views/login.qtpl:56
+		if hasGroup(p.Flow.Ui, "totp") {
+//line transports/webui/views/login.qtpl:56
+			qw422016.N().S(`
         <section>
-            <h2 class="text-base" id="2fa">MFA</h2>
             `)
-//line transports/webui/views/login.qtpl:59
+//line transports/webui/views/login.qtpl:58
 			streamformStart(qw422016, p.Flow.Ui)
+//line transports/webui/views/login.qtpl:58
+			qw422016.N().S(`
+                `)
+//line transports/webui/views/login.qtpl:59
+			streamrenderGroup(qw422016, p.Flow.Ui, "totp")
 //line transports/webui/views/login.qtpl:59
 			qw422016.N().S(`
                 `)
 //line transports/webui/views/login.qtpl:60
-			streamrenderGroup(qw422016, p.Flow.Ui, "totp")
+			streamrenderSubmit(qw422016, p.Flow.Ui, "totp")
 //line transports/webui/views/login.qtpl:60
 			qw422016.N().S(`
-                `)
-//line transports/webui/views/login.qtpl:61
-			streamrenderSubmit(qw422016, p.Flow.Ui, "totp")
-//line transports/webui/views/login.qtpl:61
-			qw422016.N().S(`
             `)
-//line transports/webui/views/login.qtpl:62
+//line transports/webui/views/login.qtpl:61
 			streamformEnd(qw422016)
-//line transports/webui/views/login.qtpl:62
+//line transports/webui/views/login.qtpl:61
 			qw422016.N().S(`
         </section>
         `)
-//line transports/webui/views/login.qtpl:64
+//line transports/webui/views/login.qtpl:63
 		}
-//line transports/webui/views/login.qtpl:64
+//line transports/webui/views/login.qtpl:63
 		qw422016.N().S(`
         `)
-//line transports/webui/views/login.qtpl:65
+//line transports/webui/views/login.qtpl:64
 		if hasGroup(p.Flow.Ui, "webauthn") {
-//line transports/webui/views/login.qtpl:65
+//line transports/webui/views/login.qtpl:64
 			qw422016.N().S(`
         <hr>
         <section>
-            <h2 class="text-base" id="webauthn">WebAuthn</h2>
             `)
-//line transports/webui/views/login.qtpl:69
+//line transports/webui/views/login.qtpl:67
 			streamformStart(qw422016, p.Flow.Ui)
+//line transports/webui/views/login.qtpl:67
+			qw422016.N().S(`
+                `)
+//line transports/webui/views/login.qtpl:68
+			streamrenderGroup(qw422016, p.Flow.Ui, "webauthn")
+//line transports/webui/views/login.qtpl:68
+			qw422016.N().S(`
+                `)
+//line transports/webui/views/login.qtpl:69
+			streamrenderSubmit(qw422016, p.Flow.Ui, "webauthn")
 //line transports/webui/views/login.qtpl:69
 			qw422016.N().S(`
-                `)
-//line transports/webui/views/login.qtpl:70
-			streamrenderGroup(qw422016, p.Flow.Ui, "webauthn")
-//line transports/webui/views/login.qtpl:70
-			qw422016.N().S(`
-                `)
-//line transports/webui/views/login.qtpl:71
-			streamrenderSubmit(qw422016, p.Flow.Ui, "webauthn")
-//line transports/webui/views/login.qtpl:71
-			qw422016.N().S(`
             `)
-//line transports/webui/views/login.qtpl:72
+//line transports/webui/views/login.qtpl:70
 			streamformEnd(qw422016)
-//line transports/webui/views/login.qtpl:72
+//line transports/webui/views/login.qtpl:70
 			qw422016.N().S(`
         </section>
         `)
-//line transports/webui/views/login.qtpl:74
+//line transports/webui/views/login.qtpl:72
 		}
-//line transports/webui/views/login.qtpl:74
+//line transports/webui/views/login.qtpl:72
 		qw422016.N().S(`
     `)
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:73
 	}
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:73
 	qw422016.N().S(`
     `)
-//line transports/webui/views/login.qtpl:76
+//line transports/webui/views/login.qtpl:74
 	streamrenderMessage(qw422016, p.Flow.Ui)
-//line transports/webui/views/login.qtpl:76
+//line transports/webui/views/login.qtpl:74
 	qw422016.N().S(`
 `)
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:75
 }
 
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:75
 func (p LoginPage) WriteBody(qq422016 qtio422016.Writer) {
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:75
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:75
 	p.StreamBody(qw422016)
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:75
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:75
 }
 
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:75
 func (p LoginPage) Body() string {
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:75
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:75
 	p.WriteBody(qb422016)
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:75
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:75
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:75
 	return qs422016
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:75
 }
