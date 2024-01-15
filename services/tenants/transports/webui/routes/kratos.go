@@ -118,7 +118,8 @@ func (k KratosRoutes) httpLoginPage() http.HandlerFunc {
 
 func (k KratosRoutes) httpLogoutPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, logoutFlow(r).GetLogoutUrl(), http.StatusSeeOther)
+		// http.Redirect(w, r, logoutFlow(r).GetLogoutUrl(), http.StatusSeeOther)
+		views.WriteLayout(w, views.LogoutPage{URL: logoutFlow(r).GetLogoutUrl()})
 	}
 }
 

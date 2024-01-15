@@ -1,8 +1,26 @@
 [
     {
+        "id": "passthrough-authentication",
+        "match": {
+            "url": "http://<127.0.0.1|localhost>:3000/<\\.ory/self-service/.*>",
+            "methods": [
+                "GET","POST","PATCH","PUT","DELETE"
+            ]
+        },
+        "authenticators": [
+            {
+                "handler": "noop"
+            }
+        ],
+        "authorizer": {
+            "handler": "allow"
+        },
+        "mutators": [{"handler":"noop"}]
+    },
+    {
         "id": "authentication",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<\\.ory/.*|tenants/auth/.*|tenants/static/.*>",
+            "url": "http://<127.0.0.1|localhost>:3000/<tenants/auth(/.+)?|tenants/static/.*>",
             "methods": [
                 "GET","POST","PATCH","PUT","DELETE"
             ]
@@ -25,7 +43,7 @@
     {
         "id": "default",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<api|dev>/<.*>",
+            "url": "http://<127.0.0.1|localhost>:3000/<dashboard|api|dev>/<.*>",
             "methods": [
                 "GET","POST","PATCH","PUT","DELETE"
             ]

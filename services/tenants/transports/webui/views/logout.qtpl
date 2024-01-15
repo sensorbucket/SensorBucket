@@ -1,0 +1,19 @@
+{% code
+type LogoutPage struct {
+    Base
+    URL string
+} %}
+
+{% func (p LogoutPage) Body() %}
+    <h1 class="text-2xl mt-4 text-center">Do you want to logout?</h1>
+    <div class="flex gap-4">
+        <a 
+            href="{%s p.URL %}" 
+            class="flex-1 text-center block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+        >Logout</a>
+        <a 
+            href="{%s U("/auth/settings") %}" 
+            class="flex-1 text-center block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+        >Cancel</a>
+    </div>
+{% endfunc %}
