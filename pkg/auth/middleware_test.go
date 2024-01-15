@@ -3,15 +3,17 @@ package auth
 import (
 	"context"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/go-jose/go-jose/v3"
 	"github.com/golang-jwt/jwt"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,12 +26,12 @@ func TestAuthenticateWellKnownUnreachable(t *testing.T) {
 	}
 
 	// Arrange
-	client := httpClientMock{
-		GetFunc: func(url string) (*http.Response, error) {
-			return nil, fmt.Errorf("connection refused")
+	client := jwksClientMock{
+		GetFunc: func() (jose.JSONWebKeySet, error) {
+			return jose.JSONWebKeySet{}, fmt.Errorf("connection refused")
 		},
 	}
-	auth := Authenticate(&client, "test-auth")
+	auth := Authenticate(&client)
 	s := http.ServeMux{}
 	s.Handle("/", auth(nil))
 
@@ -39,13 +41,13 @@ func TestAuthenticateWellKnownUnreachable(t *testing.T) {
 	}
 	rr := httptest.NewRecorder()
 	token := createToken(jwt.MapClaims{
-		"current_tenant_id": 11,
-		"permissions": []string{
+		"tid": 11,
+		"perms": []string{
 			"READ_DEVICES",
 			"READ_API_KEYS",
 		},
-		"user_id": 431,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+		"uid": 431,
+		"exp": time.Now().Add(time.Hour * 24).Unix(),
 	})
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
@@ -65,19 +67,15 @@ func TestProtectAndAuthenticatePassClaimsToNext(t *testing.T) {
 
 	// Arrange
 	protect := Protect()
-	client := httpClientMock{
-		GetFunc: func(url string) (*http.Response, error) {
-			assert.Equal(t, "test-auth/.well-known/jwks.json", url)
-			return &http.Response{
-				StatusCode: 200,
-				Body:       ioutil.NopCloser(strings.NewReader(jsonWebKeySet)),
-			}, nil
+	client := jwksClientMock{
+		GetFunc: func() (jose.JSONWebKeySet, error) {
+			return jwks(), nil
 		},
 	}
-	auth := Authenticate(&client, "test-auth")
+	auth := Authenticate(&client)
 	next := HandlerMock{
 		ServeHTTPFunc: func(responseWriter http.ResponseWriter, request *http.Request) {
-			assert.Equal(t, context.WithValue(context.WithValue(context.WithValue(context.Background(), "current_tenant_id", []int64{11}), "user_id", int64(431)), "permissions", []permission{
+			assert.Equal(t, context.WithValue(context.WithValue(context.WithValue(context.Background(), ctxCurrentTenantID, []int64{11}), ctxUserID, int64(431)), ctxPermissions, []permission{
 				READ_DEVICES,
 				READ_API_KEYS,
 			}), request.Context())
@@ -92,13 +90,13 @@ func TestProtectAndAuthenticatePassClaimsToNext(t *testing.T) {
 	}
 	rr := httptest.NewRecorder()
 	token := createToken(jwt.MapClaims{
-		"current_tenant_id": 11,
-		"permissions": []string{
+		"tid": 11,
+		"perms": []string{
 			"READ_DEVICES",
 			"READ_API_KEYS",
 		},
-		"user_id": 431,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+		"uid": 431,
+		"exp": time.Now().Add(time.Hour * 24).Unix(),
 	})
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
@@ -112,99 +110,99 @@ func TestProtectAndAuthenticatePassClaimsToNext(t *testing.T) {
 
 func TestProtect(t *testing.T) {
 	type testCase struct {
-		values             map[string]interface{}
+		values             map[ctxKey]interface{}
 		expectedStatusCode int
 		expectedNextCalls  int
 	}
 	scenarios := map[string]testCase{
 		"all required values present": {
-			values: map[string]interface{}{
-				"current_tenant_id": []int64{12, 54, 13},
-				"permissions":       []permission{READ_API_KEYS},
-				"user_id":           int64(124),
+			values: map[ctxKey]interface{}{
+				ctxCurrentTenantID: []int64{12, 54, 13},
+				ctxPermissions:     []permission{READ_API_KEYS},
+				ctxUserID:          int64(124),
 			},
 			expectedStatusCode: 200,
 			expectedNextCalls:  1,
 		},
-		"current_tenant_id is missing": {
-			values: map[string]interface{}{
-				"permissions": []permission{READ_API_KEYS},
-				"user_id":     int64(124),
+		"tid is missing": {
+			values: map[ctxKey]interface{}{
+				ctxPermissions: []permission{READ_API_KEYS},
+				ctxUserID:      int64(124),
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
-		"permissions is missing": {
-			values: map[string]interface{}{
-				"current_tenant_id": []int64{12, 54, 13},
-				"user_id":           int64(124),
+		"perms is missing": {
+			values: map[ctxKey]interface{}{
+				ctxCurrentTenantID: []int64{12, 54, 13},
+				ctxUserID:          int64(124),
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
-		"user_id is missing": {
-			values: map[string]interface{}{
-				"current_tenant_id": []int64{12, 54, 13},
-				"permissions":       []permission{READ_API_KEYS},
+		"uid is missing": {
+			values: map[ctxKey]interface{}{
+				ctxCurrentTenantID: []int64{12, 54, 13},
+				ctxPermissions:     []permission{READ_API_KEYS},
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
 		"all required values are missing": {
-			values:             map[string]interface{}{},
+			values:             map[ctxKey]interface{}{},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
-		"current_tenant_id is wrong type": {
-			values: map[string]interface{}{
-				"current_tenant_id": "123", // should be []int64!
-				"permissions":       []permission{READ_API_KEYS},
-				"user_id":           int64(124),
+		"tid is wrong type": {
+			values: map[ctxKey]interface{}{
+				ctxCurrentTenantID: "123", // should be []int64!
+				ctxPermissions:     []permission{READ_API_KEYS},
+				ctxUserID:          int64(124),
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
-		"permissions is wrong type": {
-			values: map[string]interface{}{
-				"current_tenant_id": []int64{12, 54, 13},
-				"permissions":       54325,
-				"user_id":           int64(124),
+		"perms is wrong type": {
+			values: map[ctxKey]interface{}{
+				ctxCurrentTenantID: []int64{12, 54, 13},
+				ctxPermissions:     54325,
+				ctxUserID:          int64(124),
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
-		"user_id is wrong type": {
-			values: map[string]interface{}{
-				"current_tenant_id": []int64{12, 54, 13},
-				"permissions":       []permission{READ_API_KEYS},
-				"user_id":           "asdasdsad",
+		"uid is wrong type": {
+			values: map[ctxKey]interface{}{
+				ctxCurrentTenantID: []int64{12, 54, 13},
+				ctxPermissions:     []permission{READ_API_KEYS},
+				ctxUserID:          "asdasdsad",
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
-		"current_tenant_id is nil": {
-			values: map[string]interface{}{
-				"current_tenant_id": nil,
-				"permissions":       []permission{READ_API_KEYS},
-				"user_id":           int64(124),
+		"tid is nil": {
+			values: map[ctxKey]interface{}{
+				ctxCurrentTenantID: nil,
+				ctxPermissions:     []permission{READ_API_KEYS},
+				ctxUserID:          int64(124),
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
-		"permissions is nil": {
-			values: map[string]interface{}{
-				"current_tenant_id": []int64{12, 54, 13},
-				"permissions":       nil,
-				"user_id":           int64(124),
+		"perms is nil": {
+			values: map[ctxKey]interface{}{
+				ctxCurrentTenantID: []int64{12, 54, 13},
+				ctxPermissions:     nil,
+				ctxUserID:          int64(124),
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
-		"user_id is nil": {
-			values: map[string]interface{}{
-				"current_tenant_id": []int64{12, 54, 13},
-				"permissions":       []permission{READ_API_KEYS},
-				"user_id":           nil,
+		"uid is nil": {
+			values: map[ctxKey]interface{}{
+				ctxCurrentTenantID: []int64{12, 54, 13},
+				ctxPermissions:     []permission{READ_API_KEYS},
+				ctxUserID:          nil,
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
@@ -267,18 +265,18 @@ func TestAuthenticate(t *testing.T) {
 		"bearer token is valid and contains all claims": {
 			authHeader: fmt.Sprintf("Bearer %s", createToken(
 				jwt.MapClaims{
-					"current_tenant_id": 11,
-					"permissions": []string{
+					"tid": 11,
+					"perms": []string{
 						"READ_DEVICES",
 						"READ_API_KEYS",
 					},
-					"user_id": 431,
-					"exp":     in24Hours,
+					"uid": 431,
+					"exp": in24Hours,
 				},
 			)),
 			expectedStatusCode: 200,
 			expectedNextCalls:  1,
-			expectedContext: context.WithValue(context.WithValue(context.WithValue(context.Background(), "current_tenant_id", []int64{11}), "user_id", int64(431)), "permissions", []permission{
+			expectedContext: context.WithValue(context.WithValue(context.WithValue(context.Background(), ctxCurrentTenantID, []int64{11}), ctxUserID, int64(431)), ctxPermissions, []permission{
 				READ_DEVICES,
 				READ_API_KEYS,
 			}),
@@ -286,14 +284,14 @@ func TestAuthenticate(t *testing.T) {
 		"bearer token contains invalid permission": {
 			authHeader: fmt.Sprintf("Bearer %s", createToken(
 				jwt.MapClaims{
-					"current_tenant_id": 11,
-					"permissions": []string{
+					"tid": 11,
+					"perms": []string{
 						"READ_DEVICES",
 						"READ_API_KEYS",
 						"DOES_NOT_EXIST",
 					},
-					"user_id": 431,
-					"exp":     in24Hours,
+					"uid": 431,
+					"exp": in24Hours,
 				},
 			)),
 			expectedStatusCode: 401,
@@ -306,37 +304,37 @@ func TestAuthenticate(t *testing.T) {
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
-		"bearer token is valid but current_tenant_id is missing": {
+		"bearer token is valid but tid is missing": {
 			authHeader: fmt.Sprintf("Bearer %s", createToken(
 				jwt.MapClaims{
-					"permissions": []string{
+					"perms": []string{
 						"READ_DEVICES",
 						"READ_API_KEYS",
 					},
-					"user_id": 431,
-					"exp":     in24Hours,
+					"uid": 431,
+					"exp": in24Hours,
 				},
 			)),
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
-		"bearer token is valid but permissions is missing": {
+		"bearer token is valid but perms is missing": {
 			authHeader: fmt.Sprintf("Bearer %s", createToken(
 				jwt.MapClaims{
-					"current_tenant_id": 11,
-					"user_id":           431,
-					"exp":               in24Hours,
+					"tid": 11,
+					"uid": 431,
+					"exp": in24Hours,
 				},
 			)),
-			expectedContext:    context.WithValue(context.WithValue(context.WithValue(context.Background(), "current_tenant_id", []int64{11}), "user_id", int64(431)), "permissions", nilSlice),
+			expectedContext:    context.WithValue(context.WithValue(context.WithValue(context.Background(), ctxCurrentTenantID, []int64{11}), ctxUserID, int64(431)), ctxPermissions, nilSlice),
 			expectedStatusCode: 200,
 			expectedNextCalls:  1,
 		},
-		"bearer token is valid but user_id is missing": {
+		"bearer token is valid but uid is missing": {
 			authHeader: fmt.Sprintf("Bearer %s", createToken(
 				jwt.MapClaims{
-					"current_tenant_id": 11,
-					"permissions": []string{
+					"tid": 11,
+					"perms": []string{
 						"READ_DEVICES",
 						"READ_API_KEYS",
 					},
@@ -349,13 +347,13 @@ func TestAuthenticate(t *testing.T) {
 		"bearer token is valid all claims are present but the token is expired": {
 			authHeader: fmt.Sprintf("Bearer %s", createToken(
 				jwt.MapClaims{
-					"current_tenant_id": 11,
-					"permissions": []string{
+					"tid": 11,
+					"perms": []string{
 						"READ_DEVICES",
 						"READ_API_KEYS",
 					},
-					"user_id": 431,
-					"exp":     time.Now().Add(-time.Hour * 24).Unix(),
+					"uid": 431,
+					"exp": time.Now().Add(-time.Hour * 24).Unix(),
 				},
 			)),
 			expectedStatusCode: 401,
@@ -378,17 +376,13 @@ func TestAuthenticate(t *testing.T) {
 				},
 			}
 
-			client := httpClientMock{
-				GetFunc: func(url string) (*http.Response, error) {
-					assert.Equal(t, "test-auth/.well-known/jwks.json", url)
-					return &http.Response{
-						StatusCode: 200,
-						Body:       ioutil.NopCloser(strings.NewReader(jsonWebKeySet)),
-					}, nil
+			client := jwksClientMock{
+				GetFunc: func() (jose.JSONWebKeySet, error) {
+					return jwks(), nil
 				},
 			}
 
-			handler := Authenticate(&client, "test-auth")
+			handler := Authenticate(&client)
 			s := http.ServeMux{}
 			s.Handle("/", handler(&next))
 
@@ -414,7 +408,7 @@ func jsonPrivateKey() any {
 	return privateKey
 }
 
-func testAccumulateContext(ctx context.Context, values map[string]interface{}) context.Context {
+func testAccumulateContext(ctx context.Context, values map[ctxKey]interface{}) context.Context {
 	for key, val := range values {
 		ctx = context.WithValue(ctx, key, val)
 	}
@@ -429,6 +423,14 @@ func createToken(claims jwt.MapClaims) string {
 		panic(err)
 	}
 	return tokenString
+}
+
+func jwks() jose.JSONWebKeySet {
+	var jwks jose.JSONWebKeySet
+	if err := json.NewDecoder(io.NopCloser(strings.NewReader(jsonWebKeySet))).Decode(&jwks); err != nil {
+		return jose.JSONWebKeySet{}
+	}
+	return jwks
 }
 
 // Keys below are for testing purposes only!!

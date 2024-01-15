@@ -16,10 +16,6 @@ func TestMustHavePermissionsRequestedPermissions(t *testing.T) {
 	}
 
 	scenarios := map[string]testCase{
-		"no permissions passed in function": {
-			permissionsInput: []permission{}, // empty!
-			expectedErr:      ErrNoPermissionsToCheck,
-		},
 		"no permissions present": {
 			permissionsInput: []permission{READ_API_KEYS, READ_DEVICES},
 			permissionsInCtx: []permission{}, // empty!
@@ -65,11 +61,11 @@ func TestMustHavePermissionsRequestedPermissions(t *testing.T) {
 		t.Run(testC, func(t *testing.T) {
 			ctx := context.Background()
 			if cfg.permissionsInCtx != nil {
-				ctx = context.WithValue(ctx, "permissions", cfg.permissionsInCtx)
+				ctx = context.WithValue(ctx, ctxPermissions, cfg.permissionsInCtx)
 			}
 
 			// Act
-			err := MustHavePermissions(ctx, cfg.permissionsInput...)
+			err := MustHavePermissions(ctx, cfg.permissionsInput[0], cfg.permissionsInput[1:]...)
 
 			// Assert
 			assert.ErrorIs(t, err, cfg.expectedErr)
@@ -110,13 +106,18 @@ func TestHasRole(t *testing.T) {
 			roleInput:        role([]permission{READ_API_KEYS, WRITE_API_KEYS}),
 			expectedRes:      false,
 		},
+		"has only 1 role in context": {
+			permissionsInCtx: []permission{},
+			roleInput:        role([]permission{READ_API_KEYS}),
+			expectedRes:      false,
+		},
 	}
 	for scene, cfg := range scenarios {
 		t.Run(scene, func(t *testing.T) {
 			// Act
 			ctx := context.Background()
 			if cfg.permissionsInCtx != nil {
-				ctx = context.WithValue(ctx, "permissions", cfg.permissionsInCtx)
+				ctx = context.WithValue(ctx, ctxPermissions, cfg.permissionsInCtx)
 			}
 			result := HasRole(ctx, cfg.roleInput)
 
@@ -138,7 +139,7 @@ func TestGetTenants(t *testing.T) {
 		"no tenants in context": {
 			tenantsInContext: nil,
 			expectedRes:      nil,
-			expectedErr:      ErrNoTenantIdFound,
+			expectedErr:      ErrNoTenantIDFound,
 		},
 		"no tenants": {
 			tenantsInContext: []int64{},
@@ -161,7 +162,7 @@ func TestGetTenants(t *testing.T) {
 		t.Run(scene, func(t *testing.T) {
 			ctx := context.Background()
 			if cfg.tenantsInContext != nil {
-				ctx = context.WithValue(ctx, "current_tenant_id", cfg.tenantsInContext)
+				ctx = context.WithValue(ctx, ctxCurrentTenantID, cfg.tenantsInContext)
 			}
 
 			// Act
@@ -219,7 +220,7 @@ func TestHasPermissionsFor(t *testing.T) {
 		t.Run(scene, func(t *testing.T) {
 			ctx := context.Background()
 			if cfg.tenantsInContext != nil {
-				ctx = context.WithValue(ctx, "current_tenant_id", cfg.tenantsInContext)
+				ctx = context.WithValue(ctx, ctxCurrentTenantID, cfg.tenantsInContext)
 			}
 
 			// Act

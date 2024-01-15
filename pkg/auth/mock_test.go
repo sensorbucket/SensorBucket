@@ -4,9 +4,69 @@
 package auth
 
 import (
+	"github.com/go-jose/go-jose/v3"
 	"net/http"
 	"sync"
 )
+
+// Ensure, that jwksClientMock does implement jwksClient.
+// If this is not the case, regenerate this file with moq.
+var _ jwksClient = &jwksClientMock{}
+
+// jwksClientMock is a mock implementation of jwksClient.
+//
+//	func TestSomethingThatUsesjwksClient(t *testing.T) {
+//
+//		// make and configure a mocked jwksClient
+//		mockedjwksClient := &jwksClientMock{
+//			GetFunc: func() (jose.JSONWebKeySet, error) {
+//				panic("mock out the Get method")
+//			},
+//		}
+//
+//		// use mockedjwksClient in code that requires jwksClient
+//		// and then make assertions.
+//
+//	}
+type jwksClientMock struct {
+	// GetFunc mocks the Get method.
+	GetFunc func() (jose.JSONWebKeySet, error)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// Get holds details about calls to the Get method.
+		Get []struct {
+		}
+	}
+	lockGet sync.RWMutex
+}
+
+// Get calls GetFunc.
+func (mock *jwksClientMock) Get() (jose.JSONWebKeySet, error) {
+	if mock.GetFunc == nil {
+		panic("jwksClientMock.GetFunc: method is nil but jwksClient.Get was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGet.Lock()
+	mock.calls.Get = append(mock.calls.Get, callInfo)
+	mock.lockGet.Unlock()
+	return mock.GetFunc()
+}
+
+// GetCalls gets all the calls that were made to Get.
+// Check the length with:
+//
+//	len(mockedjwksClient.GetCalls())
+func (mock *jwksClientMock) GetCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGet.RLock()
+	calls = mock.calls.Get
+	mock.lockGet.RUnlock()
+	return calls
+}
 
 // Ensure, that HandlerMock does implement Handler.
 // If this is not the case, regenerate this file with moq.
@@ -77,71 +137,5 @@ func (mock *HandlerMock) ServeHTTPCalls() []struct {
 	mock.lockServeHTTP.RLock()
 	calls = mock.calls.ServeHTTP
 	mock.lockServeHTTP.RUnlock()
-	return calls
-}
-
-// Ensure, that httpClientMock does implement httpClient.
-// If this is not the case, regenerate this file with moq.
-var _ httpClient = &httpClientMock{}
-
-// httpClientMock is a mock implementation of httpClient.
-//
-//	func TestSomethingThatUseshttpClient(t *testing.T) {
-//
-//		// make and configure a mocked httpClient
-//		mockedhttpClient := &httpClientMock{
-//			GetFunc: func(url string) (*http.Response, error) {
-//				panic("mock out the Get method")
-//			},
-//		}
-//
-//		// use mockedhttpClient in code that requires httpClient
-//		// and then make assertions.
-//
-//	}
-type httpClientMock struct {
-	// GetFunc mocks the Get method.
-	GetFunc func(url string) (*http.Response, error)
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// Get holds details about calls to the Get method.
-		Get []struct {
-			// URL is the url argument value.
-			URL string
-		}
-	}
-	lockGet sync.RWMutex
-}
-
-// Get calls GetFunc.
-func (mock *httpClientMock) Get(url string) (*http.Response, error) {
-	if mock.GetFunc == nil {
-		panic("httpClientMock.GetFunc: method is nil but httpClient.Get was just called")
-	}
-	callInfo := struct {
-		URL string
-	}{
-		URL: url,
-	}
-	mock.lockGet.Lock()
-	mock.calls.Get = append(mock.calls.Get, callInfo)
-	mock.lockGet.Unlock()
-	return mock.GetFunc(url)
-}
-
-// GetCalls gets all the calls that were made to Get.
-// Check the length with:
-//
-//	len(mockedhttpClient.GetCalls())
-func (mock *httpClientMock) GetCalls() []struct {
-	URL string
-} {
-	var calls []struct {
-		URL string
-	}
-	mock.lockGet.RLock()
-	calls = mock.calls.Get
-	mock.lockGet.RUnlock()
 	return calls
 }

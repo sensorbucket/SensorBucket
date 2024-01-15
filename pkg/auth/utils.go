@@ -2,79 +2,66 @@ package auth
 
 import (
 	"context"
+
+	"github.com/samber/lo"
 )
 
 // Checks if the given context contains said permissions
 // returns nil if all is OK
-func MustHavePermissions(c context.Context, permissions ...permission) error {
-	if len(permissions) == 0 {
-		return ErrNoPermissionsToCheck
-	}
-	permissionsFromContext, ok := fromRequestContext[[]permission](c, PermissionsKey)
+func MustHavePermissions(c context.Context, perm permission, permissions ...permission) error {
+	permissions = append(permissions, perm)
+	permissionsFromContext, ok := fromRequestContext[[]permission](c, ctxPermissions)
 	if !ok {
 		return ErrNoPermissions
 	}
-	for _, p := range permissions {
-		found := false
-		for _, fromContext := range permissionsFromContext {
-			if p == fromContext {
-				found = true
-			}
-		}
-		if !found {
-			return ErrPermissionsNotGranted
-		}
+	if lo.Every(permissionsFromContext, permissions) {
+		return nil
 	}
-	return nil
+	return ErrPermissionsNotGranted
 }
 
-func HasRole(ctx context.Context, r role) bool {
-	permissionsFromContext, ok := fromRequestContext[[]permission](ctx, PermissionsKey)
+func HasRole(ctx context.Context, r Role) bool {
+	permissionsFromContext, ok := fromRequestContext[[]permission](ctx, ctxPermissions)
 	if !ok {
 		return false
 	}
-	return r.contains(permissionsFromContext)
+	if len(permissionsFromContext) == 0 {
+		return false
+	}
+	if len(permissionsFromContext) > 1 {
+		return r.HasPermissions(permissionsFromContext[0], permissionsFromContext...)
+	}
+	return r.HasPermissions(permissionsFromContext[0])
 }
 
 func GetUser(ctx context.Context) (int64, error) {
-	val, ok := fromRequestContext[int64](ctx, UserIdKey)
+	val, ok := fromRequestContext[int64](ctx, ctxUserID)
 	if !ok {
-		return -1, ErrNoUserId
+		return -1, ErrNoUserID
 	}
 	return val, nil
 }
 
 func GetTenants(ctx context.Context) ([]int64, error) {
-	val, ok := fromRequestContext[[]int64](ctx, CurrentTenantIdKey)
+	val, ok := fromRequestContext[[]int64](ctx, ctxCurrentTenantID)
 	if !ok {
-		return nil, ErrNoTenantIdFound
+		return nil, ErrNoTenantIDFound
 	}
 	return val, nil
 }
 
-func HasPermissionsFor(ctx context.Context, tenantIds ...int64) bool {
+func HasPermissionsFor(ctx context.Context, tenantIDs ...int64) bool {
 	tenants, err := GetTenants(ctx)
 	if err != nil {
 		return false
 	}
-	if len(tenantIds) == 0 {
+	if len(tenantIDs) == 0 {
 		return false
 	}
-	for _, requestedTenant := range tenantIds {
-		found := false
-		for _, tenantInCtx := range tenants {
-			if requestedTenant == tenantInCtx {
-				found = true
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-	return true
+	return lo.Every(tenants, tenantIDs)
 }
 
-func fromRequestContext[T any](c context.Context, key string) (T, bool) {
+func fromRequestContext[T any](c context.Context, key ctxKey) (T, bool) {
 	val, ok := c.Value(key).(T)
 	return val, ok
 }

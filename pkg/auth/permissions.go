@@ -2,7 +2,16 @@ package auth
 
 import "fmt"
 
-var (
+type Role interface {
+	Permissions() []permission
+	HasPermissions(permission permission, permissions ...permission) bool
+}
+
+type permission string
+
+type role []permission
+
+const (
 	// Device permissions
 	READ_DEVICES  permission = "READ_DEVICES"
 	WRITE_DEVICES permission = "WRITE_DEVICES"
@@ -27,6 +36,8 @@ var (
 	WRITE_USER_WORKERS permission = "WRITE_USER_WORKERS"
 )
 
+var SuperUserRole = role(allowedPermissions)
+
 var allowedPermissions = []permission{
 	READ_DEVICES,
 	WRITE_DEVICES,
@@ -41,12 +52,6 @@ var allowedPermissions = []permission{
 	WRITE_USER_WORKERS,
 }
 
-func NewRole(permissions ...permission) role {
-	return role(permissions)
-}
-
-type permission string
-
 func (p permission) String() string {
 	return string(p)
 }
@@ -60,9 +65,12 @@ func (p permission) Valid() error {
 	return fmt.Errorf("%s is not a valid permission", p)
 }
 
-type role []permission
+func NewRole(permissions ...permission) Role {
+	return role(permissions)
+}
 
-func (r role) contains(permissions []permission) bool {
+func (r role) HasPermissions(permission permission, permissions ...permission) bool {
+	permissions = append(permissions, permission)
 	for _, rolePermission := range r {
 		found := false
 		for _, p := range permissions {
@@ -75,4 +83,8 @@ func (r role) contains(permissions []permission) bool {
 		}
 	}
 	return true
+}
+
+func (r role) Permissions() []permission {
+	return r
 }
