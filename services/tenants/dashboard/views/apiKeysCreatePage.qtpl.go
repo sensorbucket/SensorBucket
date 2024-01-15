@@ -21,7 +21,7 @@ var (
 )
 
 //line views/apiKeysCreatePage.qtpl:2
-func (p *ApiKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
+func (p *APIKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
 //line views/apiKeysCreatePage.qtpl:2
 	qw422016.N().S(`
 <div class="w-full xl:w-2/3 mx-auto bg-white border rounded-md">
@@ -30,52 +30,48 @@ func (p *ApiKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
             Create API Key
         </section>
     </header>
-    <div _="on htmx:afterSwap remove .hidden from #api-key-create-result">
-        <form _="on htmx:beforeRequest 
-            add @disabled to #api-key-create-button wait 5s then remove @disabled from #api-key-create-button"
-            id="apiKeyCreateForm" class="p-4 gap-4 grid lg:grid-cols-1" hx-trigger="submit"
-            hx-target="#api-key-result-value" hx-swap="innerHTML" hx-post="/api-keys/create">
-            <fieldset>
-                <label for="api-key-tenant" class="ml-1 -mb-1 block"><small
-                        class="text-xs text-slate-500">Tenant</small></label>
-                <select name="api-key-tenant" id="api-key-tenant"
-                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600">
-                    `)
-//line views/apiKeysCreatePage.qtpl:19
-	StreamRenderTenantSelect(qw422016, p.Tenants)
-//line views/apiKeysCreatePage.qtpl:19
-	qw422016.N().S(`
-                    <select />
-            </fieldset>
-            <fieldset>
-                <label for="api-key-name" class="ml-1 -mb-1 block"><small
-                        class="text-xs text-slate-500">Name</small></label>
-                <input type="text" name="api-key-name" id="api-key-name"
-                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" />
-            </fieldset>
-            <fieldset>
-                <label for="api-key-expiry" class="ml-1 -mb-1 block"><small
-                        class="text-xs text-slate-500">Expiry</small></label>
-                <input _="init get formattedDateTomorrow() then set @min to it on me" type="date" min=""
-                    name="api-key-expiry" id="api-key-expiry"
-                    class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" />
-            </fieldset>
-            <fieldset>
-                <label></label>
+    <form id="apiKeyCreateForm" class="p-4 gap-4 grid lg:grid-cols-1" hx-trigger="submit" hx-post="/api-keys/create">
+        <fieldset>
+            <label for="api-key-tenant" class="ml-1 -mb-1 block"><small
+                    class="text-xs text-slate-500">Tenant</small></label>
+            <select name="api-key-tenant" id="api-key-tenant"
+                class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600">
                 `)
-//line views/apiKeysCreatePage.qtpl:37
-	StreamRenderPermissionTables(qw422016, p.Permissions)
-//line views/apiKeysCreatePage.qtpl:37
+//line views/apiKeysCreatePage.qtpl:15
+	StreamRenderTenantSelect(qw422016, p.Tenants)
+//line views/apiKeysCreatePage.qtpl:15
 	qw422016.N().S(`
-            </fieldset>
-            <div class="col-span-full">
-                <button id="api-key-create-button"
-                    class="disabled:cursor-not-allowed disabled:opacity-50 text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1">
-                    Generate new API key
-                </button>
-            </div>
-        </form>
-        <div id="api-key-create-result" class="p-3 hidden">
+                <select />
+        </fieldset>
+        <fieldset>
+            <label for="api-key-name" class="ml-1 -mb-1 block"><small
+                    class="text-xs text-slate-500">Name</small></label>
+            <input type="text" name="api-key-name" id="api-key-name"
+                class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" />
+        </fieldset>
+        <fieldset>
+            <label for="api-key-expiry" class="ml-1 -mb-1 block"><small
+                    class="text-xs text-slate-500">Expiry</small></label>
+            <input _="init get formattedDateTomorrow() then set @min to it on me" type="date" min=""
+                name="api-key-expiry" id="api-key-expiry"
+                class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" />
+        </fieldset>
+        <fieldset>
+            <label></label>
+            `)
+//line views/apiKeysCreatePage.qtpl:33
+	StreamRenderPermissionTables(qw422016, p.Permissions)
+//line views/apiKeysCreatePage.qtpl:33
+	qw422016.N().S(`
+        </fieldset>
+        <div class="col-span-full">
+            <button id="api-key-create-button"
+                class="disabled:cursor-not-allowed disabled:opacity-50 text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1">
+                Generate new API key
+            </button>
+        </div>
+    </form>
+    <!-- <div id="api-key-create-result" class="p-3 hidden">
             <div class="bg-orange-100 border-l-4 border-orange-400 text-orange-600 p-4" role="alert">
                 <div class="flex w-full">
                     <div class="py-1"><svg class="fill-current h-6 w-6 text-orange-600 mr-4"
@@ -89,7 +85,7 @@ func (p *ApiKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
                         <br />
                         <div class="flex justify-start">
                             <p id="api-key-result-value" class="text-sm w-full truncate"></p>
-                            <button onclick="copyApiKeyToClipboard()"
+                            <button onclick="copyAPIKeyToClipboard()"
                                 class="text-sm ml-1 bg-orange-400 hover:bg-orange-500 text-white border border-orange-500 rounded px-2 py-1">
                                 Copy
                             </button>
@@ -97,130 +93,122 @@ func (p *ApiKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </div> -->
     <script type="text/javascript">
         function formattedDateTomorrow() {
             var currentDate = new Date();
             currentDate.setDate(currentDate.getDate() + 1);
             return currentDate.toISOString().split("T")[0];
         }
-
-        function copyApiKeyToClipboard() {
-            const text = document.getElementById("api-key-result-value").innerText;
-            navigator.clipboard.writeText(text);
-            showSnackbar("API key copied to clipboard!", snackbarSuccess);
-        }
     </script>
 </div>
 `)
-//line views/apiKeysCreatePage.qtpl:84
+//line views/apiKeysCreatePage.qtpl:73
 }
 
-//line views/apiKeysCreatePage.qtpl:84
-func (p *ApiKeysCreatePage) WriteBody(qq422016 qtio422016.Writer) {
-//line views/apiKeysCreatePage.qtpl:84
+//line views/apiKeysCreatePage.qtpl:73
+func (p *APIKeysCreatePage) WriteBody(qq422016 qtio422016.Writer) {
+//line views/apiKeysCreatePage.qtpl:73
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/apiKeysCreatePage.qtpl:84
+//line views/apiKeysCreatePage.qtpl:73
 	p.StreamBody(qw422016)
-//line views/apiKeysCreatePage.qtpl:84
+//line views/apiKeysCreatePage.qtpl:73
 	qt422016.ReleaseWriter(qw422016)
-//line views/apiKeysCreatePage.qtpl:84
+//line views/apiKeysCreatePage.qtpl:73
 }
 
-//line views/apiKeysCreatePage.qtpl:84
-func (p *ApiKeysCreatePage) Body() string {
-//line views/apiKeysCreatePage.qtpl:84
+//line views/apiKeysCreatePage.qtpl:73
+func (p *APIKeysCreatePage) Body() string {
+//line views/apiKeysCreatePage.qtpl:73
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/apiKeysCreatePage.qtpl:84
+//line views/apiKeysCreatePage.qtpl:73
 	p.WriteBody(qb422016)
-//line views/apiKeysCreatePage.qtpl:84
+//line views/apiKeysCreatePage.qtpl:73
 	qs422016 := string(qb422016.B)
-//line views/apiKeysCreatePage.qtpl:84
+//line views/apiKeysCreatePage.qtpl:73
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/apiKeysCreatePage.qtpl:84
+//line views/apiKeysCreatePage.qtpl:73
 	return qs422016
-//line views/apiKeysCreatePage.qtpl:84
+//line views/apiKeysCreatePage.qtpl:73
 }
 
-//line views/apiKeysCreatePage.qtpl:86
+//line views/apiKeysCreatePage.qtpl:75
 func StreamRenderTenantSelect(qw422016 *qt422016.Writer, tenants []TenantInfo) {
-//line views/apiKeysCreatePage.qtpl:86
+//line views/apiKeysCreatePage.qtpl:75
 	qw422016.N().S(`
 `)
-//line views/apiKeysCreatePage.qtpl:87
+//line views/apiKeysCreatePage.qtpl:76
 	for _, tenant := range tenants {
-//line views/apiKeysCreatePage.qtpl:87
+//line views/apiKeysCreatePage.qtpl:76
 		qw422016.N().S(`
 <option value="`)
-//line views/apiKeysCreatePage.qtpl:88
+//line views/apiKeysCreatePage.qtpl:77
 		qw422016.N().D(tenant.ID)
-//line views/apiKeysCreatePage.qtpl:88
+//line views/apiKeysCreatePage.qtpl:77
 		qw422016.N().S(`">`)
-//line views/apiKeysCreatePage.qtpl:88
+//line views/apiKeysCreatePage.qtpl:77
 		qw422016.E().S(tenant.Name)
-//line views/apiKeysCreatePage.qtpl:88
+//line views/apiKeysCreatePage.qtpl:77
 		qw422016.N().S(`</option>
 `)
-//line views/apiKeysCreatePage.qtpl:89
+//line views/apiKeysCreatePage.qtpl:78
 	}
-//line views/apiKeysCreatePage.qtpl:89
+//line views/apiKeysCreatePage.qtpl:78
 	qw422016.N().S(`
 `)
-//line views/apiKeysCreatePage.qtpl:90
+//line views/apiKeysCreatePage.qtpl:79
 }
 
-//line views/apiKeysCreatePage.qtpl:90
+//line views/apiKeysCreatePage.qtpl:79
 func WriteRenderTenantSelect(qq422016 qtio422016.Writer, tenants []TenantInfo) {
-//line views/apiKeysCreatePage.qtpl:90
+//line views/apiKeysCreatePage.qtpl:79
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/apiKeysCreatePage.qtpl:90
+//line views/apiKeysCreatePage.qtpl:79
 	StreamRenderTenantSelect(qw422016, tenants)
-//line views/apiKeysCreatePage.qtpl:90
+//line views/apiKeysCreatePage.qtpl:79
 	qt422016.ReleaseWriter(qw422016)
-//line views/apiKeysCreatePage.qtpl:90
+//line views/apiKeysCreatePage.qtpl:79
 }
 
-//line views/apiKeysCreatePage.qtpl:90
+//line views/apiKeysCreatePage.qtpl:79
 func RenderTenantSelect(tenants []TenantInfo) string {
-//line views/apiKeysCreatePage.qtpl:90
+//line views/apiKeysCreatePage.qtpl:79
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/apiKeysCreatePage.qtpl:90
+//line views/apiKeysCreatePage.qtpl:79
 	WriteRenderTenantSelect(qb422016, tenants)
-//line views/apiKeysCreatePage.qtpl:90
+//line views/apiKeysCreatePage.qtpl:79
 	qs422016 := string(qb422016.B)
-//line views/apiKeysCreatePage.qtpl:90
+//line views/apiKeysCreatePage.qtpl:79
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/apiKeysCreatePage.qtpl:90
+//line views/apiKeysCreatePage.qtpl:79
 	return qs422016
-//line views/apiKeysCreatePage.qtpl:90
+//line views/apiKeysCreatePage.qtpl:79
 }
 
-//line views/apiKeysCreatePage.qtpl:92
-func StreamRenderPermissionTables(qw422016 *qt422016.Writer, permissions map[string][]ApiKeysCreatePermission) {
-//line views/apiKeysCreatePage.qtpl:92
+//line views/apiKeysCreatePage.qtpl:81
+func StreamRenderPermissionTables(qw422016 *qt422016.Writer, permissions map[string][]APIKeysCreatePermission) {
+//line views/apiKeysCreatePage.qtpl:81
 	qw422016.N().S(`
 `)
-//line views/apiKeysCreatePage.qtpl:93
+//line views/apiKeysCreatePage.qtpl:82
 	for category, permissions := range permissions {
-//line views/apiKeysCreatePage.qtpl:93
+//line views/apiKeysCreatePage.qtpl:82
 		qw422016.N().S(`
 <table class="min-w-full bg-white border border-gray-300 mb-2">
     <thead>
         <tr class="bg-secondary-400 text-secondary-100">
             <th class="py-2 px-4" colspan="2">
                 <span class="ml-2 float-left">`)
-//line views/apiKeysCreatePage.qtpl:98
+//line views/apiKeysCreatePage.qtpl:87
 		qw422016.E().S(category)
-//line views/apiKeysCreatePage.qtpl:98
+//line views/apiKeysCreatePage.qtpl:87
 		qw422016.N().S(`</span>
             </th>
             <th class="py-2 px-4">
-                <input type="checkbox"
-                    _ = "on click set .checkbox-`)
-//line views/apiKeysCreatePage.qtpl:102
+                <input type="checkbox" _="on click set .checkbox-`)
+//line views/apiKeysCreatePage.qtpl:90
 		qw422016.E().S(category)
-//line views/apiKeysCreatePage.qtpl:102
+//line views/apiKeysCreatePage.qtpl:90
 		qw422016.N().S(`.checked to my.checked"
                     class="h-4 w-4 text-secondary-500 cursor-pointer float-right">
             </th>
@@ -228,88 +216,88 @@ func StreamRenderPermissionTables(qw422016 *qt422016.Writer, permissions map[str
     </thead>
     <tbody>
         `)
-//line views/apiKeysCreatePage.qtpl:108
+//line views/apiKeysCreatePage.qtpl:96
 		for _, permission := range permissions {
-//line views/apiKeysCreatePage.qtpl:108
+//line views/apiKeysCreatePage.qtpl:96
 			qw422016.N().S(`
         <tr>
             <td class="py-2 px-4 w-1/6">
                 `)
-//line views/apiKeysCreatePage.qtpl:111
+//line views/apiKeysCreatePage.qtpl:99
 			qw422016.E().S(permission.Name)
-//line views/apiKeysCreatePage.qtpl:111
+//line views/apiKeysCreatePage.qtpl:99
 			qw422016.N().S(`
             </td>
             <td class="py-2 px-4 w-4/6">
                 `)
-//line views/apiKeysCreatePage.qtpl:114
+//line views/apiKeysCreatePage.qtpl:102
 			qw422016.E().S(permission.Description)
-//line views/apiKeysCreatePage.qtpl:114
+//line views/apiKeysCreatePage.qtpl:102
 			qw422016.N().S(`
             </td>
             <td class="py-2 px-4 w-1/6">
                 <input type="checkbox" name="api-key-permissions" value="`)
-//line views/apiKeysCreatePage.qtpl:117
+//line views/apiKeysCreatePage.qtpl:105
 			qw422016.E().S(permission.Name)
-//line views/apiKeysCreatePage.qtpl:117
+//line views/apiKeysCreatePage.qtpl:105
 			qw422016.N().S(`"
                     class="h-4 w-4 text-secondary-500 cursor-pointer float-right checkbox-`)
-//line views/apiKeysCreatePage.qtpl:118
+//line views/apiKeysCreatePage.qtpl:106
 			qw422016.E().S(category)
-//line views/apiKeysCreatePage.qtpl:118
+//line views/apiKeysCreatePage.qtpl:106
 			qw422016.N().S(`">
             </td>
         </tr>
         `)
-//line views/apiKeysCreatePage.qtpl:121
+//line views/apiKeysCreatePage.qtpl:109
 		}
-//line views/apiKeysCreatePage.qtpl:121
+//line views/apiKeysCreatePage.qtpl:109
 		qw422016.N().S(`
     </tbody>
 </table>
 `)
-//line views/apiKeysCreatePage.qtpl:124
+//line views/apiKeysCreatePage.qtpl:112
 	}
-//line views/apiKeysCreatePage.qtpl:124
+//line views/apiKeysCreatePage.qtpl:112
 	qw422016.N().S(`
 `)
-//line views/apiKeysCreatePage.qtpl:125
+//line views/apiKeysCreatePage.qtpl:113
 }
 
-//line views/apiKeysCreatePage.qtpl:125
-func WriteRenderPermissionTables(qq422016 qtio422016.Writer, permissions map[string][]ApiKeysCreatePermission) {
-//line views/apiKeysCreatePage.qtpl:125
+//line views/apiKeysCreatePage.qtpl:113
+func WriteRenderPermissionTables(qq422016 qtio422016.Writer, permissions map[string][]APIKeysCreatePermission) {
+//line views/apiKeysCreatePage.qtpl:113
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/apiKeysCreatePage.qtpl:125
+//line views/apiKeysCreatePage.qtpl:113
 	StreamRenderPermissionTables(qw422016, permissions)
-//line views/apiKeysCreatePage.qtpl:125
+//line views/apiKeysCreatePage.qtpl:113
 	qt422016.ReleaseWriter(qw422016)
-//line views/apiKeysCreatePage.qtpl:125
+//line views/apiKeysCreatePage.qtpl:113
 }
 
-//line views/apiKeysCreatePage.qtpl:125
-func RenderPermissionTables(permissions map[string][]ApiKeysCreatePermission) string {
-//line views/apiKeysCreatePage.qtpl:125
+//line views/apiKeysCreatePage.qtpl:113
+func RenderPermissionTables(permissions map[string][]APIKeysCreatePermission) string {
+//line views/apiKeysCreatePage.qtpl:113
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/apiKeysCreatePage.qtpl:125
+//line views/apiKeysCreatePage.qtpl:113
 	WriteRenderPermissionTables(qb422016, permissions)
-//line views/apiKeysCreatePage.qtpl:125
+//line views/apiKeysCreatePage.qtpl:113
 	qs422016 := string(qb422016.B)
-//line views/apiKeysCreatePage.qtpl:125
+//line views/apiKeysCreatePage.qtpl:113
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/apiKeysCreatePage.qtpl:125
+//line views/apiKeysCreatePage.qtpl:113
 	return qs422016
-//line views/apiKeysCreatePage.qtpl:125
+//line views/apiKeysCreatePage.qtpl:113
 }
 
-//line views/apiKeysCreatePage.qtpl:128
-type ApiKeysCreatePage struct {
+//line views/apiKeysCreatePage.qtpl:116
+type APIKeysCreatePage struct {
 	layout.BasePage
 	Tenants     []TenantInfo
-	Permissions map[string][]ApiKeysCreatePermission
+	Permissions map[string][]APIKeysCreatePermission
 }
 
-type ApiKeysCreatePermission struct {
+type APIKeysCreatePermission struct {
 	Name        string
 	Description string
 }

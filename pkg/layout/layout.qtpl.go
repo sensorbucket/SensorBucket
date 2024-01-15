@@ -205,7 +205,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="`)
 //line layout.qtpl:42
-	qw422016.E().S(U("static/style.css"))
+	qw422016.E().S(U(" /static/style.css"))
 //line layout.qtpl:42
 	qw422016.N().S(`" />
     `)
@@ -218,32 +218,33 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
-    <script type="text/javascript" src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <script type="text/javascript"
+        src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.25/dist/uPlot.min.css" />
     <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
     <script type="text/javascript" src="`)
-//line layout.qtpl:54
-	qw422016.E().S(U("static/uplot.htmx.js"))
-//line layout.qtpl:54
+//line layout.qtpl:55
+	qw422016.E().S(U(" /static/uplot.htmx.js"))
+//line layout.qtpl:55
 	qw422016.N().S(`"></script>
     <script type="text/javascript" src="`)
-//line layout.qtpl:55
-	qw422016.E().S(U("static/leaflet.htmx.js"))
-//line layout.qtpl:55
+//line layout.qtpl:56
+	qw422016.E().S(U(" /static/leaflet.htmx.js"))
+//line layout.qtpl:56
 	qw422016.N().S(`"></script>
     <script src="http://SortableJS.github.io/Sortable/Sortable.js"></script>
     <script type="text/javascript">
-        window.addEventListener("DOMContentLoaded", function(){
-            document.body.addEventListener("showSnackbar", function(evt) {
+        window.addEventListener("DOMContentLoaded", function () {
+            document.body.addEventListener("showSnackbar", function (evt) {
                 showSnackbar(evt.detail.message, evt.detail.type);
             });
         });
-     
+
         const snackbarSuccess = 1;
         const snackbarError = 2;
-        
+
         let currentHideSnackbarTimer = null;
         function showSnackbar(message, type) {
             // If called again before disapearing, immediately hide
@@ -278,7 +279,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
             }
 
             currentHideSnackbarTimer = setTimeout(() => {
-              hideSnackbar();
+                hideSnackbar();
             }, 3000);
         }
 
@@ -294,19 +295,22 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
         }
     </script>
     `)
-//line layout.qtpl:116
+//line layout.qtpl:117
 	page.StreamHeader(qw422016)
-//line layout.qtpl:116
+//line layout.qtpl:117
 	qw422016.N().S(`
 </head>
 
 <body class="min-h-full" hx-boost="true">
-    <div id="snackbar" class="fixed bottom-3 right-3 w-96 h-24 select-none transition ease-in duration-100 drop-shadow-2xl -translate-y-5 opacity-0 pointer-events-none"> 
+    <div id="snackbar"
+        class="fixed bottom-3 right-3 w-96 h-24 select-none transition ease-in duration-100 drop-shadow-2xl -translate-y-5 opacity-0 pointer-events-none">
         <div class="flex justify-between w-full h-full p-4 mb-4 text-gray-500 bg-secondary-600" role="alert">
             <div class="flex items-center justify-start w-full">
                 <div class="w-1/6 h-full border-solid border border-white">
-                    <iconify-icon id="successIcon" icon="ph:check-bold" width="100%" height="100%" class="text-green-500 hidden"></iconify-icon>
-                    <iconify-icon id="errorIcon" icon="tdesign:error" width="100%" height="100%" class="text-rose-800 hidden"></iconify-icon>
+                    <iconify-icon id="successIcon" icon="ph:check-bold" width="100%" height="100%"
+                        class="text-green-500 hidden"></iconify-icon>
+                    <iconify-icon id="errorIcon" icon="tdesign:error" width="100%" height="100%"
+                        class="text-rose-800 hidden"></iconify-icon>
                 </div>
                 <span id="snackbarMessage" class="ml-3 text-lg font-normal text-white">hello there</span>
             </div>
@@ -318,116 +322,114 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
     <sidebar class="w-screen lg:w-sidebar fixed lg:h-screen top-0 left-0 flex flex-col bg-secondary-600 z-[5000]">
         <header class="h-12 lg:h-header flex justify-between lg:flex-col lg:justify-end">
             <a hx-target="main" class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="`)
-//line layout.qtpl:136
-	qw422016.E().S(U("/overview"))
-//line layout.qtpl:136
+//line layout.qtpl:140
+	qw422016.E().S(U(" /overview"))
+//line layout.qtpl:141
 	qw422016.N().S(`"><img src="`)
-//line layout.qtpl:136
-	qw422016.E().S(U("static/logo-white.png"))
-//line layout.qtpl:136
+//line layout.qtpl:141
+	qw422016.E().S(U(" static/logo-white.png"))
+//line layout.qtpl:141
 	qw422016.N().S(`" alt="SensorBucket" class="h-full" /></a>
-            <button 
-                class="h-8 w-8 self-center lg:hidden"
-                _="on click toggle .h-auto on <nav/>
+            <button class="h-8 w-8 self-center lg:hidden" _="on click toggle .h-auto on <nav/>
                     then toggle .hidden on <nav/>
-                    then toggle .rotate-180 on #toggle-sidebar-icon"
-            >
-                <iconify-icon id="toggle-sidebar-icon" icon="ic:round-keyboard-arrow-down" width="24" class="text-white transition duration-150"></iconify-icon>
+                    then toggle .rotate-180 on #toggle-sidebar-icon">
+                <iconify-icon id="toggle-sidebar-icon" icon="ic:round-keyboard-arrow-down" width="24"
+                    class="text-white transition duration-150"></iconify-icon>
             </button>
         </header>
         <nav class="mt-4 px-8 pb-4 hidden lg:block">
             <ul hx-target="main">
                 <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
                 `)
-//line layout.qtpl:149
+//line layout.qtpl:152
 	for _, item := range navItems {
-//line layout.qtpl:149
+//line layout.qtpl:152
 		qw422016.N().S(`
                 <li>
                     <a href="`)
-//line layout.qtpl:151
+//line layout.qtpl:154
 		qw422016.E().S(U(item.URL))
-//line layout.qtpl:151
+//line layout.qtpl:154
 		qw422016.N().S(`"
                         class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">
                         <iconify-icon icon="`)
-//line layout.qtpl:153
+//line layout.qtpl:156
 		qw422016.E().S(item.Icon)
-//line layout.qtpl:153
+//line layout.qtpl:156
 		qw422016.N().S(`" width="24" class="pr-4 w-8"></iconify-icon>
                         <span>
                             `)
-//line layout.qtpl:155
+//line layout.qtpl:158
 		qw422016.E().S(item.Label)
-//line layout.qtpl:155
+//line layout.qtpl:158
 		qw422016.N().S(`
                         </span>
                     </a>
                 </li>
                 `)
-//line layout.qtpl:159
+//line layout.qtpl:162
 	}
-//line layout.qtpl:159
+//line layout.qtpl:162
 	qw422016.N().S(`
             </ul>
         </nav>
     </sidebar>
     <section class="flex-1 mt-12 lg:mt-0 lg:ml-sidebar" id="main-wrapper">
         <header class="h-8 bg-white border-b" id="mustache">
-            
+
         </header>
         <main class="p-4 pt-0 mt-4" id="main">
             `)
-//line layout.qtpl:168
+//line layout.qtpl:171
 	page.StreamBody(qw422016)
-//line layout.qtpl:168
+//line layout.qtpl:171
 	qw422016.N().S(`
         </main>
     </section>
 
     `)
-//line layout.qtpl:172
+//line layout.qtpl:175
 	page.StreamFooter(qw422016)
-//line layout.qtpl:172
+//line layout.qtpl:175
 	qw422016.N().S(`
 </body>
 
 </html>
 `)
-//line layout.qtpl:176
+//line layout.qtpl:179
 }
 
-//line layout.qtpl:176
+//line layout.qtpl:179
 func WriteIndex(qq422016 qtio422016.Writer, page Page) {
-//line layout.qtpl:176
+//line layout.qtpl:179
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line layout.qtpl:176
+//line layout.qtpl:179
 	StreamIndex(qw422016, page)
-//line layout.qtpl:176
+//line layout.qtpl:179
 	qt422016.ReleaseWriter(qw422016)
-//line layout.qtpl:176
+//line layout.qtpl:179
 }
 
-//line layout.qtpl:176
+//line layout.qtpl:179
 func Index(page Page) string {
-//line layout.qtpl:176
+//line layout.qtpl:179
 	qb422016 := qt422016.AcquireByteBuffer()
-//line layout.qtpl:176
+//line layout.qtpl:179
 	WriteIndex(qb422016, page)
-//line layout.qtpl:176
+//line layout.qtpl:179
 	qs422016 := string(qb422016.B)
-//line layout.qtpl:176
+//line layout.qtpl:179
 	qt422016.ReleaseByteBuffer(qb422016)
-//line layout.qtpl:176
+//line layout.qtpl:179
 	return qs422016
-//line layout.qtpl:176
+//line layout.qtpl:179
 }
 
 // These are for debugging only. In production the tailwind and icons should be bundled with the dashboard
 
-//line layout.qtpl:180
+//line layout.qtpl:183
 func streamdebugHeaders(qw422016 *qt422016.Writer) {
-//line layout.qtpl:180
+//line layout.qtpl:183
 	qw422016.N().S(`
 <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4"></script>
 <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4/dist/ext/ws.js"></script>
@@ -435,31 +437,31 @@ func streamdebugHeaders(qw422016 *qt422016.Writer) {
 <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
 <!--<script type="text/javascript" src="https://livejs.com/live.js"></script>-->
 `)
-//line layout.qtpl:186
+//line layout.qtpl:189
 }
 
-//line layout.qtpl:186
+//line layout.qtpl:189
 func writedebugHeaders(qq422016 qtio422016.Writer) {
-//line layout.qtpl:186
+//line layout.qtpl:189
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line layout.qtpl:186
+//line layout.qtpl:189
 	streamdebugHeaders(qw422016)
-//line layout.qtpl:186
+//line layout.qtpl:189
 	qt422016.ReleaseWriter(qw422016)
-//line layout.qtpl:186
+//line layout.qtpl:189
 }
 
-//line layout.qtpl:186
+//line layout.qtpl:189
 func debugHeaders() string {
-//line layout.qtpl:186
+//line layout.qtpl:189
 	qb422016 := qt422016.AcquireByteBuffer()
-//line layout.qtpl:186
+//line layout.qtpl:189
 	writedebugHeaders(qb422016)
-//line layout.qtpl:186
+//line layout.qtpl:189
 	qs422016 := string(qb422016.B)
-//line layout.qtpl:186
+//line layout.qtpl:189
 	qt422016.ReleaseByteBuffer(qb422016)
-//line layout.qtpl:186
+//line layout.qtpl:189
 	return qs422016
-//line layout.qtpl:186
+//line layout.qtpl:189
 }

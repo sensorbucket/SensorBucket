@@ -15,13 +15,13 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tenants/dashboard/views"
 )
 
-type ApiKeysPageHandler struct {
+type APIKeysPageHandler struct {
 	router chi.Router
 	client *api.APIClient
 }
 
-func CreateApiKeysPageHandler(client *api.APIClient) *ApiKeysPageHandler {
-	handler := &ApiKeysPageHandler{
+func CreateAPIKeysPageHandler(client *api.APIClient) *APIKeysPageHandler {
+	handler := &APIKeysPageHandler{
 		router: chi.NewRouter(),
 		client: client,
 	}
@@ -29,19 +29,19 @@ func CreateApiKeysPageHandler(client *api.APIClient) *ApiKeysPageHandler {
 	return handler
 }
 
-func (h ApiKeysPageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h APIKeysPageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.router.ServeHTTP(w, r)
 }
 
-func (h *ApiKeysPageHandler) SetupRoutes(r chi.Router) {
+func (h *APIKeysPageHandler) SetupRoutes(r chi.Router) {
 	r.Get("/", h.apiKeysListPage())
 	r.Get("/table", h.apiKeysGetTableRows())
-	r.Get("/create", h.createApiKeyView())
-	r.Post("/create", h.createApiKey())
-	r.Delete("/revoke/{api_key_id}", h.revokeApiKey())
+	r.Get("/create", h.createAPIKeyView())
+	r.Post("/create", h.createAPIKey())
+	r.Delete("/revoke/{api_key_id}", h.revokeAPIKey())
 }
 
-func (h *ApiKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
+func (h *APIKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := h.client.ApiKeysApi.ListApiKeys(r.Context())
 		if r.URL.Query().Has("cursor") {
@@ -65,12 +65,12 @@ func (h *ApiKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 
 		nextPage := ""
 		if res.Links.GetNext() != "" {
-			nextPage = views.U("/api-keys/table?cursor=" + getCursor(res.Links.GetNext()))
+			nextPage = layout.U("/api-keys/table?cursor=" + getCursor(res.Links.GetNext()))
 		}
 
-		viewKeys := []views.ApiKey{}
+		viewKeys := []views.APIKey{}
 		for _, key := range res.Data {
-			viewKeys = append(viewKeys, views.ApiKey{
+			viewKeys = append(viewKeys, views.APIKey{
 				ID:             int(key.Id),
 				TenantID:       int(key.TenantId),
 				Created:        key.Created,
@@ -78,11 +78,11 @@ func (h *ApiKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 				Name:           key.Name,
 			})
 		}
-		views.WriteRenderApiKeyRows(w, viewKeys, nextPage)
+		views.WriteRenderAPIKeyRows(w, viewKeys, nextPage)
 	}
 }
 
-func (h *ApiKeysPageHandler) apiKeysListPage() http.HandlerFunc {
+func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// The initial page starts with an overview of different tenants
 		req := h.client.TenantsApi.ListTenants(r.Context())
@@ -97,7 +97,7 @@ func (h *ApiKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
-		page := &views.ApiKeysPage{Tenants: toViewTenants(list.Data)}
+		page := &views.APIKeysPage{Tenants: toViewTenants(list.Data)}
 		if layout.IsHX(r) {
 			page.WriteBody(w)
 			return
@@ -106,7 +106,7 @@ func (h *ApiKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 	}
 }
 
-func (h *ApiKeysPageHandler) revokeApiKey() http.HandlerFunc {
+func (h *APIKeysPageHandler) revokeAPIKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		apiKeyId := chi.URLParam(r, "api_key_id")
 		if apiKeyId == "" {
@@ -134,7 +134,7 @@ func (h *ApiKeysPageHandler) revokeApiKey() http.HandlerFunc {
 	}
 }
 
-func (h *ApiKeysPageHandler) createApiKey() http.HandlerFunc {
+func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
 			layout.SnackbarBadRequest(w, "Please select a tenant and enter a name")
@@ -170,19 +170,38 @@ func (h *ApiKeysPageHandler) createApiKey() http.HandlerFunc {
 			dto.SetExpirationDate(parsedTime)
 		}
 		apiKey, res, err := h.client.ApiKeysApi.CreateApiKey(r.Context()).CreateApiKeyRequest(dto).Execute()
+		if err != nil {
+			log.Printf("[Error] couldnt create api key, err: %s\n", err)
+			layout.SnackbarSomethingWentWrong(w)
+			return
+		}
+
 		if res.StatusCode != http.StatusCreated {
+			log.Printf("[Error] couldnt create api key, response: %d\n", res.StatusCode)
 			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
 
 		// Show the API key to the user
-		layout.WithSnackbarSuccess(w, "Created API Key")
 		w.Write([]byte(apiKey.ApiKey))
+		w.Header().Set("HX-Location", `{"path":"/api-keys", "target":""}`)
+		// HX-Location: {"path":"/test2", "target":"#testdiv"}
+		// w.Header().Set("HX-Redirect", "/api-keys")/
+		layout.WithSnackbarSuccess(w, "Created API Key")
+
+		// w.Write([]byte(apiKey.ApiKey))
+
+		page := &views.APIKeysPage{}
+		if layout.IsHX(r) {
+			page.WriteBody(w)
+			return
+		}
+		layout.WriteIndex(w, page)
 
 	}
 }
 
-func (h *ApiKeysPageHandler) createApiKeyView() http.HandlerFunc {
+func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Retrieve the tenants for the select box in the create view
@@ -194,11 +213,12 @@ func (h *ApiKeysPageHandler) createApiKeyView() http.HandlerFunc {
 			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
-		if resp == nil || resp.StatusCode != http.StatusOK {
+		if resp.StatusCode != http.StatusOK {
+			log.Printf("api key list failed : %d", resp.StatusCode)
 			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
-		page := &views.ApiKeysCreatePage{
+		page := &views.APIKeysCreatePage{
 			Tenants:     toViewTenants(list.Data),
 			Permissions: toViewPermissions(),
 		}
@@ -212,8 +232,8 @@ func (h *ApiKeysPageHandler) createApiKeyView() http.HandlerFunc {
 
 // TODO: should be replaced with actual auth package values once auth package is done
 // https://github.com/sensorbucket/SensorBucket/issues/70
-func toViewPermissions() map[string][]views.ApiKeysCreatePermission {
-	return map[string][]views.ApiKeysCreatePermission{
+func toViewPermissions() map[string][]views.APIKeysCreatePermission {
+	return map[string][]views.APIKeysCreatePermission{
 		"Devices": {
 			{
 				Name:        "READ_DEVICES",

@@ -78,6 +78,7 @@ func CreatePageT[T1 any, T2 any](data []T1, cursor Cursor[T2]) Page[T1] {
 	// TODO: Small bug, at this point the data has already been Limited and the data will always be equal to the Limit or smaller
 	// this means that a cursor will be made if the set is exactly equal to the limit but in reality, there is no more data
 	// meaning a new cursor is sent that won't result in any data
+	// https://github.com/sensorbucket/SensorBucket/issues/82
 	if len(data) >= int(cursor.Limit) {
 		cursorString = EncodeCursor(cursor)
 	}

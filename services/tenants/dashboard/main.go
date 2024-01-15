@@ -33,10 +33,10 @@ func main() {
 	router.Handle("/static/*", http.StripPrefix("/static", fileServer))
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		u := "/overview"
+		u := "/api-keys"
 		http.Redirect(w, r, u, http.StatusFound)
 	})
-	router.Mount("/api-keys", routes.CreateApiKeysPageHandler(apiClient))
+	router.Mount("/api-keys", routes.CreateAPIKeysPageHandler(apiClient))
 
 	srv := &http.Server{
 		Addr:         ":3010",

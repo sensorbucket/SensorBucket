@@ -1,8 +1,42 @@
 {% import "time" %}
 {% import "sensorbucket.nl/sensorbucket/pkg/layout" %}
 {% import "strings" %}
-{% func (p *ApiKeysPage) Body() %}
+{% func (p *APIKeysPage) Body() %}
 <div class="w-full xl:w-2/3 mx-auto bg-white border rounded-md">
+    {% if p.CreatedAPIKey != "" || true %}
+    <div id="api-key-create-result" class="p-3 hidden">
+        <div class="bg-orange-100 border-l-4 border-orange-400 text-orange-600 p-4" role="alert">
+            <div class="flex w-full">
+                <div class="py-1"><svg class="fill-current h-6 w-6 text-orange-600 mr-4"
+                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path
+                            d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z" />
+                    </svg></div>
+                <div class="w-full">
+                    <p class="text-sm font-bold">This is your API Key, please copy your API Key immediately as it
+                        will not be shown again</p>
+                    <br />
+                    <div class="flex justify-start">
+                        <p id="api-key-result-value" class="text-sm w-full truncate">
+                            {%s p.CreatedAPIKey %}
+                        </p>
+                        <button onclick="copyAPIKeyToClipboard()"
+                            class="text-sm ml-1 bg-orange-400 hover:bg-orange-500 text-white border border-orange-500 rounded px-2 py-1">
+                            Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function copyAPIKeyToClipboard() {
+            const text = document.getElementById("api-key-result-value").innerText;
+            navigator.clipboard.writeText(text);
+            showSnackbar("API key copied to clipboard!", snackbarSuccess);
+        }
+    </script>
+    {% endif %}
     <header class="w-full flex items-center justify-between border-b py-2 px-4 text-sm text-slate-700">
         <section>
             API Keys
@@ -10,20 +44,20 @@
         <section class="flex gap-2">
             <button
                 class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                hx-get="{%s U(" /api-keys/create") %}" hx-target="main" hx-push-url="true">
+                hx-get="{%s layout.U(" /api-keys/create") %}" hx-target="main" hx-push-url="true">
                 Create
             </button>
         </section>
     </header>
-    <div> {%= RenderApiKeyTable(p.Tenants, p.TenantsNextPage) %}</div>
+    <div> {%= RenderAPIKeyTable(p.Tenants, p.TenantsNextPage) %}</div>
 </div>
 {% endfunc %}
 
-{% func RenderApiKeyTable(tenants []TenantInfo, tenantsNextPage string) %}
+{% func RenderAPIKeyTable(tenants []TenantInfo, tenantsNextPage string) %}
 {% for _, tenant := range tenants %}
 <table class="w-full text-sm border-separate border-spacing-0 mb-3" id="device-table">
     <thead>
-        {%= RenderApiKeyRowHeading(tenant) %}
+        {%= RenderAPIKeyRowHeading(tenant) %}
     </thead>
     <tbody _="init toggle the *display of me" id="tenant-table-{%d tenant.ID %}">
     </tbody>
@@ -31,24 +65,21 @@
 {% endfor %}
 {% endfunc %}
 
-{% func RenderApiKeyRowHeading(tenant TenantInfo) %}
-<tr class="cursor-pointer h-10 border-b font-bold text-secondary-100 bg-secondary-400"
-    hx-trigger="click once" 
-    hx-get="/api-keys/table?tenant_id={%d tenant.ID %}" 
-    hx-target="#tenant-table-{%d tenant.ID %}"
-    hx-swap="beforeend"
-    _="on click toggle the *display of #tenant-table-{%d tenant.ID %} then toggle .rotate-180 on #collapse-{%d tenant.ID %}"
-    >
+{% func RenderAPIKeyRowHeading(tenant TenantInfo) %}
+<tr class="cursor-pointer h-10 border-b font-bold text-secondary-100 bg-secondary-400" hx-trigger="click once"
+    hx-get="/api-keys/table?tenant_id={%d tenant.ID %}" hx-target="#tenant-table-{%d tenant.ID %}" hx-swap="beforeend"
+    _="on click toggle the *display of #tenant-table-{%d tenant.ID %} then toggle .rotate-180 on #collapse-{%d tenant.ID %}">
     <td class="px-4" colspan="4">
         <span>{%s tenant.Name %}</span>
     </td>
     <td colspan="1">
-        <iconify-icon id="collapse-{%d tenant.ID %}" icon="ooui:collapse" class="px-4 float-right rotate-180"></iconify-icon>
+        <iconify-icon id="collapse-{%d tenant.ID %}" icon="ooui:collapse"
+            class="px-4 float-right rotate-180"></iconify-icon>
     </td>
 </tr>
 {% endfunc %}
 
-{% func RenderApiKeyRows(keys []ApiKey, nextPage string) %}
+{% func RenderAPIKeyRows(keys []APIKey, nextPage string) %}
 {% for _, key := range keys %}
 <tr class="hover:bg-slate-50 group key w-full">
     <td title="{%s key.Name %}" class="px-4 h-10 border-b w-[4em] max-w-[4em] truncate">{%s key.Name %}</td>
@@ -64,7 +95,8 @@
         {%s strings.Join(key.Permissions, ", ") %}
     </td>
     <td class="px-4 h-10 border-b w-[1em] max-w-[1em]">
-        <button hx-delete="/api-keys/revoke/{%d key.ID %}" hx-trigger="click once" hx-target="closest tr" hx-swap="innerHTML"
+        <button  hx-confirm="Are you sure you want to revoke API key with name {%s key.Name %}?" hx-delete="/api-keys/revoke/{%d key.ID %}" hx-trigger="click once" hx-target="closest tr"
+            hx-swap="innerHTML"
             class="float-right text-xs bg-red-400 hover:bg-red-500 text-white border border-red-500 rounded px-2 py-1">
             Revoke
         </button>
@@ -87,10 +119,11 @@
 {% endfunc %}
 
 {% code
-type ApiKeysPage struct {
+type APIKeysPage struct {
 layout.BasePage
 Tenants []TenantInfo
 TenantsNextPage string
+CreatedAPIKey string
 }
 
 type TenantInfo struct {
@@ -98,7 +131,7 @@ ID int
 Name string
 }
 
-type ApiKey struct {
+type APIKey struct {
 ID int
 TenantID int
 Name string
