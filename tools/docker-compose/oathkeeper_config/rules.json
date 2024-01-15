@@ -43,7 +43,7 @@
     {
         "id": "default",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<dashboard|api|dev>/<.*>",
+            "url": "http://<127.0.0.1|localhost>:3000/<(dashboard|api|dev)(/.*)?>",
             "methods": [
                 "GET","POST","PATCH","PUT","DELETE"
             ]
@@ -63,6 +63,28 @@
             {
                 "handler": "id_token",
                 "config": {}
+            }
+        ]
+    },
+    {
+        "id": "internal",
+        "match": {
+            "url": "http://<(?!localhost|127.0.0.1).*>",
+            "methods": [
+                "GET","POST","PATCH","PUT","DELETE"
+            ]
+        },
+        "authenticators": [
+            {
+                "handler": "noop"
+            }
+        ],
+        "authorizer": {
+            "handler": "allow"
+        },
+        "mutators": [
+            {
+                "handler": "noop"
             }
         ]
     }
