@@ -9,6 +9,8 @@ require (
 	github.com/fission/fission v1.19.0
 	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/go-chi/chi/v5 v5.0.7
+	github.com/go-jose/go-jose/v3 v3.0.1
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/schema v1.2.0
