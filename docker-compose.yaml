@@ -20,18 +20,6 @@ services:
     - HTTP_BASE=/dashboard
     - SB_API=http://caddy
 
-  tenants-dashboard:
-    build:
-      context: .
-      dockerfile: services/tenants/dashboard/Dockerfile
-      target: dev
-    volumes:
-      - .:/workspace:cached
-    environment:
-    - STATIC_PATH=services/tenants/dashboard/static
-    - HTTP_BASE=/tenants/dashboard
-    - SB_API=http://caddy
-
   core:
     build:
       context: .

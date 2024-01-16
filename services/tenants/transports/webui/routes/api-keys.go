@@ -15,7 +15,7 @@ import (
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/layout"
-	"sensorbucket.nl/sensorbucket/services/tenants/dashboard/views"
+	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/views"
 )
 
 type APIKeysPageHandler struct {
@@ -241,7 +241,7 @@ func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 }
 
 func toViewPermissions() (map[string][]views.APIKeysPermission, error) {
-	categorized := CreateAPIKeyViewPermissions()
+	categorized := createAPIKeyViewPermissions()
 
 	// Retrieve all allowed permissions
 	inAuth := auth.AllAllowedPermissions()
@@ -278,7 +278,7 @@ func toViewPermissions() (map[string][]views.APIKeysPermission, error) {
 	return categorized, nil
 }
 
-func CreateAPIKeyViewPermissions() map[string][]views.APIKeysPermission {
+func createAPIKeyViewPermissions() map[string][]views.APIKeysPermission {
 	return map[string][]views.APIKeysPermission{
 		"Devices": {
 			{

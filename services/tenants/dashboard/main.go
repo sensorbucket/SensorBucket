@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"sensorbucket.nl/sensorbucket/pkg/api"
-	"sensorbucket.nl/sensorbucket/services/tenants/dashboard/routes"
+	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/routes"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 	cfg.Host = sbURL.Host
 	apiClient := api.NewAPIClient(cfg)
 
-	staticPath := "/home/jeffrey/projects/pollex/SensorBucket/pkg/layout/static"
+	staticPath := "../../../pkg/layout/static"
 	fmt.Println("Serving static files...")
 	router.Use(middleware.GetHead)
 	fileServer := http.FileServer(http.Dir(staticPath))
