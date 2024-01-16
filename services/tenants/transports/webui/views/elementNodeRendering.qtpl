@@ -117,6 +117,14 @@
     {% if attr.Value != nil %}
         value="{%v attr.Value %}"
     {% endif %}
+    {% comment %}
+        In the case of account recovery, there are two submit buttons. One to submit the recovery code,
+        and one to request a new one. The Code input field has the "required" attribute. As a result
+        we wouldn't be able to submit the "request new code" button without entering something
+        in the code input field. 
+        To solve this, when we see that a submit button is for requesting a new code - denoted by
+        the code 1070008 - we disable form validation.
+    {% endcomment%}
     {% if label, ok := n.Meta.GetLabelOk(); ok && label.GetId() == 1070008 %}
         formNoValidate
     {% endif %}

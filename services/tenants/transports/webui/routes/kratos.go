@@ -102,6 +102,10 @@ func (k KratosRoutes) extractFlow(flow KratosFlow) func(next http.Handler) http.
 				web.HTTPError(w, err)
 				return
 			}
+			if flowData == nil {
+				web.HTTPError(w, fmt.Errorf("expected FlowData to not be nil after succesful request to ory"))
+				return
+			}
 
 			r = r.WithContext(context.WithValue(r.Context(), ctxFlow, flowData))
 			next.ServeHTTP(w, r)

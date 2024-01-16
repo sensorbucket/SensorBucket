@@ -28,15 +28,16 @@ selfservice:
       enabled: true
     code:
       enabled: true
-    # Note: WebAuthn does not work in local environments (ie localhost)
+    # Note: WebAuthn does not work in local environments since a domain name and HTTPS is required.
+    # it might work using something like cloudflare tunnels, but requires a consistent domain name
     webauthn:
       enabled: true
       config:
         passwordless: false
         rp:
-          id: http://localhost:3000
+          id: mydomainname.com
           origins:
-            - http://localhost:3000
+            - https://mydomainname.com
           display_name: SensorBucket
 
   flows:

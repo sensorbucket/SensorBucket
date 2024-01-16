@@ -9,26 +9,23 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/routes"
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/views"
 )
-
-var HTTP_WEBUI_BASE = env.Could("HTTP_WEBUI_BASE", "")
 
 type WebUI struct {
 	router chi.Router
 }
 
-func New() *WebUI {
+func New(baseURLString string) *WebUI {
 	ui := &WebUI{
 		router: chi.NewRouter(),
 	}
 
 	var baseURL *url.URL
-	if HTTP_WEBUI_BASE != "" {
-		fmt.Printf("WebUI base path set to: %s\n", HTTP_WEBUI_BASE)
-		baseURL, _ = url.Parse(HTTP_WEBUI_BASE)
+	if baseURLString != "" {
+		fmt.Printf("WebUI base path set to: %s\n", baseURLString)
+		baseURL, _ = url.Parse(baseURLString)
 		views.SetBase(baseURL)
 	}
 

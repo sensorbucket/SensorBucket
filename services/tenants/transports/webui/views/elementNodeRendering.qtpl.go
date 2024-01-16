@@ -605,42 +605,45 @@ func stream_renderInputNodeAttributes(qw422016 *qt422016.Writer, n ory.UiNode, a
 //line transports/webui/views/elementNodeRendering.qtpl:119
 	qw422016.N().S(`
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:120
+//line transports/webui/views/elementNodeRendering.qtpl:127
+	qw422016.N().S(`
+    `)
+//line transports/webui/views/elementNodeRendering.qtpl:128
 	if label, ok := n.Meta.GetLabelOk(); ok && label.GetId() == 1070008 {
-//line transports/webui/views/elementNodeRendering.qtpl:120
+//line transports/webui/views/elementNodeRendering.qtpl:128
 		qw422016.N().S(`
         formNoValidate
     `)
-//line transports/webui/views/elementNodeRendering.qtpl:122
+//line transports/webui/views/elementNodeRendering.qtpl:130
 	}
-//line transports/webui/views/elementNodeRendering.qtpl:122
+//line transports/webui/views/elementNodeRendering.qtpl:130
 	qw422016.N().S(`
 `)
-//line transports/webui/views/elementNodeRendering.qtpl:123
+//line transports/webui/views/elementNodeRendering.qtpl:131
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:123
+//line transports/webui/views/elementNodeRendering.qtpl:131
 func write_renderInputNodeAttributes(qq422016 qtio422016.Writer, n ory.UiNode, attr ory.UiNodeInputAttributes) {
-//line transports/webui/views/elementNodeRendering.qtpl:123
+//line transports/webui/views/elementNodeRendering.qtpl:131
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/elementNodeRendering.qtpl:123
+//line transports/webui/views/elementNodeRendering.qtpl:131
 	stream_renderInputNodeAttributes(qw422016, n, attr)
-//line transports/webui/views/elementNodeRendering.qtpl:123
+//line transports/webui/views/elementNodeRendering.qtpl:131
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/elementNodeRendering.qtpl:123
+//line transports/webui/views/elementNodeRendering.qtpl:131
 }
 
-//line transports/webui/views/elementNodeRendering.qtpl:123
+//line transports/webui/views/elementNodeRendering.qtpl:131
 func _renderInputNodeAttributes(n ory.UiNode, attr ory.UiNodeInputAttributes) string {
-//line transports/webui/views/elementNodeRendering.qtpl:123
+//line transports/webui/views/elementNodeRendering.qtpl:131
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/elementNodeRendering.qtpl:123
+//line transports/webui/views/elementNodeRendering.qtpl:131
 	write_renderInputNodeAttributes(qb422016, n, attr)
-//line transports/webui/views/elementNodeRendering.qtpl:123
+//line transports/webui/views/elementNodeRendering.qtpl:131
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/elementNodeRendering.qtpl:123
+//line transports/webui/views/elementNodeRendering.qtpl:131
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/elementNodeRendering.qtpl:123
+//line transports/webui/views/elementNodeRendering.qtpl:131
 	return qs422016
-//line transports/webui/views/elementNodeRendering.qtpl:123
+//line transports/webui/views/elementNodeRendering.qtpl:131
 }

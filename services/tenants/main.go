@@ -99,7 +99,7 @@ func runAPI(errC chan<- error, db *sqlx.DB) func(context.Context) {
 }
 
 func runWebUI(errC chan<- error) func(context.Context) {
-	ui := webui.New()
+	ui := webui.New(HTTP_WEBUI_BASE)
 	srv := &http.Server{
 		Addr:         HTTP_WEBUI_ADDR,
 		WriteTimeout: 5 * time.Second,
