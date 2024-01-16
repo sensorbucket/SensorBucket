@@ -32,7 +32,7 @@ func TestGenerateNewApiKeyCreatesNewApiKey(t *testing.T) {
 			return nil
 		},
 	}
-	s := &service{
+	s := &Service{
 		tenantStore: tenantStore,
 		apiKeyStore: apiKeyStore,
 	}
@@ -66,7 +66,7 @@ func TestGenerateNewApiKeyErrorOccursWhileAddingApiKeyToStore(t *testing.T) {
 			return fmt.Errorf("weird database error!!")
 		},
 	}
-	s := &service{
+	s := &Service{
 		tenantStore: tenantStore,
 		apiKeyStore: apiKeyStore,
 	}
@@ -91,7 +91,7 @@ func TestGenerateNewApiKeyErrorOccursWhenRetrievingTenant(t *testing.T) {
 			}, fmt.Errorf("weird database error!")
 		},
 	}
-	s := &service{
+	s := &Service{
 		tenantStore: tenantStore,
 	}
 
@@ -112,7 +112,7 @@ func TestGenerateNewApiKeyTenantDoesNotExist(t *testing.T) {
 			return tenants.Tenant{}, ErrTenantIsNotValid
 		},
 	}
-	s := &service{
+	s := &Service{
 		tenantStore: tenantStore,
 	}
 
@@ -135,7 +135,7 @@ func TestGenerateNewApiKeyTenantIsNottenantsActive(t *testing.T) {
 			}, nil
 		},
 	}
-	s := &service{
+	s := &Service{
 		tenantStore: tenantStore,
 	}
 
@@ -156,7 +156,7 @@ func TestRevokeApiKeyDeletesKey(t *testing.T) {
 			return nil
 		},
 	}
-	s := &service{
+	s := &Service{
 		apiKeyStore: apiKeyStore,
 	}
 
@@ -176,7 +176,7 @@ func TestRevokeApiKeyErrorOccurs(t *testing.T) {
 			return fmt.Errorf("weird error!!")
 		},
 	}
-	s := &service{
+	s := &Service{
 		apiKeyStore: apiKeyStore,
 	}
 
@@ -196,7 +196,7 @@ func TestRevokeApiKeyWasNotDeletedByStore(t *testing.T) {
 			return ErrKeyNotFound
 		},
 	}
-	s := &service{
+	s := &Service{
 		apiKeyStore: apiKeyStore,
 	}
 
@@ -226,7 +226,7 @@ func TestValidateApiKeyInvalidEncoding(t *testing.T) {
 	for scenario, input := range scenarios {
 		t.Run(scenario, func(t *testing.T) {
 			// Act
-			s := &service{}
+			s := &Service{}
 			res, err := s.AuthenticateApiKey(input)
 
 			// Assert
@@ -245,7 +245,7 @@ func TestValidateApiKeyErrorOccursWhileRetrievingKey(t *testing.T) {
 			return HashedApiKey{}, fmt.Errorf("database error!!")
 		},
 	}
-	s := &service{
+	s := &Service{
 		apiKeyStore: apiKeyStore,
 	}
 
@@ -273,7 +273,7 @@ func TestValidateApiKeyInvalidKey(t *testing.T) {
 			}, nil
 		},
 	}
-	s := &service{
+	s := &Service{
 		apiKeyStore: apiKeyStore,
 	}
 
@@ -307,7 +307,7 @@ func TestValidateApiKeyKeyIsExpired(t *testing.T) {
 			return nil
 		},
 	}
-	s := &service{
+	s := &Service{
 		apiKeyStore: apiKeyStore,
 	}
 
@@ -342,7 +342,7 @@ func TestValidateApiKeyKeyIsExpiredDeleteErrorOccurs(t *testing.T) {
 			return fmt.Errorf("weird database error")
 		},
 	}
-	s := &service{
+	s := &Service{
 		apiKeyStore: apiKeyStore,
 	}
 
@@ -371,7 +371,7 @@ func TestValidateApiKeyValidKey(t *testing.T) {
 			}, nil
 		},
 	}
-	s := &service{
+	s := &Service{
 		apiKeyStore: apiKeyStore,
 	}
 

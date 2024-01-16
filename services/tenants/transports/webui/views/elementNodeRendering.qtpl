@@ -1,0 +1,132 @@
+{% import (
+    ory "github.com/ory/client-go"
+    )
+%}
+
+{% func _renderNode(n ory.UiNode) %}
+    {% switch attr := n.Attributes.GetActualInstance().(type) %}
+        {% case *ory.UiNodeInputAttributes %}
+            {%= _renderInputNode(n, *attr) %}
+        {% case *ory.UiNodeImageAttributes %}
+            {%= _renderImageNode(n, *attr) %}
+        {% case *ory.UiNodeTextAttributes %}
+            {%= _renderTextNode(n, *attr) %}
+        {% case *ory.UiNodeScriptAttributes %}
+            {%= _renderScriptNode(n, *attr) %}
+    {% endswitch %}
+{% endfunc %}
+
+{% func _renderScriptNode(n ory.UiNode, attr ory.UiNodeScriptAttributes) %}
+<script
+    src="{%s attr.Src %}"
+    crossorigin="{%s attr.Crossorigin %}"
+    id="{%s attr.Id %}"
+    integrity="{%s attr.Integrity %}"
+    nonce="{%s attr.Nonce %}"
+    referrerpolicy="{%s attr.Referrerpolicy %}"
+    {% if attr.Async %}
+    async
+    {% endif %}
+    ></script>
+{% endfunc %}
+
+{% func _renderTextNode(n ory.UiNode, attr ory.UiNodeTextAttributes) %}
+    <label><span class="text-sm">{%s n.Meta.Label.GetText() %}</span>
+    {% switch attr.Text.GetId() %}
+        {% case 1050015 %}
+        <div class="grid grid-cols-3 gap-3 text-center my-4 font-mono">
+            {% if secrets, ok := attr.Text.GetContext()["secrets"]; ok %}
+                {% for _, secret := range secrets.([]any) %}
+                <span class="">{%s secret.(map[string]any)["text"].(string) %}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+        {% default %}
+        <p class="font-mono py-4 text-center">{%s attr.Text.GetText() %}</p>
+    {% endswitch %}
+    </label>
+{% endfunc %}
+
+{% func _renderImageNode(n ory.UiNode, attr ory.UiNodeImageAttributes) %}
+    <img
+        src="{%s attr.GetSrc() %}"
+        id="{%s attr.GetId() %}"
+        width="{%dl attr.GetWidth() %}"
+        height="{%dl attr.GetHeight() %}"
+        class="mx-auto"
+    />
+{% endfunc %}
+
+{% func _renderNodes(nodes []ory.UiNode) %}
+    {% for _, n := range nodes %}
+        {%= _renderNode(n) %}
+    {% endfor %}
+{% endfunc %}
+
+{% func _renderInputNode(n ory.UiNode, attr ory.UiNodeInputAttributes) %}
+    {% if attr.GetType() == "submit" || attr.GetType() == "button" %}
+    <button 
+        class="text-center p-2 border-2 border-secondary-500 text-secondary-500
+        transition-colors duration-150 hover:bg-secondary-500 hover:text-white"
+        {%= _renderInputNodeAttributes(n, attr) %}
+        >{%s n.Meta.GetLabel().Text %}</button>
+    {% if label, ok := n.Meta.GetLabelOk(); ok && label.GetId() == 1010001 %}
+        <a
+            href="{%s U("/auth/recovery") %}"
+            class="block text-center"
+        >Forgot your password?</a>
+    {% endif %}
+    {% return %}
+    {% endif %}
+    <fieldset>
+        {% if label, ok := n.Meta.GetLabelOk(); ok %}
+        <label for="{%s attr.GetName() %}" class="flex flex-col text-sm">
+            <span>{%s label.Text %}</span>
+        {% endif %}
+        <input 
+            class="border px-2 py-1"
+            {%= _renderInputNodeAttributes(n, attr) %}
+            />
+        {% if n.Meta.HasLabel() %}
+        </label>
+        {% endif %}
+        {% for _, msg := range n.GetMessages() %}
+            <span style="color: red;">{%s msg.GetText() %}</span>
+        {% endfor %}
+    </fieldset>
+{% endfunc %}
+
+{% func _renderInputNodeAttributes(n ory.UiNode, attr ory.UiNodeInputAttributes) %}
+    name="{%s attr.GetName() %}"
+    type="{%s attr.GetType() %}"
+    {% if attr.GetAutocomplete() != "" %}
+        autocomplete="{%s attr.GetAutocomplete() %}"
+    {% endif %}
+    {% if attr.GetDisabled()  %}
+        disabled
+    {% endif %}
+    {% if attr.GetRequired() %}
+        required
+    {% endif %}
+    {% if attr.GetPattern() != "" %}
+        pattern="{%s attr.GetPattern() %}"
+    {% endif %}
+    {% if attr.GetOnclick() != "" %}
+        onclick="{%s attr.GetOnclick() %}"
+    {% endif %}
+    {% if attr.Value != nil %}
+        value="{%v attr.Value %}"
+    {% endif %}
+    {% comment %}
+        In the case of account recovery, there are two submit buttons. One to submit the recovery code,
+        and one to request a new one. The Code input field has the "required" attribute. As a result
+        we wouldn't be able to submit the "request new code" button without entering something
+        in the code input field. 
+        To solve this, when we see that a submit button is for requesting a new code - denoted by
+        the code 1070008 - we disable form validation.
+    {% endcomment%}
+    {% if label, ok := n.Meta.GetLabelOk(); ok && label.GetId() == 1070008 %}
+        formNoValidate
+    {% endif %}
+{% endfunc %}
+

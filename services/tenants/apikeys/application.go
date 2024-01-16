@@ -18,26 +18,26 @@ var (
 	ErrInvalidEncoding  = fmt.Errorf("API key was sent using an invalid encoding")
 )
 
-func NewAPIKeyService(tenantStore tenantStore, apiKeyStore apiKeyStore) *service {
-	return &service{
+func NewAPIKeyService(tenantStore tenantStore, apiKeyStore apiKeyStore) *Service {
+	return &Service{
 		tenantStore: tenantStore,
 		apiKeyStore: apiKeyStore,
 	}
 }
 
-func (s *service) ListAPIKeys(filter Filter, p pagination.Request) (*pagination.Page[ApiKeyDTO], error) {
+func (s *Service) ListAPIKeys(filter Filter, p pagination.Request) (*pagination.Page[ApiKeyDTO], error) {
 	return s.apiKeyStore.List(filter, p)
 }
 
 // Revokes an API key, returns ErrKeyNotFound if the given key was not found in the apiKeyStore
-func (s *service) RevokeApiKey(apiKeyId int64) error {
+func (s *Service) RevokeApiKey(apiKeyId int64) error {
 	return s.apiKeyStore.DeleteApiKey(apiKeyId)
 }
 
 // Creates a new API key for the given tenant and with the given expiration date.
 // Returns the api key as: 'apiKeyId:apiKey' encoded to a base64 string.
 // Fails if the tenant is not active
-func (s *service) GenerateNewApiKey(name string, tenantId int64, expirationDate *time.Time) (string, error) {
+func (s *Service) GenerateNewApiKey(name string, tenantId int64, expirationDate *time.Time) (string, error) {
 	tenant, err := s.tenantStore.GetTenantById(tenantId)
 	if err != nil {
 		return "", err
@@ -57,15 +57,14 @@ func (s *service) GenerateNewApiKey(name string, tenantId int64, expirationDate 
 	if err != nil {
 		return "", err
 	}
-	apiKey :=
-		base64.StdEncoding.WithPadding(base64.NoPadding).EncodeToString(
-			[]byte(fmt.Sprintf("%d:%s", newApiKey.ID, newApiKey.Secret)))
+	apiKey := base64.StdEncoding.WithPadding(base64.NoPadding).EncodeToString(
+		[]byte(fmt.Sprintf("%d:%s", newApiKey.ID, newApiKey.Secret)))
 	return apiKey, nil
 }
 
 // Authenticates a given API key. Input must be 'apiKeyId:apiKey' encoded to a base64 string
 // API key is valid if it is the correct api key id and api key combination and if the attached tenant is active
-func (s *service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAuthenticationDTO, error) {
+func (s *Service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAuthenticationDTO, error) {
 	apiKeyId, apiKey, err := apiKeyAndIdFromBase64(base64IdAndKeyCombination)
 	if err != nil {
 		return ApiKeyAuthenticationDTO{}, ErrInvalidEncoding
@@ -134,7 +133,7 @@ func apiKeyAndIdFromBase64(base64Src string) (int64, string, error) {
 	return apiKeyId, apiKey, nil
 }
 
-type service struct {
+type Service struct {
 	tenantStore tenantStore
 	apiKeyStore apiKeyStore
 }

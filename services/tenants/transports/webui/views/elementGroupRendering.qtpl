@@ -1,0 +1,53 @@
+{% import (
+    ory "github.com/ory/client-go"
+    )
+%}
+
+{% code
+    func filterWithoutDefaults(n []ory.UiNode) filterChain {
+        return filter(n).Group("default").InputType("hidden").ContinueWithoutThese()
+    }
+%}
+
+{% func renderSubmit(ui ory.UiContainer, group string) %}
+    {%= _renderNodes(
+        filterWithoutDefaults(ui.Nodes).Group(group).InputType("submit").GetWithThese())%}
+{% endfunc %}
+
+{% func renderGroup(ui ory.UiContainer, group string) %}
+    {%= _renderNodes(
+        filterWithoutDefaults(ui.Nodes).
+            Group(group).InputType("submit").ContinueWithoutThese().
+            Group(group).GetWithThese())%}
+{% endfunc %}
+
+{% func _renderDefaults(ui ory.UiContainer) %}
+    {%= _renderNodes(filter(ui.Nodes).Group("default").InputType("hidden").GetWithThese()) %}
+{% endfunc %}
+
+{% func renderMessage(ui ory.UiContainer) %}
+    {% for _, msg := range ui.Messages %}
+        {% code 
+            classes := ""
+            if msg.GetType() == "error" {
+                classes += " text-rose-500"
+            }
+            if msg.GetType() == "success" {
+                classes += " text-emerald-700"
+            }
+        %}
+        <p class="text-xs py-2 {%s classes %}">{%s msg.GetText() %}</p>
+    {% endfor %}
+{% endfunc %}
+
+{% func formStart(ui ory.UiContainer) %}
+    <form
+        action="{%s ui.Action %}" method="{%s ui.Method %}"
+        class="space-y-2 flex flex-col"
+        />
+        {%= _renderDefaults(ui) %}
+{% endfunc %}
+
+{% func formEnd() %}
+    </form>
+{% endfunc %}

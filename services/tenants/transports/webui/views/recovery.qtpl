@@ -1,0 +1,14 @@
+{% import ory "github.com/ory/client-go" %}
+{% code
+type RecoveryPage struct {
+    Flow *ory.RecoveryFlow
+    Base
+} %}
+
+{% func (p RecoveryPage) Body() %}
+    <h1 class="text-2xl mt-4 ">Recover account</h1>
+    {%= formStart(p.Flow.Ui) %}
+        {%= renderGroup(p.Flow.Ui, "code") %}
+        {%= renderSubmit(p.Flow.Ui, "code") %}
+    {%= formEnd() %}
+{% endfunc %}

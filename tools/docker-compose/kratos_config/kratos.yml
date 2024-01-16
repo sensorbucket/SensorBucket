@@ -1,26 +1,26 @@
-version: v0.13.0
+version: v1.0.0 
 
 dsn: memory
 
 serve:
   public:
-    base_url: http://127.0.0.1:4433/
+    base_url: http://127.0.0.1:3000/.ory
     cors:
       enabled: true
   admin:
     base_url: http://kratos:4434/
 
 selfservice:
-  default_browser_return_url: http://127.0.0.1:4455/
+  default_browser_return_url: http://127.0.0.1:3000/tenants/auth
   allowed_return_urls:
-    - http://127.0.0.1:4455
+    - http://127.0.0.1:3000/tenants/auth
 
   methods:
     password:
       enabled: true
     totp:
       config:
-        issuer: Kratos
+        issuer: SensorBucket
       enabled: true
     lookup_secret:
       enabled: true
@@ -28,39 +28,50 @@ selfservice:
       enabled: true
     code:
       enabled: true
+    # Note: WebAuthn does not work in local environments since a domain name and HTTPS is required.
+    # it might work using something like cloudflare tunnels, but requires a consistent domain name
+    webauthn:
+      enabled: true
+      config:
+        passwordless: false
+        rp:
+          id: mydomainname.com
+          origins:
+            - https://mydomainname.com
+          display_name: SensorBucket
 
   flows:
     error:
-      ui_url: http://127.0.0.1:4455/error
+      ui_url: http://127.0.0.1:3000/tenants/auth/error
 
     settings:
-      ui_url: http://127.0.0.1:4455/settings
+      ui_url: http://127.0.0.1:3000/tenants/auth/settings
       privileged_session_max_age: 15m
       required_aal: highest_available
 
     recovery:
       enabled: true
-      ui_url: http://127.0.0.1:4455/recovery
+      ui_url: http://127.0.0.1:3000/tenants/auth/recovery
       use: code
 
     verification:
       enabled: true
-      ui_url: http://127.0.0.1:4455/verification
+      ui_url: http://127.0.0.1:3000/tenants/auth/verification
       use: code
       after:
-        default_browser_return_url: http://127.0.0.1:4455/
+        default_browser_return_url: http://127.0.0.1:3000/tenants/auth/
 
     logout:
       after:
-        default_browser_return_url: http://127.0.0.1:4455/login
+        default_browser_return_url: http://127.0.0.1:3000/tenants/auth/login
 
     login:
-      ui_url: http://127.0.0.1:4455/login
+      ui_url: http://127.0.0.1:3000/tenants/auth/login
       lifespan: 10m
 
     registration:
       lifespan: 10m
-      ui_url: http://127.0.0.1:4455/registration
+      ui_url: http://127.0.0.1:3000/tenants/auth/registration
       after:
         password:
           hooks:
@@ -94,4 +105,4 @@ identity:
 
 courier:
   smtp:
-    connection_uri: smtps://test:test@mailserver:1025/?skip_ssl_verify=true
+    connection_uri: smtp://mail-server:1025?disable_starttls=true

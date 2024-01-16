@@ -24,16 +24,18 @@ errors:
 mutators:
   noop:
     enabled: true
-  id_token:
-    enabled: true
-    config:
-      issuer_url: http://localhost:3000/
-      jwks_url: file:///etc/config/oathkeeper/jwks.json
   hydrator:
     enabled: true
     config:
       api:
         url: http://tenants:3000/session/hydrate
+  id_token:
+    enabled: true
+    config:
+      issuer_url: http://localhost:3000/
+      jwks_url: file:///etc/config/oathkeeper/jwks.json
+      # TODO: tackle this when implementing auth(z) on services. Do we actually need anonymous users?
+      #claims: '{"mai": "{{ print .Extra.identity.traits.email }}"}'
 
 authorizers:
   allow:
