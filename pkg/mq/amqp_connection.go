@@ -16,6 +16,7 @@ const (
 	AMQP_DISCONNECTED AMQPState = iota
 	AMQP_CONNECTED
 	AMQP_RECONNECTING
+	AMQP_UNREACHABLE
 
 	AMQP_QUEUE_LEN = 10
 )
@@ -51,13 +52,13 @@ func NewConnection(host string) *AMQPConnection {
 func (c *AMQPConnection) Start() {
 	defer func() {
 		log.Println("AMQPConnection stopping")
-		c.state = AMQP_DISCONNECTED
 		c.usersLock.Lock()
 		for _, user := range c.users {
 			close(user)
 		}
 		c.usersLock.Unlock()
 		if c.connection != nil {
+			c.state = AMQP_DISCONNECTED
 			c.connection.Close()
 		}
 		log.Println("AMQPConnection stopped")
@@ -68,11 +69,13 @@ func (c *AMQPConnection) Start() {
 	// Keep reconnecting until we get a 'done' signal
 	for {
 		log.Println("AMQPConnection (re)connecting...")
+		c.connection = nil
 		c.state = AMQP_RECONNECTING
 		connection, err := amqp.Dial(c.amqpHost)
 		if err != nil {
 			log.Printf("AMQPConnection connect failed: %v\n", err)
 			if retries > c.maximumRetries {
+				c.state = AMQP_UNREACHABLE
 				log.Printf("AMQPConnection maximum retries of %d reached, quitting...\n", retries)
 				return
 			}
@@ -110,6 +113,14 @@ func (c *AMQPConnection) Start() {
 		log.Printf("AMQPConnection disconnected\n")
 		c.connection.Close()
 	}
+}
+
+func (c *AMQPConnection) Ready() bool {
+	return c.state == AMQP_CONNECTED
+}
+
+func (c *AMQPConnection) Healthy() bool {
+	return c.state != AMQP_UNREACHABLE
 }
 
 func (c *AMQPConnection) Shutdown() {

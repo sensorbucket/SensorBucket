@@ -196,8 +196,9 @@ func doHTTPRequest(body []byte, endpoint string, retries int) (*http.Response, e
 	for retry := 0; retry < retries; retry++ {
 		req, err := http.NewRequest("POST", endpoint, bytes.NewReader(body))
 		if err != nil {
-			return nil, fmt.Errorf("Error creating invocation for function: %s, error: %w", endpoint, err)
+			return nil, fmt.Errorf("error creating invocation for function: %s, error: %w", endpoint, err)
 		}
+		req.Header.Set("X-AMQP-Topic", AMQP_TOPIC)
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
 			log.Printf("Invocation for %s failed with: %v\n", endpoint, err)
@@ -216,5 +217,5 @@ func doHTTPRequest(body []byte, endpoint string, retries int) (*http.Response, e
 	if res != nil {
 		statusCode = res.StatusCode
 	}
-	return nil, fmt.Errorf("Invocation of %s failed with statuscode: %d\n", endpoint, statusCode)
+	return nil, fmt.Errorf("invocation of %s failed with statuscode: %d", endpoint, statusCode)
 }

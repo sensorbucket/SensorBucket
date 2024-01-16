@@ -16,6 +16,12 @@
         reverse_proxy core:3000
     }
 
+    handle_path /health/* {
+        handle_path /httpimporter* {
+            reverse_proxy httpimporter:3030
+        }
+    }
+
     redir /dev/mq /dev/mq/
     handle_path /dev/mq/* {
         reverse_proxy mq:15672

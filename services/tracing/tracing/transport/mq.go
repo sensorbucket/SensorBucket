@@ -2,6 +2,7 @@ package tracingtransport
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -12,14 +13,14 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
 )
 
-func StartMQ(svc *tracing.Service, conn *mq.AMQPConnection, errQueue string, queue string) {
-	pipelineMessages := mq.Consume(conn, queue, setupFunc(queue))
+func StartMQ(svc *tracing.Service, conn *mq.AMQPConnection, queue, xchg, topic string) {
+	pipelineMessages := mq.Consume(conn, queue, setupFunc(queue, xchg, topic))
 
 	log.Println("Measurement MQ Transport running")
-	go processMessage(queue, pipelineMessages, svc)
+	go processMessage(pipelineMessages, svc)
 }
 
-func processMessage(queue string, deliveries <-chan amqp091.Delivery, svc *tracing.Service) {
+func processMessage(deliveries <-chan amqp091.Delivery, svc *tracing.Service) {
 	log.Println("Measurement MQ Transport running, tracing pipeline errors...")
 	for msg := range deliveries {
 		tsHeader, ok := msg.Headers["timestamp"]
@@ -72,9 +73,20 @@ func processMessage(queue string, deliveries <-chan amqp091.Delivery, svc *traci
 	}
 }
 
-func setupFunc(queue string) mq.AMQPSetupFunc {
+func setupFunc(queue, xchg, topic string) mq.AMQPSetupFunc {
 	return func(c *amqp091.Channel) error {
 		_, err := c.QueueDeclare(queue, true, false, false, false, nil)
-		return err
+		if err != nil {
+			return fmt.Errorf("error declaring amqp queue: %w", err)
+		}
+		err = c.ExchangeDeclare(xchg, "topic", true, false, false, false, nil)
+		if err != nil {
+			return fmt.Errorf("error declaring amqp exchange: %w", err)
+		}
+		err = c.QueueBind(queue, topic, xchg, false, nil)
+		if err != nil {
+			return fmt.Errorf("error binding amqp queue to exchange: %w", err)
+		}
+		return nil
 	}
 }

@@ -13,11 +13,12 @@ The tracing service requires the following environment variables to be set in or
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------- | --------------- |
 | DB_DSN                      | The connection string for the PostgreSQL database                                                                         | Yes      |                 |
 | AMQP_HOST                   | The RabbitMQ host                                                                                                         | Yes      |                 |
-| AMQP_QUEUE_PIPELINEMESSAGES | The queue on which pipeline messages appear                                                                               | Yes      |                 |
-| AMQP_QUEUE_ERRORS           | The queue on which any errors produced by workers appear                                                                  | Yes      |                 |
+| AMQP_QUEUE_PIPELINEMESSAGES | The queue on which pipeline messages appear                                                                               | Yes      | tracing_pipeline_messages |
 | AMQP_QUEUE_INGRESS          | The topic on which new datapoints will appear                                                                             | No       | archive-ingress |
 | AMQP_XCHG_INGRESS           | The exchange on which ingress messages will appear. The tracing service will declare the exchange if it doesn't exist yet | No       | ingress         |
 | AMQP_XCHG_INGRESS_TOPIC     | The topic on the exhange where ingress messages will be read from                                                         | No       | ingress.*       |
+| AMQP_XCHG_PIPELINEMESSAGES| The exchange on which all pipeline messages are published | Yes       | pipeline.messages       |
+| AMQP_XCHG_PIPELINEMESSAGES_TOPIC     | The binding between the pipeline messages exchange and the queue                                                        | Yes       | #       |
 
 ## Domain
 

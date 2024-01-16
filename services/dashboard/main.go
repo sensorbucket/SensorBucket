@@ -66,16 +66,8 @@ func Run() error {
 	})
 
 	// Serve static files
-	if os.Getenv("GO_ENV") != "production" {
-		staticPath := env.Could("STATIC_PATH", "")
-		fmt.Println("Serving static files...")
-		router.Use(middleware.GetHead)
-		fileServer := http.FileServer(http.Dir(staticPath))
-		router.Handle("/static/*", http.StripPrefix("/static", fileServer))
-	} else {
-		fileServer := http.FileServer(http.FS(staticFS))
-		router.Handle("/static/*", fileServer)
-	}
+	fileServer := http.FileServer(http.FS(staticFS))
+	router.Handle("/static/*", fileServer)
 
 	sbURL, err := url.Parse(SB_API)
 	if err != nil {
@@ -87,7 +79,10 @@ func Run() error {
 	apiClient := api.NewAPIClient(cfg)
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		u := baseURL.JoinPath("overview").String()
+		u := "/overview"
+		if baseURL != nil {
+			u = baseURL.JoinPath("overview").String()
+		}
 		http.Redirect(w, r, u, http.StatusFound)
 	})
 	router.Mount("/overview", routes.CreateOverviewPageHandler(apiClient))
