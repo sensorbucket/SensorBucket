@@ -1,0 +1,41 @@
+{% import ory "github.com/ory/client-go" %}
+
+{% code
+type LoginPage struct {
+    Base
+    Flow *ory.LoginFlow
+} %}
+
+{% func (p LoginPage) Body() %}
+    {% if !isMFA(p.Flow) %}
+        <h1 class="text-2xl mt-4 ">Login</h1>
+        {%= formStart(p.Flow.Ui) %}
+            {%= renderGroup(p.Flow.Ui, "default") %}
+            {%= renderGroup(p.Flow.Ui, "password") %}
+            {%= renderSubmit(p.Flow.Ui, "password") %}
+        {%= formEnd() %}
+    {% else %}
+        <h1 class="text-2xl mt-4 ">Verify login with</h1>
+        {% if hasGroup(p.Flow.Ui, "totp") %}
+        <section>
+            {%= formStart(p.Flow.Ui) %}
+                {%= renderGroup(p.Flow.Ui, "totp") %}
+                {%= renderSubmit(p.Flow.Ui, "totp") %}
+            {%= formEnd() %}
+        </section>
+        {% endif %}
+        {% if hasGroup(p.Flow.Ui, "webauthn") %}
+        <hr>
+        <section>
+            {%= formStart(p.Flow.Ui) %}
+                {%= renderGroup(p.Flow.Ui, "webauthn") %}
+                {%= renderSubmit(p.Flow.Ui, "webauthn") %}
+            {%= formEnd() %}
+        </section>
+        {% endif %}
+    {% endif %}
+    <span class="block text-center">{%= renderMessage(p.Flow.Ui) %}</span>
+    {%if isMFA(p.Flow) %}
+        <a href="{%s U("/auth/logout") %}" class="block mt-2 text-center border-gray-200 py-1 text-gray-500 text-xs hover:underline">Something not working? Click to logout</a>
+    {% endif %}
+{% endfunc %}

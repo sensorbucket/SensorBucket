@@ -161,9 +161,13 @@ func (t *OverviewRoute) deviceListPage() http.HandlerFunc {
 		sensorGroupIDStr := r.URL.Query().Get("sensor_group")
 		if sensorGroupIDStr != "" {
 			sensorGroupID, err := strconv.ParseInt(sensorGroupIDStr, 10, 64)
+			if err != nil {
+				web.HTTPError(w, web.NewError(http.StatusBadRequest, "Sensor Group ID is not an integer", "ERR_BAD_REQUEST"))
+				return
+			}
 			res, _, err := t.client.DevicesApi.GetSensorGroup(r.Context(), sensorGroupID).Execute()
 			if err != nil {
-				web.HTTPError(w, err)
+				web.HTTPError(w, fmt.Errorf("error getting sensor group: %w", err))
 				return
 			}
 			page.SensorGroup = res.Data
@@ -174,7 +178,7 @@ func (t *OverviewRoute) deviceListPage() http.HandlerFunc {
 		}
 		res, _, err := req.Execute()
 		if err != nil {
-			web.HTTPError(w, err)
+			web.HTTPError(w, fmt.Errorf("error listing devices: %w", err))
 			return
 		}
 		page.Devices = res.Data

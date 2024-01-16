@@ -1,7 +1,20 @@
 :80 {
+    log {
+        output stdout
+    }
+
     forward_auth oathkeeper:4456 {
         uri /decisions
         copy_headers Authorization
+    }
+
+    handle_path /.ory/* {
+        reverse_proxy kratos:4433
+    }
+
+    redir /tenants /tenants/
+    handle_path /tenants/* {
+        reverse_proxy tenants:3001
     }
 
     handle_path /api/* {
@@ -46,6 +59,9 @@
     handle_path /dashboard/* {
         reverse_proxy dashboard:3000
     }
-    respond 404
+
+    handle {
+        respond 404
+    }
 }
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/samber/lo"
+
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
@@ -23,25 +24,22 @@ type APIKeysPageHandler struct {
 	client *api.APIClient
 }
 
-func CreateAPIKeysPageHandler(client *api.APIClient) *APIKeysPageHandler {
+func SetupAPIKeyRoutes(client *api.APIClient) *APIKeysPageHandler {
 	handler := &APIKeysPageHandler{
 		router: chi.NewRouter(),
 		client: client,
 	}
-	handler.SetupRoutes(handler.router)
+	handler.router.Get("/", handler.apiKeysListPage())
+	handler.router.Get("/table", handler.apiKeysGetTableRows())
+	handler.router.Get("/create", handler.createAPIKeyView())
+	handler.router.Post("/create", handler.createAPIKey())
+	handler.router.Delete("/revoke/{api_key_id}", handler.revokeAPIKey())
+
 	return handler
 }
 
 func (h APIKeysPageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.router.ServeHTTP(w, r)
-}
-
-func (h *APIKeysPageHandler) SetupRoutes(r chi.Router) {
-	r.Get("/", h.apiKeysListPage())
-	r.Get("/table", h.apiKeysGetTableRows())
-	r.Get("/create", h.createAPIKeyView())
-	r.Post("/create", h.createAPIKey())
-	r.Delete("/revoke/{api_key_id}", h.revokeAPIKey())
 }
 
 func (h *APIKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
@@ -68,7 +66,7 @@ func (h *APIKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 
 		nextPage := ""
 		if res.Links.GetNext() != "" {
-			nextPage = layout.U("/api-keys/table?cursor=" + getCursor(res.Links.GetNext()))
+			nextPage = views.U("/api-keys/table?cursor=" + getCursor(res.Links.GetNext()))
 		}
 
 		viewKeys := []views.APIKey{}
@@ -111,7 +109,7 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 			page.WriteBody(w)
 			return
 		}
-		layout.WriteIndex(w, page)
+		views.WriteWideLayout(w, page)
 	}
 }
 
@@ -195,7 +193,7 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 		// sent the the HX-Location/Redirect endpoint in the request for further handling, there might be some browser
 		// caching involved which can store the API key. This way we ensure the API key is included in the response for this request
 		// along with the api keys list
-		w.Header().Set("HX-Replace-Url", "/api-keys")
+		w.Header().Set("HX-Replace-Url", views.U("/api-keys"))
 		layout.WithSnackbarSuccess(w, "Created API Key")
 		h.apiKeysListPage().ServeHTTP(
 			w,
@@ -205,7 +203,6 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 
 func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		// Retrieve the tenants for the select box in the create view
 		req := h.client.TenantsApi.ListTenants(r.Context())
 		req = req.State(1) // State Active
@@ -236,7 +233,7 @@ func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 			page.WriteBody(w)
 			return
 		}
-		layout.WriteIndex(w, page)
+		views.WriteWideLayout(w, page)
 	}
 }
 
@@ -256,13 +253,11 @@ func toViewPermissions() (map[string][]views.APIKeysPermission, error) {
 	// Check if there is any difference between the frontend's definition and the auth package definition
 	missingInView, missingInAuth := lo.Difference(authAsStrSlice, viewAsSlice)
 	if len(missingInAuth) > 0 {
-
 		// Auth package is the single point of truth, if there are permissions missing the frontend package might have
 		// outdated permission which the user should not be able to set
 		return nil, fmt.Errorf("view permissions contains invalid permissions (%d invalid permissions)", len(missingInAuth))
 	}
 	if len(missingInView) > 0 {
-
 		// Frontend might not be updated with latest permissions, simply log a warning since we can still show the missing permissions
 		// just without a category and description
 		log.Printf("[Warning] some permissions are missing in create view (%d missing permissions)\n", len(missingInView))

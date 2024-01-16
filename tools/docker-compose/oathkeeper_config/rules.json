@@ -1,12 +1,28 @@
 [
     {
-        "id": "default",
+        "id": "passthrough-authentication",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<.*>",
+            "url": "http://<127.0.0.1|localhost>:3000/<\\.ory(/.+)?>",
             "methods": [
-                "GET",
-                "POST",
-                "DELETE"
+                "GET","POST","PATCH","PUT","DELETE"
+            ]
+        },
+        "authenticators": [
+            {
+                "handler": "noop"
+            }
+        ],
+        "authorizer": {
+            "handler": "allow"
+        },
+        "mutators": [{"handler":"noop"}]
+    },
+    {
+        "id": "authentication",
+        "match": {
+            "url": "http://<127.0.0.1|localhost>:3000/<tenants(/.+)?>",
+            "methods": [
+                "GET","POST","PATCH","PUT","DELETE"
             ]
         },
         "authenticators": [
@@ -21,6 +37,54 @@
             {
                 "handler": "id_token",
                 "config": {}
+            }
+        ]
+    },
+    {
+        "id": "default",
+        "match": {
+            "url": "http://<127.0.0.1|localhost>:3000/<(dashboard|api|dev)(/.*)?>",
+            "methods": [
+                "GET","POST","PATCH","PUT","DELETE"
+            ]
+        },
+        "authenticators": [
+            {
+                "handler": "cookie_session"
+            },
+            {
+                "handler": "noop"
+            }
+        ],
+        "authorizer": {
+            "handler": "allow"
+        },
+        "mutators": [
+            {
+                "handler": "id_token",
+                "config": {}
+            }
+        ]
+    },
+    {
+        "id": "internal",
+        "match": {
+            "url": "http://<(?!localhost|127.0.0.1).*>",
+            "methods": [
+                "GET","POST","PATCH","PUT","DELETE"
+            ]
+        },
+        "authenticators": [
+            {
+                "handler": "noop"
+            }
+        ],
+        "authorizer": {
+            "handler": "allow"
+        },
+        "mutators": [
+            {
+                "handler": "noop"
             }
         ]
     }

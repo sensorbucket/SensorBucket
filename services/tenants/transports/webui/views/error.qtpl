@@ -1,0 +1,11 @@
+{% import ory "github.com/ory/client-go" %}
+{% code
+type ErrorPage struct {
+    Flow *ory.FlowError
+    Base
+} %}
+
+{% func (p ErrorPage) Body() %}
+    <h1>Error!</h1>
+    <span class="text-rose-500">{%v p.Flow.GetError() %}</span>
+{% endfunc %}

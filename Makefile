@@ -26,6 +26,9 @@ logs:
 watch-dashboard:
 	@make -C services/dashboard watch
 
+watch-tenants:
+	@make -C services/tenants watch
+
 api:
 	@echo "Starting live openapi docs"
 	-@docker run --rm -p 8080:8080 --init -v $(CURDIR):/project redocly/cli -h 0.0.0.0 preview-docs /project/tools/openapi/api.yaml

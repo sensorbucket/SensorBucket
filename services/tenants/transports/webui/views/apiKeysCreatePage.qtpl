@@ -1,4 +1,3 @@
-{% import "sensorbucket.nl/sensorbucket/pkg/layout" %}
 {% import "strings" %}
 {% func (p *APIKeysCreatePage) Body() %}
 <div class="w-full xl:w-2/3 mx-auto bg-white border rounded-md">
@@ -7,8 +6,8 @@
             Create API Key
         </section>
     </header>
-    <form id="apiKeyCreateForm" class="p-4 gap-4 grid lg:grid-cols-1" hx-trigger="submit" hx-post="/api-keys/create"
-        hx-target="#main" hx-swap="innerHTML">
+    <form id="apiKeyCreateForm" class="p-4 gap-4 grid lg:grid-cols-1" hx-trigger="submit" hx-post="{%s U("/api-keys/create") %}"
+        hx-target="main" hx-swap="innerHTML">
         <fieldset>
             <label for="api-key-tenant" class="ml-1 -mb-1 block"><small
                     class="text-xs text-slate-500">Tenant</small></label>
@@ -95,7 +94,7 @@
 
 {% code
 type APIKeysCreatePage struct {
-layout.BasePage
+Base
 Tenants []TenantInfo
 Permissions map[string][]APIKeysPermission
 }

@@ -1,0 +1,57 @@
+{% interface Page {
+    Body()
+} %}
+
+{% func Layout(p Page) %}
+<!DOCTYPE html>
+<html lang="en" class="bg-[#f8fafc]">
+    <head>
+        <title></title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{%s U("/static/style.css") %}" />
+        <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4"></script>
+        <script type="text/javascript" src="https://unpkg.com/hyperscript.org@0.9.11"></script>
+        <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+    </head>
+    <body>
+    <div class="mt-12 mx-auto w-full md:max-w-[420px] bg-white rounded-md overflow-hidden">
+        <header class="bg-secondary-500 h-14 py-3">
+            <img src="{%s U("/static/logo-white.png") %}" alt="SensorBucket Logo" class="h-full mx-auto" />
+        </header>
+        <main class="px-6 mb-4 space-y-2">
+        {%= p.Body() %}
+        </main>
+    </div>
+    </body>
+</html>
+{% endfunc %}
+
+{% func WideLayout(p Page) %}
+<!DOCTYPE html>
+<html lang="en" class="bg-[#f8fafc]">
+    <head>
+        <title></title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{%s U("/static/style.css") %}" />
+        <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4"></script>
+        <script type="text/javascript" src="https://unpkg.com/hyperscript.org@0.9.11"></script>
+        <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+    </head>
+    <body>
+    <div class="mt-12 mx-auto w-full md:max-w-screen-xl bg-white rounded-md overflow-hidden">
+        <header class="bg-secondary-500 h-14 py-3">
+            <img src="{%s U("/static/logo-white.png") %}" alt="SensorBucket Logo" class="h-full mx-auto" />
+        </header>
+        <main class="px-6 mb-4 space-y-2">
+        {%= p.Body() %}
+        </main>
+    </div>
+    </body>
+</html>
+{% endfunc %}
+
+{% code
+type Base struct {}
+%}
