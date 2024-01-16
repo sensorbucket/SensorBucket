@@ -34,6 +34,41 @@ const (
 	Error
 )
 
+func AddHTMXTrigger(w http.ResponseWriter, triggerName string, details interface{}) http.ResponseWriter {
+	// HX-Trigger: {"event1":"A message", "event2":"Another message"}
+	headerValue := w.Header().Get("hx-trigger")
+	if headerValue != "" {
+		// There is already a trigger present, add the new trigger to the existing header
+		asMap := map[string]interface{}{}
+		err := json.Unmarshal([]byte(headerValue), &asMap)
+		if err != nil {
+			log.Printf("[Warning] hx-trigger can't be set. existing header value invalid, err: %s", err)
+			return w
+		}
+
+		// Add the new event
+		asMap[triggerName] = details
+
+		// Now reset the header after adding the new event
+		headerBytes, err := json.Marshal(&asMap)
+		if err != nil {
+			log.Printf("[Warning] hx-trigger can't be set. updated header value invalid, err: %s", err)
+			return w
+		}
+		w.Header().Set("hx-trigger", string(headerBytes))
+		return w
+	}
+
+	b, err := json.Marshal(&details)
+	if err != nil {
+		log.Printf("[Warning] hx-trigger can't be set, invalid details, err: %s", err)
+		return w
+	}
+	headerValue += fmt.Sprintf(`{"%s": %s}`, triggerName, string(b))
+	w.Header().Set("hx-trigger", headerValue)
+	return w
+}
+
 func SnackbarDeleteSuccessful(w http.ResponseWriter) http.ResponseWriter {
 	return WithSnackbarSuccess(w, "Delete successful")
 }
@@ -64,35 +99,13 @@ func WithSnackbarSuccess(w http.ResponseWriter, message string) http.ResponseWri
 	}, http.StatusOK)
 }
 
-type snackbarEvent struct {
-	Details snackbarDetails `json:"showSnackbar"`
-}
-
 type snackbarDetails struct {
 	Message string       `json:"message"`
 	Type    SnackbarType `json:"type"`
 }
 
 func withSnackbarMessage(w http.ResponseWriter, details snackbarDetails, statusCode int) http.ResponseWriter {
-	b, err := json.Marshal(snackbarEvent{
-		Details: details,
-	})
-	if err != nil {
-		log.Printf("[Warning] couldn't process snackbar message")
-		b = snackbarGenericError()
-	}
-	w.Header().Set("hx-trigger", string(b))
+	w = AddHTMXTrigger(w, "showSnackbar", details)
 	w.WriteHeader(statusCode)
 	return w
-}
-
-func snackbarGenericError() []byte {
-	ev := snackbarEvent{
-		Details: snackbarDetails{
-			Message: "Something went wrong",
-			Type:    Error,
-		},
-	}
-	b, _ := json.Marshal(ev)
-	return b
 }

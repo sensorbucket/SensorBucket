@@ -2,6 +2,7 @@ package routes
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -9,8 +10,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/samber/lo"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/layout"
 	"sensorbucket.nl/sensorbucket/services/tenants/dashboard/views"
 )
@@ -50,7 +53,7 @@ func (h *APIKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 			// If no cursor is given, the initial state must be derived from the url params
 			req = req.Limit(15)
 			tenantId := r.URL.Query().Get("tenant_id")
-			id, err := strconv.ParseInt(tenantId, 10, 32)
+			id, err := strconv.ParseInt(tenantId, 10, 64)
 			if err != nil {
 				layout.SnackbarBadRequest(w, "tenant_id must be a valid number")
 				return
@@ -93,11 +96,17 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
-		if resp == nil || resp.StatusCode != http.StatusOK {
+		if resp.StatusCode != http.StatusOK {
+			log.Printf("api key list page unexpected status code: %d\n", resp.StatusCode)
 			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
+
 		page := &views.APIKeysPage{Tenants: toViewTenants(list.Data)}
+		if apiKey, ok := r.Context().Value("key").(string); ok {
+			page.CreatedAPIKey = apiKey
+		}
+
 		if layout.IsHX(r) {
 			page.WriteBody(w)
 			return
@@ -149,7 +158,7 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 			return
 		}
 
-		id, err := strconv.ParseInt(tenantId, 10, 32)
+		id, err := strconv.ParseInt(tenantId, 10, 64)
 		if err != nil {
 			layout.SnackbarBadRequest(w, "tenant_id must be a valid number")
 			return
@@ -182,22 +191,15 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 			return
 		}
 
-		// Show the API key to the user
-		w.Write([]byte(apiKey.ApiKey))
-		w.Header().Set("HX-Location", `{"path":"/api-keys", "target":""}`)
-		// HX-Location: {"path":"/test2", "target":"#testdiv"}
-		// w.Header().Set("HX-Redirect", "/api-keys")/
+		// Redirect like this instead of using HX-Location or HX-Redirect because we don't want the API key to be
+		// sent the the HX-Location/Redirect endpoint in the request for further handling, there might be some browser
+		// caching involved which can store the API key. This way we ensure the API key is included in the response for this request
+		// along with the api keys list
+		w.Header().Set("HX-Replace-Url", "/api-keys")
 		layout.WithSnackbarSuccess(w, "Created API Key")
-
-		// w.Write([]byte(apiKey.ApiKey))
-
-		page := &views.APIKeysPage{}
-		if layout.IsHX(r) {
-			page.WriteBody(w)
-			return
-		}
-		layout.WriteIndex(w, page)
-
+		h.apiKeysListPage().ServeHTTP(
+			w,
+			r.WithContext(context.WithValue(r.Context(), "key", apiKey.ApiKey)))
 	}
 }
 
@@ -214,13 +216,21 @@ func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
-			log.Printf("api key list failed : %d", resp.StatusCode)
+			log.Printf("api key list failed : %d\n", resp.StatusCode)
 			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
+
+		perms, err := toViewPermissions()
+		if err != nil {
+			log.Printf("convert to view permissions, err: %s\n", err)
+			layout.SnackbarSomethingWentWrong(w)
+			return
+		}
+
 		page := &views.APIKeysCreatePage{
 			Tenants:     toViewTenants(list.Data),
-			Permissions: toViewPermissions(),
+			Permissions: perms,
 		}
 		if layout.IsHX(r) {
 			page.WriteBody(w)
@@ -230,24 +240,100 @@ func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 	}
 }
 
-// TODO: should be replaced with actual auth package values once auth package is done
-// https://github.com/sensorbucket/SensorBucket/issues/70
-func toViewPermissions() map[string][]views.APIKeysCreatePermission {
-	return map[string][]views.APIKeysCreatePermission{
+func toViewPermissions() (map[string][]views.APIKeysPermission, error) {
+	categorized := CreateAPIKeyViewPermissions()
+
+	// Retrieve all allowed permissions
+	inAuth := auth.AllAllowedPermissions()
+	authAsStrSlice := []string{}
+	for _, p := range inAuth {
+		authAsStrSlice = append(authAsStrSlice, p.String())
+	}
+	viewAsSlice := lo.Map(lo.Flatten(lo.Values(categorized)), func(view views.APIKeysPermission, index int) string {
+		return view.Name
+	})
+
+	// Check if there is any difference between the frontend's definition and the auth package definition
+	missingInView, missingInAuth := lo.Difference(authAsStrSlice, viewAsSlice)
+	if len(missingInAuth) > 0 {
+
+		// Auth package is the single point of truth, if there are permissions missing the frontend package might have
+		// outdated permission which the user should not be able to set
+		return nil, fmt.Errorf("view permissions contains invalid permissions (%d invalid permissions)", len(missingInAuth))
+	}
+	if len(missingInView) > 0 {
+
+		// Frontend might not be updated with latest permissions, simply log a warning since we can still show the missing permissions
+		// just without a category and description
+		log.Printf("[Warning] some permissions are missing in create view (%d missing permissions)\n", len(missingInView))
+	}
+	if len(missingInView) > 0 {
+		categorized["Other"] = lo.Map(missingInView, func(val string, index int) views.APIKeysPermission {
+			return views.APIKeysPermission{
+				Name:        val,
+				Description: "-",
+			}
+		})
+	}
+	return categorized, nil
+}
+
+func CreateAPIKeyViewPermissions() map[string][]views.APIKeysPermission {
+	return map[string][]views.APIKeysPermission{
 		"Devices": {
 			{
-				Name:        "READ_DEVICES",
-				Description: "Allows the API key to read information regarding devices of the selected organisation",
+				Name:        auth.READ_DEVICES.String(),
+				Description: "Allows the API key to read information regarding devices of the selected organisation.",
 			},
 			{
-				Name:        "WRITE_DEVICES",
-				Description: "Allows the API key to write information regarding devices of the selected organisation",
+				Name:        auth.WRITE_DEVICES.String(),
+				Description: "Allows the API key to write information regarding devices of the selected organisation.",
 			},
 		},
-		"Uplinks": {
+		"API Keys": {
 			{
-				Name:        "WRITE_UPLINKS",
-				Description: "Allows the API key create uplinks",
+				Name:        auth.READ_API_KEYS.String(),
+				Description: "Does not allow reading of actual API keys. Only allowes the API key to read information certain information, for example, the expiration date.",
+			},
+			{
+				Name:        auth.WRITE_API_KEYS.String(),
+				Description: "Allows the API key to create other API keys for the tenant the API key has access to.",
+			},
+		},
+		"Tenants": {
+			{
+				Name:        auth.READ_TENANTS.String(),
+				Description: "Allows the API key to read information about the tenant they have access to.",
+			},
+			{
+				Name:        auth.WRITE_TENANTS.String(),
+				Description: "Allows the API key to create child organisations for the tenant this API key has access to.",
+			},
+		},
+		"Measurements": {
+			{
+				Name:        auth.READ_MEASUREMENTS.String(),
+				Description: "Allows the API key to read measurements that are stored for the tenant this API key has access to.",
+			},
+			{
+				Name:        auth.WRITE_MEASUREMENTS.String(),
+				Description: "Allows the API key to write measurements for the tenant this API key has access to.",
+			},
+		},
+		"Tracing": {
+			{
+				Name:        auth.READ_TRACING.String(),
+				Description: "Allows the API key to read tracing messages which give information about the progress of measurements in SensorBucket from receiving them to storage",
+			},
+		},
+		"User workers": {
+			{
+				Name:        auth.READ_USER_WORKERS.String(),
+				Description: "Allows the API key to read user worker code for this tenant",
+			},
+			{
+				Name:        auth.WRITE_USER_WORKERS.String(),
+				Description: "Allows the API key to create custom user worker code for this tenant",
 			},
 		},
 	}
