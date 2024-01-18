@@ -1,4 +1,5 @@
 {% import "strings" %}
+{% import "github.com/samber/lo" %}
 {% func (p *APIKeysCreatePage) Body() %}
 <div class="w-full bg-white">
     <header class="w-full flex items-center justify-between border-b py-2 px-4 text-sm text-slate-700">
@@ -58,22 +59,27 @@
 {% endfor %}
 {% endfunc %}
 
-{% func RenderPermissionTables(permissions map[string][]APIKeysPermission) %}
-{% for category, permissions := range permissions %}
+{% func RenderPermissionTables(permissions map[OrderedMapKey][]APIKeysPermission) %}
+{% for i:= 0; i < len(permissions);i++ %}
+{%code
+    category, _ := lo.FindKeyBy(permissions, func(key OrderedMapKey, value []APIKeysPermission) bool {
+		return key.Index == i
+	})
+%}
 <table class="min-w-full bg-white border border-gray-300 mb-2">
     <thead>
         <tr class="bg-secondary-400 text-secondary-100">
             <th class="py-2 px-4" colspan="2">
-                <span class="ml-2 float-left">{%s category %}</span>
+                <span class="ml-2 float-left">{%s category.Value %}</span>
             </th>
             <th class="py-2 px-4">
-                <input type="checkbox" _="on click set .checkbox-{%s htmlFriendlyName(category) %}.checked to my.checked"
+                <input type="checkbox" _="on click set .checkbox-{%s htmlFriendlyName(category.Value) %}.checked to my.checked"
                     class="h-4 w-4 text-secondary-500 cursor-pointer float-right">
             </th>
         </tr>
     </thead>
     <tbody>
-        {% for _, permission := range permissions %}
+        {% for _, permission := range permissions[category] %}
         <tr>
             <td class="py-2 px-4 w-1/6">
                 {%s permission.Name %}
@@ -83,7 +89,7 @@
             </td>
             <td class="py-2 px-4 w-1/6">
                 <input type="checkbox" name="api-key-permissions" value="{%s permission.Name %}"
-                    class="h-4 w-4 text-secondary-500 cursor-pointer float-right checkbox-{%s htmlFriendlyName(category) %}">
+                    class="h-4 w-4 text-secondary-500 cursor-pointer float-right checkbox-{%s htmlFriendlyName(category.Value) %}">
             </td>
         </tr>
         {% endfor %}
@@ -96,12 +102,17 @@
 type APIKeysCreatePage struct {
 Base
 Tenants []TenantInfo
-Permissions map[string][]APIKeysPermission
+Permissions map[OrderedMapKey][]APIKeysPermission
 }
 
 type APIKeysPermission struct {
 Name string
 Description string
+}
+
+type OrderedMapKey struct {
+	Index int
+	Value string
 }
 
 func htmlFriendlyName(src string) string {

@@ -232,7 +232,7 @@ func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 	}
 }
 
-func toViewPermissions() (map[string][]views.APIKeysPermission, error) {
+func toViewPermissions() (map[views.OrderedMapKey][]views.APIKeysPermission, error) {
 	categorized := createAPIKeyViewPermissions()
 
 	// Retrieve all allowed permissions
@@ -258,7 +258,7 @@ func toViewPermissions() (map[string][]views.APIKeysPermission, error) {
 		log.Printf("[Warning] some permissions are missing in create view (%d missing permissions)\n", len(missingInView))
 	}
 	if len(missingInView) > 0 {
-		categorized["Other"] = lo.Map(missingInView, func(val string, index int) views.APIKeysPermission {
+		categorized[views.OrderedMapKey{Index: len(categorized), Value: " Other"}] = lo.Map(missingInView, func(val string, index int) views.APIKeysPermission {
 			return views.APIKeysPermission{
 				Name:        val,
 				Description: "-",
@@ -268,9 +268,12 @@ func toViewPermissions() (map[string][]views.APIKeysPermission, error) {
 	return categorized, nil
 }
 
-func createAPIKeyViewPermissions() map[string][]views.APIKeysPermission {
-	return map[string][]views.APIKeysPermission{
-		"Devices": {
+func createAPIKeyViewPermissions() map[views.OrderedMapKey][]views.APIKeysPermission {
+
+	// Golang does not ensure iteration order when iterating over a map, therefore use a simple key struct
+	// so we can derive the order in which the items need to be displayed
+	return map[views.OrderedMapKey][]views.APIKeysPermission{
+		{Index: 0, Value: "Devices"}: {
 			{
 				Name:        auth.READ_DEVICES.String(),
 				Description: "Allows the API key to read information regarding devices of the selected organisation.",
@@ -280,7 +283,7 @@ func createAPIKeyViewPermissions() map[string][]views.APIKeysPermission {
 				Description: "Allows the API key to write information regarding devices of the selected organisation.",
 			},
 		},
-		"API Keys": {
+		{Index: 1, Value: "API Keys"}: {
 			{
 				Name:        auth.READ_API_KEYS.String(),
 				Description: "Does not allow reading of actual API keys. Only allowes the API key to read information certain information, for example, the expiration date.",
@@ -290,7 +293,7 @@ func createAPIKeyViewPermissions() map[string][]views.APIKeysPermission {
 				Description: "Allows the API key to create other API keys for the tenant the API key has access to.",
 			},
 		},
-		"Tenants": {
+		{Index: 2, Value: "Organisations"}: {
 			{
 				Name:        auth.READ_TENANTS.String(),
 				Description: "Allows the API key to read information about the tenant they have access to.",
@@ -300,7 +303,7 @@ func createAPIKeyViewPermissions() map[string][]views.APIKeysPermission {
 				Description: "Allows the API key to create child organisations for the tenant this API key has access to.",
 			},
 		},
-		"Measurements": {
+		{Index: 3, Value: "Measurements"}: {
 			{
 				Name:        auth.READ_MEASUREMENTS.String(),
 				Description: "Allows the API key to read measurements that are stored for the tenant this API key has access to.",
@@ -310,13 +313,13 @@ func createAPIKeyViewPermissions() map[string][]views.APIKeysPermission {
 				Description: "Allows the API key to write measurements for the tenant this API key has access to.",
 			},
 		},
-		"Tracing": {
+		{Index: 4, Value: "Tracing"}: {
 			{
 				Name:        auth.READ_TRACING.String(),
 				Description: "Allows the API key to read tracing messages which give information about the progress of measurements in SensorBucket from receiving them to storage",
 			},
 		},
-		"User workers": {
+		{Index: 5, Value: "User workers"}: {
 			{
 				Name:        auth.READ_USER_WORKERS.String(),
 				Description: "Allows the API key to read user worker code for this tenant",
