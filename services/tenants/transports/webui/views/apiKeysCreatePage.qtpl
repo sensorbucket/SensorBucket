@@ -7,8 +7,12 @@
             Create API Key
         </section>
     </header>
-    <form id="apiKeyCreateForm" class="p-4 gap-4 grid lg:grid-cols-1" hx-trigger="submit" hx-post="{%s U("/api-keys/create") %}"
-        hx-target="#apiKeyContent" hx-swap="innerHTML">
+    <form 
+        id="apiKeyCreateForm" 
+        class="p-4 gap-4 grid lg:grid-cols-1"
+        method="POST"
+        action="{%s U("/api-keys/create") %}"
+    >
         <fieldset>
             <label for="api-key-tenant" class="ml-1 -mb-1 block"><small
                     class="text-xs text-slate-500">Tenant</small></label>
@@ -37,10 +41,9 @@
             {%= RenderPermissionTables(p.Permissions) %}
         </fieldset>
         <div class="col-span-full">
-            <button id="api-key-create-button"
-                class="disabled:cursor-not-allowed disabled:opacity-50 text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1">
-                Generate new API key
-            </button>
+            <input type="submit" id="api-key-create-button"
+                class="disabled:cursor-not-allowed disabled:opacity-50 text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                value="Generate new API Key" />
         </div>
     </form>
     <script type="text/javascript">

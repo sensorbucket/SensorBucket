@@ -19,6 +19,12 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/views"
 )
 
+type ctxKey int
+
+const (
+	ctxAPIKeyKey ctxKey = iota
+)
+
 type APIKeysPageHandler struct {
 	router chi.Router
 	client *api.APIClient
@@ -92,16 +98,17 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 		if err != nil {
 			log.Printf("api key list page: %v\n", err)
 			layout.SnackbarSomethingWentWrong(w)
+			web.HTTPError(w, fmt.Errorf("could not list tenants for api key page: %s", resp.Status))
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
-			log.Printf("api key list page unexpected status code: %d\n", resp.StatusCode)
 			layout.SnackbarSomethingWentWrong(w)
+			web.HTTPError(w, fmt.Errorf("could not list tenants for api key page: %s", resp.Status))
 			return
 		}
 
 		page := &views.APIKeysPage{Tenants: toViewTenants(list.Data)}
-		if apiKey, ok := r.Context().Value("key").(string); ok {
+		if apiKey, ok := r.Context().Value(ctxAPIKeyKey).(string); ok {
 			page.CreatedAPIKey = apiKey
 		}
 
@@ -110,6 +117,7 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 			return
 		}
 		views.WriteWideLayout(w, page)
+		fmt.Println("BBBBBBBBBB")
 	}
 }
 
@@ -118,23 +126,25 @@ func (h *APIKeysPageHandler) revokeAPIKey() http.HandlerFunc {
 		apiKeyId := chi.URLParam(r, "api_key_id")
 		if apiKeyId == "" {
 			layout.WithSnackbarError(w, "api_key_id must be given", http.StatusBadRequest)
+			web.HTTPError(w, fmt.Errorf("missing api_key_id in request"))
 			return
 		}
 		id, err := strconv.ParseInt(apiKeyId, 10, 64)
 		if err != nil {
 			layout.SnackbarBadRequest(w, "api_key_id must be a number")
+			web.HTTPError(w, fmt.Errorf("api_key_id in request is not a number: %w", err))
 			return
 		}
 		req := h.client.ApiKeysApi.RevokeApiKey(context.Background(), id)
 		resp, err := req.Execute()
 		if err != nil {
-			log.Printf("revoke api key execute: %v\n", err)
 			layout.SnackbarSomethingWentWrong(w)
+			web.HTTPError(w, fmt.Errorf("could not revoke API Key: %w", err))
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
-			log.Printf("revoke api status code not ok: %d\n", resp.StatusCode)
 			layout.SnackbarSomethingWentWrong(w)
+			web.HTTPError(w, fmt.Errorf("could not revoke API Key: %s", resp.Status))
 			return
 		}
 		layout.SnackbarDeleteSuccessful(w)
@@ -153,12 +163,14 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 		permissions, ok := r.Form["api-key-permissions"]
 		if name == "" || tenantId == "" || !ok || len(permissions) == 0 {
 			layout.SnackbarBadRequest(w, "Please enter a name, select an organisation and at least 1 permission")
+			web.HTTPError(w, web.NewError(http.StatusBadRequest, "Incomplete form", ""))
 			return
 		}
 
 		id, err := strconv.ParseInt(tenantId, 10, 64)
 		if err != nil {
 			layout.SnackbarBadRequest(w, "tenant_id must be a valid number")
+			web.HTTPError(w, web.NewError(http.StatusBadRequest, "tenant_id must be a number", ""))
 			return
 		}
 
@@ -171,6 +183,7 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 			parsedTime, err := time.Parse("2006-01-02", expiry)
 			if err != nil {
 				layout.SnackbarBadRequest(w, "expiration_date must be a valid time format")
+				web.HTTPError(w, web.NewError(http.StatusBadRequest, "expiration_date must be a number", ""))
 				return
 			}
 
@@ -178,21 +191,25 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 		}
 		apiKey, res, err := h.client.ApiKeysApi.CreateApiKey(r.Context()).CreateApiKeyRequest(dto).Execute()
 		if err != nil {
-			log.Printf("[Error] couldnt create api key, err: %s\n", err)
 			layout.SnackbarSomethingWentWrong(w)
+			web.HTTPError(w, fmt.Errorf("could not create api key: %w", err))
 			return
 		}
 
 		if res.StatusCode != http.StatusCreated {
-			log.Printf("[Error] couldnt create api key, response: %d\n", res.StatusCode)
 			layout.SnackbarSomethingWentWrong(w)
+			web.HTTPError(w, fmt.Errorf("could not create api key: %s", res.Status))
 			return
 		}
 
 		layout.WithSnackbarSuccess(w, "Created API Key")
-		h.apiKeysListPage().ServeHTTP(
-			w,
-			r.WithContext(context.WithValue(r.Context(), "key", apiKey.ApiKey)))
+		fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+		web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
+			Message: apiKey.ApiKey,
+		})
+		// h.apiKeysListPage().ServeHTTP(
+		//	w,
+		//	r.WithContext(context.WithValue(r.Context(), ctxAPIKeyKey, apiKey.ApiKey)))
 	}
 }
 
@@ -205,11 +222,13 @@ func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 		if err != nil {
 			log.Printf("api key list page: %v\n", err)
 			layout.SnackbarSomethingWentWrong(w)
+			web.HTTPError(w, fmt.Errorf("could not create api key view, error listing tenants: %w", err))
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
 			log.Printf("api key list failed : %d\n", resp.StatusCode)
 			layout.SnackbarSomethingWentWrong(w)
+			web.HTTPError(w, fmt.Errorf("could not create api key view, error listing tenants: %s", resp.Status))
 			return
 		}
 
@@ -217,6 +236,7 @@ func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 		if err != nil {
 			log.Printf("convert to view permissions, err: %s\n", err)
 			layout.SnackbarSomethingWentWrong(w)
+			web.HTTPError(w, fmt.Errorf("error creating api key view, converting to view permissions: %w", err))
 			return
 		}
 
@@ -269,7 +289,6 @@ func toViewPermissions() (map[views.OrderedMapKey][]views.APIKeysPermission, err
 }
 
 func createAPIKeyViewPermissions() map[views.OrderedMapKey][]views.APIKeysPermission {
-
 	// Golang does not ensure iteration order when iterating over a map, therefore use a simple key struct
 	// so we can derive the order in which the items need to be displayed
 	return map[views.OrderedMapKey][]views.APIKeysPermission{

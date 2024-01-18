@@ -67,133 +67,69 @@ type SettingsPage struct {
                 snackbar.classList.add('pointer-events-none');
             }
         </script>
-        <div id="settingsPage" class="grid grid-cols-[1fr_4fr]">
-            <div id="snackbar" class="fixed bottom-3 right-3 w-96 h-24 select-none transition ease-in duration-100 drop-shadow-2xl -translate-y-5 opacity-0 pointer-events-none"> 
-                <div class="flex justify-between w-full h-full p-4 mb-4 text-gray-500 bg-secondary-600" role="alert">
-                    <div class="flex items-center justify-start w-full">
-                        <div class="w-1/6 h-full border-solid border border-white">
-                            <iconify-icon id="successIcon" icon="ph:check-bold" width="100%" height="100%" class="text-green-500 hidden"></iconify-icon>
-                            <iconify-icon id="errorIcon" icon="tdesign:error" width="100%" height="100%" class="text-rose-800 hidden"></iconify-icon>
-                        </div>
-                        <span id="snackbarMessage" class="ml-3 text-lg font-normal text-white">hello there</span>
+        <div id="snackbar" class="fixed bottom-3 right-3 w-96 h-24 select-none transition ease-in duration-100 drop-shadow-2xl -translate-y-5 opacity-0 pointer-events-none"> 
+            <div class="flex justify-between w-full h-full p-4 mb-4 text-gray-500 bg-secondary-600" role="alert">
+                <div class="flex items-center justify-start w-full">
+                    <div class="w-1/6 h-full border-solid border border-white">
+                        <iconify-icon id="successIcon" icon="ph:check-bold" width="100%" height="100%" class="text-green-500 hidden"></iconify-icon>
+                        <iconify-icon id="errorIcon" icon="tdesign:error" width="100%" height="100%" class="text-rose-800 hidden"></iconify-icon>
                     </div>
-                    <div class="cursor-pointer" onclick="hideSnackbar()">
-                        <iconify-icon icon="ooui:close" class="text-white"></iconify-icon>
-                    </div>
+                    <span id="snackbarMessage" class="ml-3 text-lg font-normal text-white">hello there</span>
+                </div>
+                <div class="cursor-pointer" onclick="hideSnackbar()">
+                    <iconify-icon icon="ooui:close" class="text-white"></iconify-icon>
                 </div>
             </div>
-            <section class="flex flex-col border-r">
-                <h1 class="p-6 text-lg text-center">Settings</h1>
-                <hr class="px-6 py-1">
-                <ul class="flex flex-col">
-                    <li>
-                        <a
-                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            _="on click remove .hidden from #mainContent then add .hidden to #apiKeyContent"
-                            href="#profile">Change Profile</a>
-                    </li>
-                    <li>
-                        <a
-                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            _="on click remove .hidden from #mainContent then add .hidden to #apiKeyContent"
-                            href="#password">Password</a>
-                    </li>
-                    {% if hasGroup(p.Flow.Ui, "lookup_secret") %}
-                    <li>
-                        <a
-                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            _="on click remove .hidden from #mainContent then add .hidden to #apiKeyContent"
-                            href="#backupcodes">Backup Codes</a>
-                    </li>
-                    {% endif %}
-                    {% if hasGroup(p.Flow.Ui, "totp") %}
-                    <li>
-                        <a
-                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            _="on click remove .hidden from #mainContent then add .hidden to #apiKeyContent"
-                            href="#2fa"
-                            >2FA Authenticator</a>
-                    </li>
-                    {% endif %}
-                    {% if hasGroup(p.Flow.Ui, "webauthn") %}
-                    <li>
-                        <a
-                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            _="on click remove .hidden from #mainContent then add .hidden to #apiKeyContent"
-                            href="#webauthn">WebAuthentication</a>
-                    </li>
-                    {% endif %}
-                    <li class="py-3"></li>
-                </ul>
-                <h1 class="p-6 text-lg text-center">Organisation Settings</h1>
-                <hr class="px-6 py-1">
-                <ul class="flex flex-col">
-                    <li>
-                        <a
-                            class="block cursor-pointer text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            _="on click remove .hidden from #apiKeyContent then add .hidden to #mainContent"
-                            hx-get="{%s U("/api-keys/") %}" hx-target="#apiKeyContent" hx-swap="innerHTML">
-                            API Keys</a>
-                    </li>
-                </ul>
-                <ul>
-                    <li>
-                        <a
-                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            href="{%s U("/auth/logout") %}">Logout</a>
-                    </li>
-                </ul>
-            </section>
-            <section id="apiKeyContent" class="hidden px-6 mb-4 space-y-2"></section>
-            <section id="mainContent" class="px-6 mb-4 space-y-2">
-                <!-- <h1 class="text-center text-xl m-6">Account Settings</h1> -->
-                <span class="block text-center">{%= renderMessage(p.Flow.Ui) %}</span>
-                <div class="space-y-8">
-                    <section>
-                        <h2 class="text-lg" id="profile">Change profile</h2>
-                        {%= formStart(p.Flow.Ui) %}
-                            {%= renderGroup(p.Flow.Ui, "profile") %}
-                            {%= renderSubmit(p.Flow.Ui, "profile") %}
-                        {%= formEnd() %}
-                    </section>
-                    <hr>
-                    <section>
-                        <h2 class="text-lg" id="password">Change password</h2>
-                        {%= formStart(p.Flow.Ui) %}
-                            {%= renderGroup(p.Flow.Ui, "password") %}
-                            {%= renderSubmit(p.Flow.Ui, "password") %}
-                        {%= formEnd() %}
-                    </section>
-                    {% if hasGroup(p.Flow.Ui, "lookup_secret") %}
-                    <hr>
-                    <section>
-                        <h2 class="text-lg" id="backupcodes">2FA Backup Codes</h2>
-                        {%= formStart(p.Flow.Ui) %}
-                            {%= renderGroup(p.Flow.Ui, "lookup_secret") %}
-                            {%= renderSubmit(p.Flow.Ui, "lookup_secret") %}
-                        {%= formEnd() %}
-                    </section>
-                    {% endif %}
-                    {% if hasGroup(p.Flow.Ui, "totp") %}
-                    <hr>
-                    <section>
-                        <h2 class="text-lg" id="2fa">2FA Authenticator App</h2>
-                        {%= formStart(p.Flow.Ui) %}
-                            {%= renderGroup(p.Flow.Ui, "totp") %}
-                            {%= renderSubmit(p.Flow.Ui, "totp") %}
-                        {%= formEnd() %}
-                    </section>
-                    {% endif %}
-                    {% if hasGroup(p.Flow.Ui, "webauthn") %}
-                    <hr>
-                    <section>
-                        <h2 class="text-lg" id="webauthn">Web Authentication</h2>
-                        {%= formStart(p.Flow.Ui) %}
-                            {%= renderGroup(p.Flow.Ui, "webauthn") %}
-                            {%= renderSubmit(p.Flow.Ui, "webauthn") %}
-                        {%= formEnd() %}
-                    </section>
-                    {% endif %}
-                </div>
+        </div>
+        <section id="apiKeyContent" class="hidden px-6 mb-4 space-y-2"></section>
+        <section id="mainContent" class="px-6 mb-4 space-y-2">
+            <!-- <h1 class="text-center text-xl m-6">Account Settings</h1> -->
+            <span class="block text-center">{%= renderMessage(p.Flow.Ui) %}</span>
+            <div class="space-y-8">
+                <section>
+                    <h2 class="text-lg" id="profile">Change profile</h2>
+                    {%= formStart(p.Flow.Ui) %}
+                        {%= renderGroup(p.Flow.Ui, "profile") %}
+                        {%= renderSubmit(p.Flow.Ui, "profile") %}
+                    {%= formEnd() %}
+                </section>
+                <hr>
+                <section>
+                    <h2 class="text-lg" id="password">Change password</h2>
+                    {%= formStart(p.Flow.Ui) %}
+                        {%= renderGroup(p.Flow.Ui, "password") %}
+                        {%= renderSubmit(p.Flow.Ui, "password") %}
+                    {%= formEnd() %}
+                </section>
+                {% if hasGroup(p.Flow.Ui, "lookup_secret") %}
+                <hr>
+                <section>
+                    <h2 class="text-lg" id="backupcodes">2FA Backup Codes</h2>
+                    {%= formStart(p.Flow.Ui) %}
+                        {%= renderGroup(p.Flow.Ui, "lookup_secret") %}
+                        {%= renderSubmit(p.Flow.Ui, "lookup_secret") %}
+                    {%= formEnd() %}
+                </section>
+                {% endif %}
+                {% if hasGroup(p.Flow.Ui, "totp") %}
+                <hr>
+                <section>
+                    <h2 class="text-lg" id="2fa">2FA Authenticator App</h2>
+                    {%= formStart(p.Flow.Ui) %}
+                        {%= renderGroup(p.Flow.Ui, "totp") %}
+                        {%= renderSubmit(p.Flow.Ui, "totp") %}
+                    {%= formEnd() %}
+                </section>
+                {% endif %}
+                {% if hasGroup(p.Flow.Ui, "webauthn") %}
+                <hr>
+                <section>
+                    <h2 class="text-lg" id="webauthn">Web Authentication</h2>
+                    {%= formStart(p.Flow.Ui) %}
+                        {%= renderGroup(p.Flow.Ui, "webauthn") %}
+                        {%= renderSubmit(p.Flow.Ui, "webauthn") %}
+                    {%= formEnd() %}
+                </section>
+                {% endif %}
             </section>
 {% endfunc %}

@@ -1,6 +1,7 @@
 {% import "time" %}
 {% import "strings" %}
 {% func (p *APIKeysPage) Body() %}
+    <section>
     {% if p.CreatedAPIKey != "" %}
     <div id="api-key-create-result" class="p-3">
         <div class="bg-orange-100 border-l-4 border-orange-400 text-orange-600 p-4" role="alert">
@@ -41,14 +42,15 @@
             API Keys
         </section>
         <section class="flex gap-2">
-            <button
+            <a
                 class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                hx-get="{%s U("/api-keys/create") %}" hx-target="#apiKeyContent" hx-replace-url="false">
+                href="{%s U("/api-keys/create") %}">
                 Create
-            </button>
+            </a>
         </section>
     </header>
     <div> {%= RenderAPIKeyTable(p.Tenants, p.TenantsNextPage) %}</div>
+    </section>
 {% endfunc %}
 
 {% func RenderAPIKeyTable(tenants []TenantInfo, tenantsNextPage string) %}

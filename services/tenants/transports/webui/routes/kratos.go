@@ -43,7 +43,9 @@ func SetupKratosRoutes() *KratosRoutes {
 	k.router.Get("/", k.httpDefaultPage())
 	k.router.With(k.extractFlow(FlowLogin)).Get("/login", k.httpLoginPage())
 	k.router.With(k.extractFlow(FlowRecovery)).Get("/recovery", k.httpRecoveryPage())
-	k.router.With(k.extractFlow(FlowSettings)).Get("/settings", k.httpSettingsPage())
+	k.router.With(k.extractFlow(FlowSettings)).Route("/settings", func(r chi.Router) {
+		r.Get("/", k.httpSettingsPage())
+	})
 	k.router.With(k.extractFlow(FlowError)).Get("/error", k.httpErrorPage())
 	k.router.With(k.extractFlow(FlowLogout)).Get("/logout", k.httpLogoutPage())
 
@@ -134,7 +136,8 @@ func (k KratosRoutes) httpRecoveryPage() http.HandlerFunc {
 
 func (k KratosRoutes) httpSettingsPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		views.WriteWideLayout(w, views.SettingsPage{Flow: settingsFlow(r)})
+		flow := settingsFlow(r)
+		views.WriteWideLayout(w, views.SettingsPage{Flow: flow})
 	}
 }
 

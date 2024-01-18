@@ -89,14 +89,14 @@ func WithSnackbarError(w http.ResponseWriter, message string, statusCode int) ht
 	return withSnackbarMessage(w, snackbarDetails{
 		Message: message,
 		Type:    Error,
-	}, statusCode)
+	})
 }
 
 func WithSnackbarSuccess(w http.ResponseWriter, message string) http.ResponseWriter {
 	return withSnackbarMessage(w, snackbarDetails{
 		Message: message,
 		Type:    Success,
-	}, http.StatusOK)
+	})
 }
 
 type snackbarDetails struct {
@@ -104,8 +104,7 @@ type snackbarDetails struct {
 	Type    SnackbarType `json:"type"`
 }
 
-func withSnackbarMessage(w http.ResponseWriter, details snackbarDetails, statusCode int) http.ResponseWriter {
+func withSnackbarMessage(w http.ResponseWriter, details snackbarDetails) http.ResponseWriter {
 	w = AddHTMXTrigger(w, "showSnackbar", details)
-	w.WriteHeader(statusCode)
 	return w
 }
