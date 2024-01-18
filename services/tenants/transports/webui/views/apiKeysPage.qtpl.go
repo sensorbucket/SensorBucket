@@ -85,7 +85,7 @@ func (p *APIKeysPage) StreamBody(qw422016 *qt422016.Writer) {
 //line transports/webui/views/apiKeysPage.qtpl:46
 	qw422016.E().S(U("/api-keys/create"))
 //line transports/webui/views/apiKeysPage.qtpl:46
-	qw422016.N().S(`" hx-target="#mainContent" hx-push-url="true">
+	qw422016.N().S(`" hx-target="#apiKeyContent" hx-replace-url="false">
                 Create
             </button>
         </section>

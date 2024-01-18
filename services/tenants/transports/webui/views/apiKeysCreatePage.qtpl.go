@@ -24,7 +24,7 @@ var (
 func (p *APIKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
 //line transports/webui/views/apiKeysCreatePage.qtpl:2
 	qw422016.N().S(`
-<div class="w-full bg-white border rounded-md">
+<div class="w-full bg-white">
     <header class="w-full flex items-center justify-between border-b py-2 px-4 text-sm text-slate-700">
         <section>
             Create API Key
@@ -35,7 +35,7 @@ func (p *APIKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
 	qw422016.E().S(U("/api-keys/create"))
 //line transports/webui/views/apiKeysCreatePage.qtpl:9
 	qw422016.N().S(`"
-        hx-target="#mainContent" hx-swap="innerHTML">
+        hx-target="#apiKeyContent" hx-swap="innerHTML">
         <fieldset>
             <label for="api-key-tenant" class="ml-1 -mb-1 block"><small
                     class="text-xs text-slate-500">Tenant</small></label>

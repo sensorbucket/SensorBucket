@@ -66,3 +66,7 @@ golib: golib-clean
 		--git-host=sensorbucket.nl --git-repo-id=api \
 		--enable-post-process-file \
 		--additional-properties=packageName=api,packageUrl='https://sensorbucket.nl'
+
+admin: 
+	echo '{"schema_id":"default", "traits": {"email":"a@pollex.nl"}}' | http post 127.0.0.1:4434/admin/identities | jq .id | \
+	 xargs -I uid echo '{"identity_id":"uid"}' | http post 127.0.0.1:4434/admin/recovery/code

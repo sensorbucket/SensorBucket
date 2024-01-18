@@ -189,11 +189,6 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 			return
 		}
 
-		// Redirect like this instead of using HX-Location or HX-Redirect because we don't want the API key to be
-		// sent the the HX-Location/Redirect endpoint in the request for further handling, there might be some browser
-		// caching involved which can store the API key. This way we ensure the API key is included in the response for this request
-		// along with the api keys list
-		w.Header().Set("HX-Replace-Url", views.U("/api-keys"))
 		layout.WithSnackbarSuccess(w, "Created API Key")
 		h.apiKeysListPage().ServeHTTP(
 			w,

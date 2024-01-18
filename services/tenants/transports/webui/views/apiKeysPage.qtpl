@@ -43,7 +43,7 @@
         <section class="flex gap-2">
             <button
                 class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
-                hx-get="{%s U("/api-keys/create") %}" hx-target="#mainContent" hx-push-url="true">
+                hx-get="{%s U("/api-keys/create") %}" hx-target="#apiKeyContent" hx-replace-url="false">
                 Create
             </button>
         </section>
