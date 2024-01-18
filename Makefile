@@ -46,8 +46,9 @@ else
 	@echo "Generating python client from spec"
 	@mkdir -p $(outdir)
 	@docker run --rm -v $(CURDIR):/sensorbucket -v $(outdir):/target --user `id -u` \
-		openapitools/openapi-generator-cli generate -i /sensorbucket/tools/openapi/api.yaml \
-		-g python-nextgen -t /sensorbucket/tools/openapi-templates/python -o /target \
+		openapitools/openapi-generator-cli:latest generate -i /sensorbucket/tools/openapi/api.yaml \
+		-g python -t /sensorbucket/tools/openapi-templates/python -o /target \
+		--git-user-id=sensorbucket.nl --git-repo-id=PythonClient \
 		--additional-properties=packageName=sensorbucket,packageUrl='https://sensorbucket.nl'
 endif
 
