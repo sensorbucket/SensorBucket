@@ -285,10 +285,10 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start,
         function updateDatastream() {
             let x = [];
             let y = [];
-            let start = document.querySelector('input[name="start"').valueAsDate
-            let end = document.querySelector('input[name="end"').valueAsDate
+            let start = document.querySelector('input[name="start"]').valueAsDate
+            let end = document.querySelector('input[name="end"]').valueAsDate
             let min = start.getTime()/1000
-            let max = end.getTime()/1000
+            let max = end.getTime()/1000 + 24*60*60
             plot.setScale('x', {min, max})
             const ws = new WebSocket(getWebSocketURL(`)
 //line views/datastream.qtpl:117
