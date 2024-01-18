@@ -45,6 +45,18 @@ type SettingsPage struct {
                     </li>
                     {% endif %}
                     <li class="py-3"></li>
+                </ul>
+                <h1 class="p-6 text-lg text-center">Organisation Settings</h1>
+                <hr class="px-6 py-1">
+                <ul class="flex flex-col">
+                    <li>
+                        <a 
+                            class="block cursor-pointer text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                            hx-get="{%s U("/api-keys/") %}" hx-target="#mainContent" hx-swap="innerHTML">
+                            API Keys</a>
+                    </li>
+                </ul>
+                <ul>
                     <li>
                         <a
                             class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
@@ -52,8 +64,8 @@ type SettingsPage struct {
                     </li>
                 </ul>
             </section>
-            <section class="px-6 mb-4 space-y-2">
-                <h1 class="text-center text-xl m-6">Account Settings</h1>
+            <section id="mainContent" class="px-6 mb-4 space-y-2">
+                <!-- <h1 class="text-center text-xl m-6">Account Settings</h1> -->
                 <span class="block text-center">{%= renderMessage(p.Flow.Ui) %}</span>
                 <div class="space-y-8">
                     <section>

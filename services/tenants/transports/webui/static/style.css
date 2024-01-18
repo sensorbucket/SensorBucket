@@ -1281,9 +1281,3 @@ video {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 }
-
-@media (min-width: 1280px) {
-  .xl\:w-2\/3 {
-    width: 66.666667%;
-  }
-}
