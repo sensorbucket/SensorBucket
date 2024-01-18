@@ -50,7 +50,11 @@
             downloadLink.href = URL.createObjectURL(blob);
 
             const summary = ('{%s p.Device.Code %}-{%s p.Sensor.Code %}-{%s p.Datastream.ObservedProperty %}').replace(/\s/g, '').toLowerCase();
-            const title = summary + '-{%s p.Start.Format("02-01-2006") %}-{%s p.End.Format("02-01-2006") %}.csv';
+            let start = document.querySelector('input[name="start"]').valueAsDate
+            let startStr = start.toISOString().split('T')[0]
+            let end = new Date(document.querySelector('input[name="end"]').valueAsDate.getTime()) // +1 day ommitted as the title is interpreted as inclusive
+            let endStr = end.toISOString().split('T')[0]
+            const title = `${summary}-${startStr}-${endStr}.csv`
 
             downloadLink.download = title;
             downloadLink.click();
@@ -186,7 +190,7 @@
 						u => {
 							u.over.ondblclick = e => {
                                 let start = document.querySelector('input[name="start"').valueAsDate
-                                let end = document.querySelector('input[name="end"').valueAsDate
+                                let end = new Date(document.querySelector('input[name="end"]').valueAsDate.getTime() + (24*60*60*1000))
                                 let min = start.getTime()/1000
                                 let max = end.getTime()/1000
                                 u.setScale('x', {min,max})
