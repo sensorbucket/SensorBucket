@@ -134,6 +134,34 @@ func (as *apiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State
 	return k, nil
 }
 
+// Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.
+func (as *apiKeyStore) GetHashedAPIKeyByNameAndTenantID(name string, tenantID int64) (apikeys.HashedApiKey, error) {
+	q := sq.
+		Select("api_keys.id, api_keys.value, api_keys.tenant_id, api_keys.expiration_date").
+		From("api_keys").
+		Where(sq.Eq{"api_keys.name": name, "tenants.id": tenantID}).
+		Join("tenants on api_keys.tenant_id = tenants.id")
+
+	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
+	if err != nil {
+		return apikeys.HashedApiKey{}, err
+	}
+	k := apikeys.HashedApiKey{}
+	if rows.Next() {
+		err = rows.Scan(
+			&k.ID,
+			&k.SecretHash,
+			&k.TenantID,
+			&k.ExpirationDate)
+		if err != nil {
+			return apikeys.HashedApiKey{}, err
+		}
+	} else {
+		return apikeys.HashedApiKey{}, apikeys.ErrKeyNotFound
+	}
+	return k, nil
+}
+
 type apiKeyStore struct {
 	db *sqlx.DB
 }

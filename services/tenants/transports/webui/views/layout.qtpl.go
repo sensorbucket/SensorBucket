@@ -5,32 +5,35 @@
 package views
 
 //line transports/webui/views/layout.qtpl:1
+import layout_utils "sensorbucket.nl/sensorbucket/internal/layout-utils"
+
+//line transports/webui/views/layout.qtpl:3
 import (
 	qtio422016 "io"
 
 	qt422016 "github.com/valyala/quicktemplate"
 )
 
-//line transports/webui/views/layout.qtpl:1
+//line transports/webui/views/layout.qtpl:3
 var (
 	_ = qtio422016.Copy
 	_ = qt422016.AcquireByteBuffer
 )
 
-//line transports/webui/views/layout.qtpl:1
+//line transports/webui/views/layout.qtpl:3
 type Page interface {
-//line transports/webui/views/layout.qtpl:1
+//line transports/webui/views/layout.qtpl:3
 	Body() string
-//line transports/webui/views/layout.qtpl:1
+//line transports/webui/views/layout.qtpl:3
 	StreamBody(qw422016 *qt422016.Writer)
-//line transports/webui/views/layout.qtpl:1
+//line transports/webui/views/layout.qtpl:3
 	WriteBody(qq422016 qtio422016.Writer)
-//line transports/webui/views/layout.qtpl:1
+//line transports/webui/views/layout.qtpl:3
 }
 
-//line transports/webui/views/layout.qtpl:5
+//line transports/webui/views/layout.qtpl:7
 func streamstartHTML(qw422016 *qt422016.Writer) {
-//line transports/webui/views/layout.qtpl:5
+//line transports/webui/views/layout.qtpl:7
 	qw422016.N().S(`
 <!DOCTYPE html>
 <html lang="en" class="bg-[#f8fafc]">
@@ -39,9 +42,9 @@ func streamstartHTML(qw422016 *qt422016.Writer) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="`)
-//line transports/webui/views/layout.qtpl:12
+//line transports/webui/views/layout.qtpl:14
 	qw422016.E().S(U("/static/style.css"))
-//line transports/webui/views/layout.qtpl:12
+//line transports/webui/views/layout.qtpl:14
 	qw422016.N().S(`" />
         <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4"></script>
         <script type="text/javascript" src="https://unpkg.com/hyperscript.org@0.9.11"></script>
@@ -49,201 +52,201 @@ func streamstartHTML(qw422016 *qt422016.Writer) {
     </head>
     <body>
 `)
-//line transports/webui/views/layout.qtpl:18
+//line transports/webui/views/layout.qtpl:20
 }
 
-//line transports/webui/views/layout.qtpl:18
+//line transports/webui/views/layout.qtpl:20
 func writestartHTML(qq422016 qtio422016.Writer) {
-//line transports/webui/views/layout.qtpl:18
+//line transports/webui/views/layout.qtpl:20
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/layout.qtpl:18
+//line transports/webui/views/layout.qtpl:20
 	streamstartHTML(qw422016)
-//line transports/webui/views/layout.qtpl:18
+//line transports/webui/views/layout.qtpl:20
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/layout.qtpl:18
+//line transports/webui/views/layout.qtpl:20
 }
 
-//line transports/webui/views/layout.qtpl:18
+//line transports/webui/views/layout.qtpl:20
 func startHTML() string {
-//line transports/webui/views/layout.qtpl:18
+//line transports/webui/views/layout.qtpl:20
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/layout.qtpl:18
+//line transports/webui/views/layout.qtpl:20
 	writestartHTML(qb422016)
-//line transports/webui/views/layout.qtpl:18
+//line transports/webui/views/layout.qtpl:20
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/layout.qtpl:18
+//line transports/webui/views/layout.qtpl:20
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/layout.qtpl:18
+//line transports/webui/views/layout.qtpl:20
 	return qs422016
-//line transports/webui/views/layout.qtpl:18
+//line transports/webui/views/layout.qtpl:20
 }
 
-//line transports/webui/views/layout.qtpl:19
+//line transports/webui/views/layout.qtpl:21
 func streamstopHTML(qw422016 *qt422016.Writer) {
-//line transports/webui/views/layout.qtpl:19
+//line transports/webui/views/layout.qtpl:21
 	qw422016.N().S(`
     </body>
 </html>
 `)
-//line transports/webui/views/layout.qtpl:22
+//line transports/webui/views/layout.qtpl:24
 }
 
-//line transports/webui/views/layout.qtpl:22
+//line transports/webui/views/layout.qtpl:24
 func writestopHTML(qq422016 qtio422016.Writer) {
-//line transports/webui/views/layout.qtpl:22
+//line transports/webui/views/layout.qtpl:24
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/layout.qtpl:22
+//line transports/webui/views/layout.qtpl:24
 	streamstopHTML(qw422016)
-//line transports/webui/views/layout.qtpl:22
+//line transports/webui/views/layout.qtpl:24
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/layout.qtpl:22
+//line transports/webui/views/layout.qtpl:24
 }
 
-//line transports/webui/views/layout.qtpl:22
+//line transports/webui/views/layout.qtpl:24
 func stopHTML() string {
-//line transports/webui/views/layout.qtpl:22
+//line transports/webui/views/layout.qtpl:24
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/layout.qtpl:22
+//line transports/webui/views/layout.qtpl:24
 	writestopHTML(qb422016)
-//line transports/webui/views/layout.qtpl:22
+//line transports/webui/views/layout.qtpl:24
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/layout.qtpl:22
+//line transports/webui/views/layout.qtpl:24
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/layout.qtpl:22
+//line transports/webui/views/layout.qtpl:24
 	return qs422016
-//line transports/webui/views/layout.qtpl:22
+//line transports/webui/views/layout.qtpl:24
 }
 
-//line transports/webui/views/layout.qtpl:24
+//line transports/webui/views/layout.qtpl:26
 func StreamLayout(qw422016 *qt422016.Writer, p Page) {
-//line transports/webui/views/layout.qtpl:24
+//line transports/webui/views/layout.qtpl:26
 	qw422016.N().S(`
 `)
-//line transports/webui/views/layout.qtpl:25
+//line transports/webui/views/layout.qtpl:27
 	streamstartHTML(qw422016)
-//line transports/webui/views/layout.qtpl:25
+//line transports/webui/views/layout.qtpl:27
 	qw422016.N().S(`
     <div class="mt-12 mx-auto w-full md:max-w-[420px] bg-white rounded-md overflow-hidden">
         <header class="bg-secondary-500 h-14 py-3">
             <img src="`)
-//line transports/webui/views/layout.qtpl:28
+//line transports/webui/views/layout.qtpl:30
 	qw422016.E().S(U("/static/logo-white.png"))
-//line transports/webui/views/layout.qtpl:28
+//line transports/webui/views/layout.qtpl:30
 	qw422016.N().S(`" alt="SensorBucket Logo" class="h-full mx-auto" />
         </header>
         <main class="px-6 mb-4 space-y-2">
         `)
-//line transports/webui/views/layout.qtpl:31
+//line transports/webui/views/layout.qtpl:33
 	p.StreamBody(qw422016)
-//line transports/webui/views/layout.qtpl:31
+//line transports/webui/views/layout.qtpl:33
 	qw422016.N().S(`
         </main>
     </div>
 `)
-//line transports/webui/views/layout.qtpl:34
+//line transports/webui/views/layout.qtpl:36
 	streamstopHTML(qw422016)
-//line transports/webui/views/layout.qtpl:34
+//line transports/webui/views/layout.qtpl:36
 	qw422016.N().S(`
 `)
-//line transports/webui/views/layout.qtpl:35
+//line transports/webui/views/layout.qtpl:37
 }
 
-//line transports/webui/views/layout.qtpl:35
+//line transports/webui/views/layout.qtpl:37
 func WriteLayout(qq422016 qtio422016.Writer, p Page) {
-//line transports/webui/views/layout.qtpl:35
+//line transports/webui/views/layout.qtpl:37
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/layout.qtpl:35
+//line transports/webui/views/layout.qtpl:37
 	StreamLayout(qw422016, p)
-//line transports/webui/views/layout.qtpl:35
+//line transports/webui/views/layout.qtpl:37
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/layout.qtpl:35
+//line transports/webui/views/layout.qtpl:37
 }
 
-//line transports/webui/views/layout.qtpl:35
+//line transports/webui/views/layout.qtpl:37
 func Layout(p Page) string {
-//line transports/webui/views/layout.qtpl:35
+//line transports/webui/views/layout.qtpl:37
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/layout.qtpl:35
+//line transports/webui/views/layout.qtpl:37
 	WriteLayout(qb422016, p)
-//line transports/webui/views/layout.qtpl:35
+//line transports/webui/views/layout.qtpl:37
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/layout.qtpl:35
+//line transports/webui/views/layout.qtpl:37
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/layout.qtpl:35
+//line transports/webui/views/layout.qtpl:37
 	return qs422016
-//line transports/webui/views/layout.qtpl:35
+//line transports/webui/views/layout.qtpl:37
 }
 
-//line transports/webui/views/layout.qtpl:37
+//line transports/webui/views/layout.qtpl:39
 func StreamWideLayout(qw422016 *qt422016.Writer, p Page) {
-//line transports/webui/views/layout.qtpl:37
+//line transports/webui/views/layout.qtpl:39
 	qw422016.N().S(`
 `)
-//line transports/webui/views/layout.qtpl:38
+//line transports/webui/views/layout.qtpl:40
 	streamstartHTML(qw422016)
-//line transports/webui/views/layout.qtpl:38
+//line transports/webui/views/layout.qtpl:40
 	qw422016.N().S(`
     <div class="mt-12 mx-auto w-full md:max-w-screen-xl bg-white rounded-md overflow-hidden">
         <header class="bg-secondary-500 h-14 py-3">
             <img src="`)
-//line transports/webui/views/layout.qtpl:41
+//line transports/webui/views/layout.qtpl:43
 	qw422016.E().S(U("/static/logo-white.png"))
-//line transports/webui/views/layout.qtpl:41
+//line transports/webui/views/layout.qtpl:43
 	qw422016.N().S(`" alt="SensorBucket Logo" class="h-full mx-auto" />
         </header>
         <main class="px-6 mb-4 space-y-2">
             <div id="settingsPage" class="grid grid-cols-[1fr_4fr]">
                 `)
-//line transports/webui/views/layout.qtpl:45
+//line transports/webui/views/layout.qtpl:47
 	streamrenderSidebar(qw422016)
-//line transports/webui/views/layout.qtpl:45
+//line transports/webui/views/layout.qtpl:47
 	qw422016.N().S(`
                 `)
-//line transports/webui/views/layout.qtpl:46
+//line transports/webui/views/layout.qtpl:48
 	p.StreamBody(qw422016)
-//line transports/webui/views/layout.qtpl:46
+//line transports/webui/views/layout.qtpl:48
 	qw422016.N().S(`
             </div>
         </main>
     </div>
 `)
-//line transports/webui/views/layout.qtpl:50
+//line transports/webui/views/layout.qtpl:52
 	streamstopHTML(qw422016)
-//line transports/webui/views/layout.qtpl:50
+//line transports/webui/views/layout.qtpl:52
 	qw422016.N().S(`
 `)
-//line transports/webui/views/layout.qtpl:51
+//line transports/webui/views/layout.qtpl:53
 }
 
-//line transports/webui/views/layout.qtpl:51
+//line transports/webui/views/layout.qtpl:53
 func WriteWideLayout(qq422016 qtio422016.Writer, p Page) {
-//line transports/webui/views/layout.qtpl:51
+//line transports/webui/views/layout.qtpl:53
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/layout.qtpl:51
+//line transports/webui/views/layout.qtpl:53
 	StreamWideLayout(qw422016, p)
-//line transports/webui/views/layout.qtpl:51
+//line transports/webui/views/layout.qtpl:53
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/layout.qtpl:51
+//line transports/webui/views/layout.qtpl:53
 }
 
-//line transports/webui/views/layout.qtpl:51
+//line transports/webui/views/layout.qtpl:53
 func WideLayout(p Page) string {
-//line transports/webui/views/layout.qtpl:51
+//line transports/webui/views/layout.qtpl:53
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/layout.qtpl:51
+//line transports/webui/views/layout.qtpl:53
 	WriteWideLayout(qb422016, p)
-//line transports/webui/views/layout.qtpl:51
+//line transports/webui/views/layout.qtpl:53
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/layout.qtpl:51
+//line transports/webui/views/layout.qtpl:53
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/layout.qtpl:51
+//line transports/webui/views/layout.qtpl:53
 	return qs422016
-//line transports/webui/views/layout.qtpl:51
+//line transports/webui/views/layout.qtpl:53
 }
 
-//line transports/webui/views/layout.qtpl:53
+//line transports/webui/views/layout.qtpl:55
 func streamrenderSidebar(qw422016 *qt422016.Writer) {
-//line transports/webui/views/layout.qtpl:53
+//line transports/webui/views/layout.qtpl:55
 	qw422016.N().S(`
     <section class="flex flex-col border-r">
         <h1 class="p-6 text-lg text-center">Settings</h1>
@@ -253,51 +256,249 @@ func streamrenderSidebar(qw422016 *qt422016.Writer) {
                 <a
                     class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
                     href="`)
-//line transports/webui/views/layout.qtpl:61
+//line transports/webui/views/layout.qtpl:63
 	qw422016.E().S(U("/auth/settings"))
-//line transports/webui/views/layout.qtpl:61
+//line transports/webui/views/layout.qtpl:63
 	qw422016.N().S(`">Profile Settings</a>
             </li>
             <li>
                 <a
                     class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
                     href="`)
-//line transports/webui/views/layout.qtpl:66
+//line transports/webui/views/layout.qtpl:68
 	qw422016.E().S(U("/api-keys"))
-//line transports/webui/views/layout.qtpl:66
+//line transports/webui/views/layout.qtpl:68
 	qw422016.N().S(`">API Keys</a>
             </li>
         </ul>
     </section>
 `)
-//line transports/webui/views/layout.qtpl:70
+//line transports/webui/views/layout.qtpl:72
 }
 
-//line transports/webui/views/layout.qtpl:70
+//line transports/webui/views/layout.qtpl:72
 func writerenderSidebar(qq422016 qtio422016.Writer) {
-//line transports/webui/views/layout.qtpl:70
+//line transports/webui/views/layout.qtpl:72
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/layout.qtpl:70
+//line transports/webui/views/layout.qtpl:72
 	streamrenderSidebar(qw422016)
-//line transports/webui/views/layout.qtpl:70
+//line transports/webui/views/layout.qtpl:72
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/layout.qtpl:70
+//line transports/webui/views/layout.qtpl:72
 }
 
-//line transports/webui/views/layout.qtpl:70
+//line transports/webui/views/layout.qtpl:72
 func renderSidebar() string {
-//line transports/webui/views/layout.qtpl:70
+//line transports/webui/views/layout.qtpl:72
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/layout.qtpl:70
+//line transports/webui/views/layout.qtpl:72
 	writerenderSidebar(qb422016)
-//line transports/webui/views/layout.qtpl:70
+//line transports/webui/views/layout.qtpl:72
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/layout.qtpl:70
+//line transports/webui/views/layout.qtpl:72
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/layout.qtpl:70
+//line transports/webui/views/layout.qtpl:72
 	return qs422016
-//line transports/webui/views/layout.qtpl:70
+//line transports/webui/views/layout.qtpl:72
 }
 
-//line transports/webui/views/layout.qtpl:73
-type Base struct{}
+//line transports/webui/views/layout.qtpl:74
+func StreamRenderFlashMessages(qw422016 *qt422016.Writer, flashMessages layout_utils.FlashMessages) {
+//line transports/webui/views/layout.qtpl:74
+	qw422016.N().S(`
+`)
+//line transports/webui/views/layout.qtpl:75
+	for _, flashMessage := range flashMessages {
+//line transports/webui/views/layout.qtpl:75
+		qw422016.N().S(`
+`)
+//line transports/webui/views/layout.qtpl:76
+		StreamRenderFlashMessage(qw422016, flashMessage.Title, flashMessage.Description, flashMessage.CopyButton, flashMessage.MessageType)
+//line transports/webui/views/layout.qtpl:76
+		qw422016.N().S(`
+`)
+//line transports/webui/views/layout.qtpl:77
+	}
+//line transports/webui/views/layout.qtpl:77
+	qw422016.N().S(`
+`)
+//line transports/webui/views/layout.qtpl:78
+}
+
+//line transports/webui/views/layout.qtpl:78
+func WriteRenderFlashMessages(qq422016 qtio422016.Writer, flashMessages layout_utils.FlashMessages) {
+//line transports/webui/views/layout.qtpl:78
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line transports/webui/views/layout.qtpl:78
+	StreamRenderFlashMessages(qw422016, flashMessages)
+//line transports/webui/views/layout.qtpl:78
+	qt422016.ReleaseWriter(qw422016)
+//line transports/webui/views/layout.qtpl:78
+}
+
+//line transports/webui/views/layout.qtpl:78
+func RenderFlashMessages(flashMessages layout_utils.FlashMessages) string {
+//line transports/webui/views/layout.qtpl:78
+	qb422016 := qt422016.AcquireByteBuffer()
+//line transports/webui/views/layout.qtpl:78
+	WriteRenderFlashMessages(qb422016, flashMessages)
+//line transports/webui/views/layout.qtpl:78
+	qs422016 := string(qb422016.B)
+//line transports/webui/views/layout.qtpl:78
+	qt422016.ReleaseByteBuffer(qb422016)
+//line transports/webui/views/layout.qtpl:78
+	return qs422016
+//line transports/webui/views/layout.qtpl:78
+}
+
+//line transports/webui/views/layout.qtpl:80
+func StreamRenderFlashMessage(qw422016 *qt422016.Writer, title string, message string, copyValue bool, flashMessageType layout_utils.FlashMessageType) {
+//line transports/webui/views/layout.qtpl:80
+	qw422016.N().S(`
+`)
+//line transports/webui/views/layout.qtpl:82
+	color := ""
+	icon := ""
+
+	switch flashMessageType {
+	case layout_utils.Success:
+		color = "green"
+		icon = "mdi:success-circle-outline"
+	case layout_utils.Warning:
+		color = "orange"
+		icon = "carbon:warning"
+	case layout_utils.Error:
+		color = "red"
+		icon = "icon-park-outline:error"
+	}
+
+//line transports/webui/views/layout.qtpl:96
+	qw422016.N().S(`
+<div class="p-3">
+    <!-- Required to include below tailwind classes in styles -->
+    <div class="hidden">
+        <div class="text-red-600  bg-red-400 border-red-500"></div>
+        <div class="border-red-400 bg-red-500"></div>
+        <div class="bg-red-100"></div>
+
+        <div class="text-orange-600  bg-orange-400 border-orange-500"></div>
+        <div class="border-orange-400 bg-orange-500"></div>
+        <div class="bg-orange-100"></div>
+
+        <div class="text-green-600  bg-green-400 border-green-500"></div>
+        <div class="border-green-400 bg-green-500"></div>
+        <div class="bg-green-100"></div>
+    </div>
+    <div class="bg-`)
+//line transports/webui/views/layout.qtpl:112
+	qw422016.E().S(color)
+//line transports/webui/views/layout.qtpl:112
+	qw422016.N().S(`-100 border-l-4 border-`)
+//line transports/webui/views/layout.qtpl:112
+	qw422016.E().S(color)
+//line transports/webui/views/layout.qtpl:112
+	qw422016.N().S(`-400 text-`)
+//line transports/webui/views/layout.qtpl:112
+	qw422016.E().S(color)
+//line transports/webui/views/layout.qtpl:112
+	qw422016.N().S(`-600 p-4" role="alert">
+        <div class="flex w-full">
+            <div class="py-2">
+                <iconify-icon icon="`)
+//line transports/webui/views/layout.qtpl:115
+	qw422016.E().S(icon)
+//line transports/webui/views/layout.qtpl:115
+	qw422016.N().S(`" width="24"
+                class="px-4 float-right text-`)
+//line transports/webui/views/layout.qtpl:116
+	qw422016.E().S(color)
+//line transports/webui/views/layout.qtpl:116
+	qw422016.N().S(`-600"></iconify-icon>
+            </div>
+            <div class="w-full">
+                <p class="text-sm font-bold">`)
+//line transports/webui/views/layout.qtpl:119
+	qw422016.E().S(title)
+//line transports/webui/views/layout.qtpl:119
+	qw422016.N().S(`</p>
+                <br />
+                <div class="flex justify-start">
+                    <p id="dialogue-value" class="text-sm w-full truncate">
+                        `)
+//line transports/webui/views/layout.qtpl:123
+	qw422016.E().S(message)
+//line transports/webui/views/layout.qtpl:123
+	qw422016.N().S(`
+                    </p>
+                    `)
+//line transports/webui/views/layout.qtpl:125
+	if copyValue {
+//line transports/webui/views/layout.qtpl:125
+		qw422016.N().S(`
+                    <button onclick="copyValueToClipboard()"
+                        class="text-sm ml-1 bg-`)
+//line transports/webui/views/layout.qtpl:127
+		qw422016.E().S(color)
+//line transports/webui/views/layout.qtpl:127
+		qw422016.N().S(`-400 hover:bg-`)
+//line transports/webui/views/layout.qtpl:127
+		qw422016.E().S(color)
+//line transports/webui/views/layout.qtpl:127
+		qw422016.N().S(`-500 text-white border border-`)
+//line transports/webui/views/layout.qtpl:127
+		qw422016.E().S(color)
+//line transports/webui/views/layout.qtpl:127
+		qw422016.N().S(`-500 rounded px-2 py-1">
+                        Copy
+                    </button>
+                    `)
+//line transports/webui/views/layout.qtpl:130
+	}
+//line transports/webui/views/layout.qtpl:130
+	qw422016.N().S(`
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function copyValueToClipboard() {
+            const text = document.getElementById("dialogue-value").innerText;
+            navigator.clipboard.writeText(text);
+        }
+    </script>
+
+</div>
+`)
+//line transports/webui/views/layout.qtpl:143
+}
+
+//line transports/webui/views/layout.qtpl:143
+func WriteRenderFlashMessage(qq422016 qtio422016.Writer, title string, message string, copyValue bool, flashMessageType layout_utils.FlashMessageType) {
+//line transports/webui/views/layout.qtpl:143
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line transports/webui/views/layout.qtpl:143
+	StreamRenderFlashMessage(qw422016, title, message, copyValue, flashMessageType)
+//line transports/webui/views/layout.qtpl:143
+	qt422016.ReleaseWriter(qw422016)
+//line transports/webui/views/layout.qtpl:143
+}
+
+//line transports/webui/views/layout.qtpl:143
+func RenderFlashMessage(title string, message string, copyValue bool, flashMessageType layout_utils.FlashMessageType) string {
+//line transports/webui/views/layout.qtpl:143
+	qb422016 := qt422016.AcquireByteBuffer()
+//line transports/webui/views/layout.qtpl:143
+	WriteRenderFlashMessage(qb422016, title, message, copyValue, flashMessageType)
+//line transports/webui/views/layout.qtpl:143
+	qs422016 := string(qb422016.B)
+//line transports/webui/views/layout.qtpl:143
+	qt422016.ReleaseByteBuffer(qb422016)
+//line transports/webui/views/layout.qtpl:143
+	return qs422016
+//line transports/webui/views/layout.qtpl:143
+}
+
+//line transports/webui/views/layout.qtpl:146
+type Base struct {
+	FlashMessages layout_utils.FlashMessages
+}

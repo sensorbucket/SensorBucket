@@ -78,14 +78,14 @@ func SnackbarSaveSuccessful(w http.ResponseWriter) http.ResponseWriter {
 }
 
 func SnackbarBadRequest(w http.ResponseWriter, reason string) http.ResponseWriter {
-	return WithSnackbarError(w, reason, http.StatusBadRequest)
+	return WithSnackbarError(w, reason)
 }
 
 func SnackbarSomethingWentWrong(w http.ResponseWriter) http.ResponseWriter {
-	return WithSnackbarError(w, "Something went wrong", http.StatusInternalServerError)
+	return WithSnackbarError(w, "Something went wrong")
 }
 
-func WithSnackbarError(w http.ResponseWriter, message string, statusCode int) http.ResponseWriter {
+func WithSnackbarError(w http.ResponseWriter, message string) http.ResponseWriter {
 	return withSnackbarMessage(w, snackbarDetails{
 		Message: message,
 		Type:    Error,

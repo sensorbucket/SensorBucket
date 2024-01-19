@@ -4,18 +4,21 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
 var (
-	ErrTenantIsNotValid = fmt.Errorf("tenant is not valid")
-	ErrKeyNotFound      = fmt.Errorf("couldnt find key")
-	ErrInvalidEncoding  = fmt.Errorf("API key was sent using an invalid encoding")
+	ErrTenantIsNotValid                    = fmt.Errorf("tenant is not valid")
+	ErrKeyNotFound                         = fmt.Errorf("couldnt find key")
+	ErrInvalidEncoding                     = fmt.Errorf("API key was sent using an invalid encoding")
+	ErrKeyNameTenantIDCombinationNotUnique = web.NewError(http.StatusBadRequest, "API Key with name already exists for this tenant", "API_KEY_NAME_TENANT_COMBO_NOT_UNIQUE")
 )
 
 func NewAPIKeyService(tenantStore tenantStore, apiKeyStore apiKeyStore) *Service {
@@ -45,6 +48,14 @@ func (s *Service) GenerateNewApiKey(name string, tenantId int64, expirationDate 
 	if tenant.State != tenants.Active {
 		return "", ErrTenantIsNotValid
 	}
+	existing, err := s.apiKeyStore.GetHashedAPIKeyByNameAndTenantID(name, tenantId)
+	if err != nil && err != ErrKeyNotFound {
+		return "", err
+	}
+	if existing.ID > 0 {
+		return "", ErrKeyNameTenantIDCombinationNotUnique
+	}
+
 	newApiKey, err := newApiKey(name, expirationDate)
 	if err != nil {
 		return "", err
@@ -145,6 +156,7 @@ type apiKeyStore interface {
 	AddApiKey(tenantID int64, hashedApiKey HashedApiKey) error
 	DeleteApiKey(id int64) error
 	GetHashedApiKeyById(id int64, stateFilter []tenants.State) (HashedApiKey, error)
+	GetHashedAPIKeyByNameAndTenantID(name string, tenantID int64) (HashedApiKey, error)
 	List(Filter, pagination.Request) (*pagination.Page[ApiKeyDTO], error)
 }
 
