@@ -104,26 +104,20 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 			views.WriteWideLayout(w, page)
 		}(page)
 
-		// Check if an API key result has been added, this means a new key was created and the user is being
-		// directed to the list page with a dialogue showing the API key
-		if apiKey, ok := r.Context().Value(ctxAPIKeyKey).(views.APIKeyResult); ok {
-			page.APIKeyResult = &apiKey
-		}
-
 		// The initial page starts with an overview of different tenants
 		req := h.client.TenantsApi.ListTenants(r.Context())
 		req = req.State(1) // State Active
 		list, resp, err := req.Execute()
 		if err != nil {
 			log.Printf("api key list page: %v\n", err)
-			r = r.WithContext(layout_utils.AddErrorFlashMessage(r, "An unexpected error occurred"))
+			layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
 			if resp.StatusCode == http.StatusInternalServerError {
 				log.Printf("api key api returned internal server error")
-				r = r.WithContext(layout_utils.AddErrorFlashMessage(r, "An unexpected error occurred in the API"))
+				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
 				w.WriteHeader(http.StatusInternalServerError)
 			} else {
 				apiErr := web.APIError{}
@@ -132,7 +126,7 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 					log.Printf("[Warning] couldnt decode api err: %e\n", err)
 					apiErr.Message = "An unexpected error occurred"
 				}
-				r = r.WithContext(layout_utils.AddErrorFlashMessage(r, apiErr.Message))
+				layout_utils.AddErrorFlashMessage(w, r, apiErr.Message)
 				w.WriteHeader(resp.StatusCode)
 			}
 			return
@@ -140,83 +134,55 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 
 		// Convert the tenants so they can be displayed in the view
 		page.Tenants = toViewTenants(list.Data)
-		r = r.WithContext(layout_utils.AddSuccessFlashMessage(r, "Successfully listed api keys"))
 	}
 }
 
 func (h *APIKeysPageHandler) revokeAPIKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			flashMessages, _ := layout_utils.FlashMessagesFromContext(r.Context())
-			w.Write([]byte(views.RenderFlashMessages(flashMessages)))
-		}()
 		apiKeyId := chi.URLParam(r, "api_key_id")
 		if apiKeyId == "" {
-			r = r.WithContext(layout_utils.AddErrorFlashMessage(r, "api_key_id must be given"))
+			layout_utils.AddErrorFlashMessage(w, r, "api_key_id must be given")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		id, err := strconv.ParseInt(apiKeyId, 10, 64)
 		if err != nil {
-			r = r.WithContext(layout_utils.AddErrorFlashMessage(r, "api_key_id must be a number"))
+			layout_utils.AddErrorFlashMessage(w, r, "api_key_id must be a number")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		req := h.client.ApiKeysApi.RevokeApiKey(context.Background(), id)
 		resp, err := req.Execute()
 		if err != nil {
-			log.Printf("revoke api ke err: %s\n", err)
-			r = r.WithContext(layout_utils.AddErrorFlashMessage(r, "An unexpected error occurred"))
+			log.Printf("revoke api key err: %s\n", err)
+			layout_utils.WriteErrorFlashMessage(w, r, "An unexpected error occurred", views.RenderFlashMessage)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
 			if resp.StatusCode == http.StatusInternalServerError {
 				log.Printf("revoke api key result server error\n")
-				r = r.WithContext(layout_utils.AddErrorFlashMessage(r, "An unexpected error occurred in the API"))
+				layout_utils.WriteErrorFlashMessage(w, r, "An unexpected error occurred in the API", views.RenderFlashMessage)
 				w.WriteHeader(http.StatusInternalServerError)
 			} else {
 				log.Printf("revoke api key result unexpected status code: %d\n", resp.StatusCode)
-				r = r.WithContext(layout_utils.AddErrorFlashMessage(r, "An unexpected error occurred"))
+				layout_utils.WriteErrorFlashMessage(w, r, "An unexpected error occurred", views.RenderFlashMessage)
 				w.WriteHeader(resp.StatusCode)
 			}
 			return
 		}
 
-		// Redirect user with confirmation message of the deletion
-		r = r.WithContext(layout_utils.AddSuccessFlashMessage(r, "Succesfully deleted API key"))
-		w.WriteHeader(http.StatusOK)
+		// Success, set the flash message and redirect
+		w.Header().Set("HX-Redirect", "/tenants/api-keys")
+		layout_utils.AddSuccessFlashMessage(w, r, "Succesfully deleted API key")
 	}
 }
 
 func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
-
-	// http.SetCookie(w, &http.Cookie{
-	// 	Name:     "flash_messages",
-	// 	Expires:  time.Now().Add(time.Minute * 5),
-	// 	Secure:   true,
-	// 	HttpOnly: true,
-	// 	Value:    "lalala",
-	// })
 	return func(w http.ResponseWriter, r *http.Request) {
-		createResult := views.APIKeyResult{}
-		defer func(result *views.APIKeyResult) {
-
-			// Create was a success, redirect to list page
-			if createResult.Error == "" {
-				h.apiKeysListPage().ServeHTTP(
-					w,
-					r.WithContext(context.WithValue(r.Context(), ctxAPIKeyKey, *result)))
-				return
-			}
-
-			// h.createAPIKeyView().ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ct)))
-
-		}(&createResult)
 		if err := r.ParseForm(); err != nil {
-			layout.SnackbarBadRequest(w, "API Key from is invalid")
-			createResult.Error = "API Key from is invalid"
-			web.NewError(http.StatusBadRequest, "API Key from is invalid", "INVALID_FORM")
+			layout_utils.AddErrorFlashMessage(w, r, "Form invalid")
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		name := r.FormValue("api-key-name")
@@ -224,17 +190,12 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 		tenantId := r.FormValue("api-key-tenant")
 		permissions, ok := r.Form["api-key-permissions"]
 		if name == "" || tenantId == "" || !ok || len(permissions) == 0 {
-			createResult.Error = "Please enter a name, select an organisation and at least 1 permission"
-			// layout.SnackbarBadRequest(w, createResult.Error)
-			web.NewError(http.StatusBadRequest, "API Key from is invalid", "INVALID_FORM")
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-
 		id, err := strconv.ParseInt(tenantId, 10, 64)
 		if err != nil {
-			createResult.Error = "Errrorrr!!"
-			layout.SnackbarBadRequest(w, "tenant_id must be a valid number")
-			// web.HTTPError(w, web.NewError(http.StatusBadRequest, "tenant_id must be a number", ""))
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
@@ -246,44 +207,39 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 		if expiry != "" {
 			parsedTime, err := time.Parse("2006-01-02", expiry)
 			if err != nil {
-				createResult.Error = "Errrorrr!!"
-				layout.SnackbarBadRequest(w, "expiration_date must be a valid time format")
-				web.HTTPError(w, web.NewError(http.StatusBadRequest, "expiration_date must be a number", ""))
+				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-
 			dto.SetExpirationDate(parsedTime)
 		}
-		apiKey, res, err := h.client.ApiKeysApi.CreateApiKey(r.Context()).CreateApiKeyRequest(dto).Execute()
+		apiKey, resp, err := h.client.ApiKeysApi.CreateApiKey(r.Context()).CreateApiKeyRequest(dto).Execute()
 		if err != nil {
-			// h.apiKeysListPage().ServeHTTP(
-			// 	w,
-			// 	r.WithContext(context.WithValue(r.Context(), ctxAPIKeyKey, "BLABLA1")))
-			// return
-			createResult.Error = "Errrorrr!!"
-			layout.SnackbarSomethingWentWrong(w)
-			// web.HTTPError(w, fmt.Errorf("could not create api key: %w", err))
+			layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		if res.StatusCode != http.StatusCreated {
-			// h.apiKeysListPage().ServeHTTP(
-			// 	w,
-			// 	r.WithContext(context.WithValue(r.Context(), ctxAPIKeyKey, "BLABLA2")))
-			createResult.Error = "Errrorrr!!"
-			layout.SnackbarSomethingWentWrong(w)
-			// web.HTTPError(w, fmt.Errorf("could not create api key: %s", res.Status))
+		if resp.StatusCode != http.StatusCreated {
+			if resp.StatusCode == http.StatusInternalServerError {
+				log.Printf("revoke api key result server error\n")
+				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+				http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
+			} else {
+				log.Printf("revoke api key result unexpected status code: %d\n", resp.StatusCode)
+				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred")
+				http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
+			}
 			return
 		}
 
-		layout.WithSnackbarSuccess(w, "Created API Key")
-		// web.HTTPResponse(w, http.StatusCreated, web.APIResponseAny{
-		// 	Message: apiKey.ApiKey,
-		// })
-		createResult.Value = apiKey.ApiKey
-		// h.apiKeysListPage().ServeHTTP(
-		// 	w,
-		// 	r.WithContext(context.WithValue(r.Context(), ctxAPIKeyKey, apiKey.ApiKey)))
+		// Add the API key as a flash message
+		layout_utils.AddWarningFlashMessage(w, r,
+			"This is your API key. Please copy your API key immediately as it will not be shown again.",
+			apiKey.ApiKey,
+			true)
+
+		// Redirect to overview page so that it may be shown
+		http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 	}
 }
 
@@ -313,7 +269,6 @@ func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 			web.HTTPError(w, fmt.Errorf("error creating api key view, converting to view permissions: %w", err))
 			return
 		}
-
 		page := &views.APIKeysCreatePage{
 			Tenants:     toViewTenants(list.Data),
 			Permissions: perms,

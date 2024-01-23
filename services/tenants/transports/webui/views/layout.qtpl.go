@@ -306,61 +306,63 @@ func renderSidebar() string {
 func StreamRenderFlashMessages(qw422016 *qt422016.Writer, flashMessages layout_utils.FlashMessages) {
 //line transports/webui/views/layout.qtpl:74
 	qw422016.N().S(`
+<div id="flash-messages" >
 `)
-//line transports/webui/views/layout.qtpl:75
+//line transports/webui/views/layout.qtpl:76
 	for _, flashMessage := range flashMessages {
-//line transports/webui/views/layout.qtpl:75
-		qw422016.N().S(`
-`)
-//line transports/webui/views/layout.qtpl:76
-		StreamRenderFlashMessage(qw422016, flashMessage.Title, flashMessage.Description, flashMessage.CopyButton, flashMessage.MessageType)
 //line transports/webui/views/layout.qtpl:76
 		qw422016.N().S(`
 `)
 //line transports/webui/views/layout.qtpl:77
+		StreamRenderFlashMessage(qw422016, flashMessage)
+//line transports/webui/views/layout.qtpl:77
+		qw422016.N().S(`
+`)
+//line transports/webui/views/layout.qtpl:78
 	}
-//line transports/webui/views/layout.qtpl:77
-	qw422016.N().S(`
-`)
 //line transports/webui/views/layout.qtpl:78
+	qw422016.N().S(`
+</div>
+`)
+//line transports/webui/views/layout.qtpl:80
 }
 
-//line transports/webui/views/layout.qtpl:78
+//line transports/webui/views/layout.qtpl:80
 func WriteRenderFlashMessages(qq422016 qtio422016.Writer, flashMessages layout_utils.FlashMessages) {
-//line transports/webui/views/layout.qtpl:78
+//line transports/webui/views/layout.qtpl:80
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/layout.qtpl:78
+//line transports/webui/views/layout.qtpl:80
 	StreamRenderFlashMessages(qw422016, flashMessages)
-//line transports/webui/views/layout.qtpl:78
+//line transports/webui/views/layout.qtpl:80
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/layout.qtpl:78
+//line transports/webui/views/layout.qtpl:80
 }
 
-//line transports/webui/views/layout.qtpl:78
+//line transports/webui/views/layout.qtpl:80
 func RenderFlashMessages(flashMessages layout_utils.FlashMessages) string {
-//line transports/webui/views/layout.qtpl:78
+//line transports/webui/views/layout.qtpl:80
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/layout.qtpl:78
+//line transports/webui/views/layout.qtpl:80
 	WriteRenderFlashMessages(qb422016, flashMessages)
-//line transports/webui/views/layout.qtpl:78
+//line transports/webui/views/layout.qtpl:80
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/layout.qtpl:78
+//line transports/webui/views/layout.qtpl:80
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/layout.qtpl:78
+//line transports/webui/views/layout.qtpl:80
 	return qs422016
-//line transports/webui/views/layout.qtpl:78
+//line transports/webui/views/layout.qtpl:80
 }
 
-//line transports/webui/views/layout.qtpl:80
-func StreamRenderFlashMessage(qw422016 *qt422016.Writer, title string, message string, copyValue bool, flashMessageType layout_utils.FlashMessageType) {
-//line transports/webui/views/layout.qtpl:80
+//line transports/webui/views/layout.qtpl:82
+func StreamRenderFlashMessage(qw422016 *qt422016.Writer, msg layout_utils.FlashMessage) {
+//line transports/webui/views/layout.qtpl:82
 	qw422016.N().S(`
 `)
-//line transports/webui/views/layout.qtpl:82
+//line transports/webui/views/layout.qtpl:84
 	color := ""
 	icon := ""
 
-	switch flashMessageType {
+	switch msg.MessageType {
 	case layout_utils.Success:
 		color = "green"
 		icon = "mdi:success-circle-outline"
@@ -372,7 +374,7 @@ func StreamRenderFlashMessage(qw422016 *qt422016.Writer, title string, message s
 		icon = "icon-park-outline:error"
 	}
 
-//line transports/webui/views/layout.qtpl:96
+//line transports/webui/views/layout.qtpl:98
 	qw422016.N().S(`
 <div class="p-3">
     <!-- Required to include below tailwind classes in styles -->
@@ -390,71 +392,71 @@ func StreamRenderFlashMessage(qw422016 *qt422016.Writer, title string, message s
         <div class="bg-green-100"></div>
     </div>
     <div class="bg-`)
-//line transports/webui/views/layout.qtpl:112
+//line transports/webui/views/layout.qtpl:114
 	qw422016.E().S(color)
-//line transports/webui/views/layout.qtpl:112
+//line transports/webui/views/layout.qtpl:114
 	qw422016.N().S(`-100 border-l-4 border-`)
-//line transports/webui/views/layout.qtpl:112
+//line transports/webui/views/layout.qtpl:114
 	qw422016.E().S(color)
-//line transports/webui/views/layout.qtpl:112
+//line transports/webui/views/layout.qtpl:114
 	qw422016.N().S(`-400 text-`)
-//line transports/webui/views/layout.qtpl:112
+//line transports/webui/views/layout.qtpl:114
 	qw422016.E().S(color)
-//line transports/webui/views/layout.qtpl:112
+//line transports/webui/views/layout.qtpl:114
 	qw422016.N().S(`-600 p-4" role="alert">
         <div class="flex w-full">
             <div class="py-2">
                 <iconify-icon icon="`)
-//line transports/webui/views/layout.qtpl:115
+//line transports/webui/views/layout.qtpl:117
 	qw422016.E().S(icon)
-//line transports/webui/views/layout.qtpl:115
+//line transports/webui/views/layout.qtpl:117
 	qw422016.N().S(`" width="24"
                 class="px-4 float-right text-`)
-//line transports/webui/views/layout.qtpl:116
+//line transports/webui/views/layout.qtpl:118
 	qw422016.E().S(color)
-//line transports/webui/views/layout.qtpl:116
+//line transports/webui/views/layout.qtpl:118
 	qw422016.N().S(`-600"></iconify-icon>
             </div>
             <div class="w-full">
                 <p class="text-sm font-bold">`)
-//line transports/webui/views/layout.qtpl:119
-	qw422016.E().S(title)
-//line transports/webui/views/layout.qtpl:119
+//line transports/webui/views/layout.qtpl:121
+	qw422016.E().S(msg.Title)
+//line transports/webui/views/layout.qtpl:121
 	qw422016.N().S(`</p>
                 <br />
                 <div class="flex justify-start">
                     <p id="dialogue-value" class="text-sm w-full truncate">
                         `)
-//line transports/webui/views/layout.qtpl:123
-	qw422016.E().S(message)
-//line transports/webui/views/layout.qtpl:123
+//line transports/webui/views/layout.qtpl:125
+	qw422016.E().S(msg.Description)
+//line transports/webui/views/layout.qtpl:125
 	qw422016.N().S(`
                     </p>
                     `)
-//line transports/webui/views/layout.qtpl:125
-	if copyValue {
-//line transports/webui/views/layout.qtpl:125
+//line transports/webui/views/layout.qtpl:127
+	if msg.CopyButton {
+//line transports/webui/views/layout.qtpl:127
 		qw422016.N().S(`
                     <button onclick="copyValueToClipboard()"
                         class="text-sm ml-1 bg-`)
-//line transports/webui/views/layout.qtpl:127
+//line transports/webui/views/layout.qtpl:129
 		qw422016.E().S(color)
-//line transports/webui/views/layout.qtpl:127
+//line transports/webui/views/layout.qtpl:129
 		qw422016.N().S(`-400 hover:bg-`)
-//line transports/webui/views/layout.qtpl:127
+//line transports/webui/views/layout.qtpl:129
 		qw422016.E().S(color)
-//line transports/webui/views/layout.qtpl:127
+//line transports/webui/views/layout.qtpl:129
 		qw422016.N().S(`-500 text-white border border-`)
-//line transports/webui/views/layout.qtpl:127
+//line transports/webui/views/layout.qtpl:129
 		qw422016.E().S(color)
-//line transports/webui/views/layout.qtpl:127
+//line transports/webui/views/layout.qtpl:129
 		qw422016.N().S(`-500 rounded px-2 py-1">
                         Copy
                     </button>
                     `)
-//line transports/webui/views/layout.qtpl:130
+//line transports/webui/views/layout.qtpl:132
 	}
-//line transports/webui/views/layout.qtpl:130
+//line transports/webui/views/layout.qtpl:132
 	qw422016.N().S(`
                 </div>
             </div>
@@ -469,36 +471,36 @@ func StreamRenderFlashMessage(qw422016 *qt422016.Writer, title string, message s
 
 </div>
 `)
-//line transports/webui/views/layout.qtpl:143
+//line transports/webui/views/layout.qtpl:145
 }
 
-//line transports/webui/views/layout.qtpl:143
-func WriteRenderFlashMessage(qq422016 qtio422016.Writer, title string, message string, copyValue bool, flashMessageType layout_utils.FlashMessageType) {
-//line transports/webui/views/layout.qtpl:143
+//line transports/webui/views/layout.qtpl:145
+func WriteRenderFlashMessage(qq422016 qtio422016.Writer, msg layout_utils.FlashMessage) {
+//line transports/webui/views/layout.qtpl:145
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/layout.qtpl:143
-	StreamRenderFlashMessage(qw422016, title, message, copyValue, flashMessageType)
-//line transports/webui/views/layout.qtpl:143
+//line transports/webui/views/layout.qtpl:145
+	StreamRenderFlashMessage(qw422016, msg)
+//line transports/webui/views/layout.qtpl:145
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/layout.qtpl:143
+//line transports/webui/views/layout.qtpl:145
 }
 
-//line transports/webui/views/layout.qtpl:143
-func RenderFlashMessage(title string, message string, copyValue bool, flashMessageType layout_utils.FlashMessageType) string {
-//line transports/webui/views/layout.qtpl:143
+//line transports/webui/views/layout.qtpl:145
+func RenderFlashMessage(msg layout_utils.FlashMessage) string {
+//line transports/webui/views/layout.qtpl:145
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/layout.qtpl:143
-	WriteRenderFlashMessage(qb422016, title, message, copyValue, flashMessageType)
-//line transports/webui/views/layout.qtpl:143
+//line transports/webui/views/layout.qtpl:145
+	WriteRenderFlashMessage(qb422016, msg)
+//line transports/webui/views/layout.qtpl:145
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/layout.qtpl:143
+//line transports/webui/views/layout.qtpl:145
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/layout.qtpl:143
+//line transports/webui/views/layout.qtpl:145
 	return qs422016
-//line transports/webui/views/layout.qtpl:143
+//line transports/webui/views/layout.qtpl:145
 }
 
-//line transports/webui/views/layout.qtpl:146
+//line transports/webui/views/layout.qtpl:148
 type Base struct {
 	FlashMessages layout_utils.FlashMessages
 }

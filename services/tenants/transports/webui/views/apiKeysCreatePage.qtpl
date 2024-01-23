@@ -17,7 +17,7 @@
             <label for="api-key-tenant" class="ml-1 -mb-1 block"><small
                     class="text-xs text-slate-500">Tenant</small></label>
             <select name="api-key-tenant" id="api-key-tenant"
-                class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600">
+                class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" required>
                 {%= RenderTenantSelect(p.Tenants) %}
                 <select />
         </fieldset>
@@ -25,7 +25,7 @@
             <label for="api-key-name" class="ml-1 -mb-1 block"><small
                     class="text-xs text-slate-500">Name</small></label>
             <input type="text" name="api-key-name" id="api-key-name"
-                class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" />
+                class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" required />
         </fieldset>
         <fieldset>
             <label for="api-key-expiry" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Expires</small>
@@ -41,8 +41,22 @@
             {%= RenderPermissionTables(p.Permissions) %}
         </fieldset>
         <div class="col-span-full">
-            <input type="submit" id="api-key-create-button"
-                class="disabled:cursor-not-allowed disabled:opacity-50 text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+            <input
+                _="on change from closest <form/>
+                for elt in <[required]/>
+                  if the elt's value is empty
+                    add @disabled then exit
+                  end
+                end
+                for el in .permission-checkbox.checked
+                    log el
+                    if el === true
+                        remove @disabled then exit
+                    end
+                end
+                add @disabled"
+                disabled type="submit" id="api-key-create-button"
+                class="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
                 value="Generate new API Key" />
         </div>
     </form>
@@ -92,7 +106,7 @@
             </td>
             <td class="py-2 px-4 w-1/6">
                 <input type="checkbox" name="api-key-permissions" value="{%s permission.Name %}"
-                    class="h-4 w-4 text-secondary-500 cursor-pointer float-right checkbox-{%s htmlFriendlyName(category.Value) %}">
+                    class="h-4 w-4 text-secondary-500 permission-checkbox cursor-pointer float-right checkbox-{%s htmlFriendlyName(category.Value) %}">
             </td>
         </tr>
         {% endfor %}

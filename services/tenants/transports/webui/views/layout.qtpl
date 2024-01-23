@@ -72,17 +72,19 @@
 {% endfunc %}
 
 {% func RenderFlashMessages(flashMessages layout_utils.FlashMessages) %}
+<div id="flash-messages" >
 {% for _, flashMessage := range flashMessages %}
-{%= RenderFlashMessage(flashMessage.Title, flashMessage.Description, flashMessage.CopyButton, flashMessage.MessageType) %}
+{%= RenderFlashMessage(flashMessage) %}
 {% endfor %}
+</div>
 {% endfunc %}
 
-{% func RenderFlashMessage(title string, message string, copyValue bool, flashMessageType layout_utils.FlashMessageType) %}
+{% func RenderFlashMessage(msg layout_utils.FlashMessage) %}
 {% code
     color := ""
     icon := ""
 
-    switch flashMessageType {
+    switch msg.MessageType {
         case layout_utils.Success:
             color = "green"
             icon = "mdi:success-circle-outline"
@@ -116,13 +118,13 @@
                 class="px-4 float-right text-{%s color %}-600"></iconify-icon>
             </div>
             <div class="w-full">
-                <p class="text-sm font-bold">{%s title %}</p>
+                <p class="text-sm font-bold">{%s msg.Title %}</p>
                 <br />
                 <div class="flex justify-start">
                     <p id="dialogue-value" class="text-sm w-full truncate">
-                        {%s message %}
+                        {%s msg.Description %}
                     </p>
-                    {% if copyValue %}
+                    {% if msg.CopyButton %}
                     <button onclick="copyValueToClipboard()"
                         class="text-sm ml-1 bg-{%s color %}-400 hover:bg-{%s color %}-500 text-white border border-{%s color %}-500 rounded px-2 py-1">
                         Copy
