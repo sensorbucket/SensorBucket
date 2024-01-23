@@ -38,7 +38,9 @@ var deviceCmd = &cobra.Command{
 			req.SetLocationDescription(dLDesc)
 		}
 		if dProp != "" {
-			json.Unmarshal([]byte(dProp), &req.Properties)
+			if err := json.Unmarshal([]byte(dProp), &req.Properties); err != nil {
+				return fmt.Errorf("properties is not valid JSON: %w", err)
+			}
 		}
 
 		res, _, err := client.DevicesApi.CreateDevice(cmd.Context()).CreateDeviceRequest(req).Execute()
@@ -60,5 +62,5 @@ func init() {
 	deviceCmd.Flags().Float64P("longitude", "L", 0, "Devices' longitude")
 	deviceCmd.Flags().StringP("locationdescription", "D", "", "Description for the device's location")
 	deviceCmd.Flags().StringP("properties", "p", "", "Device properties")
-	deviceCmd.MarkFlagRequired("code")
+	_ = deviceCmd.MarkFlagRequired("code")
 }

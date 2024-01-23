@@ -27,7 +27,7 @@ func TestMeasurementBuilderAddMeasurement(t *testing.T) {
 	assert.EqualValues(t, msg.Timestamp, msg.Measurements[0].Timestamp, "builder without SetTimestamp should fallback to message timestamp")
 
 	// Now with setting timestamp
-	intermediateBuilder.SetTimestamp(123456789).Add()
+	err = intermediateBuilder.SetTimestamp(123456789).Add()
 	assert.NoError(t, err)
 	assert.Len(t, msg.Measurements, 2)
 	assert.EqualValues(t, 123456789, msg.Measurements[1].Timestamp, "builder with SetTimestamp should use set timestamp")

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 )
@@ -67,7 +68,9 @@ func DecodeJSON(r *http.Request, v interface{}) error {
 func HTTPResponse(w http.ResponseWriter, s int, r interface{}) {
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(s)
-	json.NewEncoder(w).Encode(r)
+	if err := json.NewEncoder(w).Encode(r); err != nil {
+		log.Printf("HTTPResponse: failed to write response to client: %s\n", err.Error())
+	}
 }
 
 // HTTPError writes the error to a http response writer
@@ -77,16 +80,22 @@ func HTTPError(w http.ResponseWriter, err error) {
 	var apierror *APIError
 	if errors.As(err, &apierror) {
 		w.WriteHeader(apierror.HTTPStatus)
-		json.NewEncoder(w).Encode(&APIError{
+		err := json.NewEncoder(w).Encode(&APIError{
 			Message: err.Error(),
 			Code:    apierror.Code,
 		})
+		if err != nil {
+			log.Printf("HTTPError: failed to write response to client: %s\n", err.Error())
+		}
 		return
 	}
 
 	fmt.Printf("non APIError occured: %s\n", err)
 	w.WriteHeader(500)
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	err = json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "Internal server error",
 	})
+	if err != nil {
+		log.Printf("HTTPError: failed to write response to client: %s\n", err.Error())
+	}
 }
