@@ -45,7 +45,7 @@ func (p *APIKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
     >
         <fieldset>
             <label for="api-key-tenant" class="ml-1 -mb-1 block"><small
-                    class="text-xs text-slate-500">Tenant</small></label>
+                    class="text-xs text-slate-500">Tenant*</small></label>
             <select name="api-key-tenant" id="api-key-tenant"
                 class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" required>
                 `)
@@ -57,7 +57,7 @@ func (p *APIKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
         </fieldset>
         <fieldset>
             <label for="api-key-name" class="ml-1 -mb-1 block"><small
-                    class="text-xs text-slate-500">Name</small></label>
+                    class="text-xs text-slate-500">Name*</small></label>
             <input type="text" name="api-key-name" id="api-key-name"
                 class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" required />
         </fieldset>
@@ -71,11 +71,12 @@ func (p *APIKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
                 class="w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600 hidden" />
         </fieldset>
         <fieldset>
-            <label></label>
+            <label
+            class="text-xs text-slate-500">Permissions*</label>
             `)
-//line transports/webui/views/apiKeysCreatePage.qtpl:41
+//line transports/webui/views/apiKeysCreatePage.qtpl:42
 	StreamRenderPermissionTables(qw422016, p.Permissions)
-//line transports/webui/views/apiKeysCreatePage.qtpl:41
+//line transports/webui/views/apiKeysCreatePage.qtpl:42
 	qw422016.N().S(`
         </fieldset>
         <div class="col-span-full">
@@ -106,120 +107,120 @@ func (p *APIKeysCreatePage) StreamBody(qw422016 *qt422016.Writer) {
     </script>
 </div>
 `)
-//line transports/webui/views/apiKeysCreatePage.qtpl:70
+//line transports/webui/views/apiKeysCreatePage.qtpl:71
 }
 
-//line transports/webui/views/apiKeysCreatePage.qtpl:70
+//line transports/webui/views/apiKeysCreatePage.qtpl:71
 func (p *APIKeysCreatePage) WriteBody(qq422016 qtio422016.Writer) {
-//line transports/webui/views/apiKeysCreatePage.qtpl:70
+//line transports/webui/views/apiKeysCreatePage.qtpl:71
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/apiKeysCreatePage.qtpl:70
+//line transports/webui/views/apiKeysCreatePage.qtpl:71
 	p.StreamBody(qw422016)
-//line transports/webui/views/apiKeysCreatePage.qtpl:70
+//line transports/webui/views/apiKeysCreatePage.qtpl:71
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/apiKeysCreatePage.qtpl:70
+//line transports/webui/views/apiKeysCreatePage.qtpl:71
 }
 
-//line transports/webui/views/apiKeysCreatePage.qtpl:70
+//line transports/webui/views/apiKeysCreatePage.qtpl:71
 func (p *APIKeysCreatePage) Body() string {
-//line transports/webui/views/apiKeysCreatePage.qtpl:70
+//line transports/webui/views/apiKeysCreatePage.qtpl:71
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/apiKeysCreatePage.qtpl:70
+//line transports/webui/views/apiKeysCreatePage.qtpl:71
 	p.WriteBody(qb422016)
-//line transports/webui/views/apiKeysCreatePage.qtpl:70
+//line transports/webui/views/apiKeysCreatePage.qtpl:71
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/apiKeysCreatePage.qtpl:70
+//line transports/webui/views/apiKeysCreatePage.qtpl:71
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/apiKeysCreatePage.qtpl:70
+//line transports/webui/views/apiKeysCreatePage.qtpl:71
 	return qs422016
-//line transports/webui/views/apiKeysCreatePage.qtpl:70
+//line transports/webui/views/apiKeysCreatePage.qtpl:71
 }
 
-//line transports/webui/views/apiKeysCreatePage.qtpl:72
+//line transports/webui/views/apiKeysCreatePage.qtpl:73
 func StreamRenderTenantSelect(qw422016 *qt422016.Writer, tenants []TenantInfo) {
-//line transports/webui/views/apiKeysCreatePage.qtpl:72
+//line transports/webui/views/apiKeysCreatePage.qtpl:73
 	qw422016.N().S(`
 `)
-//line transports/webui/views/apiKeysCreatePage.qtpl:73
+//line transports/webui/views/apiKeysCreatePage.qtpl:74
 	for _, tenant := range tenants {
-//line transports/webui/views/apiKeysCreatePage.qtpl:73
+//line transports/webui/views/apiKeysCreatePage.qtpl:74
 		qw422016.N().S(`
 <option value="`)
-//line transports/webui/views/apiKeysCreatePage.qtpl:74
+//line transports/webui/views/apiKeysCreatePage.qtpl:75
 		qw422016.N().D(tenant.ID)
-//line transports/webui/views/apiKeysCreatePage.qtpl:74
+//line transports/webui/views/apiKeysCreatePage.qtpl:75
 		qw422016.N().S(`">`)
-//line transports/webui/views/apiKeysCreatePage.qtpl:74
+//line transports/webui/views/apiKeysCreatePage.qtpl:75
 		qw422016.E().S(tenant.Name)
-//line transports/webui/views/apiKeysCreatePage.qtpl:74
+//line transports/webui/views/apiKeysCreatePage.qtpl:75
 		qw422016.N().S(`</option>
 `)
-//line transports/webui/views/apiKeysCreatePage.qtpl:75
+//line transports/webui/views/apiKeysCreatePage.qtpl:76
 	}
-//line transports/webui/views/apiKeysCreatePage.qtpl:75
+//line transports/webui/views/apiKeysCreatePage.qtpl:76
 	qw422016.N().S(`
 `)
-//line transports/webui/views/apiKeysCreatePage.qtpl:76
+//line transports/webui/views/apiKeysCreatePage.qtpl:77
 }
 
-//line transports/webui/views/apiKeysCreatePage.qtpl:76
+//line transports/webui/views/apiKeysCreatePage.qtpl:77
 func WriteRenderTenantSelect(qq422016 qtio422016.Writer, tenants []TenantInfo) {
-//line transports/webui/views/apiKeysCreatePage.qtpl:76
+//line transports/webui/views/apiKeysCreatePage.qtpl:77
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/apiKeysCreatePage.qtpl:76
+//line transports/webui/views/apiKeysCreatePage.qtpl:77
 	StreamRenderTenantSelect(qw422016, tenants)
-//line transports/webui/views/apiKeysCreatePage.qtpl:76
+//line transports/webui/views/apiKeysCreatePage.qtpl:77
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/apiKeysCreatePage.qtpl:76
+//line transports/webui/views/apiKeysCreatePage.qtpl:77
 }
 
-//line transports/webui/views/apiKeysCreatePage.qtpl:76
+//line transports/webui/views/apiKeysCreatePage.qtpl:77
 func RenderTenantSelect(tenants []TenantInfo) string {
-//line transports/webui/views/apiKeysCreatePage.qtpl:76
+//line transports/webui/views/apiKeysCreatePage.qtpl:77
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/apiKeysCreatePage.qtpl:76
+//line transports/webui/views/apiKeysCreatePage.qtpl:77
 	WriteRenderTenantSelect(qb422016, tenants)
-//line transports/webui/views/apiKeysCreatePage.qtpl:76
+//line transports/webui/views/apiKeysCreatePage.qtpl:77
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/apiKeysCreatePage.qtpl:76
+//line transports/webui/views/apiKeysCreatePage.qtpl:77
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/apiKeysCreatePage.qtpl:76
+//line transports/webui/views/apiKeysCreatePage.qtpl:77
 	return qs422016
-//line transports/webui/views/apiKeysCreatePage.qtpl:76
+//line transports/webui/views/apiKeysCreatePage.qtpl:77
 }
 
-//line transports/webui/views/apiKeysCreatePage.qtpl:78
+//line transports/webui/views/apiKeysCreatePage.qtpl:79
 func StreamRenderPermissionTables(qw422016 *qt422016.Writer, permissions map[OrderedMapKey][]APIKeysPermission) {
-//line transports/webui/views/apiKeysCreatePage.qtpl:78
+//line transports/webui/views/apiKeysCreatePage.qtpl:79
 	qw422016.N().S(`
 `)
-//line transports/webui/views/apiKeysCreatePage.qtpl:79
+//line transports/webui/views/apiKeysCreatePage.qtpl:80
 	for i := 0; i < len(permissions); i++ {
-//line transports/webui/views/apiKeysCreatePage.qtpl:79
+//line transports/webui/views/apiKeysCreatePage.qtpl:80
 		qw422016.N().S(`
 `)
-//line transports/webui/views/apiKeysCreatePage.qtpl:81
+//line transports/webui/views/apiKeysCreatePage.qtpl:82
 		category, _ := lo.FindKeyBy(permissions, func(key OrderedMapKey, value []APIKeysPermission) bool {
 			return key.Index == i
 		})
 
-//line transports/webui/views/apiKeysCreatePage.qtpl:84
+//line transports/webui/views/apiKeysCreatePage.qtpl:85
 		qw422016.N().S(`
 <table class="min-w-full bg-white border border-gray-300 mb-2">
     <thead>
         <tr class="bg-secondary-400 text-secondary-100">
             <th class="py-2 px-4" colspan="2">
                 <span class="ml-2 float-left">`)
-//line transports/webui/views/apiKeysCreatePage.qtpl:89
+//line transports/webui/views/apiKeysCreatePage.qtpl:90
 		qw422016.E().S(category.Value)
-//line transports/webui/views/apiKeysCreatePage.qtpl:89
+//line transports/webui/views/apiKeysCreatePage.qtpl:90
 		qw422016.N().S(`</span>
             </th>
             <th class="py-2 px-4">
                 <input type="checkbox" _="on click set .checkbox-`)
-//line transports/webui/views/apiKeysCreatePage.qtpl:92
+//line transports/webui/views/apiKeysCreatePage.qtpl:93
 		qw422016.E().S(htmlFriendlyName(category.Value))
-//line transports/webui/views/apiKeysCreatePage.qtpl:92
+//line transports/webui/views/apiKeysCreatePage.qtpl:93
 		qw422016.N().S(`.checked to my.checked"
                     class="h-4 w-4 text-secondary-500 cursor-pointer float-right">
             </th>
@@ -227,81 +228,81 @@ func StreamRenderPermissionTables(qw422016 *qt422016.Writer, permissions map[Ord
     </thead>
     <tbody>
         `)
-//line transports/webui/views/apiKeysCreatePage.qtpl:98
+//line transports/webui/views/apiKeysCreatePage.qtpl:99
 		for _, permission := range permissions[category] {
-//line transports/webui/views/apiKeysCreatePage.qtpl:98
+//line transports/webui/views/apiKeysCreatePage.qtpl:99
 			qw422016.N().S(`
         <tr>
             <td class="py-2 px-4 w-1/6">
                 `)
-//line transports/webui/views/apiKeysCreatePage.qtpl:101
+//line transports/webui/views/apiKeysCreatePage.qtpl:102
 			qw422016.E().S(permission.Name)
-//line transports/webui/views/apiKeysCreatePage.qtpl:101
+//line transports/webui/views/apiKeysCreatePage.qtpl:102
 			qw422016.N().S(`
             </td>
             <td class="py-2 px-4 w-4/6">
                 `)
-//line transports/webui/views/apiKeysCreatePage.qtpl:104
+//line transports/webui/views/apiKeysCreatePage.qtpl:105
 			qw422016.E().S(permission.Description)
-//line transports/webui/views/apiKeysCreatePage.qtpl:104
+//line transports/webui/views/apiKeysCreatePage.qtpl:105
 			qw422016.N().S(`
             </td>
             <td class="py-2 px-4 w-1/6">
                 <input type="checkbox" name="api-key-permissions" value="`)
-//line transports/webui/views/apiKeysCreatePage.qtpl:107
+//line transports/webui/views/apiKeysCreatePage.qtpl:108
 			qw422016.E().S(permission.Name)
-//line transports/webui/views/apiKeysCreatePage.qtpl:107
+//line transports/webui/views/apiKeysCreatePage.qtpl:108
 			qw422016.N().S(`"
                     class="h-4 w-4 text-secondary-500 permission-checkbox cursor-pointer float-right checkbox-`)
-//line transports/webui/views/apiKeysCreatePage.qtpl:108
+//line transports/webui/views/apiKeysCreatePage.qtpl:109
 			qw422016.E().S(htmlFriendlyName(category.Value))
-//line transports/webui/views/apiKeysCreatePage.qtpl:108
+//line transports/webui/views/apiKeysCreatePage.qtpl:109
 			qw422016.N().S(`">
             </td>
         </tr>
         `)
-//line transports/webui/views/apiKeysCreatePage.qtpl:111
+//line transports/webui/views/apiKeysCreatePage.qtpl:112
 		}
-//line transports/webui/views/apiKeysCreatePage.qtpl:111
+//line transports/webui/views/apiKeysCreatePage.qtpl:112
 		qw422016.N().S(`
     </tbody>
 </table>
 `)
-//line transports/webui/views/apiKeysCreatePage.qtpl:114
+//line transports/webui/views/apiKeysCreatePage.qtpl:115
 	}
-//line transports/webui/views/apiKeysCreatePage.qtpl:114
+//line transports/webui/views/apiKeysCreatePage.qtpl:115
 	qw422016.N().S(`
 `)
-//line transports/webui/views/apiKeysCreatePage.qtpl:115
+//line transports/webui/views/apiKeysCreatePage.qtpl:116
 }
 
-//line transports/webui/views/apiKeysCreatePage.qtpl:115
+//line transports/webui/views/apiKeysCreatePage.qtpl:116
 func WriteRenderPermissionTables(qq422016 qtio422016.Writer, permissions map[OrderedMapKey][]APIKeysPermission) {
-//line transports/webui/views/apiKeysCreatePage.qtpl:115
+//line transports/webui/views/apiKeysCreatePage.qtpl:116
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/apiKeysCreatePage.qtpl:115
+//line transports/webui/views/apiKeysCreatePage.qtpl:116
 	StreamRenderPermissionTables(qw422016, permissions)
-//line transports/webui/views/apiKeysCreatePage.qtpl:115
+//line transports/webui/views/apiKeysCreatePage.qtpl:116
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/apiKeysCreatePage.qtpl:115
+//line transports/webui/views/apiKeysCreatePage.qtpl:116
 }
 
-//line transports/webui/views/apiKeysCreatePage.qtpl:115
+//line transports/webui/views/apiKeysCreatePage.qtpl:116
 func RenderPermissionTables(permissions map[OrderedMapKey][]APIKeysPermission) string {
-//line transports/webui/views/apiKeysCreatePage.qtpl:115
+//line transports/webui/views/apiKeysCreatePage.qtpl:116
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/apiKeysCreatePage.qtpl:115
+//line transports/webui/views/apiKeysCreatePage.qtpl:116
 	WriteRenderPermissionTables(qb422016, permissions)
-//line transports/webui/views/apiKeysCreatePage.qtpl:115
+//line transports/webui/views/apiKeysCreatePage.qtpl:116
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/apiKeysCreatePage.qtpl:115
+//line transports/webui/views/apiKeysCreatePage.qtpl:116
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/apiKeysCreatePage.qtpl:115
+//line transports/webui/views/apiKeysCreatePage.qtpl:116
 	return qs422016
-//line transports/webui/views/apiKeysCreatePage.qtpl:115
+//line transports/webui/views/apiKeysCreatePage.qtpl:116
 }
 
-//line transports/webui/views/apiKeysCreatePage.qtpl:118
+//line transports/webui/views/apiKeysCreatePage.qtpl:119
 type APIKeysCreatePage struct {
 	Base
 	Tenants     []TenantInfo

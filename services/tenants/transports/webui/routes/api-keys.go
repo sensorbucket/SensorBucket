@@ -212,10 +212,13 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 			}
 			dto.SetExpirationDate(parsedTime)
 		}
+
+		// TODO: err is also when not 200. is this what we want? resp should contain information like bad request
 		apiKey, resp, err := h.client.ApiKeysApi.CreateApiKey(r.Context()).CreateApiKeyRequest(dto).Execute()
 		if err != nil {
+			log.Printf("revoke api key result api error: %s\n", err)
 			layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
 

@@ -2,6 +2,7 @@ package tenantstransports
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -111,7 +112,7 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 			})
 			return
 		}
-
+		fmt.Println("generating")
 		apiKey, err := t.apiKeySvc.GenerateNewApiKey(params.Name, params.TenantID, params.ExpirationDate)
 		if err != nil {
 			if errors.Is(err, apikeys.ErrTenantIsNotValid) {
@@ -124,6 +125,7 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 				return
 			}
 		}
+		fmt.Println("done generating")
 		web.HTTPResponse(w, http.StatusCreated, Result{
 			ApiKey: apiKey,
 		})
