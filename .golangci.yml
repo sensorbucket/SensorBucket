@@ -1,3 +1,5 @@
 linters:
   enable:
     - sqlclosecheck
+run:
+  timeout: 30m
