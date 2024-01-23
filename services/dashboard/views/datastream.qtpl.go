@@ -115,15 +115,19 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
 	qw422016.E().S(p.Datastream.ObservedProperty)
 //line views/datastream.qtpl:52
 	qw422016.N().S(`').replace(/\s/g, '').toLowerCase();
-            const title = summary + '-`)
-//line views/datastream.qtpl:53
-	qw422016.E().S(p.Start.Format("02-01-2006"))
-//line views/datastream.qtpl:53
-	qw422016.N().S(`-`)
-//line views/datastream.qtpl:53
-	qw422016.E().S(p.End.Format("02-01-2006"))
-//line views/datastream.qtpl:53
-	qw422016.N().S(`.csv';
+            let start = document.querySelector('input[name="start"]').valueAsDate
+            let startStr = start.toISOString().split('T')[0]
+            let end = new Date(document.querySelector('input[name="end"]').valueAsDate.getTime()) // +1 day ommitted as the title is interpreted as inclusive
+            let endStr = end.toISOString().split('T')[0]
+            const title = `)
+//line views/datastream.qtpl:52
+	qw422016.N().S("`")
+//line views/datastream.qtpl:52
+	qw422016.N().S(`${summary}-${startStr}-${endStr}.csv`)
+//line views/datastream.qtpl:52
+	qw422016.N().S("`")
+//line views/datastream.qtpl:52
+	qw422016.N().S(`
 
             downloadLink.download = title;
             downloadLink.click();
@@ -138,9 +142,9 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
             <fieldset class="relative col-span-2">
                 <label for="start" class="absolute bottom-full ml-1 -mb-1 block"><small class="text-xs text-slate-500">Start</small></label>
                 <input type="date" name="start" value="`)
-//line views/datastream.qtpl:67
+//line views/datastream.qtpl:71
 	qw422016.E().S(p.Start.Format("2006-01-02"))
-//line views/datastream.qtpl:67
+//line views/datastream.qtpl:71
 	qw422016.N().S(`" 
                     class="border px-2 py-1 rounded-md bg-white text-slate-700"
                     _="on change debounced at 500ms call updateQueryParam(me.name, me.value) then trigger updateDatastream on body"
@@ -149,9 +153,9 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
             <fieldset class="relative col-span-2">
                 <label for="end" class="absolute bottom-full ml-1 -mb-1 block"><small class="text-xs text-slate-500">End</small></label>
                 <input type="date" name="end" value="`)
-//line views/datastream.qtpl:74
+//line views/datastream.qtpl:78
 	qw422016.E().S(p.End.Format("2006-01-02"))
-//line views/datastream.qtpl:74
+//line views/datastream.qtpl:78
 	qw422016.N().S(`" 
                     class="border px-2 py-1 rounded-md bg-white text-slate-700"
                     _="on change debounced at 500ms call updateQueryParam(me.name, me.value) then trigger updateDatastream on body"
@@ -167,41 +171,41 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
         <div class="h-96 p-4">
             <header class="flex justify-between text-sm text-slate-600">
                 <small>`)
-//line views/datastream.qtpl:88
+//line views/datastream.qtpl:92
 	qw422016.E().S(p.Device.Code)
-//line views/datastream.qtpl:88
+//line views/datastream.qtpl:92
 	qw422016.N().S(` - `)
-//line views/datastream.qtpl:88
+//line views/datastream.qtpl:92
 	qw422016.E().S(p.Sensor.Code)
-//line views/datastream.qtpl:88
+//line views/datastream.qtpl:92
 	qw422016.N().S(` - `)
-//line views/datastream.qtpl:88
+//line views/datastream.qtpl:92
 	qw422016.E().S(p.Datastream.ObservedProperty)
-//line views/datastream.qtpl:88
+//line views/datastream.qtpl:92
 	qw422016.N().S(`</small>
                 <small>`)
-//line views/datastream.qtpl:89
+//line views/datastream.qtpl:93
 	qw422016.E().S(p.Datastream.Description)
-//line views/datastream.qtpl:89
+//line views/datastream.qtpl:93
 	qw422016.N().S(`</small>
                 <small>`)
-//line views/datastream.qtpl:90
+//line views/datastream.qtpl:94
 	qw422016.E().S(p.Datastream.Id)
-//line views/datastream.qtpl:90
+//line views/datastream.qtpl:94
 	qw422016.N().S(`</small>
             </header>
             `)
-//line views/datastream.qtpl:92
+//line views/datastream.qtpl:96
 	streamrenderDataStream(qw422016, p.Datastream, p.Start, p.End)
-//line views/datastream.qtpl:92
+//line views/datastream.qtpl:96
 	qw422016.N().S(`
         </div>
     </div>
     <div class="bg-white rounded-md border" id="map">
         `)
-//line views/datastream.qtpl:96
+//line views/datastream.qtpl:100
 	streamrenderDeviceMap(qw422016, p.Device)
-//line views/datastream.qtpl:96
+//line views/datastream.qtpl:100
 	qw422016.N().S(`
     </div>
     <div class="bg-white rounded-md border" id="device">
@@ -210,9 +214,9 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
         </header>
         <div class="p-4">
             `)
-//line views/datastream.qtpl:103
+//line views/datastream.qtpl:107
 	StreamDeviceDetailBlock(qw422016, p.Device)
-//line views/datastream.qtpl:103
+//line views/datastream.qtpl:107
 	qw422016.N().S(`
         </div>
     </div>
@@ -222,46 +226,46 @@ func (p *DatastreamPage) StreamBody(qw422016 *qt422016.Writer) {
         </header>
         <div class="p-4">
             `)
-//line views/datastream.qtpl:111
+//line views/datastream.qtpl:115
 	StreamSensorDetailBlock(qw422016, p.Sensor)
-//line views/datastream.qtpl:111
+//line views/datastream.qtpl:115
 	qw422016.N().S(`
         </div>
     </div>
 </div>
 `)
-//line views/datastream.qtpl:115
+//line views/datastream.qtpl:119
 }
 
-//line views/datastream.qtpl:115
+//line views/datastream.qtpl:119
 func (p *DatastreamPage) WriteBody(qq422016 qtio422016.Writer) {
-//line views/datastream.qtpl:115
+//line views/datastream.qtpl:119
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/datastream.qtpl:115
+//line views/datastream.qtpl:119
 	p.StreamBody(qw422016)
-//line views/datastream.qtpl:115
+//line views/datastream.qtpl:119
 	qt422016.ReleaseWriter(qw422016)
-//line views/datastream.qtpl:115
+//line views/datastream.qtpl:119
 }
 
-//line views/datastream.qtpl:115
+//line views/datastream.qtpl:119
 func (p *DatastreamPage) Body() string {
-//line views/datastream.qtpl:115
+//line views/datastream.qtpl:119
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/datastream.qtpl:115
+//line views/datastream.qtpl:119
 	p.WriteBody(qb422016)
-//line views/datastream.qtpl:115
+//line views/datastream.qtpl:119
 	qs422016 := string(qb422016.B)
-//line views/datastream.qtpl:115
+//line views/datastream.qtpl:119
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/datastream.qtpl:115
+//line views/datastream.qtpl:119
 	return qs422016
-//line views/datastream.qtpl:115
+//line views/datastream.qtpl:119
 }
 
-//line views/datastream.qtpl:117
+//line views/datastream.qtpl:121
 func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start, end time.Time) {
-//line views/datastream.qtpl:117
+//line views/datastream.qtpl:121
 	qw422016.N().S(`
     <div id="chart" class="w-full h-full">
     </div>
@@ -285,21 +289,21 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start,
         function updateDatastream() {
             let x = [];
             let y = [];
-            let start = document.querySelector('input[name="start"').valueAsDate
-            let end = document.querySelector('input[name="end"').valueAsDate
+            let start = document.querySelector('input[name="start"]').valueAsDate
+            let end = new Date(document.querySelector('input[name="end"]').valueAsDate.getTime() + (24*60*60*1000))
             let min = start.getTime()/1000
             let max = end.getTime()/1000
             plot.setScale('x', {min, max})
             const ws = new WebSocket(getWebSocketURL(`)
-//line views/datastream.qtpl:117
+//line views/datastream.qtpl:121
 	qw422016.N().S("`")
-//line views/datastream.qtpl:145
+//line views/datastream.qtpl:149
 	qw422016.N().S(U("/overview/datastreams/%s/stream?start=${start.toISOString()}&end=${end.toISOString()}", ds.Id))
-//line views/datastream.qtpl:145
+//line views/datastream.qtpl:149
 	qw422016.N().S(``)
-//line views/datastream.qtpl:145
+//line views/datastream.qtpl:149
 	qw422016.N().S("`")
-//line views/datastream.qtpl:145
+//line views/datastream.qtpl:149
 	qw422016.N().S(`))
             ws.onmessage = (event) => {
                 const reader = new FileReader();
@@ -344,7 +348,7 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start,
 						u => {
 							u.over.ondblclick = e => {
                                 let start = document.querySelector('input[name="start"').valueAsDate
-                                let end = document.querySelector('input[name="end"').valueAsDate
+                                let end = new Date(document.querySelector('input[name="end"]').valueAsDate.getTime() + (24*60*60*1000))
                                 let min = start.getTime()/1000
                                 let max = end.getTime()/1000
                                 u.setScale('x', {min,max})
@@ -365,13 +369,13 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start,
                     {
                         stroke: "red",
                         label: "`)
-//line views/datastream.qtpl:209
+//line views/datastream.qtpl:213
 	qw422016.E().S(ds.ObservedProperty)
-//line views/datastream.qtpl:209
+//line views/datastream.qtpl:213
 	qw422016.N().S(` (`)
-//line views/datastream.qtpl:209
+//line views/datastream.qtpl:213
 	qw422016.E().S(ds.UnitOfMeasurement)
-//line views/datastream.qtpl:209
+//line views/datastream.qtpl:213
 	qw422016.N().S(`)"
                     }
                 ]
@@ -389,36 +393,36 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start,
     }
     </script>
 `)
-//line views/datastream.qtpl:225
+//line views/datastream.qtpl:229
 }
 
-//line views/datastream.qtpl:225
+//line views/datastream.qtpl:229
 func writerenderDataStream(qq422016 qtio422016.Writer, ds api.Datastream, start, end time.Time) {
-//line views/datastream.qtpl:225
+//line views/datastream.qtpl:229
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/datastream.qtpl:225
+//line views/datastream.qtpl:229
 	streamrenderDataStream(qw422016, ds, start, end)
-//line views/datastream.qtpl:225
+//line views/datastream.qtpl:229
 	qt422016.ReleaseWriter(qw422016)
-//line views/datastream.qtpl:225
+//line views/datastream.qtpl:229
 }
 
-//line views/datastream.qtpl:225
+//line views/datastream.qtpl:229
 func renderDataStream(ds api.Datastream, start, end time.Time) string {
-//line views/datastream.qtpl:225
+//line views/datastream.qtpl:229
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/datastream.qtpl:225
+//line views/datastream.qtpl:229
 	writerenderDataStream(qb422016, ds, start, end)
-//line views/datastream.qtpl:225
+//line views/datastream.qtpl:229
 	qs422016 := string(qb422016.B)
-//line views/datastream.qtpl:225
+//line views/datastream.qtpl:229
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/datastream.qtpl:225
+//line views/datastream.qtpl:229
 	return qs422016
-//line views/datastream.qtpl:225
+//line views/datastream.qtpl:229
 }
 
-//line views/datastream.qtpl:228
+//line views/datastream.qtpl:232
 type DatastreamPage struct {
 	BasePage
 	Device     api.Device
