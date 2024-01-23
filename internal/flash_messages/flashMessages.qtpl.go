@@ -218,7 +218,13 @@ func RenderFlashMessage(msg FlashMessage) string {
 
 //line flashMessages.qtpl:77
 type FlashMessagesContainer struct {
-	stagedFlashMessages  FlashMessages
+
+	// Staged flash messages are set by the package user and will immediately be shown upon rendering
+	stagedFlashMessages FlashMessages
+
+	// Context flash messages are present in the request context, which is based of a cookie value 'flash_messages'
 	contextFlashMessages FlashMessages
-	flashMessages        FlashMessages
+
+	// Accumulation of both staged and context flash messages
+	flashMessages FlashMessages
 }
