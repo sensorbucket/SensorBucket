@@ -7,317 +7,182 @@ package views
 //line transports/webui/views/login.qtpl:1
 import ory "github.com/ory/client-go"
 
-//line transports/webui/views/login.qtpl:2
+//line transports/webui/views/login.qtpl:3
 import (
 	qtio422016 "io"
 
 	qt422016 "github.com/valyala/quicktemplate"
 )
 
-//line transports/webui/views/login.qtpl:2
+//line transports/webui/views/login.qtpl:3
 var (
 	_ = qtio422016.Copy
 	_ = qt422016.AcquireByteBuffer
 )
 
-//line transports/webui/views/login.qtpl:2
-type PageBody interface {
-//line transports/webui/views/login.qtpl:2
-	Body() string
-//line transports/webui/views/login.qtpl:2
-	StreamBody(qw422016 *qt422016.Writer)
-//line transports/webui/views/login.qtpl:2
-	WriteBody(qq422016 qtio422016.Writer)
-//line transports/webui/views/login.qtpl:2
-}
-
-//line transports/webui/views/login.qtpl:5
-type Page interface {
-//line transports/webui/views/login.qtpl:5
-	Body() string
-//line transports/webui/views/login.qtpl:5
-	StreamBody(qw422016 *qt422016.Writer)
-//line transports/webui/views/login.qtpl:5
-	WriteBody(qq422016 qtio422016.Writer)
-//line transports/webui/views/login.qtpl:5
-	Template(p PageBody) string
-//line transports/webui/views/login.qtpl:5
-	StreamTemplate(qw422016 *qt422016.Writer, p PageBody)
-//line transports/webui/views/login.qtpl:5
-	WriteTemplate(qq422016 qtio422016.Writer, p PageBody)
-//line transports/webui/views/login.qtpl:5
-}
-
-//line transports/webui/views/login.qtpl:10
-func StreamLayout(qw422016 *qt422016.Writer, p Page) {
-//line transports/webui/views/login.qtpl:10
-	qw422016.N().S(`
-<!DOCTYPE html>
-<html lang="en" class="bg-[#f8fafc]">
-    <head>
-        <title></title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="`)
-//line transports/webui/views/login.qtpl:17
-	qw422016.E().S(U("/static/style.css"))
-//line transports/webui/views/login.qtpl:17
-	qw422016.N().S(`" />
-    </head>
-    <body>
-        `)
-//line transports/webui/views/login.qtpl:20
-	p.StreamTemplate(qw422016, p)
-//line transports/webui/views/login.qtpl:20
-	qw422016.N().S(`
-    </body>
-</html>
-`)
-//line transports/webui/views/login.qtpl:23
-}
-
-//line transports/webui/views/login.qtpl:23
-func WriteLayout(qq422016 qtio422016.Writer, p Page) {
-//line transports/webui/views/login.qtpl:23
-	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/login.qtpl:23
-	StreamLayout(qw422016, p)
-//line transports/webui/views/login.qtpl:23
-	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/login.qtpl:23
-}
-
-//line transports/webui/views/login.qtpl:23
-func Layout(p Page) string {
-//line transports/webui/views/login.qtpl:23
-	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/login.qtpl:23
-	WriteLayout(qb422016, p)
-//line transports/webui/views/login.qtpl:23
-	qs422016 := string(qb422016.B)
-//line transports/webui/views/login.qtpl:23
-	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/login.qtpl:23
-	return qs422016
-//line transports/webui/views/login.qtpl:23
-}
-
-//line transports/webui/views/login.qtpl:26
-type Base struct{}
-
-//line transports/webui/views/login.qtpl:29
-func (b Base) StreamTemplate(qw422016 *qt422016.Writer, p PageBody) {
-//line transports/webui/views/login.qtpl:29
-	qw422016.N().S(`
-    <main class="mt-12 mx-auto w-full md:max-w-[420px] bg-white rounded-md overflow-hidden">
-        <header class="bg-secondary-500 h-14 py-3">
-            <img src="`)
-//line transports/webui/views/login.qtpl:32
-	qw422016.E().S(U("/static/logo-white.png"))
-//line transports/webui/views/login.qtpl:32
-	qw422016.N().S(`" alt="SensorBucket Logo" class="h-full mx-auto" />
-        </header>
-        <section class="px-6 mb-4 space-y-2">
-        `)
-//line transports/webui/views/login.qtpl:35
-	p.StreamBody(qw422016)
-//line transports/webui/views/login.qtpl:35
-	qw422016.N().S(`
-        </section>
-    </main>
-`)
-//line transports/webui/views/login.qtpl:38
-}
-
-//line transports/webui/views/login.qtpl:38
-func (b Base) WriteTemplate(qq422016 qtio422016.Writer, p PageBody) {
-//line transports/webui/views/login.qtpl:38
-	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/login.qtpl:38
-	b.StreamTemplate(qw422016, p)
-//line transports/webui/views/login.qtpl:38
-	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/login.qtpl:38
-}
-
-//line transports/webui/views/login.qtpl:38
-func (b Base) Template(p PageBody) string {
-//line transports/webui/views/login.qtpl:38
-	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/login.qtpl:38
-	b.WriteTemplate(qb422016, p)
-//line transports/webui/views/login.qtpl:38
-	qs422016 := string(qb422016.B)
-//line transports/webui/views/login.qtpl:38
-	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/login.qtpl:38
-	return qs422016
-//line transports/webui/views/login.qtpl:38
-}
-
-//line transports/webui/views/login.qtpl:41
+//line transports/webui/views/login.qtpl:4
 type LoginPage struct {
 	Base
 	Flow *ory.LoginFlow
 }
 
-//line transports/webui/views/login.qtpl:46
+//line transports/webui/views/login.qtpl:9
 func (p LoginPage) StreamBody(qw422016 *qt422016.Writer) {
-//line transports/webui/views/login.qtpl:46
+//line transports/webui/views/login.qtpl:9
 	qw422016.N().S(`
     `)
-//line transports/webui/views/login.qtpl:47
+//line transports/webui/views/login.qtpl:10
 	if !isMFA(p.Flow) {
-//line transports/webui/views/login.qtpl:47
+//line transports/webui/views/login.qtpl:10
 		qw422016.N().S(`
         <h1 class="text-2xl mt-4 ">Login</h1>
         `)
-//line transports/webui/views/login.qtpl:49
+//line transports/webui/views/login.qtpl:12
 		streamformStart(qw422016, p.Flow.Ui)
-//line transports/webui/views/login.qtpl:49
+//line transports/webui/views/login.qtpl:12
 		qw422016.N().S(`
             `)
-//line transports/webui/views/login.qtpl:50
+//line transports/webui/views/login.qtpl:13
 		streamrenderGroup(qw422016, p.Flow.Ui, "default")
-//line transports/webui/views/login.qtpl:50
+//line transports/webui/views/login.qtpl:13
 		qw422016.N().S(`
             `)
-//line transports/webui/views/login.qtpl:51
+//line transports/webui/views/login.qtpl:14
 		streamrenderGroup(qw422016, p.Flow.Ui, "password")
-//line transports/webui/views/login.qtpl:51
+//line transports/webui/views/login.qtpl:14
 		qw422016.N().S(`
             `)
-//line transports/webui/views/login.qtpl:52
+//line transports/webui/views/login.qtpl:15
 		streamrenderSubmit(qw422016, p.Flow.Ui, "password")
-//line transports/webui/views/login.qtpl:52
+//line transports/webui/views/login.qtpl:15
 		qw422016.N().S(`
         `)
-//line transports/webui/views/login.qtpl:53
+//line transports/webui/views/login.qtpl:16
 		streamformEnd(qw422016)
-//line transports/webui/views/login.qtpl:53
+//line transports/webui/views/login.qtpl:16
 		qw422016.N().S(`
     `)
-//line transports/webui/views/login.qtpl:54
+//line transports/webui/views/login.qtpl:17
 	} else {
-//line transports/webui/views/login.qtpl:54
+//line transports/webui/views/login.qtpl:17
 		qw422016.N().S(`
         <h1 class="text-2xl mt-4 ">Verify login with</h1>
         `)
-//line transports/webui/views/login.qtpl:56
+//line transports/webui/views/login.qtpl:19
 		if hasGroup(p.Flow.Ui, "totp") {
-//line transports/webui/views/login.qtpl:56
+//line transports/webui/views/login.qtpl:19
 			qw422016.N().S(`
         <section>
             `)
-//line transports/webui/views/login.qtpl:58
+//line transports/webui/views/login.qtpl:21
 			streamformStart(qw422016, p.Flow.Ui)
-//line transports/webui/views/login.qtpl:58
+//line transports/webui/views/login.qtpl:21
 			qw422016.N().S(`
                 `)
-//line transports/webui/views/login.qtpl:59
+//line transports/webui/views/login.qtpl:22
 			streamrenderGroup(qw422016, p.Flow.Ui, "totp")
-//line transports/webui/views/login.qtpl:59
+//line transports/webui/views/login.qtpl:22
 			qw422016.N().S(`
                 `)
-//line transports/webui/views/login.qtpl:60
+//line transports/webui/views/login.qtpl:23
 			streamrenderSubmit(qw422016, p.Flow.Ui, "totp")
-//line transports/webui/views/login.qtpl:60
+//line transports/webui/views/login.qtpl:23
 			qw422016.N().S(`
             `)
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:24
 			streamformEnd(qw422016)
-//line transports/webui/views/login.qtpl:61
+//line transports/webui/views/login.qtpl:24
 			qw422016.N().S(`
         </section>
         `)
-//line transports/webui/views/login.qtpl:63
+//line transports/webui/views/login.qtpl:26
 		}
-//line transports/webui/views/login.qtpl:63
+//line transports/webui/views/login.qtpl:26
 		qw422016.N().S(`
         `)
-//line transports/webui/views/login.qtpl:64
+//line transports/webui/views/login.qtpl:27
 		if hasGroup(p.Flow.Ui, "webauthn") {
-//line transports/webui/views/login.qtpl:64
+//line transports/webui/views/login.qtpl:27
 			qw422016.N().S(`
         <hr>
         <section>
             `)
-//line transports/webui/views/login.qtpl:67
+//line transports/webui/views/login.qtpl:30
 			streamformStart(qw422016, p.Flow.Ui)
-//line transports/webui/views/login.qtpl:67
+//line transports/webui/views/login.qtpl:30
 			qw422016.N().S(`
                 `)
-//line transports/webui/views/login.qtpl:68
+//line transports/webui/views/login.qtpl:31
 			streamrenderGroup(qw422016, p.Flow.Ui, "webauthn")
-//line transports/webui/views/login.qtpl:68
+//line transports/webui/views/login.qtpl:31
 			qw422016.N().S(`
                 `)
-//line transports/webui/views/login.qtpl:69
+//line transports/webui/views/login.qtpl:32
 			streamrenderSubmit(qw422016, p.Flow.Ui, "webauthn")
-//line transports/webui/views/login.qtpl:69
+//line transports/webui/views/login.qtpl:32
 			qw422016.N().S(`
             `)
-//line transports/webui/views/login.qtpl:70
+//line transports/webui/views/login.qtpl:33
 			streamformEnd(qw422016)
-//line transports/webui/views/login.qtpl:70
+//line transports/webui/views/login.qtpl:33
 			qw422016.N().S(`
         </section>
         `)
-//line transports/webui/views/login.qtpl:72
+//line transports/webui/views/login.qtpl:35
 		}
-//line transports/webui/views/login.qtpl:72
+//line transports/webui/views/login.qtpl:35
 		qw422016.N().S(`
     `)
-//line transports/webui/views/login.qtpl:73
+//line transports/webui/views/login.qtpl:36
 	}
-//line transports/webui/views/login.qtpl:73
+//line transports/webui/views/login.qtpl:36
 	qw422016.N().S(`
     <span class="block text-center">`)
-//line transports/webui/views/login.qtpl:74
+//line transports/webui/views/login.qtpl:37
 	streamrenderMessage(qw422016, p.Flow.Ui)
-//line transports/webui/views/login.qtpl:74
+//line transports/webui/views/login.qtpl:37
 	qw422016.N().S(`</span>
     `)
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:38
 	if isMFA(p.Flow) {
-//line transports/webui/views/login.qtpl:75
+//line transports/webui/views/login.qtpl:38
 		qw422016.N().S(`
         <a href="`)
-//line transports/webui/views/login.qtpl:76
+//line transports/webui/views/login.qtpl:39
 		qw422016.E().S(U("/auth/logout"))
-//line transports/webui/views/login.qtpl:76
+//line transports/webui/views/login.qtpl:39
 		qw422016.N().S(`" class="block mt-2 text-center border-gray-200 py-1 text-gray-500 text-xs hover:underline">Something not working? Click to logout</a>
     `)
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:40
 	}
-//line transports/webui/views/login.qtpl:77
+//line transports/webui/views/login.qtpl:40
 	qw422016.N().S(`
 `)
-//line transports/webui/views/login.qtpl:78
+//line transports/webui/views/login.qtpl:41
 }
 
-//line transports/webui/views/login.qtpl:78
+//line transports/webui/views/login.qtpl:41
 func (p LoginPage) WriteBody(qq422016 qtio422016.Writer) {
-//line transports/webui/views/login.qtpl:78
+//line transports/webui/views/login.qtpl:41
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/login.qtpl:78
+//line transports/webui/views/login.qtpl:41
 	p.StreamBody(qw422016)
-//line transports/webui/views/login.qtpl:78
+//line transports/webui/views/login.qtpl:41
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/login.qtpl:78
+//line transports/webui/views/login.qtpl:41
 }
 
-//line transports/webui/views/login.qtpl:78
+//line transports/webui/views/login.qtpl:41
 func (p LoginPage) Body() string {
-//line transports/webui/views/login.qtpl:78
+//line transports/webui/views/login.qtpl:41
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/login.qtpl:78
+//line transports/webui/views/login.qtpl:41
 	p.WriteBody(qb422016)
-//line transports/webui/views/login.qtpl:78
+//line transports/webui/views/login.qtpl:41
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/login.qtpl:78
+//line transports/webui/views/login.qtpl:41
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/login.qtpl:78
+//line transports/webui/views/login.qtpl:41
 	return qs422016
-//line transports/webui/views/login.qtpl:78
+//line transports/webui/views/login.qtpl:41
 }

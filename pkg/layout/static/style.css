@@ -532,6 +532,8 @@ video {
   --tw-backdrop-opacity:  ;
   --tw-backdrop-saturate:  ;
   --tw-backdrop-sepia:  ;
+<<<<<<< HEAD
+=======
 }
 
 .pointer-events-none {
@@ -1158,4 +1160,5 @@ video {
   .xl\:w-2\/3 {
     width: 66.666667%;
   }
+>>>>>>> main
 }

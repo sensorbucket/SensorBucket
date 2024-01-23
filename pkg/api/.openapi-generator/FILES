@@ -1,8 +1,10 @@
 .gitignore
 README.md
+api_api_keys.go
 api_devices.go
 api_measurements.go
 api_pipelines.go
+api_tenants.go
 api_tracing.go
 api_uplink.go
 api_workers.go
@@ -10,7 +12,11 @@ client.go
 configuration.go
 model_add_sensor_to_sensor_group_201_response.go
 model_add_sensor_to_sensor_group_request.go
+model_api_error.go
+model_api_key.go
+model_api_key_created.go
 model_archived_ingress.go
+model_create_api_key_request.go
 model_create_device_201_response.go
 model_create_device_request.go
 model_create_device_sensor_201_response.go
@@ -35,6 +41,8 @@ model_get_sensor_group_200_response.go
 model_get_worker_200_response.go
 model_get_worker_user_code_200_response.go
 model_ingress_dto.go
+model_list_api_keys_200_response.go
+model_list_api_keys_200_response_all_of.go
 model_list_datastreams_200_response.go
 model_list_datastreams_200_response_all_of.go
 model_list_device_sensors_200_response.go
@@ -47,6 +55,8 @@ model_list_pipelines_200_response.go
 model_list_pipelines_200_response_all_of.go
 model_list_sensor_groups_200_response.go
 model_list_sensor_groups_200_response_all_of.go
+model_list_tenants_200_response.go
+model_list_tenants_200_response_all_of.go
 model_list_traces_200_response.go
 model_list_traces_200_response_all_of.go
 model_list_workers_200_response.go
@@ -59,6 +69,7 @@ model_query_measurements_200_response.go
 model_query_measurements_200_response_all_of.go
 model_sensor.go
 model_sensor_group.go
+model_tenant.go
 model_trace.go
 model_trace_step.go
 model_update_device_200_response.go

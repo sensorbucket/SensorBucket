@@ -1,0 +1,88 @@
+
+{% func (fm *FlashMessagesContainer) Render() %}
+<div id="flash-messages" >
+    {% for _, flashMessage := range fm.flashMessages %}
+    {%= RenderFlashMessage(flashMessage) %}
+    {% endfor %}
+</div>
+{% endfunc %}
+
+{% func RenderFlashMessage(msg FlashMessage) %}
+{% code
+    color := ""
+    icon := ""
+
+    switch msg.MessageType {
+        case Success:
+            color = "green"
+            icon = "mdi:success-circle-outline"
+        case Warning:
+            color = "orange"
+            icon = "carbon:warning"
+        case Error:
+            color = "red"
+            icon = "icon-park-outline:error"
+    }
+%}
+<div class="p-3">
+    <!-- Required to include below tailwind classes in styles -->
+    <div class="hidden">
+        <div class="text-red-600  bg-red-400 border-red-500"></div>
+        <div class="border-red-400 bg-red-500"></div>
+        <div class="bg-red-100"></div>
+
+        <div class="text-orange-600  bg-orange-400 border-orange-500"></div>
+        <div class="border-orange-400 bg-orange-500"></div>
+        <div class="bg-orange-100"></div>
+
+        <div class="text-green-600  bg-green-400 border-green-500"></div>
+        <div class="border-green-400 bg-green-500"></div>
+        <div class="bg-green-100"></div>
+    </div>
+    <div class="bg-{%s color %}-100 border-l-4 flash-message border-{%s color %}-400 text-{%s color %}-600 p-4" role="alert">
+        <div class="flex w-full">
+            <div class="py-2">
+                <iconify-icon icon="{%s icon %}" width="24"
+                class="px-4 float-right text-{%s color %}-600"></iconify-icon>
+            </div>
+            <div class="w-full">
+                <p class="text-sm font-bold">{%s msg.Title %}</p>
+                <br />
+                <div class="flex justify-start">
+                    <p id="dialogue-value" class="text-sm w-full truncate">
+                        {%s msg.Description %}
+                    </p>
+                    {% if msg.CopyButton %}
+                    <button onclick="copyValueToClipboard()"
+                        class="text-sm ml-1 bg-{%s color %}-400 hover:bg-{%s color %}-500 text-white border border-{%s color %}-500 rounded px-2 py-1">
+                        Copy
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            <iconify-icon _="on click hide closest .flash-message" class="cursor-pointer" icon="material-symbols-light:close" width="18"></iconify-icon>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function copyValueToClipboard() {
+            const text = document.getElementById("dialogue-value").innerText;
+            navigator.clipboard.writeText(text);
+        }
+    </script>
+
+</div>
+{% endfunc %}
+
+{% code
+type FlashMessagesContainer struct {
+
+    // Staged flash messages are set by the package user and will immediately be shown upon rendering
+    stagedFlashMessages FlashMessages
+
+    // Context flash messages are present in the request context, which is based of a cookie value 'flash_messages'
+    contextFlashMessages FlashMessages
+
+    // Accumulation of both staged and context flash messages
+    flashMessages FlashMessages
+}
+%}

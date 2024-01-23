@@ -63,6 +63,10 @@ func (p permission) Valid() error {
 	return fmt.Errorf("%s is not a valid permission", p)
 }
 
+func AllAllowedPermissions() []permission {
+	return allowedPermissions
+}
+
 type role []permission
 
 func (r role) HasPermissions(permission permission, permissions ...permission) bool {

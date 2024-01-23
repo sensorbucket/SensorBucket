@@ -7,110 +7,56 @@ type SettingsPage struct {
     Flow *ory.SettingsFlow
 } %}
 
-{% func (p SettingsPage) Template(_ignored PageBody) %}
-    <main class="mt-12 mx-auto w-full md:max-w-screen-lg bg-white rounded-md overflow-hidden">
-        <header class="bg-secondary-500 h-14 py-3">
-            <img src="{%s U("/static/logo-white.png") %}" alt="SensorBucket Logo" class="h-full mx-auto" />
-        </header>
-        <div class="grid grid-cols-[1fr_4fr]">
-            <section class="flex flex-col border-r">
-                <h1 class="p-6 text-lg text-center">Settings</h1>
-                <hr class="px-6 py-1">
-                <ul class="flex flex-col">
-                    <li>
-                        <a
-                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            href="#profile">Change Profile</a>
-                    </li>
-                    <li>
-                        <a
-                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            href="#password">Password</a>
-                    </li>
-                    {% if hasGroup(p.Flow.Ui, "lookup_secret") %}
-                    <li>
-                        <a
-                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            href="#backupcodes">Backup Codes</a>
-                    </li>
-                    {% endif %}
-                    {% if hasGroup(p.Flow.Ui, "totp") %}
-                    <li>
-                        <a
-                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            href="#2fa">2FA Authenticator</a>
-                    </li>
-                    {% endif %}
-                    {% if hasGroup(p.Flow.Ui, "webauthn") %}
-                    <li>
-                        <a
-                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            href="#webauthn">WebAuthentication</a>
-                    </li>
-                    {% endif %}
-                    <li class="py-3"></li>
-                    <li>
-                        <a
-                            class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
-                            href="{%s U("/auth/logout") %}">Logout</a>
-                    </li>
-                </ul>
-            </section>
-            <section class="px-6 mb-4 space-y-2">
-            {%= p.Body() %}
-            </section>
-        </div>
-    </main>
-{% endfunc %}
-
 {% func (p SettingsPage) Body() %}
-    <h1 class="text-center text-xl m-6">Account Settings</h1>
-    <span class="block text-center">{%= renderMessage(p.Flow.Ui) %}</span>
-    <div class="space-y-8">
-        <section>
-            <h2 class="text-lg" id="profile">Change profile</h2>
-            {%= formStart(p.Flow.Ui) %}
-                {%= renderGroup(p.Flow.Ui, "profile") %}
-                {%= renderSubmit(p.Flow.Ui, "profile") %}
-            {%= formEnd() %}
-        </section>
-        <hr>
-        <section>
-            <h2 class="text-lg" id="password">Change password</h2>
-            {%= formStart(p.Flow.Ui) %}
-                {%= renderGroup(p.Flow.Ui, "password") %}
-                {%= renderSubmit(p.Flow.Ui, "password") %}
-            {%= formEnd() %}
-        </section>
-        {% if hasGroup(p.Flow.Ui, "lookup_secret") %}
-        <hr>
-        <section>
-            <h2 class="text-lg" id="backupcodes">2FA Backup Codes</h2>
-            {%= formStart(p.Flow.Ui) %}
-                {%= renderGroup(p.Flow.Ui, "lookup_secret") %}
-                {%= renderSubmit(p.Flow.Ui, "lookup_secret") %}
-            {%= formEnd() %}
-        </section>
-        {% endif %}
-        {% if hasGroup(p.Flow.Ui, "totp") %}
-        <hr>
-        <section>
-            <h2 class="text-lg" id="2fa">2FA Authenticator App</h2>
-            {%= formStart(p.Flow.Ui) %}
-                {%= renderGroup(p.Flow.Ui, "totp") %}
-                {%= renderSubmit(p.Flow.Ui, "totp") %}
-            {%= formEnd() %}
-        </section>
-        {% endif %}
-        {% if hasGroup(p.Flow.Ui, "webauthn") %}
-        <hr>
-        <section>
-            <h2 class="text-lg" id="webauthn">Web Authentication</h2>
-            {%= formStart(p.Flow.Ui) %}
-                {%= renderGroup(p.Flow.Ui, "webauthn") %}
-                {%= renderSubmit(p.Flow.Ui, "webauthn") %}
-            {%= formEnd() %}
-        </section>
-        {% endif %}
-    </div>
+        <section id="apiKeyContent" class="hidden px-6 mb-4 space-y-2"></section>
+        <section id="mainContent" class="px-6 mb-4 space-y-2">
+            <!-- <h1 class="text-center text-xl m-6">Account Settings</h1> -->
+            <span class="block text-center">{%= renderMessage(p.Flow.Ui) %}</span>
+            <div class="space-y-8">
+                <section>
+                    <h2 class="text-lg" id="profile">Change profile</h2>
+                    {%= formStart(p.Flow.Ui) %}
+                        {%= renderGroup(p.Flow.Ui, "profile") %}
+                        {%= renderSubmit(p.Flow.Ui, "profile") %}
+                    {%= formEnd() %}
+                </section>
+                <hr>
+                <section>
+                    <h2 class="text-lg" id="password">Change password</h2>
+                    {%= formStart(p.Flow.Ui) %}
+                        {%= renderGroup(p.Flow.Ui, "password") %}
+                        {%= renderSubmit(p.Flow.Ui, "password") %}
+                    {%= formEnd() %}
+                </section>
+                {% if hasGroup(p.Flow.Ui, "lookup_secret") %}
+                <hr>
+                <section>
+                    <h2 class="text-lg" id="backupcodes">2FA Backup Codes</h2>
+                    {%= formStart(p.Flow.Ui) %}
+                        {%= renderGroup(p.Flow.Ui, "lookup_secret") %}
+                        {%= renderSubmit(p.Flow.Ui, "lookup_secret") %}
+                    {%= formEnd() %}
+                </section>
+                {% endif %}
+                {% if hasGroup(p.Flow.Ui, "totp") %}
+                <hr>
+                <section>
+                    <h2 class="text-lg" id="2fa">2FA Authenticator App</h2>
+                    {%= formStart(p.Flow.Ui) %}
+                        {%= renderGroup(p.Flow.Ui, "totp") %}
+                        {%= renderSubmit(p.Flow.Ui, "totp") %}
+                    {%= formEnd() %}
+                </section>
+                {% endif %}
+                {% if hasGroup(p.Flow.Ui, "webauthn") %}
+                <hr>
+                <section>
+                    <h2 class="text-lg" id="webauthn">Web Authentication</h2>
+                    {%= formStart(p.Flow.Ui) %}
+                        {%= renderGroup(p.Flow.Ui, "webauthn") %}
+                        {%= renderSubmit(p.Flow.Ui, "webauthn") %}
+                    {%= formEnd() %}
+                </section>
+                {% endif %}
+            </section>
 {% endfunc %}

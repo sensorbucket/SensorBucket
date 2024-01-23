@@ -91,6 +91,9 @@ var _ apiKeyStore = &apiKeyStoreMock{}
 //			DeleteApiKeyFunc: func(id int64) error {
 //				panic("mock out the DeleteApiKey method")
 //			},
+//			GetHashedAPIKeyByNameAndTenantIDFunc: func(name string, tenantID int64) (HashedApiKey, error) {
+//				panic("mock out the GetHashedAPIKeyByNameAndTenantID method")
+//			},
 //			GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (HashedApiKey, error) {
 //				panic("mock out the GetHashedApiKeyById method")
 //			},
@@ -109,6 +112,9 @@ type apiKeyStoreMock struct {
 
 	// DeleteApiKeyFunc mocks the DeleteApiKey method.
 	DeleteApiKeyFunc func(id int64) error
+
+	// GetHashedAPIKeyByNameAndTenantIDFunc mocks the GetHashedAPIKeyByNameAndTenantID method.
+	GetHashedAPIKeyByNameAndTenantIDFunc func(name string, tenantID int64) (HashedApiKey, error)
 
 	// GetHashedApiKeyByIdFunc mocks the GetHashedApiKeyById method.
 	GetHashedApiKeyByIdFunc func(id int64, stateFilter []tenants.State) (HashedApiKey, error)
@@ -130,6 +136,13 @@ type apiKeyStoreMock struct {
 			// ID is the id argument value.
 			ID int64
 		}
+		// GetHashedAPIKeyByNameAndTenantID holds details about calls to the GetHashedAPIKeyByNameAndTenantID method.
+		GetHashedAPIKeyByNameAndTenantID []struct {
+			// Name is the name argument value.
+			Name string
+			// TenantID is the tenantID argument value.
+			TenantID int64
+		}
 		// GetHashedApiKeyById holds details about calls to the GetHashedApiKeyById method.
 		GetHashedApiKeyById []struct {
 			// ID is the id argument value.
@@ -145,10 +158,11 @@ type apiKeyStoreMock struct {
 			Request pagination.Request
 		}
 	}
-	lockAddApiKey           sync.RWMutex
-	lockDeleteApiKey        sync.RWMutex
-	lockGetHashedApiKeyById sync.RWMutex
-	lockList                sync.RWMutex
+	lockAddApiKey                        sync.RWMutex
+	lockDeleteApiKey                     sync.RWMutex
+	lockGetHashedAPIKeyByNameAndTenantID sync.RWMutex
+	lockGetHashedApiKeyById              sync.RWMutex
+	lockList                             sync.RWMutex
 }
 
 // AddApiKey calls AddApiKeyFunc.
@@ -216,6 +230,42 @@ func (mock *apiKeyStoreMock) DeleteApiKeyCalls() []struct {
 	mock.lockDeleteApiKey.RLock()
 	calls = mock.calls.DeleteApiKey
 	mock.lockDeleteApiKey.RUnlock()
+	return calls
+}
+
+// GetHashedAPIKeyByNameAndTenantID calls GetHashedAPIKeyByNameAndTenantIDFunc.
+func (mock *apiKeyStoreMock) GetHashedAPIKeyByNameAndTenantID(name string, tenantID int64) (HashedApiKey, error) {
+	if mock.GetHashedAPIKeyByNameAndTenantIDFunc == nil {
+		panic("apiKeyStoreMock.GetHashedAPIKeyByNameAndTenantIDFunc: method is nil but apiKeyStore.GetHashedAPIKeyByNameAndTenantID was just called")
+	}
+	callInfo := struct {
+		Name     string
+		TenantID int64
+	}{
+		Name:     name,
+		TenantID: tenantID,
+	}
+	mock.lockGetHashedAPIKeyByNameAndTenantID.Lock()
+	mock.calls.GetHashedAPIKeyByNameAndTenantID = append(mock.calls.GetHashedAPIKeyByNameAndTenantID, callInfo)
+	mock.lockGetHashedAPIKeyByNameAndTenantID.Unlock()
+	return mock.GetHashedAPIKeyByNameAndTenantIDFunc(name, tenantID)
+}
+
+// GetHashedAPIKeyByNameAndTenantIDCalls gets all the calls that were made to GetHashedAPIKeyByNameAndTenantID.
+// Check the length with:
+//
+//	len(mockedapiKeyStore.GetHashedAPIKeyByNameAndTenantIDCalls())
+func (mock *apiKeyStoreMock) GetHashedAPIKeyByNameAndTenantIDCalls() []struct {
+	Name     string
+	TenantID int64
+} {
+	var calls []struct {
+		Name     string
+		TenantID int64
+	}
+	mock.lockGetHashedAPIKeyByNameAndTenantID.RLock()
+	calls = mock.calls.GetHashedAPIKeyByNameAndTenantID
+	mock.lockGetHashedAPIKeyByNameAndTenantID.RUnlock()
 	return calls
 }
 

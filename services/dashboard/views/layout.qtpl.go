@@ -233,7 +233,7 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
 	qw422016.E().S(U("static/leaflet.htmx.js"))
 //line views/layout.qtpl:55
 	qw422016.N().S(`"></script>
-    <script src="http://SortableJS.github.io/Sortable/Sortable.js"></script>
+    <script src="https://SortableJS.github.io/Sortable/Sortable.js"></script>
     <script type="text/javascript">
         window.addEventListener("DOMContentLoaded", function(){
             document.body.addEventListener("showSnackbar", function(evt) {
