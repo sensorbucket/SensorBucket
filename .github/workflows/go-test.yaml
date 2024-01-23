@@ -25,3 +25,15 @@ jobs:
       - name: Run Go Tests
         run: go test ./...
 
+  lint:
+    name: Run Go Linters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3.7.0
+            
+
