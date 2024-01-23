@@ -49,7 +49,6 @@
                   end
                 end
                 for el in .permission-checkbox.checked
-                    log el
                     if el === true
                         remove @disabled then exit
                     end
