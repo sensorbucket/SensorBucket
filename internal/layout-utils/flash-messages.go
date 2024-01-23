@@ -73,6 +73,7 @@ func ExtractFlashMessage(next http.Handler) http.Handler {
 
 			// unset the cookie, flash messages should only be shown once
 			cookie.MaxAge = -1
+			cookie.Path = "/"
 			http.SetCookie(w, cookie)
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -141,7 +142,6 @@ func writeFlashMessagesToCookie(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("[Warning] couldnt set flash_messages cookie %s\n", err)
 		} else {
-			fmt.Println("setting cookie")
 			http.SetCookie(w, &res)
 		}
 	} else {

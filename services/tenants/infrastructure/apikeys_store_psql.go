@@ -120,6 +120,7 @@ func (as *apiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State
 		return apikeys.HashedApiKey{}, err
 	}
 	k := apikeys.HashedApiKey{}
+	defer rows.Close()
 	if rows.Next() {
 		err = rows.Scan(
 			&k.ID,
@@ -149,6 +150,7 @@ func (as *apiKeyStore) GetHashedAPIKeyByNameAndTenantID(name string, tenantID in
 		fmt.Println("err occr", err)
 		return apikeys.HashedApiKey{}, err
 	}
+	defer rows.Close()
 	fmt.Println("done", time.Since(startT))
 	k := apikeys.HashedApiKey{}
 	if rows.Next() {

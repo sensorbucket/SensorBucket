@@ -15,6 +15,10 @@ delete:
   responses:
     '200':
       message: API key has been revoked
+    '400':
+      $ref: 'responses.yaml#/400'
+    '500':
+      $ref: './responses.yaml#/500'
     '401':
       $ref: './responses.yaml#/401'
     '403':

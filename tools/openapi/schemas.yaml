@@ -705,3 +705,13 @@ archivedIngress:
       format: date-time
     ingress_dto:
       $ref: "#/ingressDTO"
+
+apiError:
+    type: object
+    properties:
+      message:
+        type: string
+      code:
+        type: string
+      http_status:
+        type: integer

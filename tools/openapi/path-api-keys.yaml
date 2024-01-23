@@ -16,7 +16,10 @@ post:
         application/json:
           schema:
             $ref: 'schemas.yaml#/apiKeyCreated'
-              
+    '400':
+      $ref: 'responses.yaml#/400'
+    '500':
+      $ref: './responses.yaml#/500'
     '401':
       $ref: './responses.yaml#/401'
     '403':

@@ -41,7 +41,6 @@ func (s *Service) RevokeApiKey(apiKeyId int64) error {
 // Returns the api key as: 'apiKeyId:apiKey' encoded to a base64 string.
 // Fails if the tenant is not active
 func (s *Service) GenerateNewApiKey(name string, tenantId int64, expirationDate *time.Time) (string, error) {
-	fmt.Println("step 1")
 	tenant, err := s.tenantStore.GetTenantById(tenantId)
 	if err != nil {
 		return "", err
@@ -49,7 +48,6 @@ func (s *Service) GenerateNewApiKey(name string, tenantId int64, expirationDate 
 	if tenant.State != tenants.Active {
 		return "", ErrTenantIsNotValid
 	}
-	fmt.Println("step 2")
 	existing, err := s.apiKeyStore.GetHashedAPIKeyByNameAndTenantID(name, tenantId)
 	if err != nil && err != ErrKeyNotFound {
 		return "", err
@@ -57,8 +55,6 @@ func (s *Service) GenerateNewApiKey(name string, tenantId int64, expirationDate 
 	if existing.ID > 0 {
 		return "", ErrKeyNameTenantIDCombinationNotUnique
 	}
-
-	fmt.Println("step 3")
 	newApiKey, err := newApiKey(name, expirationDate)
 	if err != nil {
 		return "", err
@@ -67,15 +63,12 @@ func (s *Service) GenerateNewApiKey(name string, tenantId int64, expirationDate 
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("step 4")
 	err = s.apiKeyStore.AddApiKey(tenant.ID, hashed)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("step 5")
 	apiKey := base64.StdEncoding.WithPadding(base64.NoPadding).EncodeToString(
 		[]byte(fmt.Sprintf("%d:%s", newApiKey.ID, newApiKey.Secret)))
-	fmt.Println("step 6")
 	return apiKey, nil
 }
 

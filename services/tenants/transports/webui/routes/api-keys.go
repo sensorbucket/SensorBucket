@@ -13,7 +13,6 @@ import (
 	"github.com/samber/lo"
 
 	layout_utils "sensorbucket.nl/sensorbucket/internal/layout-utils"
-	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/layout"
@@ -60,14 +59,20 @@ func (h *APIKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 			tenantId := r.URL.Query().Get("tenant_id")
 			id, err := strconv.ParseInt(tenantId, 10, 64)
 			if err != nil {
-				layout.SnackbarBadRequest(w, "tenant_id must be a valid number")
+				layout_utils.WriteErrorFlashMessage(w, r, "tenant_id must be a valid number", views.RenderFlashMessage)
 				return
 			}
 			req = req.TenantId(id)
 		}
 		res, _, err := req.Execute()
 		if err != nil {
-			web.HTTPError(w, err)
+			if apiErr, ok := layout_utils.IsAPIError(err); ok && apiErr.Message != nil {
+				log.Printf("list api key for table result api unexpected status code: %s\n", err)
+				layout_utils.WriteErrorFlashMessage(w, r, *apiErr.Message, views.RenderFlashMessage)
+			} else {
+				log.Printf("list api key for table result api error: %s\n", err)
+				layout_utils.WriteErrorFlashMessage(w, r, "An unexpected error occurred in the API", views.RenderFlashMessage)
+			}
 			return
 		}
 
@@ -109,26 +114,20 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 		req = req.State(1) // State Active
 		list, resp, err := req.Execute()
 		if err != nil {
-			log.Printf("api key list page: %v\n", err)
-			layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred")
-			w.WriteHeader(http.StatusInternalServerError)
+			if apiErr, ok := layout_utils.IsAPIError(err); ok && apiErr.Message != nil {
+				log.Printf("list api key result api unexpected status code: %s\n", err)
+				layout_utils.AddErrorFlashMessage(w, r, *apiErr.Message)
+			} else {
+				log.Printf("list api key result api error: %s\n", err)
+				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+			}
+			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
-			if resp.StatusCode == http.StatusInternalServerError {
-				log.Printf("api key api returned internal server error")
-				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
-				w.WriteHeader(http.StatusInternalServerError)
-			} else {
-				apiErr := web.APIError{}
-				err = web.DecodeJSONResponse(resp, &apiErr)
-				if err != nil {
-					log.Printf("[Warning] couldnt decode api err: %e\n", err)
-					apiErr.Message = "An unexpected error occurred"
-				}
-				layout_utils.AddErrorFlashMessage(w, r, apiErr.Message)
-				w.WriteHeader(resp.StatusCode)
-			}
+			log.Printf("api key api returned unexpected status code\n")
+			layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
@@ -154,21 +153,20 @@ func (h *APIKeysPageHandler) revokeAPIKey() http.HandlerFunc {
 		req := h.client.ApiKeysApi.RevokeApiKey(context.Background(), id)
 		resp, err := req.Execute()
 		if err != nil {
-			log.Printf("revoke api key err: %s\n", err)
-			layout_utils.WriteErrorFlashMessage(w, r, "An unexpected error occurred", views.RenderFlashMessage)
-			w.WriteHeader(http.StatusInternalServerError)
+			if apiErr, ok := layout_utils.IsAPIError(err); ok && apiErr.Message != nil {
+				log.Printf("revoke api key result api unexpected status code: %s\n", err)
+				layout_utils.AddErrorFlashMessage(w, r, *apiErr.Message)
+			} else {
+				log.Printf("revoke api key result api error: %s\n", err)
+				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+			}
+			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
-			if resp.StatusCode == http.StatusInternalServerError {
-				log.Printf("revoke api key result server error\n")
-				layout_utils.WriteErrorFlashMessage(w, r, "An unexpected error occurred in the API", views.RenderFlashMessage)
-				w.WriteHeader(http.StatusInternalServerError)
-			} else {
-				log.Printf("revoke api key result unexpected status code: %d\n", resp.StatusCode)
-				layout_utils.WriteErrorFlashMessage(w, r, "An unexpected error occurred", views.RenderFlashMessage)
-				w.WriteHeader(resp.StatusCode)
-			}
+			log.Printf("revoke api key result unexpected status code: %d\n", resp.StatusCode)
+			layout_utils.WriteErrorFlashMessage(w, r, "An unexpected error occurred", views.RenderFlashMessage)
+			w.WriteHeader(resp.StatusCode)
 			return
 		}
 
@@ -212,26 +210,22 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 			}
 			dto.SetExpirationDate(parsedTime)
 		}
-
-		// TODO: err is also when not 200. is this what we want? resp should contain information like bad request
 		apiKey, resp, err := h.client.ApiKeysApi.CreateApiKey(r.Context()).CreateApiKeyRequest(dto).Execute()
 		if err != nil {
-			log.Printf("revoke api key result api error: %s\n", err)
-			layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+			if apiErr, ok := layout_utils.IsAPIError(err); ok && apiErr.Message != nil {
+				log.Printf("create api key result api unexpected status code: %s\n", err)
+				layout_utils.AddErrorFlashMessage(w, r, *apiErr.Message)
+			} else {
+				log.Printf("create api key result api error: %s\n", err)
+				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+			}
 			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
-
 		if resp.StatusCode != http.StatusCreated {
-			if resp.StatusCode == http.StatusInternalServerError {
-				log.Printf("revoke api key result server error\n")
-				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
-				http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
-			} else {
-				log.Printf("revoke api key result unexpected status code: %d\n", resp.StatusCode)
-				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred")
-				http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
-			}
+			log.Printf("revoke api key result unexpected status code: %d\n", resp.StatusCode)
+			layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred")
+			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
 
@@ -253,23 +247,26 @@ func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 		req = req.State(1) // State Active
 		list, resp, err := req.Execute()
 		if err != nil {
-			log.Printf("api key list page: %v\n", err)
-			layout.SnackbarSomethingWentWrong(w)
-			web.HTTPError(w, fmt.Errorf("could not create api key view, error listing tenants: %w", err))
+			if apiErr, ok := layout_utils.IsAPIError(err); ok && apiErr.Message != nil {
+				log.Printf("list api key result for create view api unexpected status code: %s\n", err)
+				layout_utils.AddErrorFlashMessage(w, r, *apiErr.Message)
+			} else {
+				log.Printf("list api key result for create view api error: %s\n", err)
+				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+			}
+			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
 			log.Printf("api key list failed : %d\n", resp.StatusCode)
-			layout.SnackbarSomethingWentWrong(w)
-			web.HTTPError(w, fmt.Errorf("could not create api key view, error listing tenants: %s", resp.Status))
+			layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
-
 		perms, err := toViewPermissions()
 		if err != nil {
-			log.Printf("convert to view permissions, err: %s\n", err)
-			layout.SnackbarSomethingWentWrong(w)
-			web.HTTPError(w, fmt.Errorf("error creating api key view, converting to view permissions: %w", err))
+			log.Printf("error creating api key view, converting to view permissions: %s\n", err)
+			layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
 			return
 		}
 		page := &views.APIKeysCreatePage{

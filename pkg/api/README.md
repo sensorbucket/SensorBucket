@@ -129,6 +129,7 @@ Class | Method | HTTP request | Description
 
  - [AddSensorToSensorGroup201Response](docs/AddSensorToSensorGroup201Response.md)
  - [AddSensorToSensorGroupRequest](docs/AddSensorToSensorGroupRequest.md)
+ - [ApiError](docs/ApiError.md)
  - [ApiKey](docs/ApiKey.md)
  - [ApiKeyCreated](docs/ApiKeyCreated.md)
  - [ArchivedIngress](docs/ArchivedIngress.md)
