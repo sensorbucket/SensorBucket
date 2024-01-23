@@ -1,7 +1,6 @@
 package tenantsinfra
 
 import (
-	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -138,20 +137,15 @@ func (as *apiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State
 
 // Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.
 func (as *apiKeyStore) GetHashedAPIKeyByNameAndTenantID(name string, tenantID int64) (apikeys.HashedApiKey, error) {
-	fmt.Println("NAME", name)
-	startT := time.Now()
 	q := sq.
 		Select("id, value,  tenant_id,  expiration_date").
 		From("api_keys").
 		Where(sq.Eq{"name": name, "tenant_id": tenantID})
-	fmt.Println(q.ToSql())
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
 	if err != nil {
-		fmt.Println("err occr", err)
 		return apikeys.HashedApiKey{}, err
 	}
 	defer rows.Close()
-	fmt.Println("done", time.Since(startT))
 	k := apikeys.HashedApiKey{}
 	if rows.Next() {
 		err = rows.Scan(
