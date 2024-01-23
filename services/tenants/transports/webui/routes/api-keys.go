@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/samber/lo"
 
-	layout_utils "sensorbucket.nl/sensorbucket/internal/layout-utils"
+	"sensorbucket.nl/sensorbucket/internal/flash_messages"
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/layout"
@@ -36,8 +36,8 @@ func SetupAPIKeyRoutes(client *api.APIClient) *APIKeysPageHandler {
 		router: chi.NewRouter(),
 		client: client,
 	}
-	handler.router.With(layout_utils.ExtractFlashMessage).Get("/", handler.apiKeysListPage())
-	handler.router.With(layout_utils.ExtractFlashMessage).Get("/create", handler.createAPIKeyView())
+	handler.router.With(flash_messages.ExtractFlashMessage).Get("/", handler.apiKeysListPage())
+	handler.router.With(flash_messages.ExtractFlashMessage).Get("/create", handler.createAPIKeyView())
 	handler.router.Delete("/revoke/{api_key_id}", handler.revokeAPIKey())
 	handler.router.Get("/table", handler.apiKeysGetTableRows())
 	handler.router.Post("/create", handler.createAPIKey())
@@ -59,19 +59,19 @@ func (h *APIKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 			tenantId := r.URL.Query().Get("tenant_id")
 			id, err := strconv.ParseInt(tenantId, 10, 64)
 			if err != nil {
-				layout_utils.WriteErrorFlashMessage(w, r, "tenant_id must be a valid number", views.RenderFlashMessage)
+				flash_messages.WriteErrorFlashMessage(w, r, "tenant_id must be a valid number")
 				return
 			}
 			req = req.TenantId(id)
 		}
 		res, _, err := req.Execute()
 		if err != nil {
-			if apiErr, ok := layout_utils.IsAPIError(err); ok && apiErr.Message != nil {
+			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
 				log.Printf("list api key for table result api unexpected status code: %s\n", err)
-				layout_utils.WriteErrorFlashMessage(w, r, *apiErr.Message, views.RenderFlashMessage)
+				flash_messages.WriteErrorFlashMessage(w, r, *apiErr.Message)
 			} else {
 				log.Printf("list api key for table result api error: %s\n", err)
-				layout_utils.WriteErrorFlashMessage(w, r, "An unexpected error occurred in the API", views.RenderFlashMessage)
+				flash_messages.WriteErrorFlashMessage(w, r, "An unexpected error occurred in the API")
 			}
 			return
 		}
@@ -100,8 +100,10 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 		// Create the page and ensure the page is written in any circumstance
 		page := &views.APIKeysPage{}
 		defer func(p *views.APIKeysPage) {
+
+			flash_messages.AddContextFlashMessages(r, &page.FlashMessagesContainer)
+
 			// Check for any flash messages that are in the context
-			page.FlashMessages, _ = layout_utils.FlashMessagesFromContext(r.Context())
 			if layout.IsHX(r) {
 				page.WriteBody(w)
 				return
@@ -114,19 +116,18 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 		req = req.State(1) // State Active
 		list, resp, err := req.Execute()
 		if err != nil {
-			if apiErr, ok := layout_utils.IsAPIError(err); ok && apiErr.Message != nil {
+			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
 				log.Printf("list api key result api unexpected status code: %s\n", err)
-				layout_utils.AddErrorFlashMessage(w, r, *apiErr.Message)
+				flash_messages.AddErrorFlashMessageToPage(r, &page.FlashMessagesContainer, *apiErr.Message)
 			} else {
 				log.Printf("list api key result api error: %s\n", err)
-				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+				flash_messages.AddErrorFlashMessageToPage(r, &page.FlashMessagesContainer, "An unexpected error occurred in the API")
 			}
-			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
 			log.Printf("api key api returned unexpected status code\n")
-			layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+			flash_messages.AddErrorFlashMessageToPage(r, &page.FlashMessagesContainer, "An unexpected error occurred in the API")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -140,46 +141,47 @@ func (h *APIKeysPageHandler) revokeAPIKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		apiKeyId := chi.URLParam(r, "api_key_id")
 		if apiKeyId == "" {
-			layout_utils.AddErrorFlashMessage(w, r, "api_key_id must be given")
+			flash_messages.AddErrorFlashMessage(w, r, "api_key_id must be given")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		id, err := strconv.ParseInt(apiKeyId, 10, 64)
 		if err != nil {
-			layout_utils.AddErrorFlashMessage(w, r, "api_key_id must be a number")
+			flash_messages.AddErrorFlashMessage(w, r, "api_key_id must be a number")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		req := h.client.ApiKeysApi.RevokeApiKey(context.Background(), id)
 		resp, err := req.Execute()
 		if err != nil {
-			if apiErr, ok := layout_utils.IsAPIError(err); ok && apiErr.Message != nil {
+			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
 				log.Printf("revoke api key result api unexpected status code: %s\n", err)
-				layout_utils.AddErrorFlashMessage(w, r, *apiErr.Message)
+				flash_messages.AddErrorFlashMessage(w, r, *apiErr.Message)
 			} else {
 				log.Printf("revoke api key result api error: %s\n", err)
-				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+				flash_messages.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
 			}
-			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
+			w.Header().Set("HX-Redirect", "/tenants/api-keys")
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
 			log.Printf("revoke api key result unexpected status code: %d\n", resp.StatusCode)
-			layout_utils.WriteErrorFlashMessage(w, r, "An unexpected error occurred", views.RenderFlashMessage)
+			flash_messages.WriteErrorFlashMessage(w, r, "An unexpected error occurred")
 			w.WriteHeader(resp.StatusCode)
+			w.Header().Set("HX-Redirect", "/tenants/api-keys")
 			return
 		}
 
 		// Success, set the flash message and redirect
 		w.Header().Set("HX-Redirect", "/tenants/api-keys")
-		layout_utils.AddSuccessFlashMessage(w, r, "Succesfully deleted API key")
+		flash_messages.AddSuccessFlashMessage(w, r, "Succesfully deleted API key")
 	}
 }
 
 func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
-			layout_utils.AddErrorFlashMessage(w, r, "Form invalid")
+			flash_messages.AddErrorFlashMessage(w, r, "Form invalid")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -212,25 +214,25 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 		}
 		apiKey, resp, err := h.client.ApiKeysApi.CreateApiKey(r.Context()).CreateApiKeyRequest(dto).Execute()
 		if err != nil {
-			if apiErr, ok := layout_utils.IsAPIError(err); ok && apiErr.Message != nil {
+			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
 				log.Printf("create api key result api unexpected status code: %s\n", err)
-				layout_utils.AddErrorFlashMessage(w, r, *apiErr.Message)
+				flash_messages.AddErrorFlashMessage(w, r, *apiErr.Message)
 			} else {
 				log.Printf("create api key result api error: %s\n", err)
-				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+				flash_messages.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
 			}
 			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
 		if resp.StatusCode != http.StatusCreated {
 			log.Printf("revoke api key result unexpected status code: %d\n", resp.StatusCode)
-			layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred")
+			flash_messages.AddErrorFlashMessage(w, r, "An unexpected error occurred")
 			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
 
 		// Add the API key as a flash message
-		layout_utils.AddWarningFlashMessage(w, r,
+		flash_messages.AddWarningFlashMessage(w, r,
 			"This is your API key. Please copy your API key immediately as it will not be shown again.",
 			apiKey.ApiKey,
 			true)
@@ -247,26 +249,26 @@ func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 		req = req.State(1) // State Active
 		list, resp, err := req.Execute()
 		if err != nil {
-			if apiErr, ok := layout_utils.IsAPIError(err); ok && apiErr.Message != nil {
+			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
 				log.Printf("list api key result for create view api unexpected status code: %s\n", err)
-				layout_utils.AddErrorFlashMessage(w, r, *apiErr.Message)
+				flash_messages.AddErrorFlashMessage(w, r, *apiErr.Message)
 			} else {
 				log.Printf("list api key result for create view api error: %s\n", err)
-				layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+				flash_messages.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
 			}
 			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
 			log.Printf("api key list failed : %d\n", resp.StatusCode)
-			layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+			flash_messages.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
 			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
 		perms, err := toViewPermissions()
 		if err != nil {
 			log.Printf("error creating api key view, converting to view permissions: %s\n", err)
-			layout_utils.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
+			flash_messages.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
 			return
 		}
 		page := &views.APIKeysCreatePage{
@@ -402,20 +404,20 @@ func getCursor(next string) string {
 	return u.Query().Get("cursor")
 }
 
-func customError(msg string) layout_utils.FlashMessage {
-	return layout_utils.FlashMessage{
+func customError(msg string) flash_messages.FlashMessage {
+	return flash_messages.FlashMessage{
 		Title:       "Error",
 		Description: msg,
-		MessageType: layout_utils.Error,
+		MessageType: flash_messages.Error,
 		CopyButton:  false,
 	}
 }
 
-func genericError() layout_utils.FlashMessage {
-	return layout_utils.FlashMessage{
+func genericError() flash_messages.FlashMessage {
+	return flash_messages.FlashMessage{
 		Title:       "Error",
 		Description: "An unexpected error occurred, please try again or contact a system administrator",
-		MessageType: layout_utils.Error,
+		MessageType: flash_messages.Error,
 		CopyButton:  false,
 	}
 }

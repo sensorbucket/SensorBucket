@@ -1,4 +1,4 @@
-package layout_utils
+package flash_messages
 
 import (
 	"encoding/json"

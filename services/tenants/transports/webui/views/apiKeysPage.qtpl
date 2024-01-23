@@ -1,8 +1,9 @@
 {% import "time" %}
 {% import "strings" %}
+{% import "sensorbucket.nl/sensorbucket/internal/flash_messages" %}
 {% func (p *APIKeysPage) Body() %}
     <section>
-    {%= RenderFlashMessages(p.FlashMessages) %}
+    {%= p.FlashMessagesContainer.Render() %}
     <header class="w-full flex items-center justify-between border-b py-2 px-4 text-sm text-slate-700">
         <section>
             API Keys
@@ -26,6 +27,13 @@
         {%= RenderAPIKeyRowHeading(tenant) %}
     </thead>
     <tbody _="init toggle the *display of me" id="tenant-table-{%d tenant.ID %}">
+        <tr>
+            <td class="px-4 h-10 border-b w-[4em] max-w-[4em]">Name</td>
+            <td class="px-4 h-10 border-b w-[2em] max-w-[2em]">Created</td>
+            <td class="px-4 h-10 border-b w-[2em] max-w-[2em]">Expiration Date</td>
+            <td class="px-4 h-10 border-b truncate w-[1em] max-w-[1em]">Permissions</td>
+            <td class="px-4 h-10 border-b w-[1em] max-w-[1em]">Action</td>
+        </tr>
     </tbody>
 </table>
 {% endfor %}
@@ -89,6 +97,7 @@
 {% code
 type APIKeysPage struct {
 Base
+flash_messages.FlashMessagesContainer
 Tenants []TenantInfo
 TenantsNextPage string
 }
