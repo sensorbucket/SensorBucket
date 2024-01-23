@@ -110,7 +110,7 @@ func StreamRenderFlashMessage(qw422016 *qt422016.Writer, msg FlashMessage) {
 //line flashMessages.qtpl:42
 	qw422016.E().S(color)
 //line flashMessages.qtpl:42
-	qw422016.N().S(`-100 border-l-4 border-`)
+	qw422016.N().S(`-100 border-l-4 flash-message border-`)
 //line flashMessages.qtpl:42
 	qw422016.E().S(color)
 //line flashMessages.qtpl:42
@@ -175,6 +175,7 @@ func StreamRenderFlashMessage(qw422016 *qt422016.Writer, msg FlashMessage) {
 	qw422016.N().S(`
                 </div>
             </div>
+            <iconify-icon _="on click hide closest .flash-message" class="cursor-pointer" icon="material-symbols-light:close" width="18"></iconify-icon>
         </div>
     </div>
     <script type="text/javascript">
@@ -186,36 +187,36 @@ func StreamRenderFlashMessage(qw422016 *qt422016.Writer, msg FlashMessage) {
 
 </div>
 `)
-//line flashMessages.qtpl:73
+//line flashMessages.qtpl:74
 }
 
-//line flashMessages.qtpl:73
+//line flashMessages.qtpl:74
 func WriteRenderFlashMessage(qq422016 qtio422016.Writer, msg FlashMessage) {
-//line flashMessages.qtpl:73
+//line flashMessages.qtpl:74
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line flashMessages.qtpl:73
+//line flashMessages.qtpl:74
 	StreamRenderFlashMessage(qw422016, msg)
-//line flashMessages.qtpl:73
+//line flashMessages.qtpl:74
 	qt422016.ReleaseWriter(qw422016)
-//line flashMessages.qtpl:73
+//line flashMessages.qtpl:74
 }
 
-//line flashMessages.qtpl:73
+//line flashMessages.qtpl:74
 func RenderFlashMessage(msg FlashMessage) string {
-//line flashMessages.qtpl:73
+//line flashMessages.qtpl:74
 	qb422016 := qt422016.AcquireByteBuffer()
-//line flashMessages.qtpl:73
+//line flashMessages.qtpl:74
 	WriteRenderFlashMessage(qb422016, msg)
-//line flashMessages.qtpl:73
+//line flashMessages.qtpl:74
 	qs422016 := string(qb422016.B)
-//line flashMessages.qtpl:73
+//line flashMessages.qtpl:74
 	qt422016.ReleaseByteBuffer(qb422016)
-//line flashMessages.qtpl:73
+//line flashMessages.qtpl:74
 	return qs422016
-//line flashMessages.qtpl:73
+//line flashMessages.qtpl:74
 }
 
-//line flashMessages.qtpl:76
+//line flashMessages.qtpl:77
 type FlashMessagesContainer struct {
 	stagedFlashMessages  FlashMessages
 	contextFlashMessages FlashMessages

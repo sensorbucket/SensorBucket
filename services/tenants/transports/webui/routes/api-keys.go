@@ -115,7 +115,7 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 		req := h.client.TenantsApi.ListTenants(r.Context())
 		req = req.State(1) // State Active
 		list, resp, err := req.Execute()
-		if err != nil {
+		if err == nil {
 			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
 				log.Printf("list api key result api unexpected status code: %s\n", err)
 				flash_messages.AddErrorFlashMessageToPage(r, &page.FlashMessagesContainer, *apiErr.Message)
