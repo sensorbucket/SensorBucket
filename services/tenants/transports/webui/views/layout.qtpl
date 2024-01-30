@@ -1,0 +1,75 @@
+{% interface Page {
+    Body()
+} %}
+
+{% func startHTML() %}
+<!DOCTYPE html>
+<html lang="en" class="bg-[#f8fafc]">
+    <head>
+        <title></title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{%s U("/static/style.css") %}" />
+        <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4"></script>
+        <script type="text/javascript" src="https://unpkg.com/hyperscript.org@0.9.11"></script>
+        <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+    </head>
+    <body>
+{% endfunc %}
+{% func stopHTML() %}
+    </body>
+</html>
+{% endfunc %}
+
+{% func Layout(p Page) %}
+{%= startHTML() %}
+    <div class="mt-12 mx-auto w-full md:max-w-[420px] bg-white rounded-md overflow-hidden">
+        <header class="bg-secondary-500 h-14 py-3">
+            <img src="{%s U("/static/logo-white.png") %}" alt="SensorBucket Logo" class="h-full mx-auto" />
+        </header>
+        <main class="px-6 mb-4 space-y-2">
+        {%= p.Body() %}
+        </main>
+    </div>
+{%= stopHTML() %}
+{% endfunc %}
+
+{% func WideLayout(p Page) %}
+{%= startHTML() %}
+    <div class="mt-12 mx-auto w-full md:max-w-screen-xl bg-white rounded-md overflow-hidden">
+        <header class="bg-secondary-500 h-14 py-3">
+            <img src="{%s U("/static/logo-white.png") %}" alt="SensorBucket Logo" class="h-full mx-auto" />
+        </header>
+        <main class="px-6 mb-4 space-y-2">
+            <div id="settingsPage" class="grid grid-cols-[1fr_4fr]">
+                {%= renderSidebar() %}
+                {%= p.Body() %}
+            </div>
+        </main>
+    </div>
+{%= stopHTML() %}
+{% endfunc %}
+
+{% func renderSidebar() %}
+    <section class="flex flex-col border-r">
+        <h1 class="p-6 text-lg text-center">Settings</h1>
+        <hr class="px-6 py-1">
+        <ul class="flex flex-col">
+            <li>
+                <a
+                    class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                    href="{%s U("/auth/settings") %}">Profile Settings</a>
+            </li>
+            <li>
+                <a
+                    class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                    href="{%s U("/api-keys") %}">API Keys</a>
+            </li>
+        </ul>
+    </section>
+{% endfunc %}
+
+{% code
+type Base struct {
+}
+%}

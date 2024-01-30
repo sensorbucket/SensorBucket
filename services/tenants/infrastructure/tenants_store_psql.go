@@ -34,6 +34,7 @@ func (ts *TenantsStore) GetTenantById(id int64) (tenants.Tenant, error) {
 	if err != nil {
 		return tenants.Tenant{}, err
 	}
+	defer rows.Close()
 	if rows.Next() {
 		err = rows.Scan(
 			&tenant.ID,

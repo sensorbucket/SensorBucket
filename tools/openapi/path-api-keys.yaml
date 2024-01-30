@@ -1,0 +1,26 @@
+post:
+  tags: ['ApiKeys']
+  operationId: CreateApiKey
+  summary: Creates a new API key for the given Tenant
+  description: |
+    Create an API key for a tenant with an expiration date. Permissions for the API key within that organisation must be set
+  requestBody: 
+    content:
+      application/json:
+        schema:
+          $ref: 'schemas.yaml#/createApiKeyRequest'
+  responses:
+    '201':
+      description: Created API key
+      content:
+        application/json:
+          schema:
+            $ref: 'schemas.yaml#/apiKeyCreated'
+    '400':
+      $ref: 'responses.yaml#/400'
+    '500':
+      $ref: './responses.yaml#/500'
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'

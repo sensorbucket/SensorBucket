@@ -28,3 +28,19 @@ func TestPermissionsValid(t *testing.T) {
 		})
 	}
 }
+
+func TestAllAllowedPermissions(t *testing.T) {
+	assert.Equal(t, []permission{
+		READ_DEVICES,
+		WRITE_DEVICES,
+		READ_API_KEYS,
+		WRITE_API_KEYS,
+		READ_TENANTS,
+		WRITE_TENANTS,
+		READ_MEASUREMENTS,
+		WRITE_MEASUREMENTS,
+		READ_TRACING,
+		READ_USER_WORKERS,
+		WRITE_USER_WORKERS,
+	}, AllAllowedPermissions())
+}
