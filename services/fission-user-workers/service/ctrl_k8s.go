@@ -209,9 +209,8 @@ func (ctrl *KubernetesController) workerToFunction(worker UserWorker) Function {
 			},
 			Spec: fissionV1.FunctionSpec{
 				Concurrency:     500,
-				RequestsPerPod:  5,
-				FunctionTimeout: 120,
-				IdleTimeout:     lo.ToPtr(900),
+				FunctionTimeout: 60,
+				IdleTimeout:     lo.ToPtr(60),
 				InvokeStrategy: fissionV1.InvokeStrategy{
 					StrategyType: "execution",
 					ExecutionStrategy: fissionV1.ExecutionStrategy{
