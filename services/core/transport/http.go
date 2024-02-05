@@ -61,6 +61,10 @@ func getDatastreams(measurementService *measurements.Service, deviceService *dev
 		m, err := measurementService.QueryMeasurements(measurements.Filter{
 			Datastream: []string{ds.ID.String()},
 		}, pagination.Request{Limit: 1})
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
 		if len(m.Data) > 0 {
 			res.LatestMeasurementValue = m.Data[0].MeasurementValue
 			res.LatestMeasurementTimestamp = m.Data[0].MeasurementTimestamp

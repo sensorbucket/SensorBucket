@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -84,7 +85,11 @@ func main() {
 		ReadTimeout:  5 * time.Second,
 		Handler:      r,
 	}
-	go srv.ListenAndServe()
+	go func() {
+		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) && err != nil {
+			log.Printf("HTTP Server error: %v\n", err)
+		}
+	}()
 
 	log.Println("Server running, send interrupt (i.e. CTRL+C) to initiate shutdown")
 	<-ctx.Done()

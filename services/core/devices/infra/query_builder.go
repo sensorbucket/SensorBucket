@@ -105,6 +105,7 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[devices.Device]
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	deviceModels := []DeviceModel{}
 	for rows.Next() {

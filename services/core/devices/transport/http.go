@@ -417,6 +417,10 @@ func (t *HTTPTransport) httpDeleteSensorGroup() http.HandlerFunc {
 func (t *HTTPTransport) httpUpdateSensorGroup() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		sensorGroupID, err := urlParamInt64(r, "id")
+		if err != nil {
+			web.HTTPError(w, err)
+			return
+		}
 
 		var dto devices.UpdateSensorGroupOpts
 		if err := web.DecodeJSON(r, &dto); err != nil {

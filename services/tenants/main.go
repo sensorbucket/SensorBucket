@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -94,7 +95,9 @@ func runAPI(errC chan<- error, db *sqlx.DB) func(context.Context) {
 	}()
 
 	return func(shutdownCtx context.Context) {
-		srv.Shutdown(shutdownCtx)
+		if err := srv.Shutdown(shutdownCtx); !errors.Is(err, http.ErrServerClosed) && err != nil {
+			log.Printf("API HTTP Server error during shutdown: %v\n", err)
+		}
 	}
 }
 
@@ -115,7 +118,9 @@ func runWebUI(errC chan<- error) func(context.Context) {
 	}()
 
 	return func(shutdownCtx context.Context) {
-		srv.Shutdown(shutdownCtx)
+		if err := srv.Shutdown(shutdownCtx); !errors.Is(err, http.ErrServerClosed) && err != nil {
+			log.Printf("WebUI HTTP Server error during shutdown: %v\n", err)
+		}
 	}
 }
 

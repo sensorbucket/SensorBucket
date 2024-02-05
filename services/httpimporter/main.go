@@ -91,8 +91,12 @@ func Run() error {
 	ctxTO, cancelTO := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelTO()
 
-	srv.Shutdown(ctxTO)
-	shutdownHealthEndpoint(ctxTO)
+	if err := srv.Shutdown(ctxTO); err != nil {
+		log.Printf("Error shutting down HTTP Server: %v\n", err)
+	}
+	if err := shutdownHealthEndpoint(ctxTO); err != nil {
+		log.Printf("Error shutting down Health Server: %v\n", err)
+	}
 
 	return err
 }

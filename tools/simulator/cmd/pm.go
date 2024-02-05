@@ -156,6 +156,8 @@ func init() {
 	pmCmd.Flags().StringSliceVarP(&flagDevices, "devices", "d", []string{}, "The device ID's to simulate")
 	pmCmd.Flags().StringVarP(&flagPipelineID, "pipeline", "p", "", "The pipeline UUID to post to")
 	pmCmd.Flags().IntVarP(&flagInterval, "interval", "i", 60, "Interval between simulated measurements in seconds")
+	//nolint:errcheck
 	pmCmd.MarkFlagRequired("devices")
+	//nolint:errcheck
 	pmCmd.MarkFlagRequired("pipeline")
 }

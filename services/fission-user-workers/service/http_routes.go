@@ -35,14 +35,14 @@ func NewHTTPTransport(app *Application, baseURL, addr string) *HTTPTransport {
 	}
 }
 
-func (t *HTTPTransport) Start() {
+func (t *HTTPTransport) Start() error {
 	log.Printf("HTTP server listening at: %s\n", t.server.Addr)
-	t.server.ListenAndServe()
+	return t.server.ListenAndServe()
 }
 
-func (t *HTTPTransport) Stop(ctx context.Context) {
+func (t *HTTPTransport) Stop(ctx context.Context) error {
 	log.Println("HTTP Server shutting down...")
-	t.server.Shutdown(ctx)
+	return t.server.Shutdown(ctx)
 }
 
 type WorkersHTTPFilters struct {
@@ -51,9 +51,6 @@ type WorkersHTTPFilters struct {
 }
 
 func createRoutes(app *Application, baseURL string, r chi.Router) {
-	r.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello"))
-	})
 	r.Get("/workers", func(w http.ResponseWriter, r *http.Request) {
 		params, err := httpfilter.Parse[WorkersHTTPFilters](r)
 		if err != nil {
@@ -85,11 +82,11 @@ func createRoutes(app *Application, baseURL string, r chi.Router) {
 	})
 	r.With(resolveWorker(app)).Get("/workers/{id}", func(w http.ResponseWriter, r *http.Request) {
 		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
-			Data: r.Context().Value("worker"),
+			Data: getWorker(r.Context()),
 		})
 	})
 	r.With(resolveWorker(app)).Get("/workers/{id}/usercode", func(w http.ResponseWriter, r *http.Request) {
-		worker := r.Context().Value("worker").(*UserWorker)
+		worker := getWorker(r.Context())
 		userCode, err := worker.GetUserCode()
 		if err != nil {
 			web.HTTPError(w, err)
@@ -100,7 +97,7 @@ func createRoutes(app *Application, baseURL string, r chi.Router) {
 		})
 	})
 	r.With(resolveWorker(app)).Get("/workers/{id}/source", func(w http.ResponseWriter, r *http.Request) {
-		worker := r.Context().Value("worker").(*UserWorker)
+		worker := getWorker(r.Context())
 		src := base64.StdEncoding.EncodeToString(worker.ZipSource)
 		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
 			Data: src,
@@ -112,7 +109,7 @@ func createRoutes(app *Application, baseURL string, r chi.Router) {
 			web.HTTPError(w, err)
 			return
 		}
-		worker := r.Context().Value("worker").(*UserWorker)
+		worker := getWorker(r.Context())
 		if err := app.UpdateWorker(r.Context(), worker, dto); err != nil {
 			web.HTTPError(w, err)
 			return
@@ -124,6 +121,12 @@ func createRoutes(app *Application, baseURL string, r chi.Router) {
 }
 
 type Middleware = func(next http.Handler) http.Handler
+
+type ctxKey int
+
+const (
+	ctxWorker ctxKey = iota
+)
 
 func resolveWorker(app *Application) Middleware {
 	return func(next http.Handler) http.Handler {
@@ -139,8 +142,20 @@ func resolveWorker(app *Application) Middleware {
 				web.HTTPError(w, err)
 				return
 			}
-			r = r.WithContext(context.WithValue(r.Context(), "worker", worker))
+			r = r.WithContext(context.WithValue(r.Context(), ctxWorker, worker))
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func getWorker(ctx context.Context) *UserWorker {
+	value := ctx.Value(ctxWorker)
+	if value == nil {
+		return nil
+	}
+	worker, ok := value.(*UserWorker)
+	if !ok {
+		return nil
+	}
+	return worker
 }

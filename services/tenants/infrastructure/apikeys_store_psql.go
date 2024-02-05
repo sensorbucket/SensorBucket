@@ -6,6 +6,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
@@ -112,6 +113,8 @@ func (as *apiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State
 	if err != nil {
 		return apikeys.HashedApiKey{}, err
 	}
+	defer rows.Close()
+
 	k := apikeys.HashedApiKey{}
 	if rows.Next() {
 		err = rows.Scan(

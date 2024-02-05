@@ -34,11 +34,15 @@ func (s *PSQLStore) CreatePipeline(p *processing.Pipeline) error {
 	}
 
 	if err := createPipeline(tx, p); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback error %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 	if err := createPipelineSteps(tx, p.ID, p.Steps); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback error %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 
@@ -55,17 +59,23 @@ func (s *PSQLStore) UpdatePipeline(p *processing.Pipeline) error {
 		`UPDATE "pipelines" SET "description" = $1, "status" = $2, "last_status_change" = $3 WHERE "id" = $4`,
 		p.Description, p.Status, p.LastStatusChange, p.ID,
 	); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback error %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 
 	if _, err := tx.Exec(`DELETE FROM "pipeline_steps" WHERE "pipeline_id" = $1`, p.ID); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback error %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 
 	if err := createPipelineSteps(tx, p.ID, p.Steps); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback error %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 
@@ -114,6 +124,8 @@ func (s *PSQLStore) ListPipelines(filter processing.PipelinesFilter, p paginatio
 	if err != nil {
 		return page, err
 	}
+	defer row.Close()
+
 	// Map rows to model
 	pIDs := make([]string, 0)
 	pipelines := make([]processing.Pipeline, 0)
@@ -151,6 +163,8 @@ func (s *PSQLStore) ListPipelines(filter processing.PipelinesFilter, p paginatio
 	if err != nil {
 		return page, err
 	}
+	defer row.Close()
+
 	// Map steps to pipeline
 	stepMap := make(map[string][]string)
 	for row.Next() {

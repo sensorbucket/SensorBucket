@@ -1,7 +1,6 @@
 package tenantstransports
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 )
@@ -86,7 +86,7 @@ func TestNewApiKeyExpirationDateNotInTheFuture(t *testing.T) {
 func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(name string, tenantId int64, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(_ string, tenantId int64, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
 			assert.Nil(t, expiry)
 			return "", apikeys.ErrTenantIsNotValid
@@ -109,7 +109,7 @@ func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 func TestNewApiKeyErrorOccurs(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(name string, tenantId int64, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(_ string, tenantId int64, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
 			assert.Nil(t, expiry)
 			return "", fmt.Errorf("weird error!")
@@ -133,7 +133,7 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 	// Arrange
 	exp := time.Now().UTC().Add(time.Hour * 24 * 5)
 	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(name string, tenantId int64, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(_ string, tenantId int64, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
 			assert.NotNil(t, expiry)
 			assert.Equal(t, exp, *expiry)
@@ -157,7 +157,7 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 func TestNewApiKeyIsCreatedWithoutExpirationDate(t *testing.T) {
 	// Arrange
 	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(name string, tenantId int64, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(_ string, tenantId int64, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
 			assert.Nil(t, expiry)
 			return "newapikey", nil
@@ -479,8 +479,4 @@ func testTransport(svc apiKeyService) *APIKeysHTTPTransport {
 	}
 	transport.setupRoutes(transport.router)
 	return transport
-}
-
-func asBase64(val string) string {
-	return base64.StdEncoding.WithPadding(base64.NoPadding).EncodeToString([]byte(val))
 }

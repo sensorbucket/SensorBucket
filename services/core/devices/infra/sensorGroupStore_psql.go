@@ -131,6 +131,7 @@ func (s *PSQLSensorGroupStore) List(p pagination.Request) (*pagination.Page[devi
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	groupMap := make(map[int64]devices.SensorGroup)
 	for rows.Next() {
@@ -180,6 +181,7 @@ func (s *PSQLSensorGroupStore) Get(id int64) (*devices.SensorGroup, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var group *devices.SensorGroup
 	for rows.Next() {
