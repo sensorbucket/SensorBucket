@@ -134,23 +134,23 @@ func AddErrorFlashMessage(w http.ResponseWriter, r *http.Request, message string
 	return addFlashMessage(w, r, "Error", message, Error, false)
 }
 
-func WriteSuccessFlashMessage(w http.ResponseWriter, r *http.Request, message string) {
+func WriteSuccessFlashMessage(w http.ResponseWriter, _ *http.Request, message string) {
 	fm := getFlashMessage("Success", message, Success, false)
-	w.Write([]byte(RenderFlashMessage(fm)))
+	WriteRenderFlashMessage(w, fm)
 }
 
-func WriteWarningFlashMessage(w http.ResponseWriter, r *http.Request, title string, message string, copyButton bool) {
+func WriteWarningFlashMessage(w http.ResponseWriter, _ *http.Request, _ string, message string, copyButton bool) {
 	fm := getFlashMessage("Warning", message, Warning, copyButton)
-	w.Write([]byte(RenderFlashMessage(fm)))
+	WriteRenderFlashMessage(w, fm)
 }
 
-func WriteErrorFlashMessage(w http.ResponseWriter, r *http.Request, message string) {
+func WriteErrorFlashMessage(w http.ResponseWriter, _ *http.Request, message string) {
 	fm := getFlashMessage("Error", message, Error, false)
-	w.Write([]byte(RenderFlashMessage(fm)))
+	WriteRenderFlashMessage(w, fm)
 }
 
 func addFlashMessage(w http.ResponseWriter, r *http.Request, title string, description string, msgType FlashMessageType, copyButton bool) context.Context {
-	flashMessages := FlashMessages{}
+	var flashMessages FlashMessages
 	flashMessages, _ = FlashMessagesFromContext(r.Context())
 	flashMessages = append(flashMessages, getFlashMessage(title, description, msgType, copyButton))
 	newCtx := context.WithValue(r.Context(), ctxFlashMessagesKey, flashMessages)
