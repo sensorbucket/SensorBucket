@@ -78,7 +78,7 @@ func (t *APIKeysHTTPTransport) httpRevokeApiKey() http.HandlerFunc {
 func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 	type Params struct {
 		Name           string     `json:"name"`
-		TenantID       int64      `json:"organisation_id"`
+		TenantID       int64      `json:"tenant_id"`
 		ExpirationDate *time.Time `json:"expiration_date"`
 	}
 	type Result struct {
@@ -100,7 +100,7 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 
 		if params.TenantID <= 0 {
 			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
-				Message: "organisation_id must be higher than 0",
+				Message: "tenant_id must be higher than 0",
 			})
 			return
 		}
@@ -111,7 +111,6 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 			})
 			return
 		}
-
 		apiKey, err := t.apiKeySvc.GenerateNewApiKey(params.Name, params.TenantID, params.ExpirationDate)
 		if err != nil {
 			if errors.Is(err, apikeys.ErrTenantIsNotValid) {
@@ -170,7 +169,6 @@ func (t *APIKeysHTTPTransport) httpListApiKeys() http.HandlerFunc {
 			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "invalid params", ""))
 			return
 		}
-
 		page, err := t.apiKeySvc.ListAPIKeys(params.Filter, params.Request)
 		if err != nil {
 			web.HTTPError(rw, err)

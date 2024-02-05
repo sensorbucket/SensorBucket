@@ -1,0 +1,138 @@
+{% import "strings" %}
+{% import "github.com/samber/lo" %}
+{% func (p *APIKeysCreatePage) Body() %}
+<div class="w-full bg-white">
+    <header class="w-full flex items-center justify-between border-b py-2 px-4 text-sm text-slate-700">
+        <section>
+            Create API Key
+        </section>
+    </header>
+    <form 
+        id="apiKeyCreateForm" 
+        class="p-4 gap-4 grid lg:grid-cols-1"
+        method="POST"
+        action="{%s U("/api-keys/create") %}"
+    >
+        <fieldset>
+            <label for="api-key-tenant" class="ml-1 -mb-1 block"><small
+                    class="text-xs text-slate-500">Tenant*</small></label>
+            <select name="api-key-tenant" id="api-key-tenant"
+                class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" required>
+                {%= RenderTenantSelect(p.Tenants) %}
+                <select />
+        </fieldset>
+        <fieldset>
+            <label for="api-key-name" class="ml-1 -mb-1 block"><small
+                    class="text-xs text-slate-500">Name*</small></label>
+            <input type="text" name="api-key-name" id="api-key-name"
+                class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600" required />
+        </fieldset>
+        <fieldset>
+            <label for="api-key-expiry" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Expires</small>
+                <input type="checkbox" _="on click toggle .hidden on #api-key-expiry"
+                    class="h-4 w-4 ml-2 text-secondary-500 cursor-pointer">
+            </label>
+            <input _="init get formattedDateTomorrow() then set @min to it on me" type="date" min=""
+                name="api-key-expiry" id="api-key-expiry"
+                class="w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600 hidden" />
+        </fieldset>
+        <fieldset>
+            <label
+            class="text-xs text-slate-500">Permissions*</label>
+            {%= RenderPermissionTables(p.Permissions) %}
+        </fieldset>
+        <div class="col-span-full">
+            <input
+                _="on change from closest <form/>
+                for elt in <[required]/>
+                  if the elt's value is empty
+                    add @disabled then exit
+                  end
+                end
+                for el in .permission-checkbox.checked
+                    if el === true
+                        remove @disabled then exit
+                    end
+                end
+                add @disabled"
+                disabled type="submit" id="api-key-create-button"
+                class="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
+                value="Generate new API Key" />
+        </div>
+    </form>
+    <script type="text/javascript">
+        function formattedDateTomorrow() {
+            var currentDate = new Date();
+            currentDate.setDate(currentDate.getDate() + 1);
+            return currentDate.toISOString().split("T")[0];
+        }
+    </script>
+</div>
+{% endfunc %}
+
+{% func RenderTenantSelect(tenants []TenantInfo) %}
+{% for _, tenant := range tenants %}
+<option value="{%d tenant.ID %}">{%s tenant.Name %}</option>
+{% endfor %}
+{% endfunc %}
+
+{% func RenderPermissionTables(permissions map[OrderedMapKey][]APIKeysPermission) %}
+{% for i:= 0; i < len(permissions);i++ %}
+{%code
+    category, _ := lo.FindKeyBy(permissions, func(key OrderedMapKey, value []APIKeysPermission) bool {
+		return key.Index == i
+	})
+%}
+<table class="min-w-full bg-white border border-gray-300 mb-2">
+    <thead>
+        <tr class="bg-secondary-400 text-secondary-100">
+            <th class="py-2 px-4" colspan="2">
+                <span class="ml-2 float-left">{%s category.Value %}</span>
+            </th>
+            <th class="py-2 px-4">
+                <input type="checkbox" _="on click set .checkbox-{%s htmlFriendlyName(category.Value) %}.checked to my.checked"
+                    class="h-4 w-4 text-secondary-500 cursor-pointer float-right">
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for _, permission := range permissions[category] %}
+        <tr>
+            <td class="py-2 px-4 w-1/6">
+                {%s permission.Name %}
+            </td>
+            <td class="py-2 px-4 w-4/6">
+                {%s permission.Description %}
+            </td>
+            <td class="py-2 px-4 w-1/6">
+                <input type="checkbox" name="api-key-permissions" value="{%s permission.Name %}"
+                    class="h-4 w-4 text-secondary-500 permission-checkbox cursor-pointer float-right checkbox-{%s htmlFriendlyName(category.Value) %}">
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endfor %}
+{% endfunc %}
+
+{% code
+type APIKeysCreatePage struct {
+Base
+Tenants []TenantInfo
+Permissions map[OrderedMapKey][]APIKeysPermission
+}
+
+type APIKeysPermission struct {
+Name string
+Description string
+}
+
+type OrderedMapKey struct {
+	Index int
+	Value string
+}
+
+func htmlFriendlyName(src string) string {
+    return strings.ReplaceAll(src, " ", "")
+}
+%}

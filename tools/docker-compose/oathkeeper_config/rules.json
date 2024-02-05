@@ -20,7 +20,7 @@
     {
         "id": "authentication",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<tenants/auth(/.+)?|tenants/static/.*>",
+            "url": "http://<127.0.0.1|localhost>:3000/<tenants(/.+)?>",
             "methods": [
                 "GET","POST","PATCH","PUT","DELETE"
             ]

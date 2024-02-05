@@ -1,41 +1,4 @@
 {% import ory "github.com/ory/client-go" %}
-{% interface PageBody {
-    Body()
-} %}
-{% interface Page {
-    Body()
-    Template(p PageBody)
-} %}
-
-{% func Layout(p Page) %}
-<!DOCTYPE html>
-<html lang="en" class="bg-[#f8fafc]">
-    <head>
-        <title></title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="{%s U("/static/style.css") %}" />
-    </head>
-    <body>
-        {%= p.Template(p) %}
-    </body>
-</html>
-{% endfunc %}
-
-{% code
-type Base struct {}
-%}
-
-{% func (b Base) Template(p PageBody) %}
-    <main class="mt-12 mx-auto w-full md:max-w-[420px] bg-white rounded-md overflow-hidden">
-        <header class="bg-secondary-500 h-14 py-3">
-            <img src="{%s U("/static/logo-white.png") %}" alt="SensorBucket Logo" class="h-full mx-auto" />
-        </header>
-        <section class="px-6 mb-4 space-y-2">
-        {%= p.Body() %}
-        </section>
-    </main>
-{% endfunc %}
 
 {% code
 type LoginPage struct {

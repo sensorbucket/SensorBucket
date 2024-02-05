@@ -19,7 +19,8 @@ func NewAPIKeyStorePSQL(db *sqlx.DB) *apiKeyStore {
 }
 
 type apiKeyQueryPage struct {
-	Created time.Time `pagination:"created,DESC"`
+	Tenant  int64     `pagination:"api_keys.tenant_id,DESC"`
+	Created time.Time `pagination:"api_keys.created,DESC"`
 }
 
 func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
@@ -31,9 +32,12 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 		return nil, err
 	}
 
-	q := sq.Select("name, expiration_date, tenant_id").Distinct().From("api_keys")
+	q := sq.
+		Select("api_keys.id, api_keys.name, api_keys.expiration_date, api_keys.tenant_id, tenants.name").
+		From("api_keys").
+		Join("tenants on api_keys.tenant_id = tenants.id")
 	if len(filter.TenantID) > 0 {
-		q = q.Where(sq.Eq{"tenant_id": filter.TenantID})
+		q = q.Where(sq.Eq{"api_keys.tenant_id": filter.TenantID})
 	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
@@ -48,17 +52,19 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 	for rows.Next() {
 		key := apikeys.ApiKeyDTO{}
 		err = rows.Scan(
+			&key.ID,
 			&key.Name,
 			&key.ExpirationDate,
 			&key.TenantID,
-			&cursor.Columns.Created,
+			&key.TenantName,
+			&cursor.Columns.Tenant,
+			&key.Created,
 		)
 		if err != nil {
 			return nil, err
 		}
-		if err != nil {
-			return nil, err
-		}
+
+		cursor.Columns.Created = key.Created
 
 		list = append(list, key)
 	}
@@ -115,6 +121,34 @@ func (as *apiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State
 	}
 	defer rows.Close()
 
+	k := apikeys.HashedApiKey{}
+	defer rows.Close()
+	if rows.Next() {
+		err = rows.Scan(
+			&k.ID,
+			&k.SecretHash,
+			&k.TenantID,
+			&k.ExpirationDate)
+		if err != nil {
+			return apikeys.HashedApiKey{}, err
+		}
+	} else {
+		return apikeys.HashedApiKey{}, apikeys.ErrKeyNotFound
+	}
+	return k, nil
+}
+
+// Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.
+func (as *apiKeyStore) GetHashedAPIKeyByNameAndTenantID(name string, tenantID int64) (apikeys.HashedApiKey, error) {
+	q := sq.
+		Select("id, value,  tenant_id,  expiration_date").
+		From("api_keys").
+		Where(sq.Eq{"name": name, "tenant_id": tenantID})
+	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
+	if err != nil {
+		return apikeys.HashedApiKey{}, err
+	}
+	defer rows.Close()
 	k := apikeys.HashedApiKey{}
 	if rows.Next() {
 		err = rows.Scan(

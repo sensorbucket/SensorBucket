@@ -216,7 +216,7 @@ func (ctrl *KubernetesController) workerToFunction(worker UserWorker) Function {
 					StrategyType: "execution",
 					ExecutionStrategy: fissionV1.ExecutionStrategy{
 						ExecutorType:          fissionV1.ExecutorTypePoolmgr,
-						MinScale:              0,
+						MinScale:              1,
 						MaxScale:              100,
 						SpecializationTimeout: 120,
 					},
@@ -304,7 +304,7 @@ func (ctrl *KubernetesController) workerToMessageQueueTrigger(worker UserWorker)
 						{
 							Name:            ctrl.resourceName(worker.ID),
 							Image:           ctrl.mqtImage,
-							ImagePullPolicy: v1.PullAlways,
+							ImagePullPolicy: v1.PullIfNotPresent,
 							Env: []v1.EnvVar{
 								{
 									Name:  "EXCHANGE",
@@ -486,20 +486,20 @@ func (ctrl *KubernetesController) calculateMessageQueueTriggerChanges(ctx contex
 }
 
 func updateFunction(current, desired Function) Function {
-	current.Resource.ObjectMeta.Labels["worker-revision"] = desired.Resource.Labels["worker-revision"]
+	current.Resource.Labels["worker-revision"] = desired.Resource.Labels["worker-revision"]
 	current.Resource.Spec = desired.Resource.Spec
 	return current
 }
 
 func updatePackage(current, desired Package) Package {
-	current.Resource.ObjectMeta.Labels["worker-revision"] = desired.Resource.Labels["worker-revision"]
+	current.Resource.Labels["worker-revision"] = desired.Resource.Labels["worker-revision"]
 	current.Resource.Spec = desired.Resource.Spec
 	current.Resource.Status = desired.Resource.Status
 	return current
 }
 
 func updateMessageQueueTrigger(current, desired MessageQueueTrigger) MessageQueueTrigger {
-	current.Resource.ObjectMeta.Labels["worker-revision"] = desired.Resource.Labels["worker-revision"]
+	current.Resource.Labels["worker-revision"] = desired.Resource.Labels["worker-revision"]
 	current.Resource.Spec = desired.Resource.Spec
 	return current
 }

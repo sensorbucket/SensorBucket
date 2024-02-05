@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
@@ -28,6 +29,7 @@ var (
 	HTTP_API_BASE   = env.Could("HTTP_BASE", "http://localhost:3000/api")
 	HTTP_WEBUI_ADDR = env.Could("HTTP_WEBUI_ADDR", ":3001")
 	HTTP_WEBUI_BASE = env.Could("HTTP_WEBUI_BASE", "http://localhost:3000/auth")
+	SB_API          = env.Must("SB_API")
 	DB_DSN          = env.Must("DB_DSN")
 )
 
@@ -48,8 +50,14 @@ func Run() error {
 		panic(err)
 	}
 
-	stopAPI := runAPI(errC, db)
-	stopWebUI := runWebUI(errC)
+	stopAPI, err := runAPI(errC, db)
+	if err != nil {
+		return fmt.Errorf("could not setup API server: %w", err)
+	}
+	stopWebUI, err := runWebUI(errC)
+	if err != nil {
+		return fmt.Errorf("could not setup WebUI server: %w", err)
+	}
 
 	select {
 	case err = <-errC:
@@ -65,7 +73,9 @@ func Run() error {
 	return err
 }
 
-func runAPI(errC chan<- error, db *sqlx.DB) func(context.Context) {
+var noopCleanup = func(ctx context.Context) {}
+
+func runAPI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -98,11 +108,15 @@ func runAPI(errC chan<- error, db *sqlx.DB) func(context.Context) {
 		if err := srv.Shutdown(shutdownCtx); !errors.Is(err, http.ErrServerClosed) && err != nil {
 			log.Printf("API HTTP Server error during shutdown: %v\n", err)
 		}
-	}
+	}, nil
 }
 
-func runWebUI(errC chan<- error) func(context.Context) {
-	ui := webui.New(HTTP_WEBUI_BASE)
+func runWebUI(errC chan<- error) (func(context.Context), error) {
+	ui, err := webui.New(HTTP_WEBUI_BASE, SB_API)
+	if err != nil {
+		errC <- err
+		return noopCleanup, nil
+	}
 	srv := &http.Server{
 		Addr:         HTTP_WEBUI_ADDR,
 		WriteTimeout: 5 * time.Second,
@@ -121,7 +135,7 @@ func runWebUI(errC chan<- error) func(context.Context) {
 		if err := srv.Shutdown(shutdownCtx); !errors.Is(err, http.ErrServerClosed) && err != nil {
 			log.Printf("WebUI HTTP Server error during shutdown: %v\n", err)
 		}
-	}
+	}, nil
 }
 
 func createDB() (*sqlx.DB, error) {

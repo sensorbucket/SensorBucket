@@ -64,6 +64,19 @@ func DecodeJSON(r *http.Request, v interface{}) error {
 	return nil
 }
 
+func DecodeJSONResponse(r *http.Response, v interface{}) error {
+	if r.Header.Get("content-type") != "application/json" {
+		return ContentTypeError
+	}
+
+	err := json.NewDecoder(r.Body).Decode(v)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error decoding JSON: %s\n", err)
+		return InvalidJSONError
+	}
+	return nil
+}
+
 // HTTPResponse ...
 func HTTPResponse(w http.ResponseWriter, s int, r interface{}) {
 	w.Header().Set("content-type", "application/json")

@@ -98,7 +98,7 @@ type BasePage struct {
             }
 
             currentHideSnackbarTimer = setTimeout(() => {
-              hideSnackbar();
+                hideSnackbar();
             }, 3000);
         }
 
@@ -162,7 +162,6 @@ type BasePage struct {
     </sidebar>
     <section class="flex-1 mt-12 lg:mt-0 lg:ml-sidebar" id="main-wrapper">
         <header class="h-8 bg-white border-b" id="mustache">
-            
         </header>
         <main class="p-4 pt-0 mt-4" id="main">
             {%= page.Body() %}
