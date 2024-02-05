@@ -69,12 +69,16 @@ func (s *PSQLStore) Delete(dev *devices.Device) error {
 	}
 
 	if _, err := tx.Exec("DELETE FROM sensors WHERE device_id=$1", dev.ID); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 
 	if _, err := tx.Exec("DELETE FROM devices WHERE id=$1", dev.ID); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 
@@ -190,7 +194,9 @@ func (s *PSQLStore) updateSensors(devID int64, sensors []devices.Sensor) error {
 		return q.Where(sq.Eq{"device_id": devID})
 	})
 	if err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 	var createdSensors []*devices.Sensor

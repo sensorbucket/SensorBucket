@@ -39,6 +39,11 @@ docs:
 	-@docker run --rm -p 8000:8000 --init -v $(CURDIR):/docs ghcr.io/sensorbucket/mkdocs:latest
 	@echo "Stopped live docs"
 
+lint:
+	@echo "Running linters..."
+	docker run --rm -v $(CURDIR):/app -w /app golangci/golangci-lint:v1.55.2 \
+		golangci-lint run --out-format github-actions
+
 python:
 ifeq ($(strip $(outdir)),)
 	@echo "Error: please specify out location by providing the 'outdir' variable"
