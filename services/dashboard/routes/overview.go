@@ -22,8 +22,6 @@ import (
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
 )
 
-type middlewareFunc = func(next http.Handler) http.Handler
-
 type OverviewRoute struct {
 	router chi.Router
 	client *api.APIClient
@@ -240,12 +238,6 @@ func (t *OverviewRoute) devicesStreamMap() http.HandlerFunc {
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
-	type Marker struct {
-		DeviceID  int64   `json:"device_id"`
-		Label     string  `json:"label"`
-		Latitude  float64 `json:"latitude"`
-		Longitude float64 `json:"longitude"`
-	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		var sgID int64 = 0
@@ -288,7 +280,10 @@ func (t *OverviewRoute) devicesStreamMap() http.HandlerFunc {
 					}
 					defer writer.Close()
 					frame := fmt.Sprintf(`{"device_id": %d, "device_code": "%s", "coordinates": [%f,%f]}`, dev.Id, dev.Code, dev.GetLatitude(), dev.GetLongitude())
-					writer.Write([]byte(frame))
+					if _, err := writer.Write([]byte(frame)); err != nil {
+						log.Printf("Failed to write to websocket: %v\n", err)
+						return
+					}
 				}
 				nextCursor = getCursor(res.Links.GetNext())
 				if nextCursor == "" {
@@ -398,8 +393,12 @@ func (t *OverviewRoute) overviewDatastreamStream() http.HandlerFunc {
 				defer writer.Close()
 				for _, point := range res.Data {
 					// Write to client
-					binary.Write(writer, binary.BigEndian, point.MeasurementTimestamp.UnixMilli())
-					binary.Write(writer, binary.BigEndian, point.MeasurementValue)
+					if err := binary.Write(writer, binary.BigEndian, point.MeasurementTimestamp.UnixMilli()); err != nil {
+						log.Printf("Error writing measurement timestamp to WebSocket: %v\n", err)
+					}
+					if err := binary.Write(writer, binary.BigEndian, point.MeasurementValue); err != nil {
+						log.Printf("Error writing measurement value to WebSocket: %v\n", err)
+					}
 				}
 				nextCursor = getCursor(res.Links.GetNext())
 				if nextCursor == "" {
@@ -440,7 +439,7 @@ func (t *OverviewRoute) resolveDevice(next http.Handler) http.Handler {
 		r = r.WithContext(
 			context.WithValue(
 				r.Context(),
-				"device",
+				ctxDevice,
 				res.Data,
 			),
 		)
@@ -449,12 +448,12 @@ func (t *OverviewRoute) resolveDevice(next http.Handler) http.Handler {
 }
 
 func getDevice(ctx context.Context) (*api.Device, bool) {
-	dev, ok := ctx.Value("device").(*api.Device)
+	dev, ok := ctx.Value(ctxDevice).(*api.Device)
 	return dev, ok
 }
 
 func getSensor(ctx context.Context) (*api.Sensor, bool) {
-	dev, ok := ctx.Value("sensor").(*api.Sensor)
+	dev, ok := ctx.Value(ctxSensor).(*api.Sensor)
 	return dev, ok
 }
 
@@ -464,7 +463,7 @@ func (t *OverviewRoute) resolveSensor(next http.Handler) http.Handler {
 
 		device, ok := getDevice(r.Context())
 		if !ok {
-			web.HTTPError(w, errors.New("resolveSensor middleware is missing device in context, did you use resolveDevice?\n"))
+			web.HTTPError(w, errors.New("resolveSensor middleware is missing device in context, you probably didn't use resolveDevice middleware"))
 			return
 		}
 
@@ -476,7 +475,7 @@ func (t *OverviewRoute) resolveSensor(next http.Handler) http.Handler {
 		r = r.WithContext(
 			context.WithValue(
 				r.Context(),
-				"sensor",
+				ctxSensor,
 				&sensor,
 			),
 		)

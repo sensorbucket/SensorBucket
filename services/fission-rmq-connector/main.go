@@ -161,7 +161,9 @@ func (c *Connector) handleError(delivery amqp091.Delivery, err error) {
 	// The invocation failed, what to do?
 	log.Printf("Invocation error: %v. Redelivering?: %v", err.Error(), !delivery.Redelivered)
 	if !delivery.Redelivered {
-		delivery.Nack(false, true)
+		if err := delivery.Nack(false, true); err != nil {
+			log.Printf("Error Nacking amqp delivery: %v\n", err)
+		}
 	}
 }
 
@@ -188,7 +190,9 @@ func (c *Connector) handleSuccess(delivery amqp091.Delivery, res *http.Response)
 			Body:      body,
 		},
 	}
-	delivery.Ack(false)
+	if err := delivery.Ack(false); err != nil {
+		log.Printf("Error Acking amqp delivery: %v\n", err)
+	}
 }
 
 func doHTTPRequest(body []byte, endpoint string, retries int) (*http.Response, error) {

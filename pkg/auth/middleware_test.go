@@ -20,11 +20,6 @@ import (
 
 // test jwks is unreachable
 func TestAuthenticateWellKnownUnreachable(t *testing.T) {
-	type testCase struct {
-		token              string
-		expectedStatusCode int
-	}
-
 	// Arrange
 	client := jwksClientMock{
 		GetFunc: func() (jose.JSONWebKeySet, error) {
@@ -59,12 +54,6 @@ func TestAuthenticateWellKnownUnreachable(t *testing.T) {
 }
 
 func TestProtectAndAuthenticatePassClaimsToNext(t *testing.T) {
-
-	type testCase struct {
-		token              string
-		expectedStatusCode int
-	}
-
 	// Arrange
 	protect := Protect()
 	client := jwksClientMock{
@@ -74,7 +63,7 @@ func TestProtectAndAuthenticatePassClaimsToNext(t *testing.T) {
 	}
 	auth := Authenticate(&client)
 	next := HandlerMock{
-		ServeHTTPFunc: func(responseWriter http.ResponseWriter, request *http.Request) {
+		ServeHTTPFunc: func(_ http.ResponseWriter, request *http.Request) {
 			assert.Equal(t, context.WithValue(context.WithValue(context.WithValue(context.Background(), ctxCurrentTenantID, []int64{11}), ctxUserID, int64(431)), ctxPermissions, []permission{
 				READ_DEVICES,
 				READ_API_KEYS,
@@ -464,16 +453,16 @@ mxiuHhps1ig5jCN3YGj2zQ==
 -----END PRIVATE KEY-----
 `
 
-const publicKey = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzaFBj+BQAc7fJlzv7qEq
-0P7YVUxwxti296UC5gugZIAs8oAbTvHk3jkTZEB4qzSguO8pPJpZRdkXSXaB4gxc
-n0UmvlfACb+Cnxe2G+uSfGu/MgHJp4+sk0kKjPuxNlO1jEU22MPR8hOGaV6eNqTw
-hhQK5bE+gpD0gC/niyL1Y20rL+9QyMulLA7EbgIivtuyQvRRI6ibLfXy5EF6msAv
-IDXhNJVzfdVo+trD9WvYuw/jBQ96fdlCNhdxTYpTiqwj67ECPWOSJfahyrvhzNwC
-f/+2Jt/0TevY7AQWQHJUWgogZSYYXMzJM8VH34i5MXtYYjYU2QTpu59GtjJhcqgy
-zQIDAQAB
------END PUBLIC KEY-----
-`
+//const publicKey = `-----BEGIN PUBLIC KEY-----
+//MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzaFBj+BQAc7fJlzv7qEq
+//0P7YVUxwxti296UC5gugZIAs8oAbTvHk3jkTZEB4qzSguO8pPJpZRdkXSXaB4gxc
+//n0UmvlfACb+Cnxe2G+uSfGu/MgHJp4+sk0kKjPuxNlO1jEU22MPR8hOGaV6eNqTw
+//hhQK5bE+gpD0gC/niyL1Y20rL+9QyMulLA7EbgIivtuyQvRRI6ibLfXy5EF6msAv
+//IDXhNJVzfdVo+trD9WvYuw/jBQ96fdlCNhdxTYpTiqwj67ECPWOSJfahyrvhzNwC
+//f/+2Jt/0TevY7AQWQHJUWgogZSYYXMzJM8VH34i5MXtYYjYU2QTpu59GtjJhcqgy
+//zQIDAQAB
+//-----END PUBLIC KEY-----
+//`
 
 const jsonWebKeySet = `{
 	"keys":[

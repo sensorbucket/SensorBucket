@@ -37,9 +37,13 @@ func NewWorker(name string, version string, processsor processor) *worker {
 		return c.ExchangeDeclare(w.mqXchg, "topic", true, false, false, false, nil)
 	})
 	consumer := conn.Consume(w.mqQueue, func(c *amqp091.Channel) error {
-		_, err := c.QueueDeclare(w.mqQueue, true, false, false, false, amqp091.Table{})
-		c.Qos(prefetch, 0, true)
-		return err
+		if _, err := c.QueueDeclare(w.mqQueue, true, false, false, false, amqp091.Table{}); err != nil {
+			return err
+		}
+		if err := c.Qos(prefetch, 0, true); err != nil {
+			return err
+		}
+		return nil
 	})
 	cancelToken := make(chan any, 1)
 
@@ -60,13 +64,21 @@ func NewWorker(name string, version string, processsor processor) *worker {
 
 // Will run the given processor. Any returned message will be sent to it's next defined step in the pipeline
 func (w *worker) Run() {
+	processError := func(delivery amqp091.Delivery, incoming, result pipeline.Message, err error) {
+		if err := w.publishError(incoming, result, err); err != nil {
+			log.Printf("Error publishing error to queue: %v\n", err)
+		}
+		if err := delivery.Nack(false, false); err != nil {
+			log.Printf("Error Nacking delivery message: %v\n", err)
+		}
+	}
+
 	// Await any messages that appear on the message queue
 	for delivery := range w.consumer {
 		var incoming pipeline.Message
 		if err := json.Unmarshal(delivery.Body, &incoming); err != nil {
 			log.Printf("Error converting delivery: %v\n", err)
-			w.publishError(incoming, pipeline.Message{}, err)
-			delivery.Nack(false, false)
+			processError(delivery, incoming, pipeline.Message{}, err)
 			continue
 		}
 
@@ -74,8 +86,7 @@ func (w *worker) Run() {
 		result, err := w.processor(incoming)
 		if err != nil {
 			log.Printf("Error processing delivery: %v\n", err)
-			w.publishError(incoming, result, err)
-			delivery.Nack(false, false)
+			processError(delivery, incoming, result, err)
 			continue
 		}
 
@@ -83,15 +94,13 @@ func (w *worker) Run() {
 		topic, err := result.NextStep()
 		if err != nil {
 			log.Printf("Error getting next step: %v\n", err)
-			delivery.Nack(false, false)
-			w.publishError(incoming, result, err)
+			processError(delivery, incoming, result, err)
 			continue
 		}
 		msgJSON, err := json.Marshal(result)
 		if err != nil {
 			log.Printf("Error marshalling result: %v\n", err)
-			delivery.Nack(false, false)
-			w.publishError(incoming, result, fmt.Errorf("could not marshal pipelines message: %w", err))
+			processError(delivery, incoming, result, err)
 			continue
 		}
 		w.publisher <- mq.PublishMessage{Topic: topic, Publishing: amqp091.Publishing{
@@ -100,7 +109,9 @@ func (w *worker) Run() {
 		}}
 
 		// The message was succesfully handled, ack the message.
-		delivery.Ack(false)
+		if err := delivery.Ack(false); err != nil {
+			log.Printf("Error Acking delivery message: %v\n", err)
+		}
 	}
 
 	// Shutdown the MQ connection

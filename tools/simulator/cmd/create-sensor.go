@@ -51,6 +51,7 @@ var sensorCmd = &cobra.Command{
 func init() {
 	createCmd.AddCommand(sensorCmd)
 	sensorCmd.Flags().StringP("code", "c", "", "Sensor code")
+	//nolint:errcheck
 	sensorCmd.MarkFlagRequired("code")
 	sensorCmd.Flags().StringP("description", "d", "", "Sensor description")
 	sensorCmd.Flags().StringP("externalid", "e", "", "External sensor ID")

@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"time"
@@ -55,7 +57,11 @@ func Run() error {
 
 	app := userworkers.NewApplication(store)
 	srv := userworkers.NewHTTPTransport(app, HTTP_BASE, HTTP_ADDR)
-	go srv.Start()
+	go func() {
+		if err := srv.Start(); !errors.Is(err, http.ErrServerClosed) && err != nil {
+			log.Printf("Error starting HTTP Server: %v\n", err)
+		}
+	}()
 
 	var ctrl Controller
 
@@ -101,7 +107,10 @@ func Run() error {
 	log.Println("Shutting down gracefully...")
 	ctxTO, cancelTO := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelTO()
-	srv.Stop(ctxTO)
+
+	if err := srv.Stop(ctxTO); err != nil {
+		log.Printf("Error while stopping HTTP Server: %v\n", err)
+	}
 
 	return nil
 }

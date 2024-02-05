@@ -27,7 +27,6 @@ func main() {
 }
 
 var (
-	startTS   = time.Now()
 	HTTP_ADDR = env.Could("HTTP_ADDR", ":3000")
 	HTTP_BASE = env.Could("HTTP_BASE", "")
 	SB_API    = env.Must("SB_API")

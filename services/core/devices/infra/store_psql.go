@@ -69,12 +69,16 @@ func (s *PSQLStore) Delete(dev *devices.Device) error {
 	}
 
 	if _, err := tx.Exec("DELETE FROM sensors WHERE device_id=$1", dev.ID); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 
 	if _, err := tx.Exec("DELETE FROM devices WHERE id=$1", dev.ID); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 
@@ -111,6 +115,7 @@ func (s *PSQLStore) ListSensors(p pagination.Request) (*pagination.Page[devices.
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var sensors []devices.Sensor
 	for rows.Next() {
@@ -190,7 +195,9 @@ func (s *PSQLStore) updateSensors(devID int64, sensors []devices.Sensor) error {
 		return q.Where(sq.Eq{"device_id": devID})
 	})
 	if err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 	var createdSensors []*devices.Sensor
@@ -227,21 +234,29 @@ deleted_delta_loop:
 	}
 
 	if err := createSensors(tx, createdSensors); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); err != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 	if err := updateSensors(tx, updatedSensors); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); err != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 	if err := deleteSensors(tx, deletedSensors); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); err != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 
 	// Commit changes
 	if err := tx.Commit(); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); err != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 	return nil
@@ -293,6 +308,7 @@ func listSensors(db DB, mods ...SelectQueryMod) ([]devices.Sensor, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	sensors := []devices.Sensor{}
 	for rows.Next() {

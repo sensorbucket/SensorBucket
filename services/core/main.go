@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -89,7 +90,11 @@ func Run() error {
 	processinghttp.SetupRoutes(r)
 	coretransport.Create(r, measurementservice, deviceservice)
 	httpsrv := createHTTPServer(r)
-	go httpsrv.ListenAndServe()
+	go func() {
+		if err := httpsrv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) && err != nil {
+			fmt.Printf("HTTP Server error: %v\n", err)
+		}
+	}()
 	log.Printf("HTTP Listening: %s\n", httpsrv.Addr)
 
 	// Setup MQ Transports
@@ -120,7 +125,9 @@ func Run() error {
 	defer cancelTO()
 
 	// Shutdown transports
-	httpsrv.Shutdown(ctxTO)
+	if err := httpsrv.Shutdown(ctxTO); err != nil {
+		log.Printf("Error shutting down HTTP Server: %v\n", err)
+	}
 	amqpConn.Shutdown()
 
 	log.Println("Shutdown complete")

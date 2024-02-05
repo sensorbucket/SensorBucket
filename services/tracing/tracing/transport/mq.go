@@ -25,51 +25,67 @@ func processMessage(deliveries <-chan amqp091.Delivery, svc *tracing.Service) {
 	for msg := range deliveries {
 		tsHeader, ok := msg.Headers["timestamp"]
 		if !ok {
-			msg.Nack(false, false)
+			if err := msg.Nack(false, false); err != nil {
+				log.Printf("Error: failed to NACK message: %s\n", err.Error())
+			}
 			log.Printf("Error: Message missing timestamp HEADER\n")
 			continue
 		}
 		tsMilli, ok := tsHeader.(int64)
 		if !ok {
-			msg.Nack(false, false)
+			if err := msg.Nack(false, false); err != nil {
+				log.Printf("Error: failed to NACK message: %s\n", err.Error())
+			}
 			log.Printf("Error: Message timestamp header is invalid type: %T\n", tsHeader)
 			continue
 		}
 
 		ts := time.UnixMilli(tsMilli)
 		if ts.IsZero() {
-			msg.Nack(false, false)
+			if err := msg.Nack(false, false); err != nil {
+				log.Printf("Error: failed to NACK message: %s\n", err.Error())
+			}
 			log.Printf("Error: msg timestamp cannot be empty\n")
 			continue
 		}
 		if msg.RoutingKey == "errors" {
 			var res pipeline.PipelineError
 			if err := json.Unmarshal(msg.Body, &res); err != nil {
-				msg.Nack(false, false)
+				if err := msg.Nack(false, false); err != nil {
+					log.Printf("Error: failed to NACK message: %s\n", err.Error())
+				}
 				log.Printf("Error unmarshalling amqp message body to pipeline.Message: %v", err)
 				continue
 			}
 
 			if err := svc.HandlePipelineError(res, ts); err != nil {
-				msg.Nack(false, false)
+				if err := msg.Nack(false, false); err != nil {
+					log.Printf("Error: failed to NACK message: %s\n", err.Error())
+				}
 				log.Printf("Error handling pipeline message: %v\n", err)
 				continue
 			}
 		} else {
 			var res pipeline.Message
 			if err := json.Unmarshal(msg.Body, &res); err != nil {
-				msg.Nack(false, false)
+				if err := msg.Nack(false, false); err != nil {
+					log.Printf("Error: failed to NACK message: %s\n", err.Error())
+				}
 				log.Printf("Error unmarshalling amqp message body to pipeline.Message: %v", err)
 				continue
 			}
 
 			if err := svc.HandlePipelineMessage(res, ts); err != nil {
-				msg.Nack(false, false)
+				if err := msg.Nack(false, false); err != nil {
+					log.Printf("Error: failed to NACK message: %s\n", err.Error())
+				}
 				log.Printf("Error handling pipeline message: %v\n", err)
 				continue
 			}
 		}
-		msg.Ack(false)
+		if err := msg.Ack(false); err != nil {
+			log.Printf("Error: failed to ACK message: %s\n", err.Error())
+		}
 	}
 }
 

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
@@ -92,8 +91,8 @@ func (h *PipelinePageHandler) createPipeline() http.HandlerFunc {
 			return
 		}
 
-		allWorkers, ok := r.Context().Value("pipeline_workers").([]api.UserWorker)
-		if !ok {
+		allWorkers := getPipelineWorkers(r.Context())
+		if allWorkers == nil {
 			WithSnackbarError(w, "Couldn't find workers", http.StatusBadRequest)
 			return
 		}
@@ -120,13 +119,13 @@ func (h *PipelinePageHandler) createPipeline() http.HandlerFunc {
 
 func pipelineCreatePage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		workers, ok := r.Context().Value("workers").([]api.UserWorker)
-		if !ok {
+		workers := getWorkers(r.Context())
+		if workers == nil {
 			web.HTTPResponse(w, http.StatusBadRequest, "invalid workers array")
 			return
 		}
-		workersCursor, ok := r.Context().Value("workers_cursor").(string)
-		if !ok {
+		workersCursor := getWorkersCursor(r.Context())
+		if workersCursor == nil {
 			web.HTTPResponse(w, http.StatusBadRequest, "no cursor found")
 			return
 		}
@@ -134,7 +133,7 @@ func pipelineCreatePage() http.HandlerFunc {
 			Pipeline:          nil,
 			Workers:           workers,
 			WorkersInPipeline: nil,
-			WorkersNextPage:   workersCursor,
+			WorkersNextPage:   *workersCursor,
 		}
 		if isHX(r) {
 			page.WriteBody(w)
@@ -147,32 +146,32 @@ func pipelineCreatePage() http.HandlerFunc {
 func pipelineDetailPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// TODO: redirect to 404 when pipeline is empty
-		pipeline, ok := r.Context().Value("pipeline").(api.Pipeline)
-		if !ok {
+		pipeline := getPipeline(r.Context())
+		if pipeline == nil {
 			web.HTTPResponse(w, http.StatusBadRequest, "invalid pipeline model")
 			return
 		}
-		workers, ok := r.Context().Value("workers").([]api.UserWorker)
-		if !ok {
+		workers := getWorkers(r.Context())
+		if workers == nil {
 			web.HTTPResponse(w, http.StatusBadRequest, "invalid workers array")
 			return
 		}
-		workersCursor, ok := r.Context().Value("workers_cursor").(string)
-		if !ok {
+		workersCursor := getWorkersCursor(r.Context())
+		if workersCursor == nil {
 			web.HTTPResponse(w, http.StatusBadRequest, "no cursor found")
 			return
 		}
-		workersInPipeline, ok := r.Context().Value("pipeline_workers").([]api.UserWorker)
-		if !ok {
+		workersInPipeline := getPipelineWorkers(r.Context())
+		if workersInPipeline == nil {
 			web.HTTPResponse(w, http.StatusBadRequest, "no workers in pipeline found")
 			return
 		}
 
 		page := &views.PipelineEditPage{
-			Pipeline:          &pipeline,
+			Pipeline:          pipeline,
 			Workers:           workers,
 			WorkersInPipeline: &workersInPipeline,
-			WorkersNextPage:   workersCursor,
+			WorkersNextPage:   *workersCursor,
 		}
 		if isHX(r) {
 			page.WriteBody(w)
@@ -210,8 +209,8 @@ func (h *PipelinePageHandler) updatePipeline(next http.Handler) http.Handler {
 			return
 		}
 
-		allWorkers, ok := r.Context().Value("pipeline_workers").([]api.UserWorker)
-		if !ok {
+		allWorkers := getPipelineWorkers(r.Context())
+		if allWorkers == nil {
 			WithSnackbarError(w, "Couldn't find workers", http.StatusBadRequest)
 			return
 		}
@@ -247,8 +246,8 @@ func (h *PipelinePageHandler) updatePipeline(next http.Handler) http.Handler {
 
 func (h *PipelinePageHandler) pipelineStepsView() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		allWorkers, ok := r.Context().Value("pipeline_workers").([]api.UserWorker)
-		if !ok {
+		allWorkers := getPipelineWorkers(r.Context())
+		if allWorkers == nil {
 			web.HTTPResponse(w, http.StatusBadRequest, "Couldn't find workers")
 			return
 		}
@@ -319,7 +318,7 @@ func (h *PipelinePageHandler) validatePipelineSteps(next http.Handler) http.Hand
 		r = r.WithContext(
 			context.WithValue(
 				r.Context(),
-				"pipeline_workers",
+				ctxPipelineWorkers,
 				allWorkers,
 			),
 		)
@@ -401,7 +400,7 @@ func (h *PipelinePageHandler) resolvePipeline(next http.Handler) http.Handler {
 		r = r.WithContext(
 			context.WithValue(
 				r.Context(),
-				"pipeline",
+				ctxPipeline,
 				*pipeline.Data,
 			),
 		)
@@ -411,8 +410,8 @@ func (h *PipelinePageHandler) resolvePipeline(next http.Handler) http.Handler {
 
 func (h *PipelinePageHandler) resolveWorkersInPipeline(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		pipeline, ok := r.Context().Value("pipeline").(api.Pipeline)
-		if !ok {
+		pipeline := getPipeline(r.Context())
+		if pipeline == nil {
 			web.HTTPResponse(w, http.StatusBadRequest, "invalid pipeline model")
 			return
 		}
@@ -426,7 +425,7 @@ func (h *PipelinePageHandler) resolveWorkersInPipeline(next http.Handler) http.H
 		r = r.WithContext(
 			context.WithValue(
 				r.Context(),
-				"pipeline_workers",
+				ctxPipelineWorkers,
 				workersInPipeline,
 			),
 		)
@@ -448,7 +447,7 @@ func (h *PipelinePageHandler) resolveWorkers(next http.Handler) http.Handler {
 		// Include old workers or some arbitrary stuff
 		ctx := context.WithValue(
 			r.Context(),
-			"workers",
+			ctxWorkers,
 			workers.Data,
 		)
 
@@ -459,7 +458,7 @@ func (h *PipelinePageHandler) resolveWorkers(next http.Handler) http.Handler {
 
 		ctx = context.WithValue(
 			ctx,
-			"workers_cursor",
+			ctxWorkersCursor,
 			nextCursor,
 		)
 		r = r.WithContext(ctx)
@@ -506,12 +505,6 @@ func createPlaceholderWorkers(steps []string) []api.UserWorker {
 	return lo.Map(steps, func(step string, _ int) api.UserWorker {
 		return placeholderWorker(step, step)
 	})
-}
-
-var R_UUID = regexp.MustCompile("^[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}$")
-
-func isOldWorker(step string) bool {
-	return R_UUID.MatchString(step)
 }
 
 func placeholderWorker(name string, description string) api.UserWorker {

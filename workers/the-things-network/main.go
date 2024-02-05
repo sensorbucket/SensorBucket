@@ -83,8 +83,12 @@ func process(msg pipeline.Message) (pipeline.Message, error) {
 
 		gwEUI := gw.GatewayId.EUI
 		builder := builder.SetTimestamp(ts).SetMetadata(map[string]any{"gateway_eui": gwEUI}).SetSensor("antenna")
-		builder.SetValue(gw.RSSI, fmt.Sprintf("rssi_%s", gwEUI), "dB").Add()
-		builder.SetValue(gw.SNR, fmt.Sprintf("snr_%s", gwEUI), "dB").Add()
+		if err := builder.SetValue(gw.RSSI, fmt.Sprintf("rssi_%s", gwEUI), "dB").Add(); err != nil {
+			log.Printf("Failed to add RSSI for gateway %s: %v\n", gwEUI, err.Error())
+		}
+		if err := builder.SetValue(gw.SNR, fmt.Sprintf("snr_%s", gwEUI), "dB").Add(); err != nil {
+			log.Printf("Failed to add SNR for gateway %s: %v\n", gwEUI, err.Error())
+		}
 	}
 
 	return msg, nil

@@ -30,16 +30,16 @@ type WorkerStatus string
 
 const (
 	StatusUnknown WorkerStatus = "unknown"
-	StatusReady                = "ready"
-	StatusError                = "error"
+	StatusReady   WorkerStatus = "ready"
+	StatusError   WorkerStatus = "error"
 )
 
 type WorkerState string
 
 const (
 	StateUnknown  WorkerState = "unknown"
-	StateDisabled             = "disabled"
-	StateEnabled              = "enabled"
+	StateDisabled WorkerState = "disabled"
+	StateEnabled  WorkerState = "enabled"
 )
 
 type UserWorker struct {

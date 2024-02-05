@@ -34,15 +34,21 @@ func StartIngressDTOConsumer(conn *mq.AMQPConnection, svc *processing.Service, q
 		var dto processing.IngressDTO
 		if err := json.Unmarshal(delivery.Body, &dto); err != nil {
 			fmt.Printf("Error unmarshalling ingress DTO: %v\n", err)
-			delivery.Nack(false, false)
+			if err := delivery.Nack(false, false); err != nil {
+				fmt.Printf("Error Nacking ingress delivery: %v\n", err)
+			}
 			continue
 		}
 
 		if err := svc.ProcessIngressDTO(context.Background(), dto); err != nil {
 			fmt.Printf("Error processing ingress DTO: %v\n", err)
-			delivery.Nack(false, false)
+			if err := delivery.Nack(false, false); err != nil {
+				fmt.Printf("Error Nacking ingress delivery: %v\n", err)
+			}
 			continue
 		}
-		delivery.Ack(false)
+		if err := delivery.Ack(false); err != nil {
+			fmt.Printf("Error Nacking ingress delivery: %v\n", err)
+		}
 	}
 }

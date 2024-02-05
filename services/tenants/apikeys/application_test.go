@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
@@ -142,7 +143,7 @@ func TestGenerateNewApiKeyErrorOccursWhileAddingApiKeyToStore(t *testing.T) {
 		AddApiKeyFunc: func(tenantID int64, hashedApiKey HashedApiKey) error {
 			assert.Equal(t, int64(905), tenantID)
 			assert.NotEmpty(t, hashedApiKey.SecretHash)
-			assert.NotEqual(t, 0, hashedApiKey.Key.ID)
+			assert.NotEqual(t, 0, hashedApiKey.ID)
 			return fmt.Errorf("weird database error!!")
 		},
 	}
@@ -289,18 +290,12 @@ func TestRevokeApiKeyWasNotDeletedByStore(t *testing.T) {
 }
 
 func TestValidateApiKeyInvalidEncoding(t *testing.T) {
-	type scene struct {
-		Value    string
-		Expected bool
-		Error    bool
-	}
-
 	// Arrange
 	scenarios := map[string]string{
 		"invalid base64 string":  "invalid base64 blabla",
 		"invalid decoded format": asBase64("asdasdjahsdlkoahsd"),
 		"empty api key":          asBase64("1231234:"),
-		"api key id invalid int": asBase64(("123sad213213:asdasidhlas")),
+		"api key id invalid int": asBase64("123sad213213:asdasidhlas"),
 		"api key id empty":       asBase64(":asdashdlhasd"),
 	}
 	for scenario, input := range scenarios {

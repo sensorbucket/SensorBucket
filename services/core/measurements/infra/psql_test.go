@@ -45,7 +45,9 @@ func createPostgresServer(t *testing.T) *sqlx.DB {
 	})
 	require.NoError(t, err, "failed to create testcontainer")
 	t.Cleanup(func() {
-		pgc.Terminate(ctx)
+		if err := pgc.Terminate(ctx); err != nil {
+			t.Logf("Error: %v\n", err)
+		}
 	})
 
 	containerPort, err := pgc.MappedPort(ctx, "5432")

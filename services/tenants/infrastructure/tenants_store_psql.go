@@ -1,12 +1,14 @@
 package tenantsinfra
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
@@ -35,6 +37,7 @@ func (ts *TenantsStore) GetTenantById(id int64) (tenants.Tenant, error) {
 		return tenants.Tenant{}, err
 	}
 	defer rows.Close()
+
 	if rows.Next() {
 		err = rows.Scan(
 			&tenant.ID,
@@ -148,6 +151,10 @@ func (ts *TenantsStore) Create(tenant *tenants.Tenant) error {
 }
 
 func (ts *TenantsStore) Update(tenant tenants.Tenant) error {
+	tx, err := ts.db.BeginTxx(context.Background(), nil)
+	if err != nil {
+		return fmt.Errorf("could not start database Transaction: %w", err)
+	}
 	q := sq.Update("tenants").
 		Set("name", tenant.Name).
 		Set("address", tenant.Address).
@@ -160,17 +167,37 @@ func (ts *TenantsStore) Update(tenant tenants.Tenant) error {
 		Set("logo", tenant.Logo).
 		Set("parent_tenant_id", tenant.ParentID).
 		Where(sq.Eq{"id": tenant.ID})
-	res, err := q.PlaceholderFormat(sq.Dollar).RunWith(ts.db).Exec()
+	res, err := q.PlaceholderFormat(sq.Dollar).RunWith(tx).Exec()
 	if err != nil {
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback error %w while handling error: %w", rb, err)
+		}
 		return err
 	}
 	updated, err := res.RowsAffected()
+	if err != nil {
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback error %w while handling error: %w", rb, err)
+		}
+		return fmt.Errorf("error getting affected rows: %w", err)
+	}
 	if updated != 1 {
 		if updated == 0 {
-			return tenants.ErrTenantNotFound
+			var err error = tenants.ErrTenantNotFound
+			if rb := tx.Rollback(); rb != nil {
+				err = fmt.Errorf("rollback error %w while handling error: %w", rb, err)
+			}
+			return err
 		} else {
-			return fmt.Errorf("more than one row was updated")
+			err := fmt.Errorf("more than one row was updated")
+			if rb := tx.Rollback(); rb != nil {
+				err = fmt.Errorf("rollback error %w while handling error: %w", rb, err)
+			}
+			return err
 		}
+	}
+	if rb := tx.Commit(); err != nil {
+		return fmt.Errorf("commit error: %w", rb)
 	}
 	return nil
 }

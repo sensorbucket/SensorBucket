@@ -302,6 +302,7 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter measurements.DatastreamFil
 	if err != nil {
 		return nil, fmt.Errorf("error selecting datastreams from db: %w", err)
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var d measurements.Datastream

@@ -19,13 +19,6 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/views"
 )
 
-type ctxKey int
-
-const (
-	ctxAPIKeyKey ctxKey = iota
-	ctxFlashMessagesKey
-)
-
 type APIKeysPageHandler struct {
 	router chi.Router
 	client *api.APIClient
@@ -99,8 +92,7 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create the page and ensure the page is written in any circumstance
 		page := &views.APIKeysPage{}
-		defer func(p *views.APIKeysPage) {
-
+		defer func() {
 			flash_messages.AddContextFlashMessages(r, &page.FlashMessagesContainer)
 
 			// Check for any flash messages that are in the context
@@ -109,7 +101,7 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 				return
 			}
 			views.WriteWideLayout(w, page)
-		}(page)
+		}()
 
 		// The initial page starts with an overview of different tenants
 		req := h.client.TenantsApi.ListTenants(r.Context())
@@ -402,22 +394,4 @@ func getCursor(next string) string {
 		return ""
 	}
 	return u.Query().Get("cursor")
-}
-
-func customError(msg string) flash_messages.FlashMessage {
-	return flash_messages.FlashMessage{
-		Title:       "Error",
-		Description: msg,
-		MessageType: flash_messages.Error,
-		CopyButton:  false,
-	}
-}
-
-func genericError() flash_messages.FlashMessage {
-	return flash_messages.FlashMessage{
-		Title:       "Error",
-		Description: "An unexpected error occurred, please try again or contact a system administrator",
-		MessageType: flash_messages.Error,
-		CopyButton:  false,
-	}
 }

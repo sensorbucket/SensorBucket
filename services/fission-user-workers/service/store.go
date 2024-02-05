@@ -34,6 +34,8 @@ func (s *PSQLStore) WorkersExists(ids []uuid.UUID, filters ListWorkerFilters) ([
 	if err != nil {
 		return nil, fmt.Errorf("error querying for worker ids: %w", err)
 	}
+	defer rows.Close()
+
 	existingIDs := make([]uuid.UUID, 0, len(ids))
 	for rows.Next() {
 		var id uuid.UUID
@@ -63,7 +65,7 @@ func applyFilters(q sq.SelectBuilder, filters ListWorkerFilters) sq.SelectBuilde
 	return q
 }
 
-var R_UUID = regexp.MustCompile("^[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}$")
+var R_UUID = regexp.MustCompile(`^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$`)
 
 func (s *PSQLStore) ListUserWorkers(filters ListWorkerFilters, req pagination.Request) (*pagination.Page[UserWorker], error) {
 	var err error
@@ -87,6 +89,7 @@ func (s *PSQLStore) ListUserWorkers(filters ListWorkerFilters, req pagination.Re
 	if err != nil {
 		return nil, fmt.Errorf("error querying rows: %w", err)
 	}
+	defer rows.Close()
 
 	workers := []UserWorker{}
 	for rows.Next() {

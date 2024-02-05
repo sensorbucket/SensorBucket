@@ -93,12 +93,16 @@ func (s *PSQLSensorGroupStore) Save(group *devices.SensorGroup) error {
 		err = updateSensorGroup(tx, group)
 	}
 	if err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return fmt.Errorf("error updating/creating group: %w", err)
 	}
 
 	if err := saveGroupSensors(tx, group); err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return fmt.Errorf("saving group sensors: %w", err)
 	}
 
@@ -127,6 +131,7 @@ func (s *PSQLSensorGroupStore) List(p pagination.Request) (*pagination.Page[devi
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	groupMap := make(map[int64]devices.SensorGroup)
 	for rows.Next() {
@@ -176,6 +181,7 @@ func (s *PSQLSensorGroupStore) Get(id int64) (*devices.SensorGroup, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var group *devices.SensorGroup
 	for rows.Next() {
@@ -220,12 +226,16 @@ func (s *PSQLSensorGroupStore) Delete(id int64) error {
 
 	_, err = tx.Exec("DELETE FROM sensor_groups_sensors WHERE sensor_group_id = $1", id)
 	if err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return fmt.Errorf("could not delete sensor_group_sensors: %w", err)
 	}
 	_, err = tx.Exec("DELETE FROM sensor_groups WHERE id = $1", id)
 	if err != nil {
-		tx.Rollback()
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
+		}
 		return fmt.Errorf("could not delete sensor_group: %w", err)
 	}
 

@@ -50,13 +50,17 @@ func StartMQ(
 			case msg := <-consume:
 				var pmsg pipeline.Message
 				if err := json.Unmarshal(msg.Body, &pmsg); err != nil {
-					msg.Nack(false, false)
+					if nerr := msg.Nack(false, false); nerr != nil {
+						err = fmt.Errorf("error nacking message: %w, while handling another error: %w", nerr, err)
+					}
 					log.Printf("Error unmarshalling amqp message body to pipeline.Message: %v", err)
 					continue
 				}
 
 				if err := svc.StorePipelineMessage(context.Background(), pmsg); err != nil {
-					msg.Nack(false, false)
+					if nerr := msg.Nack(false, false); nerr != nil {
+						err = fmt.Errorf("error nacking message: %w, while handling another error: %w", nerr, err)
+					}
 					log.Printf("Error storing pipeline message: %v\n", err)
 					// Create error
 					msgError := pipeline.PipelineError{
@@ -79,7 +83,9 @@ func StartMQ(
 
 					continue
 				}
-				msg.Ack(false)
+				if err := msg.Ack(false); err != nil {
+					log.Printf("Error Acking message: %s\n", err.Error())
+				}
 			case <-done:
 				return
 			}
