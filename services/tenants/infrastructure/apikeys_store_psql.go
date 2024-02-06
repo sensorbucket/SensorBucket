@@ -1,6 +1,7 @@
 package tenantsinfra
 
 import (
+	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -19,34 +20,33 @@ func NewAPIKeyStorePSQL(db *sqlx.DB) *apiKeyStore {
 }
 
 type apiKeyQueryPage struct {
-	Tenant  int64     `pagination:"api_keys.tenant_id,DESC"`
-	Created time.Time `pagination:"api_keys.created,DESC"`
+	Tenant  int64     `pagination:"keys.tenant_id,DESC"`
+	Created time.Time `pagination:"keys.created,DESC"`
 }
 
 func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
 	var err error
-
 	// Pagination
 	cursor, err := pagination.GetCursor[apiKeyQueryPage](r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not getcursor from pagination request: %w", err)
 	}
 
 	q := sq.
-		Select("keys.id", "keys.name", "keys.expiration_date", "keys.created_at", "keys.tenant_id", "tenant.name", "permissions.permission").
+		Select("keys.id", "keys.name", "keys.expiration_date", "keys.created", "keys.tenant_id", "tenants.name", "permissions.permission").
 		From("api_keys keys").
-		LeftJoin("permissions on keys.id = permissions.api_key_id").
+		LeftJoin("api_key_permissions permissions on keys.id = permissions.api_key_id").
 		RightJoin("tenants on keys.tenant_id = tenants.id")
 	if len(filter.TenantID) > 0 {
-		q = q.Where(sq.Eq{"api_keys.tenant_id": filter.TenantID})
+		q = q.Where(sq.Eq{"keys.tenant_id": filter.TenantID})
 	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not apply pagination: %w", err)
 	}
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error running database query: %w", err)
 	}
 	defer rows.Close()
 
@@ -73,7 +73,7 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 			&cursor.Columns.Created,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error scanning row into api key w/ permission: %w", err)
 		}
 		if lastId != currentId {
 			// Started scanning new API key record

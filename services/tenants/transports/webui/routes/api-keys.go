@@ -194,6 +194,7 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 		var dto api.CreateApiKeyRequest
 		dto.SetName(name)
 		dto.SetTenantId(id)
+		dto.SetPermissions(permissions)
 
 		// Expiry is an optional value
 		if expiry != "" {
@@ -204,6 +205,7 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 			}
 			dto.SetExpirationDate(parsedTime)
 		}
+
 		apiKey, resp, err := h.client.ApiKeysApi.CreateApiKey(r.Context()).CreateApiKeyRequest(dto).Execute()
 		if err != nil {
 			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {

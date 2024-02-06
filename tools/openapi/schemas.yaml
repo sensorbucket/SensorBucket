@@ -273,6 +273,10 @@ createApiKeyRequest:
       type: integer
       format: int64
       example: 19
+    permissions:
+      type: array
+      items:
+        type: string
     expiration_date:
       type: string
       format: date-time
