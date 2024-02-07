@@ -1,4 +1,4 @@
-package tenantstransports
+package tenantstransports_test
 
 import (
 	"fmt"
@@ -12,12 +12,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
+	tenantstransports "sensorbucket.nl/sensorbucket/services/tenants/transports"
 )
 
 func TestNewApiKeyInvalidJsonBody(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{}
+	svc := ApiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`blablabla`))
 
@@ -33,7 +35,7 @@ func TestNewApiKeyInvalidJsonBody(t *testing.T) {
 
 func TestNewApiKeyNoName(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{}
+	svc := ApiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "", "tenant_id": 905}`))
 	req.Header.Add("content-type", "application/json")
@@ -50,7 +52,7 @@ func TestNewApiKeyNoName(t *testing.T) {
 
 func TestNewApiKeyNoOrganisationID(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{}
+	svc := ApiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "wasdasdas", "tenant_id": 0}`))
 	req.Header.Add("content-type", "application/json")
@@ -67,7 +69,7 @@ func TestNewApiKeyNoOrganisationID(t *testing.T) {
 
 func TestNewApiKeyPermissionsNotGiven(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{}
+	svc := ApiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("POST", "/api-keys",
 		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "tenant_id": 12, "expiration_date": "%s"}`, time.Now().Add(time.Hour*24).Format(time.RFC3339))))
@@ -85,7 +87,7 @@ func TestNewApiKeyPermissionsNotGiven(t *testing.T) {
 
 func TestNewApiKeyPermissionsEmptyList(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{}
+	svc := ApiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("POST", "/api-keys",
 		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "tenant_id": 12, "permissions":[], "expiration_date": "%s"}`, time.Now().Add(time.Hour*24).Format(time.RFC3339))))
@@ -103,7 +105,7 @@ func TestNewApiKeyPermissionsEmptyList(t *testing.T) {
 
 func TestNewApiKeyExpirationDateNotInTheFuture(t *testing.T) {
 	// Arrange
-	svc := &apiKeyServiceMock{}
+	svc := &ApiKeyServiceMock{}
 	transport := testTransport(svc)
 	req, _ := http.NewRequest("POST", "/api-keys",
 		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "tenant_id": 12, "permissions":["some_permission"], "expiration_date": "%s"}`, time.Now().Add(-time.Hour*24).Format(time.RFC3339))))
@@ -121,10 +123,10 @@ func TestNewApiKeyExpirationDateNotInTheFuture(t *testing.T) {
 
 func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions []string, expiry *time.Time) (string, error) {
+	svc := ApiKeyServiceMock{
+		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
-			assert.Equal(t, []string{"some_permission"}, permissions)
+			assert.Equal(t, auth.Permissions{auth.Permission("some_permission")}, permissions)
 			assert.Nil(t, expiry)
 			return "", apikeys.ErrTenantIsNotValid
 		},
@@ -145,10 +147,10 @@ func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 
 func TestNewApiKeyErrorOccurs(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions []string, expiry *time.Time) (string, error) {
+	svc := ApiKeyServiceMock{
+		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
-			assert.Equal(t, []string{"some_permission"}, permissions)
+			assert.Equal(t, auth.Permissions{auth.Permission("some_permission")}, permissions)
 			assert.Nil(t, expiry)
 			return "", fmt.Errorf("weird error!")
 		},
@@ -170,10 +172,10 @@ func TestNewApiKeyErrorOccurs(t *testing.T) {
 func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 	// Arrange
 	exp := time.Now().UTC().Add(time.Hour * 24 * 5)
-	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions []string, expiry *time.Time) (string, error) {
+	svc := ApiKeyServiceMock{
+		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
-			assert.Equal(t, []string{"some_permission"}, permissions)
+			assert.Equal(t, auth.Permissions{auth.Permission("some_permission")}, permissions)
 			assert.NotNil(t, expiry)
 			assert.Equal(t, exp, *expiry)
 			return "newapikey", nil
@@ -195,10 +197,10 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 
 func TestNewApiKeyIsCreatedWithoutExpirationDate(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(name string, tenantId int64, permissions []string, expiry *time.Time) (string, error) {
+	svc := ApiKeyServiceMock{
+		GenerateNewApiKeyFunc: func(name string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
-			assert.Equal(t, []string{"some_permission"}, permissions)
+			assert.Equal(t, auth.Permissions{auth.Permission("some_permission")}, permissions)
 			assert.Nil(t, expiry)
 			return "newapikey", nil
 		},
@@ -219,7 +221,7 @@ func TestNewApiKeyIsCreatedWithoutExpirationDate(t *testing.T) {
 
 func TestRevokeApiKeyInvalidApiKeyId(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{}
+	svc := ApiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("DELETE", "/api-keys/blablalb", nil)
 
@@ -235,7 +237,7 @@ func TestRevokeApiKeyInvalidApiKeyId(t *testing.T) {
 
 func TestRevokeApiKeyRevokesApiKey(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
+	svc := ApiKeyServiceMock{
 		RevokeApiKeyFunc: func(id int64) error {
 			assert.Equal(t, int64(123), id)
 			return nil
@@ -256,7 +258,7 @@ func TestRevokeApiKeyRevokesApiKey(t *testing.T) {
 
 func TestRevokeApiKeyRevokeFails(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
+	svc := ApiKeyServiceMock{
 		RevokeApiKeyFunc: func(id int64) error {
 			assert.Equal(t, int64(12343), id)
 			return fmt.Errorf("weird error")
@@ -277,7 +279,7 @@ func TestRevokeApiKeyRevokeFails(t *testing.T) {
 
 func TestRevokeApiKeyKeyDoesNotExist(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
+	svc := ApiKeyServiceMock{
 		RevokeApiKeyFunc: func(id int64) error {
 			assert.Equal(t, int64(12343), id)
 			return apikeys.ErrKeyNotFound
@@ -298,7 +300,7 @@ func TestRevokeApiKeyKeyDoesNotExist(t *testing.T) {
 
 func TestAuthenticateNoAuthorizationHeaderInRequest(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{}
+	svc := ApiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("GET", "/api-keys/authenticate", nil)
 
@@ -313,7 +315,7 @@ func TestAuthenticateNoAuthorizationHeaderInRequest(t *testing.T) {
 
 func TestAuthenticateAuthorizationHeaderIncorrectFormat(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{}
+	svc := ApiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("GET", "/api-keys/authenticate", nil)
 
@@ -329,7 +331,7 @@ func TestAuthenticateAuthorizationHeaderIncorrectFormat(t *testing.T) {
 
 func TestAuthenticateErrorOccursWhileValidatingApiKey(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
+	svc := ApiKeyServiceMock{
 		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{}, fmt.Errorf("database error!")
@@ -351,7 +353,7 @@ func TestAuthenticateErrorOccursWhileValidatingApiKey(t *testing.T) {
 
 func TestAuthenticateApiKeyIsNotFound(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
+	svc := ApiKeyServiceMock{
 		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{}, apikeys.ErrKeyNotFound
@@ -373,7 +375,7 @@ func TestAuthenticateApiKeyIsNotFound(t *testing.T) {
 
 func TestAuthenticateApiKeyInvalidEncodingErrorOccurs(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
+	svc := ApiKeyServiceMock{
 		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "blablabla", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{}, apikeys.ErrInvalidEncoding
@@ -395,7 +397,7 @@ func TestAuthenticateApiKeyInvalidEncodingErrorOccurs(t *testing.T) {
 
 func TestAuthenticateApiKeyIsValidNoExpirationDate(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
+	svc := ApiKeyServiceMock{
 		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{
@@ -421,7 +423,7 @@ func TestAuthenticateApiKeyIsValidNoExpirationDate(t *testing.T) {
 
 func TestAuthenticateApiKeyWithPermissions(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
+	svc := ApiKeyServiceMock{
 		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{
@@ -448,7 +450,7 @@ func TestAuthenticateApiKeyWithPermissions(t *testing.T) {
 func TestAuthenticateApiKeyIsValidWithExpirationDate(t *testing.T) {
 	// Arrange
 	exp := time.Now().Add(time.Minute).Unix()
-	svc := apiKeyServiceMock{
+	svc := ApiKeyServiceMock{
 		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{
@@ -474,7 +476,7 @@ func TestAuthenticateApiKeyIsValidWithExpirationDate(t *testing.T) {
 
 func TestListApiKeysReturnsPaginatedList(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
+	svc := ApiKeyServiceMock{
 		ListAPIKeysFunc: func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
 			return &pagination.Page[apikeys.ApiKeyDTO]{
 				Cursor: "encoded_cursor",
@@ -507,7 +509,7 @@ func TestListApiKeysReturnsPaginatedList(t *testing.T) {
 
 func TestListApiKeysInvalidParams(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{}
+	svc := ApiKeyServiceMock{}
 	transport := testTransport(&svc)
 	req, _ := http.NewRequest("GET", "/api-keys/list?tenant_id=blablalq", nil)
 
@@ -523,7 +525,7 @@ func TestListApiKeysInvalidParams(t *testing.T) {
 
 func TestListApiKeysErrorsOccursWhileRetrievingData(t *testing.T) {
 	// Arrange
-	svc := apiKeyServiceMock{
+	svc := ApiKeyServiceMock{
 		ListAPIKeysFunc: func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
 			return nil, fmt.Errorf("weird database error!")
 		},
@@ -542,11 +544,7 @@ func TestListApiKeysErrorsOccursWhileRetrievingData(t *testing.T) {
 	assert.Len(t, svc.ListAPIKeysCalls(), 1)
 }
 
-func testTransport(svc apiKeyService) *APIKeysHTTPTransport {
-	transport := &APIKeysHTTPTransport{
-		apiKeySvc: svc,
-		router:    chi.NewMux(),
-	}
-	transport.setupRoutes(transport.router)
+func testTransport(svc tenantstransports.ApiKeyService) *tenantstransports.APIKeysHTTPTransport {
+	transport := tenantstransports.NewAPIKeysHTTP(chi.NewRouter(), svc, "")
 	return transport
 }

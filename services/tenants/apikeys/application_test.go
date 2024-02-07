@@ -1,4 +1,4 @@
-package apikeys
+package apikeys_test
 
 import (
 	"encoding/base64"
@@ -8,13 +8,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
 func TestGenerateNewApiKeyCreatesNewApiKey(t *testing.T) {
 	// Arrange
 	exp := time.Date(2024, 12, 9, 33, 12, 50, 300, time.UTC)
-	tenantStore := &tenantStoreMock{
+	tenantStore := &TenantStoreMock{
 		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
 			assert.Equal(t, int64(905), id)
 			return tenants.Tenant{
@@ -23,28 +25,24 @@ func TestGenerateNewApiKeyCreatesNewApiKey(t *testing.T) {
 			}, nil
 		},
 	}
-	apiKeyStore := &apiKeyStoreMock{
-		GetHashedAPIKeyByNameAndTenantIDFunc: func(name string, tenantID int64) (HashedApiKey, error) {
+	apiKeyStore := &ApiKeyStoreMock{
+		GetHashedAPIKeyByNameAndTenantIDFunc: func(_ string, tenantID int64) (apikeys.HashedApiKey, error) {
 			assert.Equal(t, int64(905), tenantID)
-			return HashedApiKey{}, ErrKeyNotFound
+			return apikeys.HashedApiKey{}, apikeys.ErrKeyNotFound
 		},
-		AddApiKeyFunc: func(tenantID int64, permissions []string, hashedApiKey HashedApiKey) error {
+		AddApiKeyFunc: func(tenantID int64, permissions auth.Permissions, hashedApiKey apikeys.HashedApiKey) error {
 			assert.Equal(t, int64(905), tenantID)
-			assert.Equal(t, []string{"READ_DEVICES"}, permissions)
+			assert.Equal(t, auth.Permissions{auth.READ_DEVICES}, permissions)
 			assert.NotNil(t, hashedApiKey.ExpirationDate)
 			assert.Equal(t, exp, *hashedApiKey.ExpirationDate)
 			assert.NotEmpty(t, hashedApiKey.SecretHash)
-			assert.NotEqual(t, 0, hashedApiKey.Key.ID)
+			assert.NotEqual(t, 0, hashedApiKey.ID)
 			return nil
 		},
 	}
-	s := &Service{
-		tenantStore: tenantStore,
-		apiKeyStore: apiKeyStore,
-	}
-
+	s := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 905, []string{"READ_DEVICES"}, &exp)
+	res, err := s.GenerateNewApiKey("whatever", 905, auth.Permissions{auth.READ_DEVICES}, &exp)
 
 	// Assert
 	assert.NoError(t, err)
@@ -57,7 +55,7 @@ func TestGenerateNewApiKeyCreatesNewApiKey(t *testing.T) {
 func TestGenerateNewAPIKeyNameAndTenantCombinationNotUnique(t *testing.T) {
 	// Arrange
 	exp := time.Date(2024, 12, 9, 33, 12, 50, 300, time.UTC)
-	tenantStore := &tenantStoreMock{
+	tenantStore := &TenantStoreMock{
 		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
 			assert.Equal(t, int64(905), id)
 			return tenants.Tenant{
@@ -66,27 +64,24 @@ func TestGenerateNewAPIKeyNameAndTenantCombinationNotUnique(t *testing.T) {
 			}, nil
 		},
 	}
-	apiKeyStore := &apiKeyStoreMock{
-		GetHashedAPIKeyByNameAndTenantIDFunc: func(name string, tenantID int64) (HashedApiKey, error) {
+	apiKeyStore := &ApiKeyStoreMock{
+		GetHashedAPIKeyByNameAndTenantIDFunc: func(name string, tenantID int64) (apikeys.HashedApiKey, error) {
 			assert.Equal(t, int64(905), tenantID)
-			return HashedApiKey{
-				Key: Key{
+			return apikeys.HashedApiKey{
+				Key: apikeys.Key{
 					ID:   2431,
 					Name: "already exists!",
 				},
 			}, nil
 		},
 	}
-	s := &Service{
-		tenantStore: tenantStore,
-		apiKeyStore: apiKeyStore,
-	}
+	s := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 905, []string{"READ_DEVICES"}, &exp)
+	res, err := s.GenerateNewApiKey("whatever", 905, auth.Permissions{auth.READ_API_KEYS}, &exp)
 
 	// Assert
-	assert.ErrorIs(t, err, ErrKeyNameTenantIDCombinationNotUnique)
+	assert.ErrorIs(t, err, apikeys.ErrKeyNameTenantIDCombinationNotUnique)
 	assert.Empty(t, res)
 	assert.Len(t, apiKeyStore.GetHashedAPIKeyByNameAndTenantIDCalls(), 1)
 	assert.Len(t, tenantStore.GetTenantByIdCalls(), 1)
@@ -95,7 +90,7 @@ func TestGenerateNewAPIKeyNameAndTenantCombinationNotUnique(t *testing.T) {
 func TestGenerateNewAPIKeyCheckCombinationUniqueErrorOccurs(t *testing.T) {
 	// Arrange
 	exp := time.Date(2024, 12, 9, 33, 12, 50, 300, time.UTC)
-	tenantStore := &tenantStoreMock{
+	tenantStore := &TenantStoreMock{
 		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
 			assert.Equal(t, int64(905), id)
 			return tenants.Tenant{
@@ -104,19 +99,16 @@ func TestGenerateNewAPIKeyCheckCombinationUniqueErrorOccurs(t *testing.T) {
 			}, nil
 		},
 	}
-	apiKeyStore := &apiKeyStoreMock{
-		GetHashedAPIKeyByNameAndTenantIDFunc: func(name string, tenantID int64) (HashedApiKey, error) {
+	apiKeyStore := &ApiKeyStoreMock{
+		GetHashedAPIKeyByNameAndTenantIDFunc: func(name string, tenantID int64) (apikeys.HashedApiKey, error) {
 			assert.Equal(t, int64(905), tenantID)
-			return HashedApiKey{}, fmt.Errorf("weird db error!")
+			return apikeys.HashedApiKey{}, fmt.Errorf("weird db error!")
 		},
 	}
-	s := &Service{
-		tenantStore: tenantStore,
-		apiKeyStore: apiKeyStore,
-	}
+	s := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 905, []string{"READ_DEVICES"}, &exp)
+	res, err := s.GenerateNewApiKey("whatever", 905, auth.Permissions{auth.READ_DEVICES}, &exp)
 
 	// Assert
 	assert.Error(t, err)
@@ -127,7 +119,7 @@ func TestGenerateNewAPIKeyCheckCombinationUniqueErrorOccurs(t *testing.T) {
 
 func TestGenerateNewApiKeyErrorOccursWhileAddingApiKeyToStore(t *testing.T) {
 	// Arrange
-	tenantStore := &tenantStoreMock{
+	tenantStore := &TenantStoreMock{
 		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
 			assert.Equal(t, int64(905), id)
 			return tenants.Tenant{
@@ -136,26 +128,23 @@ func TestGenerateNewApiKeyErrorOccursWhileAddingApiKeyToStore(t *testing.T) {
 			}, nil
 		},
 	}
-	apiKeyStore := &apiKeyStoreMock{
-		GetHashedAPIKeyByNameAndTenantIDFunc: func(name string, tenantID int64) (HashedApiKey, error) {
+	apiKeyStore := &ApiKeyStoreMock{
+		GetHashedAPIKeyByNameAndTenantIDFunc: func(name string, tenantID int64) (apikeys.HashedApiKey, error) {
 			assert.Equal(t, int64(905), tenantID)
-			return HashedApiKey{}, ErrKeyNotFound
+			return apikeys.HashedApiKey{}, apikeys.ErrKeyNotFound
 		},
-		AddApiKeyFunc: func(tenantID int64, permissions []string, hashedApiKey HashedApiKey) error {
+		AddApiKeyFunc: func(tenantID int64, permissions auth.Permissions, hashedApiKey apikeys.HashedApiKey) error {
 			assert.Equal(t, int64(905), tenantID)
-			assert.Equal(t, []string{"READ_DEVICES"}, permissions)
+			assert.Equal(t, auth.Permissions{auth.READ_DEVICES}, permissions)
 			assert.NotEmpty(t, hashedApiKey.SecretHash)
 			assert.NotEqual(t, 0, hashedApiKey.ID)
 			return fmt.Errorf("weird database error!!")
 		},
 	}
-	s := &Service{
-		tenantStore: tenantStore,
-		apiKeyStore: apiKeyStore,
-	}
+	s := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 905, []string{"READ_DEVICES"}, nil)
+	res, err := s.GenerateNewApiKey("whatever", 905, auth.Permissions{auth.READ_DEVICES}, nil)
 
 	// Assert
 	assert.Error(t, err)
@@ -166,18 +155,15 @@ func TestGenerateNewApiKeyErrorOccursWhileAddingApiKeyToStore(t *testing.T) {
 
 func TestGenerateNewApiKeyPermissionsContains1InvalidPermission(t *testing.T) {
 	// Arrange
-	tenantStore := &tenantStoreMock{}
-	apiKeyStore := &apiKeyStoreMock{}
-	s := &Service{
-		tenantStore: tenantStore,
-		apiKeyStore: apiKeyStore,
-	}
+	tenantStore := &TenantStoreMock{}
+	apiKeyStore := &ApiKeyStoreMock{}
+	s := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 905, []string{"READ_DEVICES", "WRITE_DEVICES", "invalid_permission_2"}, nil)
+	res, err := s.GenerateNewApiKey("whatever", 905, auth.Permissions{auth.READ_API_KEYS, auth.READ_DEVICES, auth.Permission("invalidpermission")}, nil)
 
 	// Assert
-	assert.ErrorIs(t, ErrPermissionsInvalid, err)
+	assert.ErrorIs(t, err, apikeys.ErrPermissionsInvalid)
 	assert.Empty(t, res)
 	assert.Len(t, tenantStore.GetTenantByIdCalls(), 0)
 	assert.Len(t, apiKeyStore.AddApiKeyCalls(), 0)
@@ -185,7 +171,7 @@ func TestGenerateNewApiKeyPermissionsContains1InvalidPermission(t *testing.T) {
 
 func TestGenerateNewApiKeyErrorOccursWhenRetrievingTenant(t *testing.T) {
 	// Arrange
-	tenantStore := &tenantStoreMock{
+	tenantStore := &TenantStoreMock{
 		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
 			assert.Equal(t, int64(905), id)
 			return tenants.Tenant{
@@ -193,12 +179,10 @@ func TestGenerateNewApiKeyErrorOccursWhenRetrievingTenant(t *testing.T) {
 			}, fmt.Errorf("weird database error!")
 		},
 	}
-	s := &Service{
-		tenantStore: tenantStore,
-	}
+	s := apikeys.NewAPIKeyService(tenantStore, &ApiKeyStoreMock{})
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 905, []string{"READ_DEVICES"}, nil)
+	res, err := s.GenerateNewApiKey("whatever", 905, auth.Permissions{auth.READ_DEVICES}, nil)
 
 	// Assert
 	assert.Error(t, err)
@@ -208,28 +192,26 @@ func TestGenerateNewApiKeyErrorOccursWhenRetrievingTenant(t *testing.T) {
 
 func TestGenerateNewApiKeyTenantDoesNotExist(t *testing.T) {
 	// Arrange
-	tenantStore := &tenantStoreMock{
+	tenantStore := &TenantStoreMock{
 		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
 			assert.Equal(t, int64(334), id)
-			return tenants.Tenant{}, ErrTenantIsNotValid
+			return tenants.Tenant{}, apikeys.ErrTenantIsNotValid
 		},
 	}
-	s := &Service{
-		tenantStore: tenantStore,
-	}
+	s := apikeys.NewAPIKeyService(tenantStore, &ApiKeyStoreMock{})
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 334, []string{"READ_DEVICES"}, nil)
+	res, err := s.GenerateNewApiKey("whatever", 334, auth.Permissions{auth.READ_DEVICES}, nil)
 
 	// Assert
-	assert.ErrorIs(t, err, ErrTenantIsNotValid)
+	assert.ErrorIs(t, err, apikeys.ErrTenantIsNotValid)
 	assert.Empty(t, res)
 	assert.Len(t, tenantStore.GetTenantByIdCalls(), 1)
 }
 
 func TestGenerateNewApiKeyTenantIsNottenantsActive(t *testing.T) {
 	// Arrange
-	tenantStore := &tenantStoreMock{
+	tenantStore := &TenantStoreMock{
 		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
 			assert.Equal(t, int64(334), id)
 			return tenants.Tenant{
@@ -237,30 +219,26 @@ func TestGenerateNewApiKeyTenantIsNottenantsActive(t *testing.T) {
 			}, nil
 		},
 	}
-	s := &Service{
-		tenantStore: tenantStore,
-	}
+	s := apikeys.NewAPIKeyService(tenantStore, &ApiKeyStoreMock{})
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 334, []string{"READ_DEVICES"}, nil)
+	res, err := s.GenerateNewApiKey("whatever", 334, auth.Permissions{auth.READ_DEVICES}, nil)
 
 	// Assert
-	assert.ErrorIs(t, err, ErrTenantIsNotValid)
+	assert.ErrorIs(t, err, apikeys.ErrTenantIsNotValid)
 	assert.Empty(t, res)
 	assert.Len(t, tenantStore.GetTenantByIdCalls(), 1)
 }
 
 func TestRevokeApiKeyDeletesKey(t *testing.T) {
 	// Arrange
-	apiKeyStore := &apiKeyStoreMock{
+	apiKeyStore := &ApiKeyStoreMock{
 		DeleteApiKeyFunc: func(id int64) error {
 			assert.Equal(t, int64(665213432), id)
 			return nil
 		},
 	}
-	s := &Service{
-		apiKeyStore: apiKeyStore,
-	}
+	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
 	err := s.RevokeApiKey(665213432)
@@ -272,15 +250,13 @@ func TestRevokeApiKeyDeletesKey(t *testing.T) {
 
 func TestRevokeApiKeyErrorOccurs(t *testing.T) {
 	// Arrange
-	apiKeyStore := &apiKeyStoreMock{
+	apiKeyStore := &ApiKeyStoreMock{
 		DeleteApiKeyFunc: func(id int64) error {
 			assert.Equal(t, int64(83245345), id)
 			return fmt.Errorf("weird error!!")
 		},
 	}
-	s := &Service{
-		apiKeyStore: apiKeyStore,
-	}
+	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
 	err := s.RevokeApiKey(83245345)
@@ -292,21 +268,19 @@ func TestRevokeApiKeyErrorOccurs(t *testing.T) {
 
 func TestRevokeApiKeyWasNotDeletedByStore(t *testing.T) {
 	// Arrange
-	apiKeyStore := &apiKeyStoreMock{
+	apiKeyStore := &ApiKeyStoreMock{
 		DeleteApiKeyFunc: func(id int64) error {
 			assert.Equal(t, int64(83245345), id)
-			return ErrKeyNotFound
+			return apikeys.ErrKeyNotFound
 		},
 	}
-	s := &Service{
-		apiKeyStore: apiKeyStore,
-	}
+	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
 	err := s.RevokeApiKey(83245345)
 
 	// Assert
-	assert.ErrorIs(t, err, ErrKeyNotFound)
+	assert.ErrorIs(t, err, apikeys.ErrKeyNotFound)
 	assert.Len(t, apiKeyStore.DeleteApiKeyCalls(), 1)
 }
 
@@ -322,28 +296,26 @@ func TestValidateApiKeyInvalidEncoding(t *testing.T) {
 	for scenario, input := range scenarios {
 		t.Run(scenario, func(t *testing.T) {
 			// Act
-			s := &Service{}
+			s := &apikeys.Service{}
 			res, err := s.AuthenticateApiKey(input)
 
 			// Assert
 			assert.Equal(t, "", res.TenantID)
-			assert.ErrorIs(t, err, ErrInvalidEncoding)
+			assert.ErrorIs(t, err, apikeys.ErrInvalidEncoding)
 		})
 	}
 }
 
 func TestValidateApiKeyErrorOccursWhileRetrievingKey(t *testing.T) {
 	// Arrange
-	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (HashedApiKey, error) {
+	apiKeyStore := &ApiKeyStoreMock{
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
 			assert.Equal(t, []tenants.State{tenants.Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
-			return HashedApiKey{}, fmt.Errorf("database error!!")
+			return apikeys.HashedApiKey{}, fmt.Errorf("database error!!")
 		},
 	}
-	s := &Service{
-		apiKeyStore: apiKeyStore,
-	}
+	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
 	res, err := s.AuthenticateApiKey(asBase64("43214:somevalidapikey"))
@@ -356,12 +328,12 @@ func TestValidateApiKeyErrorOccursWhileRetrievingKey(t *testing.T) {
 
 func TestValidateApiKeyInvalidKey(t *testing.T) {
 	// Arrange
-	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (HashedApiKey, error) {
+	apiKeyStore := &ApiKeyStoreMock{
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
 			assert.Equal(t, []tenants.State{tenants.Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
-			return HashedApiKey{
-				Key: Key{
+			return apikeys.HashedApiKey{
+				Key: apikeys.Key{
 					ID: id,
 				},
 				TenantID:   823,
@@ -369,28 +341,26 @@ func TestValidateApiKeyInvalidKey(t *testing.T) {
 			}, nil
 		},
 	}
-	s := &Service{
-		apiKeyStore: apiKeyStore,
-	}
+	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
 	res, err := s.AuthenticateApiKey(asBase64("43214:someinvalidapikey"))
 
 	// Assert
 	assert.Equal(t, "", res.TenantID)
-	assert.ErrorIs(t, err, ErrKeyNotFound)
+	assert.ErrorIs(t, err, apikeys.ErrKeyNotFound)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
 }
 
 func TestValidateApiKeyKeyIsExpired(t *testing.T) {
 	// Arrange
-	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (HashedApiKey, error) {
+	apiKeyStore := &ApiKeyStoreMock{
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
 			assert.Equal(t, []tenants.State{tenants.Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
 			t := time.Date(2010, 11, 12, 8, 37, 3, 500, time.Local)
-			return HashedApiKey{
-				Key: Key{
+			return apikeys.HashedApiKey{
+				Key: apikeys.Key{
 					ID:             id,
 					ExpirationDate: &t,
 				},
@@ -403,29 +373,27 @@ func TestValidateApiKeyKeyIsExpired(t *testing.T) {
 			return nil
 		},
 	}
-	s := &Service{
-		apiKeyStore: apiKeyStore,
-	}
+	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
 	res, err := s.AuthenticateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
 
 	// Assert
 	assert.Equal(t, "", res.TenantID)
-	assert.ErrorIs(t, err, ErrKeyNotFound)
+	assert.ErrorIs(t, err, apikeys.ErrKeyNotFound)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
 	assert.Len(t, apiKeyStore.DeleteApiKeyCalls(), 1)
 }
 
 func TestValidateApiKeyKeyIsExpiredDeleteErrorOccurs(t *testing.T) {
 	// Arrange
-	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (HashedApiKey, error) {
+	apiKeyStore := &ApiKeyStoreMock{
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
 			assert.Equal(t, []tenants.State{tenants.Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
 			t := time.Date(2010, 11, 12, 8, 37, 3, 500, time.Local)
-			return HashedApiKey{
-				Key: Key{
+			return apikeys.HashedApiKey{
+				Key: apikeys.Key{
 					ID:             id,
 					ExpirationDate: &t,
 				},
@@ -438,28 +406,26 @@ func TestValidateApiKeyKeyIsExpiredDeleteErrorOccurs(t *testing.T) {
 			return fmt.Errorf("weird database error")
 		},
 	}
-	s := &Service{
-		apiKeyStore: apiKeyStore,
-	}
+	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
 	res, err := s.AuthenticateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
 
 	// Assert
 	assert.Equal(t, "", res.TenantID)
-	assert.ErrorIs(t, err, ErrKeyNotFound)
+	assert.ErrorIs(t, err, apikeys.ErrKeyNotFound)
 	assert.Len(t, apiKeyStore.GetHashedApiKeyByIdCalls(), 1)
 	assert.Len(t, apiKeyStore.DeleteApiKeyCalls(), 1)
 }
 
 func TestValidateApiKeyValidKey(t *testing.T) {
 	// Arrange
-	apiKeyStore := &apiKeyStoreMock{
-		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (HashedApiKey, error) {
+	apiKeyStore := &ApiKeyStoreMock{
+		GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
 			assert.Equal(t, []tenants.State{tenants.Active}, stateFilter)
 			assert.Equal(t, int64(43214), id)
-			return HashedApiKey{
-				Key: Key{
+			return apikeys.HashedApiKey{
+				Key: apikeys.Key{
 					ID: id,
 				},
 				TenantID:   534,
@@ -467,9 +433,7 @@ func TestValidateApiKeyValidKey(t *testing.T) {
 			}, nil
 		},
 	}
-	s := &Service{
-		apiKeyStore: apiKeyStore,
-	}
+	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
 	res, err := s.AuthenticateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))

@@ -9,12 +9,15 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
-func NewAPIKeyStorePSQL(db *sqlx.DB) *apiKeyStore {
-	return &apiKeyStore{
+var _ apikeys.ApiKeyStore = (*ApiKeyStore)(nil)
+
+func NewAPIKeyStorePSQL(db *sqlx.DB) *ApiKeyStore {
+	return &ApiKeyStore{
 		db: db,
 	}
 }
@@ -24,7 +27,7 @@ type apiKeyQueryPage struct {
 	Created time.Time `pagination:"keys.created,DESC"`
 }
 
-func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
+func (as *ApiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
 	var err error
 	// Pagination
 	cursor, err := pagination.GetCursor[apiKeyQueryPage](r)
@@ -94,7 +97,7 @@ func (as *apiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 	return &page, nil
 }
 
-func (as *apiKeyStore) AddApiKey(tenantID int64, permissions []string, hashedKey apikeys.HashedApiKey) error {
+func (as *ApiKeyStore) AddApiKey(tenantID int64, permissions auth.Permissions, hashedKey apikeys.HashedApiKey) error {
 	// Create the insert statement for the permissions which must ran with the insert API key query
 	apiKeyPermissionsQ := sq.Insert("api_key_permissions").
 		Columns("permission", "api_key_id")
@@ -125,7 +128,7 @@ func (as *apiKeyStore) AddApiKey(tenantID int64, permissions []string, hashedKey
 }
 
 // Deletes an API key if found. If the key is not found, ErrKeyNotFound is returned
-func (as *apiKeyStore) DeleteApiKey(id int64) error {
+func (as *ApiKeyStore) DeleteApiKey(id int64) error {
 	q := sq.Delete("").From("api_keys").Where("id=?", id)
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Exec()
 	if err != nil {
@@ -143,7 +146,7 @@ func (as *apiKeyStore) DeleteApiKey(id int64) error {
 
 // Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.
 // Only returns the API key if the given tenant confirms to any state passed in the stateFilter
-func (as *apiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
+func (as *ApiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
 	// TODO: how secure is this query?
 	q := sq.
 		Select("api_keys.id, api_keys.value, api_keys.tenant_id, api_keys.expiration_date", "api_key_permissions.permission").
@@ -179,7 +182,7 @@ func (as *apiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State
 }
 
 // Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.
-func (as *apiKeyStore) GetHashedAPIKeyByNameAndTenantID(name string, tenantID int64) (apikeys.HashedApiKey, error) {
+func (as *ApiKeyStore) GetHashedAPIKeyByNameAndTenantID(name string, tenantID int64) (apikeys.HashedApiKey, error) {
 	q := sq.
 		Select("id, value,  tenant_id,  expiration_date").
 		From("api_keys").
@@ -210,6 +213,6 @@ func (as *apiKeyStore) GetHashedAPIKeyByNameAndTenantID(name string, tenantID in
 	return k, nil
 }
 
-type apiKeyStore struct {
+type ApiKeyStore struct {
 	db *sqlx.DB
 }

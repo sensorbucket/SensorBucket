@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-jose/go-jose/v3"
 	"github.com/golang-jwt/jwt"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -62,16 +63,23 @@ func TestProtectAndAuthenticatePassClaimsToNext(t *testing.T) {
 		},
 	}
 	auth := Authenticate(&client)
-	next := HandlerMock{
-		ServeHTTPFunc: func(_ http.ResponseWriter, request *http.Request) {
-			assert.Equal(t, context.WithValue(context.WithValue(context.WithValue(context.Background(), ctxCurrentTenantID, []int64{11}), ctxUserID, int64(431)), ctxPermissions, []permission{
-				READ_DEVICES,
-				READ_API_KEYS,
-			}), request.Context())
+	next := &HandlerMock{
+		ServeHTTPFunc: func(_ http.ResponseWriter, r *http.Request) {
+			tID, err := GetTenant(r.Context())
+			assert.NoError(t, err)
+			assert.Equal(t, int64(11), tID)
+
+			uID, err := GetUser(r.Context())
+			assert.NoError(t, err)
+			assert.Equal(t, int64(431), uID)
+
+			permissions, err := GetPermissions(r.Context())
+			assert.NoError(t, err)
+			assert.Equal(t, Permissions{READ_DEVICES, READ_API_KEYS}, permissions)
 		},
 	}
 	s := http.ServeMux{}
-	s.Handle("/", auth(protect(&next)))
+	s.Handle("/", auth(protect(next)))
 
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
@@ -99,99 +107,99 @@ func TestProtectAndAuthenticatePassClaimsToNext(t *testing.T) {
 
 func TestProtect(t *testing.T) {
 	type testCase struct {
-		values             map[ctxKey]interface{}
+		values             map[ctxKey]any
 		expectedStatusCode int
 		expectedNextCalls  int
 	}
 	scenarios := map[string]testCase{
 		"all required values present": {
-			values: map[ctxKey]interface{}{
-				ctxCurrentTenantID: []int64{12, 54, 13},
-				ctxPermissions:     []permission{READ_API_KEYS},
-				ctxUserID:          int64(124),
+			values: map[ctxKey]any{
+				ctxTenantID:    int64(11),
+				ctxPermissions: Permissions{READ_API_KEYS},
+				ctxUserID:      int64(124),
 			},
 			expectedStatusCode: 200,
 			expectedNextCalls:  1,
 		},
 		"tid is missing": {
-			values: map[ctxKey]interface{}{
-				ctxPermissions: []permission{READ_API_KEYS},
+			values: map[ctxKey]any{
+				ctxPermissions: Permissions{READ_API_KEYS},
 				ctxUserID:      int64(124),
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
 		"perms is missing": {
-			values: map[ctxKey]interface{}{
-				ctxCurrentTenantID: []int64{12, 54, 13},
-				ctxUserID:          int64(124),
+			values: map[ctxKey]any{
+				ctxTenantID: int64(12),
+				ctxUserID:   int64(124),
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
 		"uid is missing": {
-			values: map[ctxKey]interface{}{
-				ctxCurrentTenantID: []int64{12, 54, 13},
-				ctxPermissions:     []permission{READ_API_KEYS},
+			values: map[ctxKey]any{
+				ctxTenantID:    int64(13),
+				ctxPermissions: Permissions{READ_API_KEYS},
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
 		"all required values are missing": {
-			values:             map[ctxKey]interface{}{},
+			values:             map[ctxKey]any{},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
 		"tid is wrong type": {
-			values: map[ctxKey]interface{}{
-				ctxCurrentTenantID: "123", // should be []int64!
-				ctxPermissions:     []permission{READ_API_KEYS},
-				ctxUserID:          int64(124),
+			values: map[ctxKey]any{
+				ctxTenantID:    "123", // should be int64!
+				ctxPermissions: Permissions{READ_API_KEYS},
+				ctxUserID:      int64(124),
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
 		"perms is wrong type": {
-			values: map[ctxKey]interface{}{
-				ctxCurrentTenantID: []int64{12, 54, 13},
-				ctxPermissions:     54325,
-				ctxUserID:          int64(124),
+			values: map[ctxKey]any{
+				ctxTenantID:    int64(13),
+				ctxPermissions: 54325,
+				ctxUserID:      int64(124),
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
 		"uid is wrong type": {
-			values: map[ctxKey]interface{}{
-				ctxCurrentTenantID: []int64{12, 54, 13},
-				ctxPermissions:     []permission{READ_API_KEYS},
-				ctxUserID:          "asdasdsad",
+			values: map[ctxKey]any{
+				ctxTenantID:    int64(13),
+				ctxPermissions: Permissions{READ_API_KEYS},
+				ctxUserID:      "asdasdsad",
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
 		"tid is nil": {
-			values: map[ctxKey]interface{}{
-				ctxCurrentTenantID: nil,
-				ctxPermissions:     []permission{READ_API_KEYS},
-				ctxUserID:          int64(124),
+			values: map[ctxKey]any{
+				ctxTenantID:    nil,
+				ctxPermissions: Permissions{READ_API_KEYS},
+				ctxUserID:      int64(124),
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
 		"perms is nil": {
-			values: map[ctxKey]interface{}{
-				ctxCurrentTenantID: []int64{12, 54, 13},
-				ctxPermissions:     nil,
-				ctxUserID:          int64(124),
+			values: map[ctxKey]any{
+				ctxTenantID:    int64(13),
+				ctxPermissions: nil,
+				ctxUserID:      int64(124),
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
 		"uid is nil": {
-			values: map[ctxKey]interface{}{
-				ctxCurrentTenantID: []int64{12, 54, 13},
-				ctxPermissions:     []permission{READ_API_KEYS},
-				ctxUserID:          nil,
+			values: map[ctxKey]any{
+				ctxTenantID:    int64(13),
+				ctxPermissions: Permissions{READ_API_KEYS},
+				ctxUserID:      nil,
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
@@ -205,15 +213,15 @@ func TestProtect(t *testing.T) {
 				t.Fatal(err)
 			}
 			rr := httptest.NewRecorder()
-			ctx := testAccumulateContext(context.Background(), cfg.values)
+			ctx := createTestContext(context.Background(), cfg.values)
 
-			next := HandlerMock{
+			next := &HandlerMock{
 				ServeHTTPFunc: func(responseWriter http.ResponseWriter, request *http.Request) {},
 			}
 
 			handler := Protect()
 			s := http.ServeMux{}
-			s.Handle("/", handler(&next))
+			s.Handle("/", handler(next))
 
 			// Act
 			s.ServeHTTP(rr, req.WithContext(ctx))
@@ -227,12 +235,13 @@ func TestProtect(t *testing.T) {
 
 func TestAuthenticate(t *testing.T) {
 	in24Hours := time.Now().Add(time.Hour * 24).Unix()
-	var nilSlice []permission
 	type testCase struct {
-		authHeader         string
-		expectedStatusCode int
-		expectedNextCalls  int
-		expectedContext    context.Context
+		authHeader          string
+		expectedStatusCode  int
+		expectedNextCalls   int
+		expectedTenantID    *int64
+		expectedUserID      *int64
+		expectedPermissions Permissions
 	}
 	scenarios := map[string]testCase{
 		"auth header is invalid": {
@@ -249,7 +258,6 @@ func TestAuthenticate(t *testing.T) {
 			authHeader:         "",
 			expectedStatusCode: 200,
 			expectedNextCalls:  1,
-			expectedContext:    context.Background(),
 		},
 		"bearer token is valid and contains all claims": {
 			authHeader: fmt.Sprintf("Bearer %s", createToken(
@@ -263,12 +271,11 @@ func TestAuthenticate(t *testing.T) {
 					"exp": in24Hours,
 				},
 			)),
-			expectedStatusCode: 200,
-			expectedNextCalls:  1,
-			expectedContext: context.WithValue(context.WithValue(context.WithValue(context.Background(), ctxCurrentTenantID, []int64{11}), ctxUserID, int64(431)), ctxPermissions, []permission{
-				READ_DEVICES,
-				READ_API_KEYS,
-			}),
+			expectedStatusCode:  200,
+			expectedNextCalls:   1,
+			expectedUserID:      lo.ToPtr[int64](431),
+			expectedTenantID:    lo.ToPtr[int64](11),
+			expectedPermissions: Permissions{READ_DEVICES, READ_API_KEYS},
 		},
 		"bearer token contains invalid permission": {
 			authHeader: fmt.Sprintf("Bearer %s", createToken(
@@ -315,9 +322,10 @@ func TestAuthenticate(t *testing.T) {
 					"exp": in24Hours,
 				},
 			)),
-			expectedContext:    context.WithValue(context.WithValue(context.WithValue(context.Background(), ctxCurrentTenantID, []int64{11}), ctxUserID, int64(431)), ctxPermissions, nilSlice),
 			expectedStatusCode: 200,
 			expectedNextCalls:  1,
+			expectedTenantID:   lo.ToPtr[int64](11),
+			expectedUserID:     lo.ToPtr[int64](431),
 		},
 		"bearer token is valid but uid is missing": {
 			authHeader: fmt.Sprintf("Bearer %s", createToken(
@@ -360,8 +368,30 @@ func TestAuthenticate(t *testing.T) {
 			rr := httptest.NewRecorder()
 
 			next := HandlerMock{
-				ServeHTTPFunc: func(responseWriter http.ResponseWriter, request *http.Request) {
-					assert.Equal(t, cfg.expectedContext, request.Context())
+				ServeHTTPFunc: func(_ http.ResponseWriter, r *http.Request) {
+					tID, err := GetTenant(r.Context())
+					if cfg.expectedTenantID == nil {
+						assert.Error(t, err)
+					} else {
+						assert.NoError(t, err)
+						assert.Equal(t, *cfg.expectedTenantID, tID)
+					}
+
+					uID, err := GetUser(r.Context())
+					if cfg.expectedTenantID == nil {
+						assert.Error(t, err)
+					} else {
+						assert.NoError(t, err)
+						assert.Equal(t, *cfg.expectedUserID, uID)
+					}
+
+					permissions, err := GetPermissions(r.Context())
+					if cfg.expectedTenantID == nil {
+						assert.Error(t, err)
+					} else {
+						assert.NoError(t, err)
+						assert.Equal(t, cfg.expectedPermissions, permissions)
+					}
 				},
 			}
 
@@ -397,7 +427,7 @@ func jsonPrivateKey() any {
 	return privateKey
 }
 
-func testAccumulateContext(ctx context.Context, values map[ctxKey]interface{}) context.Context {
+func createTestContext(ctx context.Context, values map[ctxKey]any) context.Context {
 	for key, val := range values {
 		ctx = context.WithValue(ctx, key, val)
 	}

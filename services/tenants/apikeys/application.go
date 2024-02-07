@@ -1,5 +1,7 @@
 package apikeys
 
+//go:generate moq -pkg apikeys_test -out mock_test.go . ApiKeyStore TenantStore
+
 import (
 	"encoding/base64"
 	"fmt"
@@ -22,7 +24,7 @@ var (
 	ErrKeyNameTenantIDCombinationNotUnique = web.NewError(http.StatusBadRequest, "API Key with name already exists for this tenant", "API_KEY_NAME_TENANT_COMBO_NOT_UNIQUE")
 )
 
-func NewAPIKeyService(tenantStore tenantStore, apiKeyStore apiKeyStore) *Service {
+func NewAPIKeyService(tenantStore TenantStore, apiKeyStore ApiKeyStore) *Service {
 	return &Service{
 		tenantStore: tenantStore,
 		apiKeyStore: apiKeyStore,
@@ -41,9 +43,9 @@ func (s *Service) RevokeApiKey(apiKeyId int64) error {
 // Creates a new API key for the given tenant and with the given expiration date.
 // Returns the api key as: 'apiKeyId:apiKey' encoded to a base64 string.
 // Fails if the tenant is not active
-func (s *Service) GenerateNewApiKey(name string, tenantId int64, permissions []string, expirationDate *time.Time) (string, error) {
-	if valid := auth.PermissionsValid(permissions); !valid {
-		return "", ErrPermissionsInvalid
+func (s *Service) GenerateNewApiKey(name string, tenantId int64, permissions auth.Permissions, expirationDate *time.Time) (string, error) {
+	if err := permissions.Validate(); err != nil {
+		return "", fmt.Errorf("%w: %w", ErrPermissionsInvalid, err)
 	}
 	tenant, err := s.tenantStore.GetTenantById(tenantId)
 	if err != nil {
@@ -151,18 +153,18 @@ func apiKeyAndIdFromBase64(base64Src string) (int64, string, error) {
 }
 
 type Service struct {
-	tenantStore tenantStore
-	apiKeyStore apiKeyStore
+	tenantStore TenantStore
+	apiKeyStore ApiKeyStore
 }
 
-type apiKeyStore interface {
-	AddApiKey(tenantID int64, permissions []string, hashedApiKey HashedApiKey) error
+type ApiKeyStore interface {
+	AddApiKey(tenantID int64, permissions auth.Permissions, hashedApiKey HashedApiKey) error
 	DeleteApiKey(id int64) error
 	GetHashedApiKeyById(id int64, stateFilter []tenants.State) (HashedApiKey, error)
 	GetHashedAPIKeyByNameAndTenantID(name string, tenantID int64) (HashedApiKey, error)
 	List(Filter, pagination.Request) (*pagination.Page[ApiKeyDTO], error)
 }
 
-type tenantStore interface {
+type TenantStore interface {
 	GetTenantById(id int64) (tenants.Tenant, error)
 }

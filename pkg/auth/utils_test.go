@@ -4,230 +4,189 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestMustHavePermissionsRequestedPermissions(t *testing.T) {
-	// Arrange
-	type testCase struct {
-		permissionsInCtx []permission
-		permissionsInput []permission
-		expectedErr      error
+func TestMustBeTenant(t *testing.T) {
+	testCases := []struct {
+		desc             string
+		contextTenantID  *int64
+		requiredTenantID int64
+		expectedError    error
+	}{
+		{
+			desc:             "No tenant in context should error",
+			contextTenantID:  nil,
+			requiredTenantID: 10,
+			expectedError:    ErrUnauthorized,
+		},
+		{
+			desc:             "Correct tenant in context",
+			contextTenantID:  lo.ToPtr[int64](10),
+			requiredTenantID: 10,
+			expectedError:    nil,
+		},
+		{
+			desc:             "Incorrect tenant in context",
+			contextTenantID:  lo.ToPtr[int64](13),
+			requiredTenantID: 10,
+			expectedError:    ErrUnauthorized,
+		},
+		{
+			desc:             "Required is tenant 0, context is nil",
+			contextTenantID:  nil,
+			requiredTenantID: 0,
+			expectedError:    ErrUnauthorized,
+		},
+		{
+			desc:             "Required is tenant 0, context is set",
+			contextTenantID:  lo.ToPtr[int64](13),
+			requiredTenantID: 0,
+			expectedError:    ErrUnauthorized,
+		},
+		{
+			desc:             "Context is 0, required is set",
+			contextTenantID:  lo.ToPtr[int64](0),
+			requiredTenantID: 5,
+			expectedError:    ErrUnauthorized,
+		},
+		{
+			desc:             "Context is 0, required is 0",
+			contextTenantID:  lo.ToPtr[int64](0),
+			requiredTenantID: 0,
+			expectedError:    ErrUnauthorized,
+		},
 	}
-
-	scenarios := map[string]testCase{
-		"no permissions present": {
-			permissionsInput: []permission{READ_API_KEYS, READ_DEVICES},
-			permissionsInCtx: []permission{}, // empty!
-			expectedErr:      ErrPermissionsNotGranted,
-		},
-		"no permissions present in context": {
-			permissionsInput: []permission{READ_API_KEYS, READ_DEVICES},
-			permissionsInCtx: nil,
-			expectedErr:      ErrNoPermissions,
-		},
-		"some requested permissions are missing": {
-			permissionsInput: []permission{READ_API_KEYS, READ_DEVICES, WRITE_API_KEYS, WRITE_DEVICES},
-			permissionsInCtx: []permission{READ_API_KEYS, READ_DEVICES},
-			expectedErr:      ErrPermissionsNotGranted,
-		},
-		"only 1 requested permission is missing": {
-			permissionsInput: []permission{READ_API_KEYS, READ_DEVICES, WRITE_API_KEYS, WRITE_DEVICES},
-			permissionsInCtx: []permission{READ_API_KEYS, READ_DEVICES, WRITE_API_KEYS},
-			expectedErr:      ErrPermissionsNotGranted,
-		},
-		"only 1 requested permission is present": {
-			permissionsInput: []permission{READ_API_KEYS, READ_DEVICES, WRITE_API_KEYS, WRITE_DEVICES},
-			permissionsInCtx: []permission{READ_API_KEYS},
-			expectedErr:      ErrPermissionsNotGranted,
-		},
-		"all requested permissions are present": {
-			permissionsInput: []permission{READ_API_KEYS, READ_DEVICES, WRITE_API_KEYS, WRITE_DEVICES},
-			permissionsInCtx: []permission{READ_API_KEYS, READ_DEVICES, WRITE_API_KEYS, WRITE_DEVICES},
-			expectedErr:      nil,
-		},
-		"all requested permissions are missing": {
-			permissionsInput: []permission{READ_API_KEYS, READ_DEVICES, WRITE_API_KEYS, WRITE_DEVICES},
-			permissionsInCtx: []permission{READ_API_KEYS},
-			expectedErr:      ErrPermissionsNotGranted,
-		},
-		"more permissions are present than are requested": {
-			permissionsInput: []permission{READ_API_KEYS, READ_DEVICES},
-			permissionsInCtx: []permission{READ_API_KEYS, WRITE_API_KEYS, WRITE_DEVICES, READ_DEVICES},
-			expectedErr:      nil,
-		},
-	}
-	for testC, cfg := range scenarios {
-		t.Run(testC, func(t *testing.T) {
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
 			ctx := context.Background()
-			if cfg.permissionsInCtx != nil {
-				ctx = context.WithValue(ctx, ctxPermissions, cfg.permissionsInCtx)
+			if tC.contextTenantID != nil {
+				ctx = setTenantID(ctx, *tC.contextTenantID)
 			}
 
-			// Act
-			err := MustHavePermissions(ctx, cfg.permissionsInput[0], cfg.permissionsInput[1:]...)
-
-			// Assert
-			assert.ErrorIs(t, err, cfg.expectedErr)
+			err := mustBeTenant(ctx, tC.requiredTenantID)
+			if tC.expectedError != nil {
+				require.Error(t, err)
+			}
+			assert.ErrorIs(t, err, tC.expectedError)
 		})
 	}
 }
 
-func TestHasRole(t *testing.T) {
-	// Arrange
-	type testCase struct {
-		permissionsInCtx []permission
-		roleInput        role
-		expectedRes      bool
+func TestMustHaveTenantPermissions(t *testing.T) {
+	testCases := []struct {
+		desc                string
+		contextTenantID     *int64
+		contextPermissions  Permissions
+		requiredTenantID    int64
+		requiredPermissions Permissions
+		expectedError       error
+	}{
+		{
+			desc:                "No tenant and no perms should error",
+			contextTenantID:     nil,
+			requiredTenantID:    15,
+			requiredPermissions: Permissions{READ_DEVICES, WRITE_DEVICES},
+			expectedError:       ErrUnauthorized,
+		},
+		{
+			desc:                "Wrong tenant without perms should error",
+			contextTenantID:     lo.ToPtr[int64](10),
+			requiredTenantID:    15,
+			requiredPermissions: Permissions{READ_DEVICES, WRITE_DEVICES},
+			expectedError:       ErrUnauthorized,
+		},
+		{
+			desc:                "Wrong tenant with correct perms should error",
+			contextTenantID:     lo.ToPtr[int64](10),
+			contextPermissions:  Permissions{READ_DEVICES, WRITE_DEVICES},
+			requiredTenantID:    15,
+			requiredPermissions: Permissions{READ_DEVICES, WRITE_DEVICES},
+			expectedError:       ErrUnauthorized,
+		},
+		{
+			desc:                "Correct tenant without perms should error",
+			contextTenantID:     lo.ToPtr[int64](15),
+			contextPermissions:  Permissions{},
+			requiredTenantID:    15,
+			requiredPermissions: Permissions{READ_DEVICES, WRITE_DEVICES},
+			expectedError:       ErrUnauthorized,
+		},
+		{
+			desc:                "Correct tenant with partial correct perms should error",
+			contextTenantID:     lo.ToPtr[int64](15),
+			contextPermissions:  Permissions{READ_DEVICES},
+			requiredTenantID:    15,
+			requiredPermissions: Permissions{READ_DEVICES, WRITE_DEVICES},
+			expectedError:       ErrUnauthorized,
+		},
+		{
+			desc:                "Correct tenant with correct perms should not error",
+			contextTenantID:     lo.ToPtr[int64](15),
+			contextPermissions:  Permissions{READ_DEVICES, WRITE_DEVICES},
+			requiredTenantID:    15,
+			requiredPermissions: Permissions{READ_DEVICES, WRITE_DEVICES},
+			expectedError:       nil,
+		},
 	}
-	scenarios := map[string]testCase{
-		"does not have requested role": {
-			permissionsInCtx: []permission{READ_DEVICES, WRITE_DEVICES},
-			roleInput:        role([]permission{READ_API_KEYS, WRITE_API_KEYS}),
-			expectedRes:      false,
-		},
-		"has only the requested role": {
-			permissionsInCtx: []permission{READ_API_KEYS, WRITE_API_KEYS},
-			roleInput:        role([]permission{READ_API_KEYS, WRITE_API_KEYS}),
-			expectedRes:      true,
-		},
-		"has requested role and more permissions": {
-			permissionsInCtx: []permission{READ_API_KEYS, READ_DEVICES, WRITE_API_KEYS, WRITE_DEVICES},
-			roleInput:        role([]permission{READ_API_KEYS, WRITE_API_KEYS}),
-			expectedRes:      true,
-		},
-		"has no permissions": {
-			permissionsInCtx: []permission{},
-			roleInput:        role([]permission{READ_API_KEYS, WRITE_API_KEYS}),
-			expectedRes:      false,
-		},
-		"has no permissions in context": {
-			permissionsInCtx: nil,
-			roleInput:        role([]permission{READ_API_KEYS, WRITE_API_KEYS}),
-			expectedRes:      false,
-		},
-		"has only 1 role in context": {
-			permissionsInCtx: []permission{},
-			roleInput:        role([]permission{READ_API_KEYS}),
-			expectedRes:      false,
-		},
-	}
-	for scene, cfg := range scenarios {
-		t.Run(scene, func(t *testing.T) {
-			// Act
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
 			ctx := context.Background()
-			if cfg.permissionsInCtx != nil {
-				ctx = context.WithValue(ctx, ctxPermissions, cfg.permissionsInCtx)
+			if tC.contextTenantID != nil {
+				ctx = setTenantID(ctx, *tC.contextTenantID)
 			}
-			result := HasRole(ctx, cfg.roleInput)
+			ctx = setPermissions(ctx, tC.contextPermissions)
 
-			// Assert
-			assert.Equal(t, cfg.expectedRes, result)
+			err := MustHaveTenantPermissions(ctx, tC.requiredTenantID, tC.requiredPermissions)
+			if tC.expectedError != nil {
+				require.Error(t, err)
+			}
+			assert.ErrorIs(t, err, tC.expectedError)
 		})
 	}
 }
 
-func TestGetTenants(t *testing.T) {
+func TestGetTenant(t *testing.T) {
 	// Arrange
 	type testCase struct {
-		tenantsInContext []int64
-		expectedRes      []int64
-		expectedErr      error
+		tenantInContext *int64
+		expectedRes     int64
+		expectedErr     error
 	}
 
 	scenarios := map[string]testCase{
 		"no tenants in context": {
-			tenantsInContext: nil,
-			expectedRes:      nil,
-			expectedErr:      ErrNoTenantIDFound,
+			tenantInContext: nil,
+			expectedRes:     0,
+			expectedErr:     ErrNoTenantIDFound,
 		},
-		"no tenants": {
-			tenantsInContext: []int64{},
-			expectedRes:      []int64{},
-			expectedErr:      nil,
+		"with tenant in context": {
+			tenantInContext: lo.ToPtr[int64](143),
+			expectedRes:     143,
+			expectedErr:     nil,
 		},
-		"multiple tenants in context": {
-			tenantsInContext: []int64{541, 241, 21},
-			expectedRes:      []int64{541, 241, 21},
-			expectedErr:      nil,
-		},
-		"only 1 tenant in context": {
-			tenantsInContext: []int64{143},
-			expectedRes:      []int64{143},
-			expectedErr:      nil,
+		"with 0 in context should return error": {
+			tenantInContext: lo.ToPtr[int64](0),
+			expectedRes:     0,
+			expectedErr:     ErrNoTenantIDFound,
 		},
 	}
 
 	for scene, cfg := range scenarios {
 		t.Run(scene, func(t *testing.T) {
 			ctx := context.Background()
-			if cfg.tenantsInContext != nil {
-				ctx = context.WithValue(ctx, ctxCurrentTenantID, cfg.tenantsInContext)
+			if cfg.tenantInContext != nil {
+				ctx = setTenantID(ctx, *cfg.tenantInContext)
 			}
 
 			// Act
-			result, err := GetTenants(ctx)
+			result, err := GetTenant(ctx)
 
 			// Assert
 			assert.Equal(t, cfg.expectedRes, result)
 			assert.Equal(t, cfg.expectedErr, err)
-		})
-	}
-}
-
-func TestHasPermissionsFor(t *testing.T) {
-	// Arrange
-	type testCase struct {
-		tenantsInContext []int64
-		tenantsInput     []int64
-		expectedRes      bool
-	}
-
-	scenarios := map[string]testCase{
-		"no tenants in context": {
-			tenantsInContext: nil,
-			tenantsInput:     []int64{123, 54, 21, 53},
-			expectedRes:      false,
-		},
-		"no tenants": {
-			tenantsInContext: []int64{},
-			tenantsInput:     []int64{123, 54, 21, 53},
-			expectedRes:      false,
-		},
-		"has permissions for 1 tenant": {
-			tenantsInContext: []int64{123},
-			tenantsInput:     []int64{123, 54, 21, 53},
-			expectedRes:      false,
-		},
-		"has permissions for some tenants": {
-			tenantsInContext: []int64{123, 54},
-			tenantsInput:     []int64{123, 54, 21, 53},
-			expectedRes:      false,
-		},
-		"has permissions for all tenants": {
-			tenantsInContext: []int64{123, 54, 21, 53},
-			tenantsInput:     []int64{123, 54, 21, 53},
-			expectedRes:      true,
-		},
-		"has permissions for 1 tenant and 1 tenant is requested": {
-			tenantsInContext: []int64{123},
-			tenantsInput:     []int64{123},
-			expectedRes:      true,
-		},
-	}
-
-	for scene, cfg := range scenarios {
-		t.Run(scene, func(t *testing.T) {
-			ctx := context.Background()
-			if cfg.tenantsInContext != nil {
-				ctx = context.WithValue(ctx, ctxCurrentTenantID, cfg.tenantsInContext)
-			}
-
-			// Act
-			result := HasPermissionsFor(ctx, cfg.tenantsInput...)
-
-			// Assert
-			assert.Equal(t, cfg.expectedRes, result)
 		})
 	}
 }
