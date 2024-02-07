@@ -37,7 +37,7 @@ func NewTenantService(tenantStore tenantStore) *TenantService {
 // Creates a new tenant, if a parent tenant is given it must be found and have an active state,
 // otherwise ErrParentTenantNotFound is returned
 func (s *TenantService) CreateNewTenant(dto TenantDTO) (TenantDTO, error) {
-	tenant := newTenantFromDto(dto)
+	tenant := NewTenant(dto)
 	if tenant.ParentID != nil {
 		parent, err := s.tenantStore.GetTenantById(*tenant.ParentID)
 		if err != nil {
