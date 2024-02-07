@@ -1,33 +1,50 @@
 package auth
 
-import "fmt"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/samber/lo"
+)
+
+var ErrPermissionInvalid = errors.New("permission value is invalid")
+
+type PermissionSet interface {
+	Permissions() []Permission
+}
+
+type Permission string
+
+type Permissions []PermissionSet
 
 const (
 	// Device permissions
-	READ_DEVICES  permission = "READ_DEVICES"
-	WRITE_DEVICES permission = "WRITE_DEVICES"
+	READ_DEVICES  Permission = "READ_DEVICES"
+	WRITE_DEVICES Permission = "WRITE_DEVICES"
 
 	// API Key permissions
-	READ_API_KEYS  permission = "READ_API_KEYS"
-	WRITE_API_KEYS permission = "WRITE_API_KEYS"
+	READ_API_KEYS  Permission = "READ_API_KEYS"
+	WRITE_API_KEYS Permission = "WRITE_API_KEYS"
 
 	// Tenant permissions
-	READ_TENANTS  permission = "READ_TENANTS"
-	WRITE_TENANTS permission = "WRITE_TENANTS"
+	READ_TENANTS  Permission = "READ_TENANTS"
+	WRITE_TENANTS Permission = "WRITE_TENANTS"
 
 	// Measurement permissions
-	READ_MEASUREMENTS  permission = "READ_MEASUREMENTS"
-	WRITE_MEASUREMENTS permission = "WRITE_MEASUREMENTS"
+	READ_MEASUREMENTS  Permission = "READ_MEASUREMENTS"
+	WRITE_MEASUREMENTS Permission = "WRITE_MEASUREMENTS"
 
 	// Tracing permissions
-	READ_TRACING permission = "READ_TRACING"
+	READ_TRACING Permission = "READ_TRACING"
 
 	// User worker permissions
-	READ_USER_WORKERS  permission = "READ_USER_WORKERS"
-	WRITE_USER_WORKERS permission = "WRITE_USER_WORKERS"
+	READ_USER_WORKERS  Permission = "READ_USER_WORKERS"
+	WRITE_USER_WORKERS Permission = "WRITE_USER_WORKERS"
 )
 
-var allowedPermissions = []permission{
+var allPermissions = Permissions{
 	READ_DEVICES,
 	WRITE_DEVICES,
 	READ_API_KEYS,
@@ -41,54 +58,72 @@ var allowedPermissions = []permission{
 	WRITE_USER_WORKERS,
 }
 
-var SuperUserRole = role(allowedPermissions)
-
-type Role interface {
-	Permissions() []permission
-	HasPermissions(permission permission, permissions ...permission) bool
+func (p Permission) Permissions() []Permission {
+	return []Permission{p}
 }
 
-type permission string
+func (gotten Permissions) Fulfills(required Permissions) error {
+	flatGotten := gotten.Permissions()
+	flatRequired := required.Permissions()
+	missing, _ := lo.Difference(flatRequired, flatGotten)
+	if len(missing) > 0 {
+		return fmt.Errorf("missing: %v", missing)
+	}
+	return nil
+}
 
-func (p permission) String() string {
+func (p Permissions) Permissions() []Permission {
+	return lo.Uniq(lo.Flatten(lo.Map(p, func(item PermissionSet, index int) []Permission { return item.Permissions() })))
+}
+
+func (p Permissions) Includes(other Permission) bool {
+	return lo.IndexOf(p.Permissions(), other) != -1
+}
+
+func (p Permissions) Validate() error {
+	invalidPermissions := lo.FilterMap(p.Permissions(), func(item Permission, _ int) (string, bool) {
+		if err := item.Valid(); err != nil {
+			return item.String(), true
+		}
+		return "", false
+	})
+	if len(invalidPermissions) > 0 {
+		return fmt.Errorf("%w: %s", ErrPermissionInvalid, strings.Join(invalidPermissions, ", "))
+	}
+	return nil
+}
+
+func (s Permissions) String() string {
+	return strings.Join(
+		lo.Map(s.Permissions(), func(item Permission, _ int) string { return string(item) }),
+		", ",
+	)
+}
+
+func (s *Permissions) UnmarshalJSON(data []byte) error {
+	var permissionSlice []Permission
+	if err := json.Unmarshal(data, &permissionSlice); err != nil {
+		return err
+	}
+	permissions := Permissions{}
+	for _, p := range permissionSlice {
+		permissions = append(permissions, p)
+	}
+	*s = permissions
+	return nil
+}
+
+func (p Permission) String() string {
 	return string(p)
 }
 
-func (p permission) Valid() error {
-	for _, allowed := range allowedPermissions {
-		if allowed == p {
-			return nil
-		}
+func (p Permission) Valid() error {
+	if allPermissions.Includes(p) {
+		return nil
 	}
-	return fmt.Errorf("%s is not a valid permission", p)
+	return fmt.Errorf("%w (value: %s)", ErrPermissionInvalid, p)
 }
 
-func AllAllowedPermissions() []permission {
-	return allowedPermissions
-}
-
-type role []permission
-
-func (r role) HasPermissions(permission permission, permissions ...permission) bool {
-	permissions = append(permissions, permission)
-	for _, rolePermission := range r {
-		found := false
-		for _, p := range permissions {
-			if rolePermission == p {
-				found = true
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-	return true
-}
-
-func (r role) Permissions() []permission {
-	return r
-}
-
-func NewRole(permissions ...permission) Role {
-	return role(permissions)
+func AllPermissions() PermissionSet {
+	return allPermissions
 }

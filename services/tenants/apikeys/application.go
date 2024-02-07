@@ -1,5 +1,7 @@
 package apikeys
 
+//go:generate moq -pkg apikeys_test -out mock_test.go . ApiKeyStore TenantStore
+
 import (
 	"encoding/base64"
 	"fmt"
@@ -11,6 +13,7 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
@@ -21,7 +24,7 @@ var (
 	ErrKeyNameTenantIDCombinationNotUnique = web.NewError(http.StatusBadRequest, "API Key with name already exists for this tenant", "API_KEY_NAME_TENANT_COMBO_NOT_UNIQUE")
 )
 
-func NewAPIKeyService(tenantStore tenantStore, apiKeyStore apiKeyStore) *Service {
+func NewAPIKeyService(tenantStore TenantStore, apiKeyStore ApiKeyStore) *Service {
 	return &Service{
 		tenantStore: tenantStore,
 		apiKeyStore: apiKeyStore,
@@ -40,7 +43,10 @@ func (s *Service) RevokeApiKey(apiKeyId int64) error {
 // Creates a new API key for the given tenant and with the given expiration date.
 // Returns the api key as: 'apiKeyId:apiKey' encoded to a base64 string.
 // Fails if the tenant is not active
-func (s *Service) GenerateNewApiKey(name string, tenantId int64, expirationDate *time.Time) (string, error) {
+func (s *Service) GenerateNewApiKey(name string, tenantId int64, permissions auth.Permissions, expirationDate *time.Time) (string, error) {
+	if err := permissions.Validate(); err != nil {
+		return "", fmt.Errorf("%w: %w", ErrPermissionsInvalid, err)
+	}
 	tenant, err := s.tenantStore.GetTenantById(tenantId)
 	if err != nil {
 		return "", err
@@ -63,7 +69,7 @@ func (s *Service) GenerateNewApiKey(name string, tenantId int64, expirationDate 
 	if err != nil {
 		return "", err
 	}
-	err = s.apiKeyStore.AddApiKey(tenant.ID, hashed)
+	err = s.apiKeyStore.AddApiKey(tenant.ID, permissions, hashed)
 	if err != nil {
 		return "", err
 	}
@@ -92,17 +98,15 @@ func (s *Service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAu
 	}
 	isValid := hashed.compare(apiKey)
 	if isValid {
+		dto := ApiKeyAuthenticationDTO{
+			TenantID:    fmt.Sprintf("%d", hashed.TenantID),
+			Permissions: hashed.Permissions,
+		}
 		if hashed.ExpirationDate != nil {
 			exp := hashed.ExpirationDate.Unix()
-			return ApiKeyAuthenticationDTO{
-				TenantID:   fmt.Sprintf("%d", hashed.TenantID),
-				Expiration: &exp,
-			}, nil
-		} else {
-			return ApiKeyAuthenticationDTO{
-				TenantID: fmt.Sprintf("%d", hashed.TenantID),
-			}, nil
+			dto.Expiration = &exp
 		}
+		return dto, nil
 	}
 	return ApiKeyAuthenticationDTO{}, ErrKeyNotFound
 }
@@ -112,8 +116,9 @@ type Filter struct {
 }
 
 type ApiKeyAuthenticationDTO struct {
-	TenantID   string `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
-	Expiration *int64 `json:"expiration_date"`
+	TenantID    string   `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
+	Expiration  *int64   `json:"expiration_date"`
+	Permissions []string `json:"permissions"`
 }
 
 type ApiKeyDTO struct {
@@ -123,6 +128,7 @@ type ApiKeyDTO struct {
 	TenantName     string     `json:"tenant_name"`
 	ExpirationDate *time.Time `json:"expiration_date"`
 	Created        time.Time  `json:"created"`
+	Permissions    []string   `json:"permissions"`
 }
 
 func apiKeyAndIdFromBase64(base64Src string) (int64, string, error) {
@@ -147,18 +153,18 @@ func apiKeyAndIdFromBase64(base64Src string) (int64, string, error) {
 }
 
 type Service struct {
-	tenantStore tenantStore
-	apiKeyStore apiKeyStore
+	tenantStore TenantStore
+	apiKeyStore ApiKeyStore
 }
 
-type apiKeyStore interface {
-	AddApiKey(tenantID int64, hashedApiKey HashedApiKey) error
+type ApiKeyStore interface {
+	AddApiKey(tenantID int64, permissions auth.Permissions, hashedApiKey HashedApiKey) error
 	DeleteApiKey(id int64) error
 	GetHashedApiKeyById(id int64, stateFilter []tenants.State) (HashedApiKey, error)
 	GetHashedAPIKeyByNameAndTenantID(name string, tenantID int64) (HashedApiKey, error)
 	List(Filter, pagination.Request) (*pagination.Page[ApiKeyDTO], error)
 }
 
-type tenantStore interface {
+type TenantStore interface {
 	GetTenantById(id int64) (tenants.Tenant, error)
 }

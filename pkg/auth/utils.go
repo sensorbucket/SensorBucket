@@ -2,66 +2,32 @@ package auth
 
 import (
 	"context"
-
-	"github.com/samber/lo"
+	"fmt"
 )
 
-// Checks if the given context contains said permissions
-// returns nil if all is OK
-func MustHavePermissions(c context.Context, perm permission, permissions ...permission) error {
-	permissions = append(permissions, perm)
-	permissionsFromContext, ok := fromRequestContext[[]permission](c, ctxPermissions)
-	if !ok {
-		return ErrNoPermissions
+// MustHaveTenantPermissions is the only validating exported authentication and authorization method
+// it requires the developer to supply both the tenant for whom this request must be and accompanying permissions
+func MustHaveTenantPermissions(ctx context.Context, tenantID int64, required Permissions) error {
+	if err := mustBeTenant(ctx, tenantID); err != nil {
+		return fmt.Errorf("%w: %w", ErrUnauthorized, err)
 	}
-	if lo.Every(permissionsFromContext, permissions) {
-		return nil
-	}
-	return ErrPermissionsNotGranted
-}
-
-func HasRole(ctx context.Context, r Role) bool {
-	permissionsFromContext, ok := fromRequestContext[[]permission](ctx, ctxPermissions)
-	if !ok {
-		return false
-	}
-	if len(permissionsFromContext) == 0 {
-		return false
-	}
-	if len(permissionsFromContext) > 1 {
-		return r.HasPermissions(permissionsFromContext[0], permissionsFromContext...)
-	}
-	return r.HasPermissions(permissionsFromContext[0])
-}
-
-func GetUser(ctx context.Context) (int64, error) {
-	val, ok := fromRequestContext[int64](ctx, ctxUserID)
-	if !ok {
-		return -1, ErrNoUserID
-	}
-	return val, nil
-}
-
-func GetTenants(ctx context.Context) ([]int64, error) {
-	val, ok := fromRequestContext[[]int64](ctx, ctxCurrentTenantID)
-	if !ok {
-		return nil, ErrNoTenantIDFound
-	}
-	return val, nil
-}
-
-func HasPermissionsFor(ctx context.Context, tenantIDs ...int64) bool {
-	tenants, err := GetTenants(ctx)
+	permissions, err := GetPermissions(ctx)
 	if err != nil {
-		return false
+		return fmt.Errorf("%w: %w", ErrUnauthorized, err)
 	}
-	if len(tenantIDs) == 0 {
-		return false
+	if err := permissions.Fulfills(required); err != nil {
+		return fmt.Errorf("%w: %w", ErrUnauthorized, err)
 	}
-	return lo.Every(tenants, tenantIDs)
+	return nil
 }
 
-func fromRequestContext[T any](c context.Context, key ctxKey) (T, bool) {
-	val, ok := c.Value(key).(T)
-	return val, ok
+func mustBeTenant(ctx context.Context, tenantID int64) error {
+	tenant, err := GetTenant(ctx)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrUnauthorized, err)
+	}
+	if tenant != tenantID {
+		return ErrUnauthorized
+	}
+	return nil
 }

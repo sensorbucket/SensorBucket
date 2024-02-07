@@ -1,4 +1,4 @@
-package tenantstransports
+package tenantstransports_test
 
 import (
 	"encoding/json"
@@ -10,8 +10,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
+
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
+	tenantstransports "sensorbucket.nl/sensorbucket/services/tenants/transports"
 )
 
 func TestCreateTenantModelNotValid(t *testing.T) {
@@ -96,7 +98,7 @@ func TestCreateTenantModelNotValid(t *testing.T) {
 
 	for scene, cfg := range scenarios {
 		t.Run(scene, func(t *testing.T) {
-			svc := tenantServiceMock{}
+			svc := TenantServiceMock{}
 			transport := testTenantsTransport(&svc)
 			req, _ := http.NewRequest("POST", "/tenants", strings.NewReader(cfg.input))
 			req.Header.Set("content-type", "application/json")
@@ -121,7 +123,7 @@ func TestCreateTenantModelNotValid(t *testing.T) {
 
 func TestCreateTenantInvalidJSONBody(t *testing.T) {
 	// Arrange
-	svc := tenantServiceMock{}
+	svc := TenantServiceMock{}
 	transport := testTenantsTransport(&svc)
 	req, _ := http.NewRequest("POST", "/tenants", strings.NewReader("invalid json!!"))
 	req.Header.Set("content-type", "application/json")
@@ -138,7 +140,7 @@ func TestCreateTenantInvalidJSONBody(t *testing.T) {
 
 func TestCreateTenantParentTenantDoesNotExist(t *testing.T) {
 	// Arrange
-	svc := tenantServiceMock{
+	svc := TenantServiceMock{
 		CreateNewTenantFunc: func(tenant tenants.TenantDTO) (tenants.TenantDTO, error) {
 			assert.NotNil(t, tenant.ParentID)
 			assert.Equal(t, int64(345), *tenant.ParentID)
@@ -169,7 +171,7 @@ func TestCreateTenantParentTenantDoesNotExist(t *testing.T) {
 
 func TestCreateTenantTenantIsCreated(t *testing.T) {
 	// Arrange
-	svc := tenantServiceMock{
+	svc := TenantServiceMock{
 		CreateNewTenantFunc: func(tenant tenants.TenantDTO) (tenants.TenantDTO, error) {
 			assert.NotNil(t, tenant.ParentID)
 			assert.Equal(t, int64(345), *tenant.ParentID)
@@ -203,7 +205,7 @@ func TestCreateTenantTenantIsCreated(t *testing.T) {
 
 func TestDeleteTenantTenantIDIsNotAnInt(t *testing.T) {
 	// Arrange
-	svc := tenantServiceMock{}
+	svc := TenantServiceMock{}
 	transport := testTenantsTransport(&svc)
 	req, _ := http.NewRequest("DELETE", "/tenants/asdasd", nil)
 
@@ -215,11 +217,11 @@ func TestDeleteTenantTenantIDIsNotAnInt(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	assert.Equal(t, `{"message":"tenant_id must be a number"}`+"\n", rr.Body.String(), "\n")
 	assert.Len(t, svc.ArchiveTenantCalls(), 0)
-
 }
+
 func TestDeleteTenantTenantDoesNotExist(t *testing.T) {
 	// Arrange
-	svc := tenantServiceMock{
+	svc := TenantServiceMock{
 		ArchiveTenantFunc: func(tenantID int64) error {
 			assert.Equal(t, int64(12345), tenantID)
 			return tenants.ErrTenantNotFound
@@ -240,7 +242,7 @@ func TestDeleteTenantTenantDoesNotExist(t *testing.T) {
 
 func TestDeleteTenantErrorOccursWhileDeleting(t *testing.T) {
 	// Arrange
-	svc := tenantServiceMock{
+	svc := TenantServiceMock{
 		ArchiveTenantFunc: func(tenantID int64) error {
 			assert.Equal(t, int64(12345), tenantID)
 			return fmt.Errorf("weird db error!!")
@@ -261,7 +263,7 @@ func TestDeleteTenantErrorOccursWhileDeleting(t *testing.T) {
 
 func TestDeleteTenantTenantIsDeleted(t *testing.T) {
 	// Arrange
-	svc := tenantServiceMock{
+	svc := TenantServiceMock{
 		ArchiveTenantFunc: func(tenantID int64) error {
 			assert.Equal(t, int64(12345), tenantID)
 			return nil
@@ -282,7 +284,7 @@ func TestDeleteTenantTenantIsDeleted(t *testing.T) {
 
 func TestListTenantsInvalidParams(t *testing.T) {
 	// Arrange
-	svc := tenantServiceMock{}
+	svc := TenantServiceMock{}
 	transport := testTenantsTransport(&svc)
 	req, _ := http.NewRequest("GET", "/tenants/list?state=asdasd", nil)
 
@@ -298,7 +300,7 @@ func TestListTenantsInvalidParams(t *testing.T) {
 
 func TestListTenantsErrorOccursWhileRetrievingData(t *testing.T) {
 	// Arrange
-	svc := tenantServiceMock{
+	svc := TenantServiceMock{
 		ListTenantsFunc: func(filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
 			return nil, fmt.Errorf("weird error occurred!")
 		},
@@ -318,7 +320,7 @@ func TestListTenantsErrorOccursWhileRetrievingData(t *testing.T) {
 
 func TestListTenantsReturnsListOfTenants(t *testing.T) {
 	// Arrange
-	svc := tenantServiceMock{
+	svc := TenantServiceMock{
 		ListTenantsFunc: func(filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
 			return &pagination.Page[tenants.TenantDTO]{
 				Cursor: "asdasdads",
@@ -346,11 +348,6 @@ func TestListTenantsReturnsListOfTenants(t *testing.T) {
 	assert.Len(t, svc.ListTenantsCalls(), 1)
 }
 
-func testTenantsTransport(svc tenantService) *TenantsHTTPTransport {
-	transport := &TenantsHTTPTransport{
-		tenantSvc: svc,
-		router:    chi.NewMux(),
-	}
-	transport.setupRoutes(transport.router)
-	return transport
+func testTenantsTransport(svc tenantstransports.TenantService) *tenantstransports.TenantsHTTPTransport {
+	return tenantstransports.NewTenantsHTTP(chi.NewRouter(), svc, "")
 }

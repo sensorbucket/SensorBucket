@@ -13,7 +13,7 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
-func NewTenantsHTTP(r chi.Router, tenantSvc tenantService, url string) *TenantsHTTPTransport {
+func NewTenantsHTTP(r chi.Router, tenantSvc TenantService, url string) *TenantsHTTPTransport {
 	t := &TenantsHTTPTransport{
 		router:    r,
 		tenantSvc: tenantSvc,
@@ -25,7 +25,7 @@ func NewTenantsHTTP(r chi.Router, tenantSvc tenantService, url string) *TenantsH
 
 type TenantsHTTPTransport struct {
 	router    chi.Router
-	tenantSvc tenantService
+	tenantSvc TenantService
 	url       string
 }
 
@@ -126,7 +126,7 @@ func ensureValuesNotEmpty[T comparable](values map[string]T) []string {
 	return validationErrors
 }
 
-type tenantService interface {
+type TenantService interface {
 	CreateNewTenant(tenant tenants.TenantDTO) (tenants.TenantDTO, error)
 	ArchiveTenant(tenantID int64) error
 	ListTenants(filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.TenantDTO], error)

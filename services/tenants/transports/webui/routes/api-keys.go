@@ -194,6 +194,7 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 		var dto api.CreateApiKeyRequest
 		dto.SetName(name)
 		dto.SetTenantId(id)
+		dto.SetPermissions(permissions)
 
 		// Expiry is an optional value
 		if expiry != "" {
@@ -204,6 +205,7 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 			}
 			dto.SetExpirationDate(parsedTime)
 		}
+
 		apiKey, resp, err := h.client.ApiKeysApi.CreateApiKey(r.Context()).CreateApiKeyRequest(dto).Execute()
 		if err != nil {
 			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
@@ -279,9 +281,9 @@ func toViewPermissions() (map[views.OrderedMapKey][]views.APIKeysPermission, err
 	categorized := createAPIKeyViewPermissions()
 
 	// Retrieve all allowed permissions
-	inAuth := auth.AllAllowedPermissions()
+	allPermissions := auth.AllPermissions().Permissions()
 	authAsStrSlice := []string{}
-	for _, p := range inAuth {
+	for _, p := range allPermissions {
 		authAsStrSlice = append(authAsStrSlice, p.String())
 	}
 	viewAsSlice := lo.Map(lo.Flatten(lo.Values(categorized)), func(view views.APIKeysPermission, index int) string {

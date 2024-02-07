@@ -20,6 +20,7 @@ import (
 type CreateApiKeyRequest struct {
 	Name string `json:"name"`
 	TenantId int64 `json:"tenant_id"`
+	Permissions []string `json:"permissions,omitempty"`
 	ExpirationDate *time.Time `json:"expiration_date,omitempty"`
 }
 
@@ -90,6 +91,38 @@ func (o *CreateApiKeyRequest) SetTenantId(v int64) {
 	o.TenantId = v
 }
 
+// GetPermissions returns the Permissions field value if set, zero value otherwise.
+func (o *CreateApiKeyRequest) GetPermissions() []string {
+	if o == nil || isNil(o.Permissions) {
+		var ret []string
+		return ret
+	}
+	return o.Permissions
+}
+
+// GetPermissionsOk returns a tuple with the Permissions field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CreateApiKeyRequest) GetPermissionsOk() ([]string, bool) {
+	if o == nil || isNil(o.Permissions) {
+    return nil, false
+	}
+	return o.Permissions, true
+}
+
+// HasPermissions returns a boolean if a field has been set.
+func (o *CreateApiKeyRequest) HasPermissions() bool {
+	if o != nil && !isNil(o.Permissions) {
+		return true
+	}
+
+	return false
+}
+
+// SetPermissions gets a reference to the given []string and assigns it to the Permissions field.
+func (o *CreateApiKeyRequest) SetPermissions(v []string) {
+	o.Permissions = v
+}
+
 // GetExpirationDate returns the ExpirationDate field value if set, zero value otherwise.
 func (o *CreateApiKeyRequest) GetExpirationDate() time.Time {
 	if o == nil || isNil(o.ExpirationDate) {
@@ -129,6 +162,9 @@ func (o CreateApiKeyRequest) MarshalJSON() ([]byte, error) {
 	}
 	if true {
 		toSerialize["tenant_id"] = o.TenantId
+	}
+	if !isNil(o.Permissions) {
+		toSerialize["permissions"] = o.Permissions
 	}
 	if !isNil(o.ExpirationDate) {
 		toSerialize["expiration_date"] = o.ExpirationDate

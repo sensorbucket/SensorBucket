@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,23 +10,20 @@ import (
 
 	"github.com/go-jose/go-jose/v3"
 	"github.com/golang-jwt/jwt"
+
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
-type ctxKey int
-
 type claims struct {
-	TenantID    int64        `json:"tid"`
-	Permissions []permission `json:"perms"`
-	UserID      int64        `json:"uid"`
-	Expiration  int64        `json:"exp"`
+	TenantID    int64       `json:"tid"`
+	Permissions Permissions `json:"perms"`
+	UserID      int64       `json:"uid"`
+	Expiration  int64       `json:"exp"`
 }
 
 func (c *claims) Valid() error {
-	for _, permission := range c.Permissions {
-		if permission.Valid() != nil {
-			return fmt.Errorf("invalid permissions")
-		}
+	if err := c.Permissions.Validate(); err != nil {
+		return err
 	}
 	if c.TenantID > 0 && c.UserID > 0 && c.Expiration > time.Now().Unix() {
 		return nil
@@ -46,7 +42,6 @@ type jwksHttpClient struct {
 
 func (c *jwksHttpClient) Get() (jose.JSONWebKeySet, error) {
 	res, err := c.httpClient.Get(fmt.Sprintf("%s/.well-known/jwks.json", c.issuer))
-
 	if err != nil {
 		return jose.JSONWebKeySet{}, fmt.Errorf("failed to fetch jwks: %w", err)
 	}
@@ -56,25 +51,6 @@ func (c *jwksHttpClient) Get() (jose.JSONWebKeySet, error) {
 	}
 	return jwks, nil
 }
-
-type contextBuilder struct {
-	c context.Context
-}
-
-func (cb *contextBuilder) With(key ctxKey, value any) *contextBuilder {
-	cb.c = context.WithValue(cb.c, key, value)
-	return cb
-}
-
-func (cb *contextBuilder) Finish() context.Context {
-	return cb.c
-}
-
-const (
-	ctxUserID ctxKey = iota
-	ctxCurrentTenantID
-	ctxPermissions
-)
 
 func NewJWKSHttpClient(issuer string) *jwksHttpClient {
 	return &jwksHttpClient{
@@ -86,15 +62,20 @@ func NewJWKSHttpClient(issuer string) *jwksHttpClient {
 func Protect() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, tenantIDPresent := fromRequestContext[[]int64](r.Context(), ctxCurrentTenantID)
-			_, permissionsPresent := fromRequestContext[[]permission](r.Context(), ctxPermissions)
-			_, userIDPresent := fromRequestContext[int64](r.Context(), ctxUserID)
-			if tenantIDPresent && permissionsPresent && userIDPresent {
-				// All required authentication values are present, allow the request
-				next.ServeHTTP(w, r)
+			if _, err := GetTenant(r.Context()); err != nil {
+				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
-			web.HTTPError(w, ErrUnauthorized)
+			if _, err := GetUser(r.Context()); err != nil {
+				web.HTTPError(w, ErrUnauthorized)
+				return
+			}
+			if _, err := GetPermissions(r.Context()); err != nil {
+				web.HTTPError(w, ErrUnauthorized)
+				return
+			}
+			// All required authentication values are present, allow the request
+			next.ServeHTTP(w, r)
 		})
 	}
 }
@@ -112,6 +93,7 @@ func Authenticate(keyClient jwksClient) func(http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
+
 			tokenStr, ok := strings.CutPrefix(auth, "Bearer ")
 			if !ok {
 				web.HTTPError(w, ErrAuthHeaderInvalidFormat)
@@ -121,20 +103,22 @@ func Authenticate(keyClient jwksClient) func(http.Handler) http.Handler {
 			// Retrieve the JWT and ensure it was signed by us
 			c := claims{}
 			token, err := jwt.ParseWithClaims(tokenStr, &c, validateJWTFunc(keyClient))
-			if err == nil && token.Valid {
-				// JWT itself is validated, pass it to the actual endpoint for further authorization
-				// First fill the context with user information
-				cb := contextBuilder{c: r.Context()}
-				next.ServeHTTP(w, r.WithContext(
-					cb.
-						With(ctxCurrentTenantID, []int64{c.TenantID}).
-						With(ctxUserID, c.UserID).
-						With(ctxPermissions, c.Permissions).
-						Finish()))
+			if err != nil {
+				log.Printf("[Error] authentication failed err: %s", err)
+				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
-			log.Printf("[Error] authentication failed err: %s", err)
-			web.HTTPError(w, ErrUnauthorized)
+			if !token.Valid {
+				log.Printf("[Error] authentication failed err: %s", err)
+				web.HTTPError(w, ErrUnauthorized)
+				return
+			}
+			// JWT itself is validated, pass it to the actual endpoint for further authorization
+			// First fill the context with user information
+			ctx := setTenantID(r.Context(), c.TenantID)
+			ctx = setUserID(ctx, c.UserID)
+			ctx = setPermissions(ctx, c.Permissions)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
