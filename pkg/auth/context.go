@@ -50,16 +50,3 @@ func fromContext[T any](ctx context.Context, key ctxKey) (T, bool) {
 	val, ok := ctx.Value(key).(T)
 	return val, ok
 }
-
-type contextBuilder struct {
-	c context.Context
-}
-
-func (cb *contextBuilder) With(key ctxKey, value any) *contextBuilder {
-	cb.c = context.WithValue(cb.c, key, value)
-	return cb
-}
-
-func (cb *contextBuilder) Finish() context.Context {
-	return cb.c
-}
