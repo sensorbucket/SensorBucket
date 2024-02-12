@@ -8,17 +8,20 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
-type TenantsStore struct {
+var _ tenants.TenantStore = (*PSQLTenantStore)(nil)
+
+type PSQLTenantStore struct {
 	db *sqlx.DB
 }
 
-func NewTenantsStorePSQL(db *sqlx.DB) *TenantsStore {
-	return &TenantsStore{
+func NewTenantsStorePSQL(db *sqlx.DB) *PSQLTenantStore {
+	return &PSQLTenantStore{
 		db: db,
 	}
 }
@@ -27,14 +30,14 @@ type tenantsQueryPage struct {
 	Created time.Time `pagination:"created,DESC"`
 }
 
-func (ts *TenantsStore) GetTenantById(id int64) (tenants.Tenant, error) {
+func (ts *PSQLTenantStore) GetTenantById(id int64) (*tenants.Tenant, error) {
 	tenant := tenants.Tenant{}
 	q := sq.Select(
 		"id, name, address, zip_code, city, chamber_of_commerce_id, headquarter_id, archive_time, state, logo, parent_tenant_id").
 		From("tenants").Where(sq.Eq{"id": id})
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(ts.db).Query()
 	if err != nil {
-		return tenants.Tenant{}, err
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -52,15 +55,15 @@ func (ts *TenantsStore) GetTenantById(id int64) (tenants.Tenant, error) {
 			&tenant.Logo,
 			&tenant.ParentID)
 		if err != nil {
-			return tenants.Tenant{}, err
+			return nil, err
 		}
 	} else {
-		return tenants.Tenant{}, tenants.ErrTenantNotFound
+		return nil, tenants.ErrTenantNotFound
 	}
-	return tenant, nil
+	return &tenant, nil
 }
 
-func (ts *TenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
+func (ts *PSQLTenantStore) List(filter tenants.Filter, r pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
 	var err error
 
 	// Pagination
@@ -120,7 +123,7 @@ func (ts *TenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagi
 	return &page, nil
 }
 
-func (ts *TenantsStore) Create(tenant *tenants.Tenant) error {
+func (ts *PSQLTenantStore) Create(tenant *tenants.Tenant) error {
 	q := sq.Insert("tenants").
 		Columns(
 			"name",
@@ -150,7 +153,7 @@ func (ts *TenantsStore) Create(tenant *tenants.Tenant) error {
 	return q.QueryRow().Scan(&tenant.ID)
 }
 
-func (ts *TenantsStore) Update(tenant tenants.Tenant) error {
+func (ts *PSQLTenantStore) Update(tenant *tenants.Tenant) error {
 	tx, err := ts.db.BeginTxx(context.Background(), nil)
 	if err != nil {
 		return fmt.Errorf("could not start database Transaction: %w", err)
@@ -196,8 +199,67 @@ func (ts *TenantsStore) Update(tenant tenants.Tenant) error {
 			return err
 		}
 	}
+	// Update members
+	if err := updateMembers(tx, tenant); err != nil {
+		if rb := tx.Rollback(); rb != nil {
+			err = fmt.Errorf("rollback error %w while handling error: %w", rb, err)
+		}
+		return err
+	}
+
 	if rb := tx.Commit(); err != nil {
 		return fmt.Errorf("commit error: %w", rb)
 	}
+	return nil
+}
+
+func updateMembers(tx *sqlx.Tx, tenant *tenants.Tenant) error {
+	newMembers := lo.Filter(tenant.Members, func(item tenants.Member, index int) bool {
+		return item.MemberID == 0
+	})
+	q := sq.Insert("tenant_members").Columns("tenant_id", "user_id", "permissions")
+	for _, member := range newMembers {
+		q = q.Values(tenant.ID, member.UserID, member.Permissions.Permissions())
+	}
+	_, err := q.PlaceholderFormat(sq.Dollar).RunWith(tx).Exec()
+	if err != nil {
+		return fmt.Errorf("error inserting new members in database: %w", err)
+	}
+
+	// Get exisitng member ids
+	rows, err := sq.Select("id").From("tenant_members").Where("tenant_id = ?", tenant.ID).PlaceholderFormat(sq.Dollar).RunWith(tx).Query()
+	if err != nil {
+		return fmt.Errorf("could not fetch existing members from database: %w", err)
+	}
+	defer rows.Close()
+	existingMemberIDs := []int64{}
+	for rows.Next() {
+		var id int64
+		err := rows.Scan(&id)
+		if err != nil {
+			return fmt.Errorf("could not scan member id into int64: %w", err)
+		}
+		existingMemberIDs = append(existingMemberIDs, id)
+	}
+
+	currentMemberIDs := lo.Map(tenant.Members, func(item tenants.Member, index int) int64 { return item.MemberID })
+	deletedMembers, _ := lo.Difference(existingMemberIDs, currentMemberIDs)
+	_, err = sq.Delete("tenant_members").Where(sq.Eq{"id": deletedMembers}).PlaceholderFormat(sq.Dollar).RunWith(tx).Exec()
+	if err != nil {
+		return fmt.Errorf("could not delete removed tenants from database: %w", err)
+	}
+
+	// update test set info=tmp.info from (values (1,'new1'),(2,'new2'),(6,'new6')) as tmp (id,info) where test.id=tmp.id;
+	updatedMembers := lo.Filter(tenant.Members, func(item tenants.Member, index int) bool {
+		return item.IsDirty()
+	})
+	for _, member := range updatedMembers {
+		updateQ := sq.Update("tenant_members").Set("permissions", member.Permissions.Permissions()).Where("member_id = ?", member.MemberID)
+		_, err = updateQ.PlaceholderFormat(sq.Dollar).RunWith(tx).Exec()
+		if err != nil {
+			return fmt.Errorf("error updating member in database: %w", err)
+		}
+	}
+
 	return nil
 }

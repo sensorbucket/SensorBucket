@@ -3,7 +3,7 @@ module sensorbucket.nl/sensorbucket
 go 1.21
 
 require (
-	github.com/Masterminds/squirrel v1.5.2
+	github.com/Masterminds/squirrel v1.5.4
 	github.com/aquilax/go-perlin v1.1.0
 	github.com/docker/docker v24.0.5+incompatible
 	github.com/fission/fission v1.19.0

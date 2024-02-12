@@ -4,10 +4,11 @@ import (
 	"time"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 )
 
 type TenantService struct {
-	tenantStore tenantStore
+	tenantStore TenantStore
 }
 
 type Filter struct {
@@ -28,7 +29,7 @@ type TenantDTO struct {
 	ParentID            *int64         `json:"parent_tenant_id"`
 }
 
-func NewTenantService(tenantStore tenantStore) *TenantService {
+func NewTenantService(tenantStore TenantStore) *TenantService {
 	return &TenantService{
 		tenantStore: tenantStore,
 	}
@@ -73,9 +74,31 @@ func (s *TenantService) ListTenants(filter Filter, p pagination.Request) (*pagin
 	return s.tenantStore.List(filter, p)
 }
 
-type tenantStore interface {
+func (s *TenantService) AddTenantMember(tenantID int64, userID string, permissions auth.Permissions) error {
+	tenant, err := s.tenantStore.GetTenantById(tenantID)
+	if err != nil {
+		return err
+	}
+	if err := tenant.AddMember(userID); err != nil {
+		return err
+	}
+	if err := tenant.GrantPermission(userID, permissions); err != nil {
+		return err
+	}
+	return s.tenantStore.Update(tenant)
+}
+
+func (s *TenantService) RemoveTenantMember(tenantID int64, userID string) error {
+	return ErrNotImplemented
+}
+
+func (s *TenantService) ModifyMemberPermissions(tenantID int64, userID string, permissions auth.Permissions) error {
+	return ErrNotImplemented
+}
+
+type TenantStore interface {
 	Create(*Tenant) error
-	Update(Tenant) error
-	GetTenantById(id int64) (Tenant, error)
+	Update(*Tenant) error
+	GetTenantById(id int64) (*Tenant, error)
 	List(Filter, pagination.Request) (*pagination.Page[TenantDTO], error)
 }

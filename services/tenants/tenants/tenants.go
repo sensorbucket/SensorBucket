@@ -2,6 +2,7 @@ package tenants
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -75,19 +76,61 @@ func newTenantDtoFromTenant(tenant Tenant) TenantDTO {
 }
 
 func (t *Tenant) AddMember(userID string) error {
-	return ErrNotImplemented
+	if _, err := t.GetMember(userID); !errors.Is(err, ErrTenantMemberNotFound) {
+		if err == nil {
+			return ErrAlreadyMember
+		}
+		return err
+	}
+	t.Members = append(t.Members, newMember(userID))
+	return nil
 }
 
 func (t *Tenant) RemoveMember(userID string) error {
-	return ErrNotImplemented
+	_, ix, ok := lo.FindIndexOf(t.Members, func(item Member) bool {
+		return item.UserID == userID
+	})
+	if !ok {
+		return ErrTenantMemberNotFound
+	}
+	lastIX := len(t.Members) - 1
+	t.Members[ix] = t.Members[lastIX]
+	t.Members = t.Members[:lastIX]
+	return nil
 }
 
 func (t *Tenant) GrantPermission(userID string, permissions auth.PermissionSet) error {
-	return ErrNotImplemented
+	_, ix, ok := lo.FindIndexOf(t.Members, func(item Member) bool {
+		return item.UserID == userID
+	})
+	if !ok {
+		return fmt.Errorf("cannot get user for granting permission: %w", ErrTenantNotFound)
+	}
+	member := &t.Members[ix]
+	member.Permissions = append(member.Permissions, permissions)
+	member.dirty = true
+	return nil
 }
 
-func (t *Tenant) RevokePermission(userID string, permissions auth.PermissionSet) error {
-	return ErrNotImplemented
+func (t *Tenant) RevokePermission(userID string, revokedPermissions auth.PermissionSet) error {
+	member, ix, ok := lo.FindIndexOf(t.Members, func(item Member) bool {
+		return item.UserID == userID
+	})
+	if !ok {
+		return fmt.Errorf("cannot get user for revoking permission: %w", ErrTenantNotFound)
+	}
+	memberPermissions := member.Permissions.Permissions()
+	memberPermissions = lo.Reject(memberPermissions, func(memberPermission auth.Permission, index int) bool {
+		return lo.ContainsBy(revokedPermissions.Permissions(), func(revokedPermission auth.Permission) bool {
+			return memberPermission.String() == revokedPermission.String()
+		})
+	})
+	member.Permissions = lo.Map(memberPermissions, func(item auth.Permission, _ int) auth.PermissionSet {
+		return item
+	})
+	member.dirty = true
+	t.Members[ix] = member
+	return nil
 }
 
 func (t *Tenant) GetMember(userID string) (Member, error) {
@@ -102,4 +145,17 @@ type Member struct {
 	MemberID    int64
 	UserID      string
 	Permissions auth.Permissions
+
+	dirty bool
+}
+
+func (m Member) IsDirty() bool {
+	return m.dirty
+}
+
+func newMember(userID string) Member {
+	return Member{
+		UserID:      userID,
+		Permissions: auth.Permissions{},
+	}
 }
