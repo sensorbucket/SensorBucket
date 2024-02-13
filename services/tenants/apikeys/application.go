@@ -166,5 +166,5 @@ type ApiKeyStore interface {
 }
 
 type TenantStore interface {
-	GetTenantById(id int64) (tenants.Tenant, error)
+	GetTenantById(id int64) (*tenants.Tenant, error)
 }

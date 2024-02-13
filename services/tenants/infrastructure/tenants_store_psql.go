@@ -11,10 +11,14 @@ import (
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
-var _ tenants.TenantStore = (*PSQLTenantStore)(nil)
+var (
+	_ tenants.TenantStore = (*PSQLTenantStore)(nil)
+	_ apikeys.TenantStore = (*PSQLTenantStore)(nil)
+)
 
 type PSQLTenantStore struct {
 	db *sqlx.DB

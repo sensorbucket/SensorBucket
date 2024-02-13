@@ -293,7 +293,7 @@ var _ apikeys.TenantStore = &TenantStoreMock{}
 //
 //		// make and configure a mocked apikeys.TenantStore
 //		mockedTenantStore := &TenantStoreMock{
-//			GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
+//			GetTenantByIdFunc: func(id int64) (*tenants.Tenant, error) {
 //				panic("mock out the GetTenantById method")
 //			},
 //		}
@@ -304,7 +304,7 @@ var _ apikeys.TenantStore = &TenantStoreMock{}
 //	}
 type TenantStoreMock struct {
 	// GetTenantByIdFunc mocks the GetTenantById method.
-	GetTenantByIdFunc func(id int64) (tenants.Tenant, error)
+	GetTenantByIdFunc func(id int64) (*tenants.Tenant, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -318,7 +318,7 @@ type TenantStoreMock struct {
 }
 
 // GetTenantById calls GetTenantByIdFunc.
-func (mock *TenantStoreMock) GetTenantById(id int64) (tenants.Tenant, error) {
+func (mock *TenantStoreMock) GetTenantById(id int64) (*tenants.Tenant, error) {
 	if mock.GetTenantByIdFunc == nil {
 		panic("TenantStoreMock.GetTenantByIdFunc: method is nil but TenantStore.GetTenantById was just called")
 	}

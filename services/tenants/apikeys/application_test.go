@@ -17,9 +17,9 @@ func TestGenerateNewApiKeyCreatesNewApiKey(t *testing.T) {
 	// Arrange
 	exp := time.Date(2024, 12, 9, 33, 12, 50, 300, time.UTC)
 	tenantStore := &TenantStoreMock{
-		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
+		GetTenantByIdFunc: func(id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(905), id)
-			return tenants.Tenant{
+			return &tenants.Tenant{
 				ID:    905,
 				State: tenants.Active,
 			}, nil
@@ -56,9 +56,9 @@ func TestGenerateNewAPIKeyNameAndTenantCombinationNotUnique(t *testing.T) {
 	// Arrange
 	exp := time.Date(2024, 12, 9, 33, 12, 50, 300, time.UTC)
 	tenantStore := &TenantStoreMock{
-		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
+		GetTenantByIdFunc: func(id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(905), id)
-			return tenants.Tenant{
+			return &tenants.Tenant{
 				ID:    905,
 				State: tenants.Active,
 			}, nil
@@ -91,9 +91,9 @@ func TestGenerateNewAPIKeyCheckCombinationUniqueErrorOccurs(t *testing.T) {
 	// Arrange
 	exp := time.Date(2024, 12, 9, 33, 12, 50, 300, time.UTC)
 	tenantStore := &TenantStoreMock{
-		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
+		GetTenantByIdFunc: func(id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(905), id)
-			return tenants.Tenant{
+			return &tenants.Tenant{
 				ID:    905,
 				State: tenants.Active,
 			}, nil
@@ -120,9 +120,9 @@ func TestGenerateNewAPIKeyCheckCombinationUniqueErrorOccurs(t *testing.T) {
 func TestGenerateNewApiKeyErrorOccursWhileAddingApiKeyToStore(t *testing.T) {
 	// Arrange
 	tenantStore := &TenantStoreMock{
-		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
+		GetTenantByIdFunc: func(id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(905), id)
-			return tenants.Tenant{
+			return &tenants.Tenant{
 				ID:    905,
 				State: tenants.Active,
 			}, nil
@@ -172,9 +172,9 @@ func TestGenerateNewApiKeyPermissionsContains1InvalidPermission(t *testing.T) {
 func TestGenerateNewApiKeyErrorOccursWhenRetrievingTenant(t *testing.T) {
 	// Arrange
 	tenantStore := &TenantStoreMock{
-		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
+		GetTenantByIdFunc: func(id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(905), id)
-			return tenants.Tenant{
+			return &tenants.Tenant{
 				State: tenants.Active,
 			}, fmt.Errorf("weird database error!")
 		},
@@ -193,9 +193,9 @@ func TestGenerateNewApiKeyErrorOccursWhenRetrievingTenant(t *testing.T) {
 func TestGenerateNewApiKeyTenantDoesNotExist(t *testing.T) {
 	// Arrange
 	tenantStore := &TenantStoreMock{
-		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
+		GetTenantByIdFunc: func(id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(334), id)
-			return tenants.Tenant{}, apikeys.ErrTenantIsNotValid
+			return &tenants.Tenant{}, apikeys.ErrTenantIsNotValid
 		},
 	}
 	s := apikeys.NewAPIKeyService(tenantStore, &ApiKeyStoreMock{})
@@ -212,9 +212,9 @@ func TestGenerateNewApiKeyTenantDoesNotExist(t *testing.T) {
 func TestGenerateNewApiKeyTenantIsNottenantsActive(t *testing.T) {
 	// Arrange
 	tenantStore := &TenantStoreMock{
-		GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
+		GetTenantByIdFunc: func(id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(334), id)
-			return tenants.Tenant{
+			return &tenants.Tenant{
 				State: tenants.Archived,
 			}, nil
 		},
