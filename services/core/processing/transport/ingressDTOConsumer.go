@@ -11,8 +11,11 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
 
-func StartIngressDTOConsumer(conn *mq.AMQPConnection, svc *processing.Service, queue, xchg, topic string) {
+func StartIngressDTOConsumer(conn *mq.AMQPConnection, svc *processing.Service, queue, xchg, topic string, prefetch int) {
 	consume := conn.Consume(queue, func(c *amqp091.Channel) error {
+		if err := c.Qos(prefetch, 0, false); err != nil {
+			return fmt.Errorf("error setting Qos with prefetch on amqp: %w", err)
+		}
 		_, err := c.QueueDeclare(queue, true, false, false, false, nil)
 		if err != nil {
 			return err

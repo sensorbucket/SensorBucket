@@ -41,6 +41,7 @@ var (
 	AMQP_QUEUE_INGRESS           = env.Could("AMQP_QUEUE_INGRESS", "core-ingress")
 	AMQP_XCHG_INGRESS            = env.Could("AMQP_XCHG_INGRESS", "ingress")
 	AMQP_QUEUE_ERRORS            = env.Could("AMQP_QUEUE_ERRORS", "errors")
+	AMQP_PREFETCH                = env.Could("AMQP_PREFETCH", "5")
 	HTTP_ADDR                    = env.Could("HTTP_ADDR", ":3000")
 	HTTP_BASE                    = env.Could("HTTP_BASE", "http://localhost:3000/api")
 	SYS_ARCHIVE_TIME             = env.Could("SYS_ARCHIVE_TIME", "30")
@@ -56,6 +57,11 @@ func Run() error {
 	// Create shutdown context
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
+
+	prefetch, err := strconv.Atoi(AMQP_PREFETCH)
+	if err != nil {
+		return err
+	}
 
 	db, err := createDB()
 	if err != nil {
@@ -105,6 +111,7 @@ func Run() error {
 		AMQP_QUEUE_MEASUREMENTS,
 		AMQP_XCHG_MEASUREMENTS_TOPIC,
 		AMQP_QUEUE_ERRORS,
+		prefetch,
 	)
 	go processingtransport.StartIngressDTOConsumer(
 		amqpConn,
@@ -112,6 +119,7 @@ func Run() error {
 		AMQP_QUEUE_INGRESS,
 		AMQP_XCHG_INGRESS,
 		AMQP_XCHG_INGRESS_TOPIC,
+		prefetch,
 	)
 	go amqpConn.Start()
 
