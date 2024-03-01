@@ -89,3 +89,4 @@ tags:
   - name: Uplink
   - name: Tracing
   - name: Workers
+  - name: APIKeys
