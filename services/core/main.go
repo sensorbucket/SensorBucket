@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/cors"
 
@@ -157,8 +158,10 @@ func createDB() (*sqlx.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxIdleConns(2)
-	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
+	db.SetMaxOpenConns(50)
+	db.SetConnMaxIdleTime(4 * time.Minute)
+	db.SetConnMaxLifetime(0)
 	if err := migrations.MigratePostgres(db.DB); err != nil {
 		return nil, fmt.Errorf("failed to migrate db: %w", err)
 	}
