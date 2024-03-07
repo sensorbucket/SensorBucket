@@ -11,7 +11,7 @@ import (
 )
 
 func TestAddMemberToTenantWithPermissions(t *testing.T) {
-	tenant := tenants.NewTenant(tenants.TenantDTO{
+	tenant := tenants.NewTenant(tenants.CreateTenantDTO{
 		Name: "TestingTenant",
 	})
 	userID := "123123"
@@ -23,6 +23,8 @@ func TestAddMemberToTenantWithPermissions(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, auth.Permissions{auth.READ_DEVICES, auth.WRITE_DEVICES}, member.Permissions)
 	require.NoError(t, tenant.RevokePermission(userID, auth.WRITE_DEVICES), "could not revoke permission")
+	member, err = tenant.GetMember(userID)
+	require.NoError(t, err)
 	assert.Equal(t, auth.Permissions{auth.READ_DEVICES}, member.Permissions)
 	require.NoError(t, tenant.RemoveMember(userID), "could not remove member")
 	_, err = tenant.GetMember(userID)

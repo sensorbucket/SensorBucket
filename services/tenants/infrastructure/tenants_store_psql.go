@@ -2,15 +2,19 @@ package tenantsinfra
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/jackc/pgx/v5"
+	pgt "github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
@@ -18,6 +22,10 @@ import (
 var (
 	_ tenants.TenantStore = (*PSQLTenantStore)(nil)
 	_ apikeys.TenantStore = (*PSQLTenantStore)(nil)
+
+	ErrNoRowsAffected = errors.New("no rows where updated")
+
+	pq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 )
 
 type PSQLTenantStore struct {
@@ -34,7 +42,7 @@ type tenantsQueryPage struct {
 	Created time.Time `pagination:"created,DESC"`
 }
 
-func (ts *PSQLTenantStore) GetTenantById(id int64) (*tenants.Tenant, error) {
+func (ts *PSQLTenantStore) GetTenantByID(id int64) (*tenants.Tenant, error) {
 	tenant := tenants.Tenant{}
 	q := sq.Select(
 		"id, name, address, zip_code, city, chamber_of_commerce_id, headquarter_id, archive_time, state, logo, parent_tenant_id").
@@ -67,7 +75,7 @@ func (ts *PSQLTenantStore) GetTenantById(id int64) (*tenants.Tenant, error) {
 	return &tenant, nil
 }
 
-func (ts *PSQLTenantStore) List(filter tenants.Filter, r pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
+func (ts *PSQLTenantStore) List(filter tenants.Filter, r pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
 	var err error
 
 	// Pagination
@@ -102,9 +110,9 @@ func (ts *PSQLTenantStore) List(filter tenants.Filter, r pagination.Request) (*p
 		return nil, err
 	}
 	defer rows.Close()
-	list := make([]tenants.TenantDTO, 0, cursor.Limit)
+	list := make([]tenants.CreateTenantDTO, 0, cursor.Limit)
 	for rows.Next() {
-		tenant := tenants.TenantDTO{}
+		tenant := tenants.CreateTenantDTO{}
 		err = rows.Scan(
 			&tenant.ID,
 			&tenant.Name,
@@ -203,13 +211,6 @@ func (ts *PSQLTenantStore) Update(tenant *tenants.Tenant) error {
 			return err
 		}
 	}
-	// Update members
-	if err := updateMembers(tx, tenant); err != nil {
-		if rb := tx.Rollback(); rb != nil {
-			err = fmt.Errorf("rollback error %w while handling error: %w", rb, err)
-		}
-		return err
-	}
 
 	if rb := tx.Commit(); err != nil {
 		return fmt.Errorf("commit error: %w", rb)
@@ -217,53 +218,101 @@ func (ts *PSQLTenantStore) Update(tenant *tenants.Tenant) error {
 	return nil
 }
 
-func updateMembers(tx *sqlx.Tx, tenant *tenants.Tenant) error {
-	newMembers := lo.Filter(tenant.Members, func(item tenants.Member, index int) bool {
-		return item.MemberID == 0
-	})
-	q := sq.Insert("tenant_members").Columns("tenant_id", "user_id", "permissions")
-	for _, member := range newMembers {
-		q = q.Values(tenant.ID, member.UserID, member.Permissions.Permissions())
-	}
-	_, err := q.PlaceholderFormat(sq.Dollar).RunWith(tx).Exec()
+func (store *PSQLTenantStore) GetTenantMember(tenantID int64, userID string) (*tenants.Member, error) {
+	var member tenants.Member
+	var permissions pgt.FlatArray[auth.Permission]
+	// TODO: This is a hack, it grabs the underlying PGX connection to scan the row
+	// it is sort of required to scan the array of permission as that column is a postgres
+	// special type
+	c, err := store.db.Conn(context.Background())
 	if err != nil {
-		return fmt.Errorf("error inserting new members in database: %w", err)
+		return nil, fmt.Errorf("in GetTenantMember, could not get raw db conn: %w", err)
 	}
-
-	// Get exisitng member ids
-	rows, err := sq.Select("id").From("tenant_members").Where("tenant_id = ?", tenant.ID).PlaceholderFormat(sq.Dollar).RunWith(tx).Query()
-	if err != nil {
-		return fmt.Errorf("could not fetch existing members from database: %w", err)
-	}
-	defer rows.Close()
-	existingMemberIDs := []int64{}
-	for rows.Next() {
-		var id int64
-		err := rows.Scan(&id)
-		if err != nil {
-			return fmt.Errorf("could not scan member id into int64: %w", err)
+	defer c.Close()
+	err = c.Raw(func(driverConn any) error {
+		stdlibConn, ok := driverConn.(*stdlib.Conn)
+		if !ok {
+			return errors.New("in GetTenantMember, expected driverConnection to be of type stdlib.Conn")
 		}
-		existingMemberIDs = append(existingMemberIDs, id)
-	}
-
-	currentMemberIDs := lo.Map(tenant.Members, func(item tenants.Member, index int) int64 { return item.MemberID })
-	deletedMembers, _ := lo.Difference(existingMemberIDs, currentMemberIDs)
-	_, err = sq.Delete("tenant_members").Where(sq.Eq{"id": deletedMembers}).PlaceholderFormat(sq.Dollar).RunWith(tx).Exec()
-	if err != nil {
-		return fmt.Errorf("could not delete removed tenants from database: %w", err)
-	}
-
-	// update test set info=tmp.info from (values (1,'new1'),(2,'new2'),(6,'new6')) as tmp (id,info) where test.id=tmp.id;
-	updatedMembers := lo.Filter(tenant.Members, func(item tenants.Member, index int) bool {
-		return item.IsDirty()
-	})
-	for _, member := range updatedMembers {
-		updateQ := sq.Update("tenant_members").Set("permissions", member.Permissions.Permissions()).Where("member_id = ?", member.MemberID)
-		_, err = updateQ.PlaceholderFormat(sq.Dollar).RunWith(tx).Exec()
+		conn := stdlibConn.Conn()
+		query, params, err := pq.Select("tenant_id", "user_id", "permissions").From("tenant_members").Where(sq.Eq{"tenant_id": tenantID, "user_id": userID}).ToSql()
 		if err != nil {
-			return fmt.Errorf("error updating member in database: %w", err)
+			return fmt.Errorf("in GetTenantMember, could not build sql query: %w", err)
 		}
+		err = conn.QueryRow(context.Background(), query, params...).
+			Scan(
+				&member.TenantID, &member.UserID, &permissions,
+			)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return tenants.ErrTenantMemberNotFound
+		} else if err != nil {
+			return fmt.Errorf("error getting tenant member: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err // error context given by method above
 	}
+	member.Permissions = auth.Permissions(permissions)
+	return &member, nil
+}
 
+func (s *PSQLTenantStore) SaveMember(tenantID int64, member *tenants.Member) error {
+	var count int64
+	if err := s.db.Get(&count, "SELECT count(*) FROM tenant_members WHERE tenant_id = $1 AND user_id = $2", tenantID, member.UserID); err != nil {
+		return fmt.Errorf("error getting counting tenant member for existance: %w", err)
+	}
+	if count > 0 {
+		return s.updateMember(tenantID, member)
+	}
+	return s.createMember(tenantID, member)
+}
+
+func (s *PSQLTenantStore) createMember(tenantID int64, member *tenants.Member) error {
+	rows, err := pq.Insert("tenant_members").Columns("tenant_id", "user_id", "permissions").
+		Values(tenantID, member.UserID, member.Permissions).RunWith(s.db).Exec()
+	if err != nil {
+		return fmt.Errorf("error inserting new tenant member: %w", err)
+	}
+	affected, err := rows.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return ErrNoRowsAffected
+	}
+	return nil
+}
+
+func (s *PSQLTenantStore) updateMember(tenantID int64, member *tenants.Member) error {
+	rows, err := pq.Update("tenant_members").Set("permissions", member.Permissions).RunWith(s.db).Exec()
+	if err != nil {
+		return err
+	}
+	affected, err := rows.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return ErrNoRowsAffected
+	}
+	return nil
+}
+
+func (s *PSQLTenantStore) RemoveMember(tenantID int64, userID string) error {
+	rows, err := pq.Delete("tenant_members").Where(sq.Eq{
+		"tenant_id": tenantID,
+		"user_id":   userID,
+	}).RunWith(s.db).Exec()
+	if err != nil {
+		return err
+	}
+	affected, err := rows.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return ErrNoRowsAffected
+	}
 	return nil
 }

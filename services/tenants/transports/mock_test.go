@@ -4,6 +4,7 @@
 package tenantstransports_test
 
 import (
+	"context"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
@@ -245,14 +246,23 @@ var _ tenantstransports.TenantService = &TenantServiceMock{}
 //
 //		// make and configure a mocked tenantstransports.TenantService
 //		mockedTenantService := &TenantServiceMock{
-//			ArchiveTenantFunc: func(tenantID int64) error {
+//			AddTenantMemberFunc: func(ctx context.Context, tenantID int64, userID string, permissions auth.Permissions) error {
+//				panic("mock out the AddTenantMember method")
+//			},
+//			ArchiveTenantFunc: func(ctx context.Context, tenantID int64) error {
 //				panic("mock out the ArchiveTenant method")
 //			},
-//			CreateNewTenantFunc: func(tenant tenants.TenantDTO) (tenants.TenantDTO, error) {
+//			CreateNewTenantFunc: func(ctx context.Context, tenant tenants.CreateTenantDTO) (tenants.CreateTenantDTO, error) {
 //				panic("mock out the CreateNewTenant method")
 //			},
-//			ListTenantsFunc: func(filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
+//			ListTenantsFunc: func(ctx context.Context, filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
 //				panic("mock out the ListTenants method")
+//			},
+//			RemoveTenantMemberFunc: func(ctx context.Context, tenantID int64, userID string) error {
+//				panic("mock out the RemoveTenantMember method")
+//			},
+//			UpdateTenantMemberFunc: func(ctx context.Context, tenantID int64, userID string, permissions auth.Permissions) error {
+//				panic("mock out the UpdateTenantMember method")
 //			},
 //		}
 //
@@ -261,54 +271,149 @@ var _ tenantstransports.TenantService = &TenantServiceMock{}
 //
 //	}
 type TenantServiceMock struct {
+	// AddTenantMemberFunc mocks the AddTenantMember method.
+	AddTenantMemberFunc func(ctx context.Context, tenantID int64, userID string, permissions auth.Permissions) error
+
 	// ArchiveTenantFunc mocks the ArchiveTenant method.
-	ArchiveTenantFunc func(tenantID int64) error
+	ArchiveTenantFunc func(ctx context.Context, tenantID int64) error
 
 	// CreateNewTenantFunc mocks the CreateNewTenant method.
-	CreateNewTenantFunc func(tenant tenants.TenantDTO) (tenants.TenantDTO, error)
+	CreateNewTenantFunc func(ctx context.Context, tenant tenants.CreateTenantDTO) (tenants.CreateTenantDTO, error)
 
 	// ListTenantsFunc mocks the ListTenants method.
-	ListTenantsFunc func(filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.TenantDTO], error)
+	ListTenantsFunc func(ctx context.Context, filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error)
+
+	// RemoveTenantMemberFunc mocks the RemoveTenantMember method.
+	RemoveTenantMemberFunc func(ctx context.Context, tenantID int64, userID string) error
+
+	// UpdateTenantMemberFunc mocks the UpdateTenantMember method.
+	UpdateTenantMemberFunc func(ctx context.Context, tenantID int64, userID string, permissions auth.Permissions) error
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AddTenantMember holds details about calls to the AddTenantMember method.
+		AddTenantMember []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// TenantID is the tenantID argument value.
+			TenantID int64
+			// UserID is the userID argument value.
+			UserID string
+			// Permissions is the permissions argument value.
+			Permissions auth.Permissions
+		}
 		// ArchiveTenant holds details about calls to the ArchiveTenant method.
 		ArchiveTenant []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// TenantID is the tenantID argument value.
 			TenantID int64
 		}
 		// CreateNewTenant holds details about calls to the CreateNewTenant method.
 		CreateNewTenant []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// Tenant is the tenant argument value.
-			Tenant tenants.TenantDTO
+			Tenant tenants.CreateTenantDTO
 		}
 		// ListTenants holds details about calls to the ListTenants method.
 		ListTenants []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// Filter is the filter argument value.
 			Filter tenants.Filter
 			// P is the p argument value.
 			P pagination.Request
 		}
+		// RemoveTenantMember holds details about calls to the RemoveTenantMember method.
+		RemoveTenantMember []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// TenantID is the tenantID argument value.
+			TenantID int64
+			// UserID is the userID argument value.
+			UserID string
+		}
+		// UpdateTenantMember holds details about calls to the UpdateTenantMember method.
+		UpdateTenantMember []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// TenantID is the tenantID argument value.
+			TenantID int64
+			// UserID is the userID argument value.
+			UserID string
+			// Permissions is the permissions argument value.
+			Permissions auth.Permissions
+		}
 	}
-	lockArchiveTenant   sync.RWMutex
-	lockCreateNewTenant sync.RWMutex
-	lockListTenants     sync.RWMutex
+	lockAddTenantMember    sync.RWMutex
+	lockArchiveTenant      sync.RWMutex
+	lockCreateNewTenant    sync.RWMutex
+	lockListTenants        sync.RWMutex
+	lockRemoveTenantMember sync.RWMutex
+	lockUpdateTenantMember sync.RWMutex
+}
+
+// AddTenantMember calls AddTenantMemberFunc.
+func (mock *TenantServiceMock) AddTenantMember(ctx context.Context, tenantID int64, userID string, permissions auth.Permissions) error {
+	if mock.AddTenantMemberFunc == nil {
+		panic("TenantServiceMock.AddTenantMemberFunc: method is nil but TenantService.AddTenantMember was just called")
+	}
+	callInfo := struct {
+		Ctx         context.Context
+		TenantID    int64
+		UserID      string
+		Permissions auth.Permissions
+	}{
+		Ctx:         ctx,
+		TenantID:    tenantID,
+		UserID:      userID,
+		Permissions: permissions,
+	}
+	mock.lockAddTenantMember.Lock()
+	mock.calls.AddTenantMember = append(mock.calls.AddTenantMember, callInfo)
+	mock.lockAddTenantMember.Unlock()
+	return mock.AddTenantMemberFunc(ctx, tenantID, userID, permissions)
+}
+
+// AddTenantMemberCalls gets all the calls that were made to AddTenantMember.
+// Check the length with:
+//
+//	len(mockedTenantService.AddTenantMemberCalls())
+func (mock *TenantServiceMock) AddTenantMemberCalls() []struct {
+	Ctx         context.Context
+	TenantID    int64
+	UserID      string
+	Permissions auth.Permissions
+} {
+	var calls []struct {
+		Ctx         context.Context
+		TenantID    int64
+		UserID      string
+		Permissions auth.Permissions
+	}
+	mock.lockAddTenantMember.RLock()
+	calls = mock.calls.AddTenantMember
+	mock.lockAddTenantMember.RUnlock()
+	return calls
 }
 
 // ArchiveTenant calls ArchiveTenantFunc.
-func (mock *TenantServiceMock) ArchiveTenant(tenantID int64) error {
+func (mock *TenantServiceMock) ArchiveTenant(ctx context.Context, tenantID int64) error {
 	if mock.ArchiveTenantFunc == nil {
 		panic("TenantServiceMock.ArchiveTenantFunc: method is nil but TenantService.ArchiveTenant was just called")
 	}
 	callInfo := struct {
+		Ctx      context.Context
 		TenantID int64
 	}{
+		Ctx:      ctx,
 		TenantID: tenantID,
 	}
 	mock.lockArchiveTenant.Lock()
 	mock.calls.ArchiveTenant = append(mock.calls.ArchiveTenant, callInfo)
 	mock.lockArchiveTenant.Unlock()
-	return mock.ArchiveTenantFunc(tenantID)
+	return mock.ArchiveTenantFunc(ctx, tenantID)
 }
 
 // ArchiveTenantCalls gets all the calls that were made to ArchiveTenant.
@@ -316,9 +421,11 @@ func (mock *TenantServiceMock) ArchiveTenant(tenantID int64) error {
 //
 //	len(mockedTenantService.ArchiveTenantCalls())
 func (mock *TenantServiceMock) ArchiveTenantCalls() []struct {
+	Ctx      context.Context
 	TenantID int64
 } {
 	var calls []struct {
+		Ctx      context.Context
 		TenantID int64
 	}
 	mock.lockArchiveTenant.RLock()
@@ -328,19 +435,21 @@ func (mock *TenantServiceMock) ArchiveTenantCalls() []struct {
 }
 
 // CreateNewTenant calls CreateNewTenantFunc.
-func (mock *TenantServiceMock) CreateNewTenant(tenant tenants.TenantDTO) (tenants.TenantDTO, error) {
+func (mock *TenantServiceMock) CreateNewTenant(ctx context.Context, tenant tenants.CreateTenantDTO) (tenants.CreateTenantDTO, error) {
 	if mock.CreateNewTenantFunc == nil {
 		panic("TenantServiceMock.CreateNewTenantFunc: method is nil but TenantService.CreateNewTenant was just called")
 	}
 	callInfo := struct {
-		Tenant tenants.TenantDTO
+		Ctx    context.Context
+		Tenant tenants.CreateTenantDTO
 	}{
+		Ctx:    ctx,
 		Tenant: tenant,
 	}
 	mock.lockCreateNewTenant.Lock()
 	mock.calls.CreateNewTenant = append(mock.calls.CreateNewTenant, callInfo)
 	mock.lockCreateNewTenant.Unlock()
-	return mock.CreateNewTenantFunc(tenant)
+	return mock.CreateNewTenantFunc(ctx, tenant)
 }
 
 // CreateNewTenantCalls gets all the calls that were made to CreateNewTenant.
@@ -348,10 +457,12 @@ func (mock *TenantServiceMock) CreateNewTenant(tenant tenants.TenantDTO) (tenant
 //
 //	len(mockedTenantService.CreateNewTenantCalls())
 func (mock *TenantServiceMock) CreateNewTenantCalls() []struct {
-	Tenant tenants.TenantDTO
+	Ctx    context.Context
+	Tenant tenants.CreateTenantDTO
 } {
 	var calls []struct {
-		Tenant tenants.TenantDTO
+		Ctx    context.Context
+		Tenant tenants.CreateTenantDTO
 	}
 	mock.lockCreateNewTenant.RLock()
 	calls = mock.calls.CreateNewTenant
@@ -360,21 +471,23 @@ func (mock *TenantServiceMock) CreateNewTenantCalls() []struct {
 }
 
 // ListTenants calls ListTenantsFunc.
-func (mock *TenantServiceMock) ListTenants(filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
+func (mock *TenantServiceMock) ListTenants(ctx context.Context, filter tenants.Filter, p pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
 	if mock.ListTenantsFunc == nil {
 		panic("TenantServiceMock.ListTenantsFunc: method is nil but TenantService.ListTenants was just called")
 	}
 	callInfo := struct {
+		Ctx    context.Context
 		Filter tenants.Filter
 		P      pagination.Request
 	}{
+		Ctx:    ctx,
 		Filter: filter,
 		P:      p,
 	}
 	mock.lockListTenants.Lock()
 	mock.calls.ListTenants = append(mock.calls.ListTenants, callInfo)
 	mock.lockListTenants.Unlock()
-	return mock.ListTenantsFunc(filter, p)
+	return mock.ListTenantsFunc(ctx, filter, p)
 }
 
 // ListTenantsCalls gets all the calls that were made to ListTenants.
@@ -382,15 +495,101 @@ func (mock *TenantServiceMock) ListTenants(filter tenants.Filter, p pagination.R
 //
 //	len(mockedTenantService.ListTenantsCalls())
 func (mock *TenantServiceMock) ListTenantsCalls() []struct {
+	Ctx    context.Context
 	Filter tenants.Filter
 	P      pagination.Request
 } {
 	var calls []struct {
+		Ctx    context.Context
 		Filter tenants.Filter
 		P      pagination.Request
 	}
 	mock.lockListTenants.RLock()
 	calls = mock.calls.ListTenants
 	mock.lockListTenants.RUnlock()
+	return calls
+}
+
+// RemoveTenantMember calls RemoveTenantMemberFunc.
+func (mock *TenantServiceMock) RemoveTenantMember(ctx context.Context, tenantID int64, userID string) error {
+	if mock.RemoveTenantMemberFunc == nil {
+		panic("TenantServiceMock.RemoveTenantMemberFunc: method is nil but TenantService.RemoveTenantMember was just called")
+	}
+	callInfo := struct {
+		Ctx      context.Context
+		TenantID int64
+		UserID   string
+	}{
+		Ctx:      ctx,
+		TenantID: tenantID,
+		UserID:   userID,
+	}
+	mock.lockRemoveTenantMember.Lock()
+	mock.calls.RemoveTenantMember = append(mock.calls.RemoveTenantMember, callInfo)
+	mock.lockRemoveTenantMember.Unlock()
+	return mock.RemoveTenantMemberFunc(ctx, tenantID, userID)
+}
+
+// RemoveTenantMemberCalls gets all the calls that were made to RemoveTenantMember.
+// Check the length with:
+//
+//	len(mockedTenantService.RemoveTenantMemberCalls())
+func (mock *TenantServiceMock) RemoveTenantMemberCalls() []struct {
+	Ctx      context.Context
+	TenantID int64
+	UserID   string
+} {
+	var calls []struct {
+		Ctx      context.Context
+		TenantID int64
+		UserID   string
+	}
+	mock.lockRemoveTenantMember.RLock()
+	calls = mock.calls.RemoveTenantMember
+	mock.lockRemoveTenantMember.RUnlock()
+	return calls
+}
+
+// UpdateTenantMember calls UpdateTenantMemberFunc.
+func (mock *TenantServiceMock) UpdateTenantMember(ctx context.Context, tenantID int64, userID string, permissions auth.Permissions) error {
+	if mock.UpdateTenantMemberFunc == nil {
+		panic("TenantServiceMock.UpdateTenantMemberFunc: method is nil but TenantService.UpdateTenantMember was just called")
+	}
+	callInfo := struct {
+		Ctx         context.Context
+		TenantID    int64
+		UserID      string
+		Permissions auth.Permissions
+	}{
+		Ctx:         ctx,
+		TenantID:    tenantID,
+		UserID:      userID,
+		Permissions: permissions,
+	}
+	mock.lockUpdateTenantMember.Lock()
+	mock.calls.UpdateTenantMember = append(mock.calls.UpdateTenantMember, callInfo)
+	mock.lockUpdateTenantMember.Unlock()
+	return mock.UpdateTenantMemberFunc(ctx, tenantID, userID, permissions)
+}
+
+// UpdateTenantMemberCalls gets all the calls that were made to UpdateTenantMember.
+// Check the length with:
+//
+//	len(mockedTenantService.UpdateTenantMemberCalls())
+func (mock *TenantServiceMock) UpdateTenantMemberCalls() []struct {
+	Ctx         context.Context
+	TenantID    int64
+	UserID      string
+	Permissions auth.Permissions
+} {
+	var calls []struct {
+		Ctx         context.Context
+		TenantID    int64
+		UserID      string
+		Permissions auth.Permissions
+	}
+	mock.lockUpdateTenantMember.RLock()
+	calls = mock.calls.UpdateTenantMember
+	mock.lockUpdateTenantMember.RUnlock()
 	return calls
 }

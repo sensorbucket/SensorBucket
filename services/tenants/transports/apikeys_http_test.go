@@ -108,7 +108,7 @@ func TestNewApiKeyExpirationDateNotInTheFuture(t *testing.T) {
 	svc := &ApiKeyServiceMock{}
 	transport := testTransport(svc)
 	req, _ := http.NewRequest("POST", "/api-keys",
-		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "tenant_id": 12, "permissions":["some_permission"], "expiration_date": "%s"}`, time.Now().Add(-time.Hour*24).Format(time.RFC3339))))
+		strings.NewReader(fmt.Sprintf(`{"name": "wasdasdas", "tenant_id": 12, "permissions":["WRITE_DEVICES"], "expiration_date": "%s"}`, time.Now().Add(-time.Hour*24).Format(time.RFC3339))))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -126,13 +126,13 @@ func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 	svc := ApiKeyServiceMock{
 		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
-			assert.Equal(t, auth.Permissions{auth.Permission("some_permission")}, permissions)
+			assert.Equal(t, auth.Permissions{auth.Permission("WRITE_DEVICES")}, permissions)
 			assert.Nil(t, expiry)
 			return "", apikeys.ErrTenantIsNotValid
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "permissions":["some_permission"], "tenant_id": 905}`))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "permissions":["WRITE_DEVICES"], "tenant_id": 905}`))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -150,13 +150,13 @@ func TestNewApiKeyErrorOccurs(t *testing.T) {
 	svc := ApiKeyServiceMock{
 		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
-			assert.Equal(t, auth.Permissions{auth.Permission("some_permission")}, permissions)
+			assert.Equal(t, auth.Permissions{auth.Permission("WRITE_DEVICES")}, permissions)
 			assert.Nil(t, expiry)
 			return "", fmt.Errorf("weird error!")
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "permissions":["some_permission"], "tenant_id": 905}`))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "permissions":["WRITE_DEVICES"], "tenant_id": 905}`))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -175,14 +175,14 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 	svc := ApiKeyServiceMock{
 		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
-			assert.Equal(t, auth.Permissions{auth.Permission("some_permission")}, permissions)
+			assert.Equal(t, auth.Permissions{auth.Permission("WRITE_DEVICES")}, permissions)
 			assert.NotNil(t, expiry)
 			assert.Equal(t, exp, *expiry)
 			return "newapikey", nil
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(fmt.Sprintf(`{"name": "whatever", "permissions":["some_permission"], "tenant_id": 905, "expiration_date": "%s"}`, exp.Format("2006-01-02T15:04:05.999999999Z"))))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(fmt.Sprintf(`{"name": "whatever", "permissions":["WRITE_DEVICES"], "tenant_id": 905, "expiration_date": "%s"}`, exp.Format("2006-01-02T15:04:05.999999999Z"))))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -198,15 +198,15 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 func TestNewApiKeyIsCreatedWithoutExpirationDate(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(name string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
-			assert.Equal(t, auth.Permissions{auth.Permission("some_permission")}, permissions)
+			assert.Equal(t, auth.Permissions{auth.Permission("WRITE_DEVICES")}, permissions)
 			assert.Nil(t, expiry)
 			return "newapikey", nil
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "permissions":["some_permission"], "tenant_id": 905}`))
+	req, _ := http.NewRequest("POST", "/api-keys", strings.NewReader(`{"name": "whatever", "permissions":["WRITE_DEVICES"], "tenant_id": 905}`))
 	req.Header.Add("content-type", "application/json")
 
 	// Act
@@ -494,7 +494,7 @@ func TestListApiKeysReturnsPaginatedList(t *testing.T) {
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("GET", "/api-keys/list", nil)
+	req, _ := http.NewRequest("GET", "/api-keys", nil)
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -503,7 +503,7 @@ func TestListApiKeysReturnsPaginatedList(t *testing.T) {
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Equal(t,
-		`{"links":{"previous":"","next":"/api-keys/list?cursor=encoded_cursor"},"page_size":2,"total_count":0,"data":[{"id":0,"name":"api-key-1","tenant_id":0,"tenant_name":"","expiration_date":null,"created":"0001-01-01T00:00:00Z","permissions":["READ_API_KEYS"]},{"id":0,"name":"api-key-2","tenant_id":0,"tenant_name":"","expiration_date":null,"created":"0001-01-01T00:00:00Z","permissions":["READ_DEVICES","WRITE_DEVICES"]}]}`+"\n", rr.Body.String())
+		`{"links":{"previous":"","next":"/api-keys?cursor=encoded_cursor"},"page_size":2,"total_count":0,"data":[{"id":0,"name":"api-key-1","tenant_id":0,"tenant_name":"","expiration_date":null,"created":"0001-01-01T00:00:00Z","permissions":["READ_API_KEYS"]},{"id":0,"name":"api-key-2","tenant_id":0,"tenant_name":"","expiration_date":null,"created":"0001-01-01T00:00:00Z","permissions":["READ_DEVICES","WRITE_DEVICES"]}]}`+"\n", rr.Body.String())
 	assert.Len(t, svc.ListAPIKeysCalls(), 1)
 }
 
@@ -511,7 +511,7 @@ func TestListApiKeysInvalidParams(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("GET", "/api-keys/list?tenant_id=blablalq", nil)
+	req, _ := http.NewRequest("GET", "/api-keys?tenant_id=blablalq", nil)
 
 	// Act
 	rr := httptest.NewRecorder()
@@ -531,7 +531,7 @@ func TestListApiKeysErrorsOccursWhileRetrievingData(t *testing.T) {
 		},
 	}
 	transport := testTransport(&svc)
-	req, _ := http.NewRequest("GET", "/api-keys/list", nil)
+	req, _ := http.NewRequest("GET", "/api-keys", nil)
 
 	// Act
 	rr := httptest.NewRecorder()

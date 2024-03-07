@@ -226,6 +226,27 @@ tenant:
       type: string
     headquarter_id:
       type: string
+addTenantMemberRequest:
+  type: object
+  required:
+    - user_id
+    - permissions
+  properties:
+    user_id:
+      type: string
+    permissions:
+      type: array
+      items:
+        type: string
+updateTenantMemberRequest:
+  type: object
+  required:
+    - permissions
+  properties:
+    permissions:
+      type: array
+      items:
+        type: string
     
 
 apiKey:

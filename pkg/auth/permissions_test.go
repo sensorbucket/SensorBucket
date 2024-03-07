@@ -7,75 +7,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPermissionsValid(t *testing.T) {
+func TestStringToPermissions(t *testing.T) {
 	testCases := []struct {
-		desc          string
-		permission    Permission
-		expectedError error
+		desc                string
+		strings             []string
+		expectedError       error
+		expectedPermissions Permissions
 	}{
 		{
-			desc:          "valid permission",
-			permission:    WRITE_DEVICES,
-			expectedError: nil,
+			desc:                "valid permission",
+			strings:             []string{string(WRITE_DEVICES)},
+			expectedError:       nil,
+			expectedPermissions: Permissions{WRITE_DEVICES},
 		},
 		{
-			desc:          "invalid permission",
-			permission:    Permission("NON_EXISTANT"),
-			expectedError: ErrPermissionInvalid,
+			desc:                "invalid permission",
+			strings:             []string{"INVALID_PERM"},
+			expectedError:       ErrPermissionInvalid,
+			expectedPermissions: nil,
 		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			assert.ErrorIs(t, tC.permission.Valid(), tC.expectedError)
-		})
-	}
-}
-
-func TestPermissionsFlattenCorrectly(t *testing.T) {
-	testCases := []struct {
-		desc     string
-		set      Permissions
-		expected []Permission
-	}{
-		{
-			desc:     "Empty to empty",
-			set:      Permissions{},
-			expected: []Permission{},
-		},
-		{
-			desc:     "One to one",
-			set:      Permissions{READ_DEVICES},
-			expected: []Permission{READ_DEVICES},
-		},
-		{
-			desc:     "Two to Two",
-			set:      Permissions{READ_DEVICES, WRITE_DEVICES},
-			expected: []Permission{READ_DEVICES, WRITE_DEVICES},
-		},
-		{
-			desc:     "Group with one to one",
-			set:      Permissions{Permissions{READ_DEVICES}},
-			expected: []Permission{READ_DEVICES},
-		},
-		{
-			desc:     "Group with many to many",
-			set:      Permissions{Permissions{READ_DEVICES, WRITE_DEVICES}},
-			expected: []Permission{READ_DEVICES, WRITE_DEVICES},
-		},
-		{
-			desc:     "Group with groups",
-			set:      Permissions{Permissions{Permissions{READ_DEVICES}, Permissions{WRITE_DEVICES}}},
-			expected: []Permission{READ_DEVICES, WRITE_DEVICES},
-		},
-		{
-			desc:     "Remove duplicates",
-			set:      Permissions{READ_DEVICES, READ_DEVICES},
-			expected: []Permission{READ_DEVICES},
-		},
-	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
-			assert.Equal(t, tC.expected, tC.set.Permissions())
+			perms, err := stringsToPermissions(tC.strings)
+			assert.ErrorIs(t, err, tC.expectedError)
+			assert.Equal(t, tC.expectedPermissions, perms)
 		})
 	}
 }

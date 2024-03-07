@@ -281,7 +281,7 @@ func toViewPermissions() (map[views.OrderedMapKey][]views.APIKeysPermission, err
 	categorized := createAPIKeyViewPermissions()
 
 	// Retrieve all allowed permissions
-	allPermissions := auth.AllPermissions().Permissions()
+	allPermissions := auth.AllPermissions()
 	authAsStrSlice := []string{}
 	for _, p := range allPermissions {
 		authAsStrSlice = append(authAsStrSlice, p.String())

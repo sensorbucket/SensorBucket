@@ -47,7 +47,7 @@ func (s *Service) GenerateNewApiKey(name string, tenantId int64, permissions aut
 	if err := permissions.Validate(); err != nil {
 		return "", fmt.Errorf("%w: %w", ErrPermissionsInvalid, err)
 	}
-	tenant, err := s.tenantStore.GetTenantById(tenantId)
+	tenant, err := s.tenantStore.GetTenantByID(tenantId)
 	if err != nil {
 		return "", err
 	}
@@ -166,5 +166,5 @@ type ApiKeyStore interface {
 }
 
 type TenantStore interface {
-	GetTenantById(id int64) (*tenants.Tenant, error)
+	GetTenantByID(id int64) (*tenants.Tenant, error)
 }

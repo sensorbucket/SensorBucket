@@ -64,6 +64,7 @@ services:
       - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/tenants?sslmode=disable
       - STATIC_PATH=services/tenants/static
       - HTTP_WEBUI_BASE=/tenants
+      - KRATOS_ADMIN_API=http://kratos:4434
       - SB_API=http://caddy
 
   userworkers:

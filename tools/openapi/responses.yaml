@@ -10,10 +10,9 @@
     application/json:
       schema:
         $ref: 'schemas.yaml#/apiError'
-
 '500':
   description: The request failed because of an unexpected server error
   content:
-  application/json:
-    schema:
-      $ref: 'schemas.yaml#/apiError'
+    application/json:
+      schema:
+        $ref: 'schemas.yaml#/apiError'

@@ -25,12 +25,13 @@ import (
 )
 
 var (
-	HTTP_API_ADDR   = env.Could("HTTP_ADDR", ":3000")
-	HTTP_API_BASE   = env.Could("HTTP_BASE", "http://localhost:3000/api")
-	HTTP_WEBUI_ADDR = env.Could("HTTP_WEBUI_ADDR", ":3001")
-	HTTP_WEBUI_BASE = env.Could("HTTP_WEBUI_BASE", "http://localhost:3000/auth")
-	SB_API          = env.Must("SB_API")
-	DB_DSN          = env.Must("DB_DSN")
+	HTTP_API_ADDR    = env.Could("HTTP_ADDR", ":3000")
+	HTTP_API_BASE    = env.Could("HTTP_BASE", "http://localhost:3000/api")
+	HTTP_WEBUI_ADDR  = env.Could("HTTP_WEBUI_ADDR", ":3001")
+	HTTP_WEBUI_BASE  = env.Could("HTTP_WEBUI_BASE", "http://localhost:3000/auth")
+	KRATOS_ADMIN_API = env.Could("KRATOS_ADMIN_API", "http://kratos:4434/")
+	SB_API           = env.Must("SB_API")
+	DB_DSN           = env.Must("DB_DSN")
 )
 
 func main() {
@@ -81,7 +82,8 @@ func runAPI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 
 	// Setup Tenants service
 	tenantStore := tenantsinfra.NewTenantsStorePSQL(db)
-	tenantSvc := tenants.NewTenantService(tenantStore)
+	kratosAdmin := tenantsinfra.NewKratosUserValidator(KRATOS_ADMIN_API)
+	tenantSvc := tenants.NewTenantService(tenantStore, kratosAdmin)
 	_ = tenantstransports.NewTenantsHTTP(r, tenantSvc, HTTP_API_BASE)
 
 	// Setup API keys service
