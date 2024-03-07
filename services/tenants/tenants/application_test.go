@@ -1,6 +1,7 @@
 package tenants_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -25,7 +26,7 @@ func TestCreateParentTenantDoesNotExist(t *testing.T) {
 
 	// Act
 	parent := int64(132)
-	_, err := s.CreateNewTenant(tenants.CreateTenantDTO{
+	_, err := s.CreateNewTenant(context.Background(), tenants.CreateTenantDTO{
 		ParentID: &parent,
 	})
 
@@ -47,7 +48,7 @@ func TestCreateParentTenantCantBeRetrieved(t *testing.T) {
 
 	// Act
 	parent := int64(675)
-	_, err := s.CreateNewTenant(tenants.CreateTenantDTO{
+	_, err := s.CreateNewTenant(context.Background(), tenants.CreateTenantDTO{
 		ParentID: &parent,
 	})
 
@@ -71,7 +72,7 @@ func TestCreateParentTenantIsNotActive(t *testing.T) {
 
 	// Act
 	parent := int64(675)
-	_, err := s.CreateNewTenant(tenants.CreateTenantDTO{
+	_, err := s.CreateNewTenant(context.Background(), tenants.CreateTenantDTO{
 		ParentID: &parent,
 	})
 
@@ -99,7 +100,7 @@ func TestCreateErrorOccurs(t *testing.T) {
 
 	// Act
 	parent := int64(675)
-	_, err := s.CreateNewTenant(tenants.CreateTenantDTO{
+	_, err := s.CreateNewTenant(context.Background(), tenants.CreateTenantDTO{
 		ParentID: &parent,
 	})
 
@@ -127,7 +128,7 @@ func TestCreateCreatesNewTenant(t *testing.T) {
 
 	// Act
 	parent := int64(675)
-	dto, err := s.CreateNewTenant(tenants.CreateTenantDTO{
+	dto, err := s.CreateNewTenant(context.Background(), tenants.CreateTenantDTO{
 		Name:    "blabla",
 		Address: "somewhere nice",
 		ZipCode: "no clue",
@@ -164,7 +165,7 @@ func TestArchiveTenantErrorOccursWhileRetrievingTenant(t *testing.T) {
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	err := s.ArchiveTenant(43124)
+	err := s.ArchiveTenant(context.Background(), 43124)
 
 	// Assert
 	assert.ErrorIs(t, err, expErr)
@@ -184,7 +185,7 @@ func TestArchiveTenantTenantIsAlreadyArchived(t *testing.T) {
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	err := s.ArchiveTenant(43124)
+	err := s.ArchiveTenant(context.Background(), 43124)
 
 	// Assert
 	assert.ErrorIs(t, err, tenants.ErrTenantNotActive)
@@ -209,7 +210,7 @@ func TestArchiveTenantUpdateErrors(t *testing.T) {
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	err := s.ArchiveTenant(43124)
+	err := s.ArchiveTenant(context.Background(), 43124)
 
 	// Assert
 	assert.ErrorIs(t, err, expErr)
@@ -234,7 +235,7 @@ func TestArchiveTenantUpdatesTenantWithArchivedState(t *testing.T) {
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	err := s.ArchiveTenant(43124)
+	err := s.ArchiveTenant(context.Background(), 43124)
 
 	// Assert
 	assert.NoError(t, err)
@@ -259,7 +260,7 @@ func TestListTenantsReturnsList(t *testing.T) {
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	res, err := s.ListTenants(tenants.Filter{}, pagination.Request{})
+	res, err := s.ListTenants(context.Background(), tenants.Filter{}, pagination.Request{})
 
 	// Assert
 	assert.Equal(t, "blabla", res.Cursor)
@@ -280,7 +281,7 @@ func TestListTenantsErrorOccursWhileRetrievingList(t *testing.T) {
 	s := tenants.NewTenantService(&store, nil)
 
 	// Act
-	res, err := s.ListTenants(tenants.Filter{}, pagination.Request{})
+	res, err := s.ListTenants(context.Background(), tenants.Filter{}, pagination.Request{})
 
 	// Assert
 	assert.ErrorIs(t, err, expErr)
@@ -316,13 +317,13 @@ func TestCreateTenantMember(t *testing.T) {
 		},
 	}
 	userValidator := &UserValidatorMock{
-		UserByIDExistsFunc: func(tenantID int64, userID string) error {
+		UserByIDExistsFunc: func(ctx context.Context, tenantID int64, userID string) error {
 			return nil
 		},
 	}
 	service := tenants.NewTenantService(store, userValidator)
 
-	err := service.AddTenantMember(tenant.ID, userID, permissions)
+	err := service.AddTenantMember(context.Background(), tenant.ID, userID, permissions)
 	require.NoError(t, err)
 
 	require.Len(t, store.calls.GetTenantByID, 1)
@@ -362,13 +363,13 @@ func TestTenantAddMemberShouldErrorWithInvalidPermissions(t *testing.T) {
 		},
 	}
 	userValidator := &UserValidatorMock{
-		UserByIDExistsFunc: func(tenantID int64, userID string) error {
+		UserByIDExistsFunc: func(ctx context.Context, tenantID int64, userID string) error {
 			return nil
 		},
 	}
 	service := tenants.NewTenantService(store, userValidator)
 
-	err := service.AddTenantMember(tenant.ID, userID, permissions)
+	err := service.AddTenantMember(context.Background(), tenant.ID, userID, permissions)
 	assert.ErrorIs(t, err, auth.ErrPermissionInvalid)
 	assert.Len(t, store.calls.GetTenantByID, 0)
 	assert.Len(t, store.calls.SaveMember, 0)
@@ -407,13 +408,13 @@ func TestTenantModifyMemberShouldErrorWithInvalidPermissions(t *testing.T) {
 		},
 	}
 	userValidator := &UserValidatorMock{
-		UserByIDExistsFunc: func(tenantID int64, userID string) error {
+		UserByIDExistsFunc: func(ctx context.Context, tenantID int64, userID string) error {
 			return nil
 		},
 	}
 	service := tenants.NewTenantService(store, userValidator)
 
-	err := service.ModifyMemberPermissions(tenant.ID, userID, newPermissions)
+	err := service.ModifyMemberPermissions(context.Background(), tenant.ID, userID, newPermissions)
 	assert.ErrorIs(t, err, auth.ErrPermissionInvalid)
 	assert.Len(t, store.calls.GetTenantByID, 0)
 	assert.Len(t, store.calls.SaveMember, 0)
@@ -434,7 +435,7 @@ func TestTenantAddMemberShouldErrorIfUserDoesNotExist(t *testing.T) {
 		ParentID:            nil,
 	}
 	userID := "123123"
-	permissions := auth.Permissions{auth.WRITE_DEVICES, auth.Permission("1283719823")}
+	permissions := auth.Permissions{auth.WRITE_DEVICES}
 	store := &TenantStoreMock{
 		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
 			return &tenant, nil
@@ -446,18 +447,15 @@ func TestTenantAddMemberShouldErrorIfUserDoesNotExist(t *testing.T) {
 			return nil, tenants.ErrTenantMemberNotFound
 		},
 	}
-	// TODO: What should the interface look like?
-	// is it to check the existence of a user, or to verify
-	// that the user can be added to the tenant
-	// then former is single-responsibility
 	userValidator := &UserValidatorMock{
-		UserByIDExistsFunc: func(tenantID int64, userID string) error {
+		UserByIDExistsFunc: func(ctx context.Context, tenantID int64, userID string) error {
 			return errors.New("TODO: UserNotFoundError")
 		},
 	}
 	service := tenants.NewTenantService(store, userValidator)
 
-	err := service.AddTenantMember(tenant.ID, userID, permissions)
+	err := service.AddTenantMember(context.Background(), tenant.ID, userID, permissions)
+
 	assert.Error(t, err)
 	assert.Len(t, store.calls.GetTenantByID, 1)
 	assert.Len(t, userValidator.calls.UserByIDExists, 1)
@@ -498,7 +496,7 @@ func TestTenantModifyMemberChangesPermissions(t *testing.T) {
 	}
 	service := tenants.NewTenantService(store, nil)
 
-	err := service.ModifyMemberPermissions(tenant.ID, userID, newPermissions)
+	err := service.ModifyMemberPermissions(context.Background(), tenant.ID, userID, newPermissions)
 	assert.NoError(t, err)
 	require.Len(t, store.calls.GetTenantByID, 1)
 	require.Len(t, store.calls.SaveMember, 1)
