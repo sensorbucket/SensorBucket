@@ -75,7 +75,7 @@ func (ts *PSQLTenantStore) GetTenantByID(id int64) (*tenants.Tenant, error) {
 	return &tenant, nil
 }
 
-func (ts *PSQLTenantStore) List(filter tenants.Filter, r pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
+func (ts *PSQLTenantStore) List(filter tenants.StoreFilter, r pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
 	var err error
 
 	// Pagination
@@ -100,6 +100,10 @@ func (ts *PSQLTenantStore) List(filter tenants.Filter, r pagination.Request) (*p
 	}
 	if len(filter.State) > 0 {
 		q = q.Where(sq.Eq{"state": filter.State})
+	}
+	if filter.MemberID != "" {
+		subQ := sq.Select("member.tenant_id").From("tenant_members member").Where(sq.Eq{"user_id": filter.MemberID})
+		q = q.Where(subQ.Prefix("id IN (")).Suffix(")")
 	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {

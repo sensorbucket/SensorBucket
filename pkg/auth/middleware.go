@@ -17,7 +17,7 @@ import (
 type claims struct {
 	TenantID    int64       `json:"tid"`
 	Permissions Permissions `json:"perms"`
-	UserID      int64       `json:"uid"`
+	UserID      string      `json:"uid"`
 	Expiration  int64       `json:"exp"`
 }
 
@@ -25,7 +25,7 @@ func (c *claims) Valid() error {
 	if err := c.Permissions.Validate(); err != nil {
 		return err
 	}
-	if c.TenantID > 0 && c.UserID > 0 && c.Expiration > time.Now().Unix() {
+	if c.Expiration > time.Now().Unix() {
 		return nil
 	}
 	return fmt.Errorf("claims not valid")

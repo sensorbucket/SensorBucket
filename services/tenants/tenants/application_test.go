@@ -246,7 +246,7 @@ func TestArchiveTenantUpdatesTenantWithArchivedState(t *testing.T) {
 func TestListTenantsReturnsList(t *testing.T) {
 	// Arrange
 	store := &TenantStoreMock{
-		ListFunc: func(filter tenants.Filter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
+		ListFunc: func(filter tenants.StoreFilter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
 			return &pagination.Page[tenants.CreateTenantDTO]{
 				Cursor: "blabla",
 				Data: []tenants.CreateTenantDTO{
@@ -274,7 +274,7 @@ func TestListTenantsErrorOccursWhileRetrievingList(t *testing.T) {
 	// Arrange
 	expErr := fmt.Errorf("weird error")
 	store := TenantStoreMock{
-		ListFunc: func(filter tenants.Filter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
+		ListFunc: func(filter tenants.StoreFilter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
 			return nil, expErr
 		},
 	}

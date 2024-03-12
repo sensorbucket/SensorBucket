@@ -29,7 +29,7 @@ var _ tenants.TenantStore = &TenantStoreMock{}
 //			GetTenantMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
 //				panic("mock out the GetTenantMember method")
 //			},
-//			ListFunc: func(filter tenants.Filter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
+//			ListFunc: func(storeFilter tenants.StoreFilter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
 //				panic("mock out the List method")
 //			},
 //			RemoveMemberFunc: func(tenantID int64, userID string) error {
@@ -58,7 +58,7 @@ type TenantStoreMock struct {
 	GetTenantMemberFunc func(tenantID int64, userID string) (*tenants.Member, error)
 
 	// ListFunc mocks the List method.
-	ListFunc func(filter tenants.Filter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error)
+	ListFunc func(storeFilter tenants.StoreFilter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error)
 
 	// RemoveMemberFunc mocks the RemoveMember method.
 	RemoveMemberFunc func(tenantID int64, userID string) error
@@ -90,8 +90,8 @@ type TenantStoreMock struct {
 		}
 		// List holds details about calls to the List method.
 		List []struct {
-			// Filter is the filter argument value.
-			Filter tenants.Filter
+			// StoreFilter is the storeFilter argument value.
+			StoreFilter tenants.StoreFilter
 			// Request is the request argument value.
 			Request pagination.Request
 		}
@@ -225,21 +225,21 @@ func (mock *TenantStoreMock) GetTenantMemberCalls() []struct {
 }
 
 // List calls ListFunc.
-func (mock *TenantStoreMock) List(filter tenants.Filter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
+func (mock *TenantStoreMock) List(storeFilter tenants.StoreFilter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
 	if mock.ListFunc == nil {
 		panic("TenantStoreMock.ListFunc: method is nil but TenantStore.List was just called")
 	}
 	callInfo := struct {
-		Filter  tenants.Filter
-		Request pagination.Request
+		StoreFilter tenants.StoreFilter
+		Request     pagination.Request
 	}{
-		Filter:  filter,
-		Request: request,
+		StoreFilter: storeFilter,
+		Request:     request,
 	}
 	mock.lockList.Lock()
 	mock.calls.List = append(mock.calls.List, callInfo)
 	mock.lockList.Unlock()
-	return mock.ListFunc(filter, request)
+	return mock.ListFunc(storeFilter, request)
 }
 
 // ListCalls gets all the calls that were made to List.
@@ -247,12 +247,12 @@ func (mock *TenantStoreMock) List(filter tenants.Filter, request pagination.Requ
 //
 //	len(mockedTenantStore.ListCalls())
 func (mock *TenantStoreMock) ListCalls() []struct {
-	Filter  tenants.Filter
-	Request pagination.Request
+	StoreFilter tenants.StoreFilter
+	Request     pagination.Request
 } {
 	var calls []struct {
-		Filter  tenants.Filter
-		Request pagination.Request
+		StoreFilter tenants.StoreFilter
+		Request     pagination.Request
 	}
 	mock.lockList.RLock()
 	calls = mock.calls.List
