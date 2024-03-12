@@ -49,7 +49,7 @@ func (ts *PSQLTenantStore) GetTenantByID(id int64) (*tenants.Tenant, error) {
 		From("tenants").Where(sq.Eq{"id": id})
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(ts.db).Query()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not create GetTenantByID query: %w", err)
 	}
 	defer rows.Close()
 
@@ -67,7 +67,7 @@ func (ts *PSQLTenantStore) GetTenantByID(id int64) (*tenants.Tenant, error) {
 			&tenant.Logo,
 			&tenant.ParentID)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("in GetTenantByID, could not scan row: %w", err)
 		}
 	} else {
 		return nil, tenants.ErrTenantNotFound
@@ -81,7 +81,7 @@ func (ts *PSQLTenantStore) List(filter tenants.Filter, r pagination.Request) (*p
 	// Pagination
 	cursor, err := pagination.GetCursor[tenantsQueryPage](r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("in List tenants, could not parse pagination cursor: %w", err)
 	}
 	q := sq.Select(
 		"id",
@@ -103,11 +103,11 @@ func (ts *PSQLTenantStore) List(filter tenants.Filter, r pagination.Request) (*p
 	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("in List tenants, could not apply pagination: %w", err)
 	}
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(ts.db).Query()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("in List tenants, could not run query: %w", err)
 	}
 	defer rows.Close()
 	list := make([]tenants.CreateTenantDTO, 0, cursor.Limit)
@@ -127,7 +127,7 @@ func (ts *PSQLTenantStore) List(filter tenants.Filter, r pagination.Request) (*p
 			&cursor.Columns.Created,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("in List tenants, could not scan row: %w", err)
 		}
 		list = append(list, tenant)
 	}
@@ -276,7 +276,7 @@ func (s *PSQLTenantStore) createMember(tenantID int64, member *tenants.Member) e
 	}
 	affected, err := rows.RowsAffected()
 	if err != nil {
-		return err
+		return fmt.Errorf("in CreateMember, could not get affected rows: %w", err)
 	}
 	if affected == 0 {
 		return ErrNoRowsAffected
@@ -291,7 +291,7 @@ func (s *PSQLTenantStore) updateMember(tenantID int64, member *tenants.Member) e
 	}
 	affected, err := rows.RowsAffected()
 	if err != nil {
-		return err
+		return fmt.Errorf("in UpdateMember, could not get affected rows: %w", err)
 	}
 	if affected == 0 {
 		return ErrNoRowsAffected
@@ -305,11 +305,11 @@ func (s *PSQLTenantStore) RemoveMember(tenantID int64, userID string) error {
 		"user_id":   userID,
 	}).RunWith(s.db).Exec()
 	if err != nil {
-		return err
+		return fmt.Errorf("in RemoveMember, could not execute query: %w", err)
 	}
 	affected, err := rows.RowsAffected()
 	if err != nil {
-		return err
+		return fmt.Errorf("in RemoveMember, could not get rows affected: %w", err)
 	}
 	if affected == 0 {
 		return ErrNoRowsAffected

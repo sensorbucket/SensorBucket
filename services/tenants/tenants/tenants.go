@@ -2,11 +2,8 @@ package tenants
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
@@ -40,8 +37,6 @@ type Tenant struct {
 	State               State
 	Logo                *string
 	ParentID            *int64
-
-	Members []Member
 }
 
 func NewTenant(dto CreateTenantDTO) Tenant {
@@ -56,7 +51,6 @@ func NewTenant(dto CreateTenantDTO) Tenant {
 		ChamberOfCommerceID: dto.ChamberOfCommerceID,
 		HeadquarterID:       dto.HeadquarterID,
 		ArchiveTime:         dto.ArchiveTime,
-		Members:             []Member{},
 	}
 }
 
@@ -73,63 +67,6 @@ func newTenantDtoFromTenant(tenant Tenant) CreateTenantDTO {
 		Logo:                tenant.Logo,
 		ParentID:            tenant.ParentID,
 	}
-}
-
-func (t *Tenant) AddMember(userID string) error {
-	if _, err := t.GetMember(userID); !errors.Is(err, ErrTenantMemberNotFound) {
-		if err == nil {
-			return ErrAlreadyMember
-		}
-		return err
-	}
-	t.Members = append(t.Members, newMember(userID))
-	return nil
-}
-
-func (t *Tenant) RemoveMember(userID string) error {
-	_, ix, ok := lo.FindIndexOf(t.Members, func(item Member) bool {
-		return item.UserID == userID
-	})
-	if !ok {
-		return ErrTenantMemberNotFound
-	}
-	lastIX := len(t.Members) - 1
-	t.Members[ix] = t.Members[lastIX]
-	t.Members = t.Members[:lastIX]
-	return nil
-}
-
-func (t *Tenant) GrantPermission(userID string, permissions ...auth.Permission) error {
-	_, ix, ok := lo.FindIndexOf(t.Members, func(item Member) bool {
-		return item.UserID == userID
-	})
-	if !ok {
-		return fmt.Errorf("cannot get user for granting permission: %w", ErrTenantNotFound)
-	}
-	member := &t.Members[ix]
-	member.Permissions = append(member.Permissions, permissions...)
-	return nil
-}
-
-func (t *Tenant) RevokePermission(userID string, revokedPermissions ...auth.Permission) error {
-	member, ix, ok := lo.FindIndexOf(t.Members, func(item Member) bool {
-		return item.UserID == userID
-	})
-	if !ok {
-		return fmt.Errorf("cannot get user for revoking permission: %w", ErrTenantNotFound)
-	}
-	newMemberPermissions, _ := lo.Difference(member.Permissions, revokedPermissions)
-	member.Permissions = newMemberPermissions
-	t.Members[ix] = member
-	return nil
-}
-
-func (t *Tenant) GetMember(userID string) (Member, error) {
-	member, ok := lo.Find(t.Members, func(item Member) bool { return item.UserID == userID })
-	if !ok {
-		return member, ErrTenantMemberNotFound
-	}
-	return member, nil
 }
 
 type Member struct {

@@ -59,7 +59,6 @@ func DecodeJSON(r *http.Request, v interface{}) error {
 	err := json.NewDecoder(r.Body).Decode(v)
 	var apiError *APIError
 	if errors.As(err, &apiError) {
-		fmt.Printf("OGAHBOIAHJSDKJH: %v\n", err)
 		return apiError
 	}
 	if err != nil {
