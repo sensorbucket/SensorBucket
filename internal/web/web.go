@@ -57,19 +57,10 @@ func DecodeJSON(r *http.Request, v interface{}) error {
 	}
 
 	err := json.NewDecoder(r.Body).Decode(v)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error decoding JSON: %s\n", err)
-		return InvalidJSONError
+	var apiError *APIError
+	if errors.As(err, &apiError) {
+		return apiError
 	}
-	return nil
-}
-
-func DecodeJSONResponse(r *http.Response, v interface{}) error {
-	if r.Header.Get("content-type") != "application/json" {
-		return ContentTypeError
-	}
-
-	err := json.NewDecoder(r.Body).Decode(v)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error decoding JSON: %s\n", err)
 		return InvalidJSONError

@@ -293,8 +293,8 @@ var _ apikeys.TenantStore = &TenantStoreMock{}
 //
 //		// make and configure a mocked apikeys.TenantStore
 //		mockedTenantStore := &TenantStoreMock{
-//			GetTenantByIdFunc: func(id int64) (tenants.Tenant, error) {
-//				panic("mock out the GetTenantById method")
+//			GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+//				panic("mock out the GetTenantByID method")
 //			},
 //		}
 //
@@ -303,48 +303,48 @@ var _ apikeys.TenantStore = &TenantStoreMock{}
 //
 //	}
 type TenantStoreMock struct {
-	// GetTenantByIdFunc mocks the GetTenantById method.
-	GetTenantByIdFunc func(id int64) (tenants.Tenant, error)
+	// GetTenantByIDFunc mocks the GetTenantByID method.
+	GetTenantByIDFunc func(id int64) (*tenants.Tenant, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetTenantById holds details about calls to the GetTenantById method.
-		GetTenantById []struct {
+		// GetTenantByID holds details about calls to the GetTenantByID method.
+		GetTenantByID []struct {
 			// ID is the id argument value.
 			ID int64
 		}
 	}
-	lockGetTenantById sync.RWMutex
+	lockGetTenantByID sync.RWMutex
 }
 
-// GetTenantById calls GetTenantByIdFunc.
-func (mock *TenantStoreMock) GetTenantById(id int64) (tenants.Tenant, error) {
-	if mock.GetTenantByIdFunc == nil {
-		panic("TenantStoreMock.GetTenantByIdFunc: method is nil but TenantStore.GetTenantById was just called")
+// GetTenantByID calls GetTenantByIDFunc.
+func (mock *TenantStoreMock) GetTenantByID(id int64) (*tenants.Tenant, error) {
+	if mock.GetTenantByIDFunc == nil {
+		panic("TenantStoreMock.GetTenantByIDFunc: method is nil but TenantStore.GetTenantByID was just called")
 	}
 	callInfo := struct {
 		ID int64
 	}{
 		ID: id,
 	}
-	mock.lockGetTenantById.Lock()
-	mock.calls.GetTenantById = append(mock.calls.GetTenantById, callInfo)
-	mock.lockGetTenantById.Unlock()
-	return mock.GetTenantByIdFunc(id)
+	mock.lockGetTenantByID.Lock()
+	mock.calls.GetTenantByID = append(mock.calls.GetTenantByID, callInfo)
+	mock.lockGetTenantByID.Unlock()
+	return mock.GetTenantByIDFunc(id)
 }
 
-// GetTenantByIdCalls gets all the calls that were made to GetTenantById.
+// GetTenantByIDCalls gets all the calls that were made to GetTenantByID.
 // Check the length with:
 //
-//	len(mockedTenantStore.GetTenantByIdCalls())
-func (mock *TenantStoreMock) GetTenantByIdCalls() []struct {
+//	len(mockedTenantStore.GetTenantByIDCalls())
+func (mock *TenantStoreMock) GetTenantByIDCalls() []struct {
 	ID int64
 } {
 	var calls []struct {
 		ID int64
 	}
-	mock.lockGetTenantById.RLock()
-	calls = mock.calls.GetTenantById
-	mock.lockGetTenantById.RUnlock()
+	mock.lockGetTenantByID.RLock()
+	calls = mock.calls.GetTenantByID
+	mock.lockGetTenantByID.RUnlock()
 	return calls
 }

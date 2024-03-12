@@ -1,10 +1,12 @@
 package tenants
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 )
 
 type State int
@@ -16,8 +18,11 @@ var (
 	Archived State = 2
 
 	// Errors
-	ErrTenantNotActive = web.NewError(http.StatusNotFound, "Tenant could not be found", "TENANT_NOT_FOUND")
-	ErrTenantNotFound  = web.NewError(http.StatusNotFound, "Tenant could not be found", "TENANT_NOT_FOUND")
+	ErrTenantNotActive      = web.NewError(http.StatusNotFound, "Tenant could not be found", "TENANT_NOT_FOUND")
+	ErrTenantNotFound       = web.NewError(http.StatusNotFound, "Tenant could not be found", "TENANT_NOT_FOUND")
+	ErrTenantMemberNotFound = web.NewError(http.StatusNotFound, "User is not a member of tenant", "USER_NOT_TENANT_MEMBER")
+	ErrAlreadyMember        = web.NewError(http.StatusBadRequest, "User is already a member of this tennant", "USER_ALREADY_MEMBER")
+	ErrNotImplemented       = errors.New("not implemented")
 )
 
 type Tenant struct {
@@ -34,7 +39,7 @@ type Tenant struct {
 	ParentID            *int64
 }
 
-func newTenantFromDto(dto TenantDTO) Tenant {
+func NewTenant(dto CreateTenantDTO) Tenant {
 	return Tenant{
 		Name:                dto.Name,
 		Address:             dto.Address,
@@ -49,8 +54,8 @@ func newTenantFromDto(dto TenantDTO) Tenant {
 	}
 }
 
-func newTenantDtoFromTenant(tenant Tenant) TenantDTO {
-	return TenantDTO{
+func newTenantDtoFromTenant(tenant Tenant) CreateTenantDTO {
+	return CreateTenantDTO{
 		ID:                  tenant.ID,
 		Name:                tenant.Name,
 		Address:             tenant.Address,
@@ -61,5 +66,18 @@ func newTenantDtoFromTenant(tenant Tenant) TenantDTO {
 		ArchiveTime:         tenant.ArchiveTime,
 		Logo:                tenant.Logo,
 		ParentID:            tenant.ParentID,
+	}
+}
+
+type Member struct {
+	TenantID    int64
+	UserID      string
+	Permissions auth.Permissions
+}
+
+func newMember(userID string) Member {
+	return Member{
+		UserID:      userID,
+		Permissions: auth.Permissions{},
 	}
 }

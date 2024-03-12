@@ -2,23 +2,38 @@ package tenantsinfra
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/jackc/pgx/v5"
+	pgt "github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
-type TenantsStore struct {
+var (
+	_ tenants.TenantStore = (*PSQLTenantStore)(nil)
+	_ apikeys.TenantStore = (*PSQLTenantStore)(nil)
+
+	ErrNoRowsAffected = errors.New("no rows where updated")
+
+	pq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+)
+
+type PSQLTenantStore struct {
 	db *sqlx.DB
 }
 
-func NewTenantsStorePSQL(db *sqlx.DB) *TenantsStore {
-	return &TenantsStore{
+func NewTenantsStorePSQL(db *sqlx.DB) *PSQLTenantStore {
+	return &PSQLTenantStore{
 		db: db,
 	}
 }
@@ -27,14 +42,14 @@ type tenantsQueryPage struct {
 	Created time.Time `pagination:"created,DESC"`
 }
 
-func (ts *TenantsStore) GetTenantById(id int64) (tenants.Tenant, error) {
+func (ts *PSQLTenantStore) GetTenantByID(id int64) (*tenants.Tenant, error) {
 	tenant := tenants.Tenant{}
 	q := sq.Select(
 		"id, name, address, zip_code, city, chamber_of_commerce_id, headquarter_id, archive_time, state, logo, parent_tenant_id").
 		From("tenants").Where(sq.Eq{"id": id})
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(ts.db).Query()
 	if err != nil {
-		return tenants.Tenant{}, err
+		return nil, fmt.Errorf("could not create GetTenantByID query: %w", err)
 	}
 	defer rows.Close()
 
@@ -52,21 +67,21 @@ func (ts *TenantsStore) GetTenantById(id int64) (tenants.Tenant, error) {
 			&tenant.Logo,
 			&tenant.ParentID)
 		if err != nil {
-			return tenants.Tenant{}, err
+			return nil, fmt.Errorf("in GetTenantByID, could not scan row: %w", err)
 		}
 	} else {
-		return tenants.Tenant{}, tenants.ErrTenantNotFound
+		return nil, tenants.ErrTenantNotFound
 	}
-	return tenant, nil
+	return &tenant, nil
 }
 
-func (ts *TenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagination.Page[tenants.TenantDTO], error) {
+func (ts *PSQLTenantStore) List(filter tenants.Filter, r pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
 	var err error
 
 	// Pagination
 	cursor, err := pagination.GetCursor[tenantsQueryPage](r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("in List tenants, could not parse pagination cursor: %w", err)
 	}
 	q := sq.Select(
 		"id",
@@ -88,16 +103,16 @@ func (ts *TenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagi
 	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("in List tenants, could not apply pagination: %w", err)
 	}
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(ts.db).Query()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("in List tenants, could not run query: %w", err)
 	}
 	defer rows.Close()
-	list := make([]tenants.TenantDTO, 0, cursor.Limit)
+	list := make([]tenants.CreateTenantDTO, 0, cursor.Limit)
 	for rows.Next() {
-		tenant := tenants.TenantDTO{}
+		tenant := tenants.CreateTenantDTO{}
 		err = rows.Scan(
 			&tenant.ID,
 			&tenant.Name,
@@ -112,7 +127,7 @@ func (ts *TenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagi
 			&cursor.Columns.Created,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("in List tenants, could not scan row: %w", err)
 		}
 		list = append(list, tenant)
 	}
@@ -120,7 +135,7 @@ func (ts *TenantsStore) List(filter tenants.Filter, r pagination.Request) (*pagi
 	return &page, nil
 }
 
-func (ts *TenantsStore) Create(tenant *tenants.Tenant) error {
+func (ts *PSQLTenantStore) Create(tenant *tenants.Tenant) error {
 	q := sq.Insert("tenants").
 		Columns(
 			"name",
@@ -150,7 +165,7 @@ func (ts *TenantsStore) Create(tenant *tenants.Tenant) error {
 	return q.QueryRow().Scan(&tenant.ID)
 }
 
-func (ts *TenantsStore) Update(tenant tenants.Tenant) error {
+func (ts *PSQLTenantStore) Update(tenant *tenants.Tenant) error {
 	tx, err := ts.db.BeginTxx(context.Background(), nil)
 	if err != nil {
 		return fmt.Errorf("could not start database Transaction: %w", err)
@@ -196,8 +211,108 @@ func (ts *TenantsStore) Update(tenant tenants.Tenant) error {
 			return err
 		}
 	}
+
 	if rb := tx.Commit(); err != nil {
 		return fmt.Errorf("commit error: %w", rb)
+	}
+	return nil
+}
+
+func (store *PSQLTenantStore) GetTenantMember(tenantID int64, userID string) (*tenants.Member, error) {
+	var member tenants.Member
+	var permissions pgt.FlatArray[auth.Permission]
+	// TODO: This is a hack, it grabs the underlying PGX connection to scan the row
+	// it is sort of required to scan the array of permission as that column is a postgres
+	// special type
+	c, err := store.db.Conn(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("in GetTenantMember, could not get raw db conn: %w", err)
+	}
+	defer c.Close()
+	err = c.Raw(func(driverConn any) error {
+		stdlibConn, ok := driverConn.(*stdlib.Conn)
+		if !ok {
+			return errors.New("in GetTenantMember, expected driverConnection to be of type stdlib.Conn")
+		}
+		conn := stdlibConn.Conn()
+		query, params, err := pq.Select("tenant_id", "user_id", "permissions").From("tenant_members").Where(sq.Eq{"tenant_id": tenantID, "user_id": userID}).ToSql()
+		if err != nil {
+			return fmt.Errorf("in GetTenantMember, could not build sql query: %w", err)
+		}
+		err = conn.QueryRow(context.Background(), query, params...).
+			Scan(
+				&member.TenantID, &member.UserID, &permissions,
+			)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return tenants.ErrTenantMemberNotFound
+		} else if err != nil {
+			return fmt.Errorf("error getting tenant member: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err // error context given by method above
+	}
+	member.Permissions = auth.Permissions(permissions)
+	return &member, nil
+}
+
+func (s *PSQLTenantStore) SaveMember(tenantID int64, member *tenants.Member) error {
+	var count int64
+	if err := s.db.Get(&count, "SELECT count(*) FROM tenant_members WHERE tenant_id = $1 AND user_id = $2", tenantID, member.UserID); err != nil {
+		return fmt.Errorf("error getting counting tenant member for existance: %w", err)
+	}
+	if count > 0 {
+		return s.updateMember(tenantID, member)
+	}
+	return s.createMember(tenantID, member)
+}
+
+func (s *PSQLTenantStore) createMember(tenantID int64, member *tenants.Member) error {
+	rows, err := pq.Insert("tenant_members").Columns("tenant_id", "user_id", "permissions").
+		Values(tenantID, member.UserID, member.Permissions).RunWith(s.db).Exec()
+	if err != nil {
+		return fmt.Errorf("error inserting new tenant member: %w", err)
+	}
+	affected, err := rows.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("in CreateMember, could not get affected rows: %w", err)
+	}
+	if affected == 0 {
+		return ErrNoRowsAffected
+	}
+	return nil
+}
+
+func (s *PSQLTenantStore) updateMember(tenantID int64, member *tenants.Member) error {
+	rows, err := pq.Update("tenant_members").Set("permissions", member.Permissions).RunWith(s.db).Exec()
+	if err != nil {
+		return err
+	}
+	affected, err := rows.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("in UpdateMember, could not get affected rows: %w", err)
+	}
+	if affected == 0 {
+		return ErrNoRowsAffected
+	}
+	return nil
+}
+
+func (s *PSQLTenantStore) RemoveMember(tenantID int64, userID string) error {
+	rows, err := pq.Delete("tenant_members").Where(sq.Eq{
+		"tenant_id": tenantID,
+		"user_id":   userID,
+	}).RunWith(s.db).Exec()
+	if err != nil {
+		return fmt.Errorf("in RemoveMember, could not execute query: %w", err)
+	}
+	affected, err := rows.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("in RemoveMember, could not get rows affected: %w", err)
+	}
+	if affected == 0 {
+		return ErrNoRowsAffected
 	}
 	return nil
 }

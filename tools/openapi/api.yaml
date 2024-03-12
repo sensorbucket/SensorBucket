@@ -65,14 +65,16 @@ paths:
     $ref: 'path-workers-by-id.yaml'
   /workers/{id}/usercode:
     $ref: 'path-workers-usercode.yaml'
-  /tenants/list:
-    $ref: 'path-tenants-list.yaml'
-  /api-keys/list:
-    $ref: 'path-api-keys-list.yaml'
-  /api-keys/{api_key_id}:
-    $ref: 'path-api-keys-by-id.yaml'
+  /tenants:
+    $ref: 'path-tenants.yaml'
+  /tenants/{tenant_id}/members:
+    $ref: 'path-tenants-members.yaml'
+  /tenants/{tenant_id}/members/{user_id}:
+    $ref: 'path-tenants-members-by-user.yaml'
   /api-keys:
     $ref: 'path-api-keys.yaml'
+  /api-keys/{api_key_id}:
+    $ref: 'path-api-keys-by-id.yaml'
 components:
   securitySchemes:
     basicAuth:
@@ -88,5 +90,6 @@ tags:
   - name: Measurements
   - name: Uplink
   - name: Tracing
+  - name: Tenants
   - name: Workers
   - name: APIKeys

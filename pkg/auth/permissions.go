@@ -2,23 +2,25 @@ package auth
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"log"
+	"net/http"
 	"strings"
 
 	"github.com/samber/lo"
+
+	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
-var ErrPermissionInvalid = errors.New("permission value is invalid")
+var ErrPermissionInvalid = web.NewError(http.StatusBadRequest, "permission value is invalid", "ERR_PERMISSION_INVALID")
 
-type PermissionSet interface {
-	Permissions() []Permission
-}
+type (
+	// Singular permission, already validated
+	Permission  string
+	Permissions []Permission
+)
 
-type Permission string
-
-type Permissions []PermissionSet
-
+// Permissions
 const (
 	// Device permissions
 	READ_DEVICES  Permission = "READ_DEVICES"
@@ -58,72 +60,63 @@ var allPermissions = Permissions{
 	WRITE_USER_WORKERS,
 }
 
-func (p Permission) Permissions() []Permission {
-	return []Permission{p}
+func AllPermissions() Permissions {
+	return allPermissions
 }
 
-func (gotten Permissions) Fulfills(required Permissions) error {
-	flatGotten := gotten.Permissions()
-	flatRequired := required.Permissions()
-	missing, _ := lo.Difference(flatRequired, flatGotten)
+var stringPermissionMap = lo.SliceToMap(allPermissions, func(item Permission) (string, Permission) {
+	return string(item), item
+})
+
+func (this Permissions) Fulfills(that Permissions) error {
+	_, missing := lo.Difference(this, that)
 	if len(missing) > 0 {
 		return fmt.Errorf("missing: %v", missing)
 	}
 	return nil
 }
 
-func (p Permissions) Permissions() []Permission {
-	return lo.Uniq(lo.Flatten(lo.Map(p, func(item PermissionSet, index int) []Permission { return item.Permissions() })))
+func stringToPermission(str string) (Permission, bool) {
+	p, ok := stringPermissionMap[str]
+	if !ok {
+		log.Printf("Tried converting non-existant string to permission: %s\n", str)
+	}
+	return p, ok
 }
 
-func (p Permissions) Includes(other Permission) bool {
-	return lo.IndexOf(p.Permissions(), other) != -1
-}
-
-func (p Permissions) Validate() error {
-	invalidPermissions := lo.FilterMap(p.Permissions(), func(item Permission, _ int) (string, bool) {
-		if err := item.Valid(); err != nil {
-			return item.String(), true
+func stringsToPermissions(keys []string) (Permissions, error) {
+	permissions := make([]Permission, 0, len(keys))
+	for _, str := range keys {
+		permission, ok := stringToPermission(str)
+		if !ok {
+			return nil, fmt.Errorf("%w: %s", ErrPermissionInvalid, str)
 		}
-		return "", false
-	})
+		permissions = append(permissions, permission)
+	}
+	return permissions, nil
+}
+
+func (permission Permission) String() string {
+	return string(permission)
+}
+
+func (permissions *Permissions) UnmarshalJSON(data []byte) error {
+	strings := []string{}
+	if err := json.Unmarshal(data, &strings); err != nil {
+		return fmt.Errorf("could not unmarshal permissions: %w", err)
+	}
+	perms, err := stringsToPermissions(strings)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal permissions: %w", err)
+	}
+	*permissions = perms
+	return nil
+}
+
+func (permissions Permissions) Validate() error {
+	_, invalidPermissions := lo.Difference(allPermissions, permissions)
 	if len(invalidPermissions) > 0 {
-		return fmt.Errorf("%w: %s", ErrPermissionInvalid, strings.Join(invalidPermissions, ", "))
+		return fmt.Errorf("%w: %s", ErrPermissionInvalid, strings.Join(lo.Map(invalidPermissions, func(item Permission, index int) string { return string(item) }), ", "))
 	}
 	return nil
-}
-
-func (s Permissions) String() string {
-	return strings.Join(
-		lo.Map(s.Permissions(), func(item Permission, _ int) string { return string(item) }),
-		", ",
-	)
-}
-
-func (s *Permissions) UnmarshalJSON(data []byte) error {
-	var permissionSlice []Permission
-	if err := json.Unmarshal(data, &permissionSlice); err != nil {
-		return err
-	}
-	permissions := Permissions{}
-	for _, p := range permissionSlice {
-		permissions = append(permissions, p)
-	}
-	*s = permissions
-	return nil
-}
-
-func (p Permission) String() string {
-	return string(p)
-}
-
-func (p Permission) Valid() error {
-	if allPermissions.Includes(p) {
-		return nil
-	}
-	return fmt.Errorf("%w (value: %s)", ErrPermissionInvalid, p)
-}
-
-func AllPermissions() PermissionSet {
-	return allPermissions
 }
