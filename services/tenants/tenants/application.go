@@ -94,11 +94,11 @@ func (s *TenantService) ListTenants(ctx context.Context, filter Filter, p pagina
 	storeFilter.State = filter.State
 	storeFilter.Name = filter.Name
 	if filter.Member {
-		//userID, err := auth.GetUser(ctx)
-		//if err != nil {
-		//	return nil, fmt.Errorf("%w: must be authenticated as a user to use the 'IsMember' filter", ErrSessionInvalid)
-		//}
-		storeFilter.MemberID = "e518496c-32b1-4fe5-ad96-d4179ae68d39"
+		userID, err := auth.GetUser(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("%w: must be authenticated as a user to use the 'IsMember' filter", ErrSessionInvalid)
+		}
+		storeFilter.MemberID = userID
 	}
 	return s.tenantStore.List(storeFilter, p)
 }
