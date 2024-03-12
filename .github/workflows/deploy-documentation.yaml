@@ -39,6 +39,10 @@ jobs:
       id: pages
       uses: actions/configure-pages@v3
     - run: mkdir -p docs/api
+    - name: Validate OpenAPI spec
+      uses: seeebiii/redoc-cli-github-action@v10
+      with:
+        args: 'lint tools/openapi/api.yaml'
     - name: Bundle OpenAPI spec with Redoc
       uses: seeebiii/redoc-cli-github-action@v10
       with:

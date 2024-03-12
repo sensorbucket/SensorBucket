@@ -30,6 +30,7 @@ watch-tenants:
 	@make -C services/tenants watch
 
 api:
+	-@docker run --rm -p 8080:8080 --init -v $(CURDIR):/project redocly/cli lint /project/tools/openapi/api.yaml
 	@echo "Starting live openapi docs"
 	-@docker run --rm -p 8080:8080 --init -v $(CURDIR):/project redocly/cli -h 0.0.0.0 preview-docs /project/tools/openapi/api.yaml
 	@echo "Stopped live openapi docs"

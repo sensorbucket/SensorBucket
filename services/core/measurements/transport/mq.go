@@ -21,9 +21,13 @@ func StartMQ(
 	measurementQueue,
 	measurementStorageTopic,
 	measurementErrorTopic string,
+	prefetch int,
 ) func() {
 	done := make(chan struct{})
 	consume := mq.Consume(conn, measurementQueue, func(c *amqp091.Channel) error {
+		if err := c.Qos(prefetch, 0, false); err != nil {
+			return fmt.Errorf("error setting Qos with prefetch on amqp: %w", err)
+		}
 		q, err := c.QueueDeclare(measurementQueue, true, false, false, false, nil)
 		if err != nil {
 			return fmt.Errorf("error declaring amqp queue: %w", err)
