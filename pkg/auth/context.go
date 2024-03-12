@@ -10,7 +10,7 @@ const (
 	ctxPermissions
 )
 
-func setUserID(ctx context.Context, userID int64) context.Context {
+func setUserID(ctx context.Context, userID string) context.Context {
 	return context.WithValue(ctx, ctxUserID, userID)
 }
 
@@ -30,10 +30,10 @@ func GetTenant(ctx context.Context) (int64, error) {
 	return val, nil
 }
 
-func GetUser(ctx context.Context) (int64, error) {
-	val, ok := fromContext[int64](ctx, ctxUserID)
+func GetUser(ctx context.Context) (string, error) {
+	val, ok := fromContext[string](ctx, ctxUserID)
 	if !ok {
-		return 0, ErrNoUserID
+		return "", ErrNoUserID
 	}
 	return val, nil
 }
@@ -47,6 +47,12 @@ func GetPermissions(ctx context.Context) (Permissions, error) {
 }
 
 func fromContext[T any](ctx context.Context, key ctxKey) (T, bool) {
-	val, ok := ctx.Value(key).(T)
+	var val T
+	var ok bool
+	ival := ctx.Value(key)
+	if ival == nil {
+		return val, false
+	}
+	val, ok = ival.(T)
 	return val, ok
 }

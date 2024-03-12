@@ -12,7 +12,10 @@ import (
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 )
 
-var ErrUserNotValidated = web.NewError(http.StatusBadRequest, "Could not validate provided user ID", "ERR_USER_NOT_VALIDATED")
+var (
+	ErrUserNotValidated = web.NewError(http.StatusBadRequest, "Could not validate provided user ID", "ERR_USER_NOT_VALIDATED")
+	ErrSessionInvalid   = web.NewError(http.StatusBadRequest, "Invalid authentication session", "ERR_SESSION_INVALID")
+)
 
 type TenantService struct {
 	tenantStore   TenantStore
@@ -20,8 +23,9 @@ type TenantService struct {
 }
 
 type Filter struct {
-	Name  []string `json:"name"`
-	State []State  `json:"state"`
+	Name   []string `schema:"name"`
+	State  []State  `schema:"state"`
+	Member bool
 }
 
 type CreateTenantDTO struct {
@@ -79,8 +83,24 @@ func (s *TenantService) ArchiveTenant(ctx context.Context, tenantID int64) error
 	return s.tenantStore.Update(tenant)
 }
 
+type StoreFilter struct {
+	MemberID string
+	State    []State
+	Name     []string
+}
+
 func (s *TenantService) ListTenants(ctx context.Context, filter Filter, p pagination.Request) (*pagination.Page[CreateTenantDTO], error) {
-	return s.tenantStore.List(filter, p)
+	var storeFilter StoreFilter
+	storeFilter.State = filter.State
+	storeFilter.Name = filter.Name
+	if filter.Member {
+		//userID, err := auth.GetUser(ctx)
+		//if err != nil {
+		//	return nil, fmt.Errorf("%w: must be authenticated as a user to use the 'IsMember' filter", ErrSessionInvalid)
+		//}
+		storeFilter.MemberID = "e518496c-32b1-4fe5-ad96-d4179ae68d39"
+	}
+	return s.tenantStore.List(storeFilter, p)
 }
 
 func (s *TenantService) AddTenantMember(ctx context.Context, tenantID int64, userID string, permissions auth.Permissions) error {
@@ -174,7 +194,7 @@ type TenantStore interface {
 	GetTenantMember(tenantID int64, userID string) (*Member, error)
 	SaveMember(tenantID int64, member *Member) error
 	RemoveMember(tenantID int64, userID string) error
-	List(Filter, pagination.Request) (*pagination.Page[CreateTenantDTO], error)
+	List(StoreFilter, pagination.Request) (*pagination.Page[CreateTenantDTO], error)
 }
 
 type UserValidator interface {

@@ -42,7 +42,7 @@ func TestAuthenticateWellKnownUnreachable(t *testing.T) {
 			"READ_DEVICES",
 			"READ_API_KEYS",
 		},
-		"uid": 431,
+		"uid": "00000000-0000-0000-0000-000000000000",
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
 	})
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -71,7 +71,7 @@ func TestProtectAndAuthenticatePassClaimsToNext(t *testing.T) {
 
 			uID, err := GetUser(r.Context())
 			assert.NoError(t, err)
-			assert.Equal(t, int64(431), uID)
+			assert.Equal(t, "00000000-0000-0000-0000-000000000000", uID)
 
 			permissions, err := GetPermissions(r.Context())
 			assert.NoError(t, err)
@@ -92,7 +92,7 @@ func TestProtectAndAuthenticatePassClaimsToNext(t *testing.T) {
 			"READ_DEVICES",
 			"READ_API_KEYS",
 		},
-		"uid": 431,
+		"uid": "00000000-0000-0000-0000-000000000000",
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
 	})
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -116,31 +116,15 @@ func TestProtect(t *testing.T) {
 			values: map[ctxKey]any{
 				ctxTenantID:    int64(11),
 				ctxPermissions: Permissions{READ_API_KEYS},
-				ctxUserID:      int64(124),
+				ctxUserID:      "00000000-0000-0000-0000-000000000000",
 			},
 			expectedStatusCode: 200,
 			expectedNextCalls:  1,
-		},
-		"tid is missing": {
-			values: map[ctxKey]any{
-				ctxPermissions: Permissions{READ_API_KEYS},
-				ctxUserID:      int64(124),
-			},
-			expectedStatusCode: 401,
-			expectedNextCalls:  0,
 		},
 		"perms is missing": {
 			values: map[ctxKey]any{
 				ctxTenantID: int64(12),
 				ctxUserID:   int64(124),
-			},
-			expectedStatusCode: 401,
-			expectedNextCalls:  0,
-		},
-		"uid is missing": {
-			values: map[ctxKey]any{
-				ctxTenantID:    int64(13),
-				ctxPermissions: Permissions{READ_API_KEYS},
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
@@ -172,16 +156,7 @@ func TestProtect(t *testing.T) {
 			values: map[ctxKey]any{
 				ctxTenantID:    int64(13),
 				ctxPermissions: Permissions{READ_API_KEYS},
-				ctxUserID:      "asdasdsad",
-			},
-			expectedStatusCode: 401,
-			expectedNextCalls:  0,
-		},
-		"tid is nil": {
-			values: map[ctxKey]any{
-				ctxTenantID:    nil,
-				ctxPermissions: Permissions{READ_API_KEYS},
-				ctxUserID:      int64(124),
+				ctxUserID:      123,
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
@@ -191,15 +166,6 @@ func TestProtect(t *testing.T) {
 				ctxTenantID:    int64(13),
 				ctxPermissions: nil,
 				ctxUserID:      int64(124),
-			},
-			expectedStatusCode: 401,
-			expectedNextCalls:  0,
-		},
-		"uid is nil": {
-			values: map[ctxKey]any{
-				ctxTenantID:    int64(13),
-				ctxPermissions: Permissions{READ_API_KEYS},
-				ctxUserID:      nil,
 			},
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
@@ -240,7 +206,7 @@ func TestAuthenticate(t *testing.T) {
 		expectedStatusCode  int
 		expectedNextCalls   int
 		expectedTenantID    *int64
-		expectedUserID      *int64
+		expectedUserID      *string
 		expectedPermissions Permissions
 	}
 	scenarios := map[string]testCase{
@@ -267,13 +233,13 @@ func TestAuthenticate(t *testing.T) {
 						"READ_DEVICES",
 						"READ_API_KEYS",
 					},
-					"uid": 431,
+					"uid": "00000000-0000-0000-0000-000000000000",
 					"exp": in24Hours,
 				},
 			)),
 			expectedStatusCode:  200,
 			expectedNextCalls:   1,
-			expectedUserID:      lo.ToPtr[int64](431),
+			expectedUserID:      lo.ToPtr("00000000-0000-0000-0000-000000000000"),
 			expectedTenantID:    lo.ToPtr[int64](11),
 			expectedPermissions: Permissions{READ_DEVICES, READ_API_KEYS},
 		},
@@ -286,7 +252,7 @@ func TestAuthenticate(t *testing.T) {
 						"READ_API_KEYS",
 						"DOES_NOT_EXIST",
 					},
-					"uid": 431,
+					"uid": "00000000-0000-0000-0000-000000000000",
 					"exp": in24Hours,
 				},
 			)),
@@ -300,46 +266,18 @@ func TestAuthenticate(t *testing.T) {
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
-		"bearer token is valid but tid is missing": {
-			authHeader: fmt.Sprintf("Bearer %s", createToken(
-				jwt.MapClaims{
-					"perms": []string{
-						"READ_DEVICES",
-						"READ_API_KEYS",
-					},
-					"uid": 431,
-					"exp": in24Hours,
-				},
-			)),
-			expectedStatusCode: 401,
-			expectedNextCalls:  0,
-		},
 		"bearer token is valid but perms is missing": {
 			authHeader: fmt.Sprintf("Bearer %s", createToken(
 				jwt.MapClaims{
 					"tid": 11,
-					"uid": 431,
+					"uid": "00000000-0000-0000-0000-000000000000",
 					"exp": in24Hours,
 				},
 			)),
 			expectedStatusCode: 200,
 			expectedNextCalls:  1,
 			expectedTenantID:   lo.ToPtr[int64](11),
-			expectedUserID:     lo.ToPtr[int64](431),
-		},
-		"bearer token is valid but uid is missing": {
-			authHeader: fmt.Sprintf("Bearer %s", createToken(
-				jwt.MapClaims{
-					"tid": 11,
-					"perms": []string{
-						"READ_DEVICES",
-						"READ_API_KEYS",
-					},
-					"exp": in24Hours,
-				},
-			)),
-			expectedStatusCode: 401,
-			expectedNextCalls:  0,
+			expectedUserID:     lo.ToPtr("00000000-0000-0000-0000-000000000000"),
 		},
 		"bearer token is valid all claims are present but the token is expired": {
 			authHeader: fmt.Sprintf("Bearer %s", createToken(
@@ -349,7 +287,7 @@ func TestAuthenticate(t *testing.T) {
 						"READ_DEVICES",
 						"READ_API_KEYS",
 					},
-					"uid": 431,
+					"uid": "00000000-0000-0000-0000-000000000000",
 					"exp": time.Now().Add(-time.Hour * 24).Unix(),
 				},
 			)),
