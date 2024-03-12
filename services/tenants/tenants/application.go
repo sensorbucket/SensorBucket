@@ -23,9 +23,9 @@ type TenantService struct {
 }
 
 type Filter struct {
-	Name   []string `schema:"name"`
-	State  []State  `schema:"state"`
-	Member bool
+	Name     []string `schema:"name"`
+	State    []State  `schema:"state"`
+	IsMember bool     `schema:"is_member"`
 }
 
 type CreateTenantDTO struct {
@@ -93,7 +93,7 @@ func (s *TenantService) ListTenants(ctx context.Context, filter Filter, p pagina
 	var storeFilter StoreFilter
 	storeFilter.State = filter.State
 	storeFilter.Name = filter.Name
-	if filter.Member {
+	if filter.IsMember {
 		userID, err := auth.GetUser(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("%w: must be authenticated as a user to use the 'IsMember' filter", ErrSessionInvalid)
