@@ -55,7 +55,7 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("could not setup API server: %w", err)
 	}
-	stopWebUI, err := runWebUI(errC)
+	stopWebUI, err := runWebUI(errC, db)
 	if err != nil {
 		return fmt.Errorf("could not setup WebUI server: %w", err)
 	}
@@ -113,8 +113,13 @@ func runAPI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 	}, nil
 }
 
-func runWebUI(errC chan<- error) (func(context.Context), error) {
-	ui, err := webui.New(HTTP_WEBUI_BASE, SB_API)
+func runWebUI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
+	// Setup Tenants service
+	tenantStore := tenantsinfra.NewTenantsStorePSQL(db)
+	kratosAdmin := tenantsinfra.NewKratosUserValidator(KRATOS_ADMIN_API)
+	tenantSvc := tenants.NewTenantService(tenantStore, kratosAdmin)
+
+	ui, err := webui.New(HTTP_WEBUI_BASE, SB_API, tenantSvc)
 	if err != nil {
 		errC <- err
 		return noopCleanup, nil

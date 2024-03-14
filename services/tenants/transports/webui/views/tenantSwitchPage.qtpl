@@ -1,0 +1,38 @@
+{% code
+type TenantSwitchingPage struct {
+    Base
+    Tenants []TenantView
+}
+
+type TenantView struct {
+    ID int64
+    Name string
+    ImageURL string
+}
+%}
+
+{% func (p *TenantSwitchingPage) Body() %}
+    <h1 class="text-center text-xl mt-4">Switch to tenant</h1>
+    {%= p.renderTenantList() %}
+{% endfunc %}
+
+{% func (p *TenantSwitchingPage) renderTenantList() %}
+    <ul class="flex flex-col max-h-[50vh] overflow-y-auto">
+        {% for _, tenant := range p.Tenants %}
+            {%= renderTenantListEntry(tenant) %}
+        {% endfor %}
+    </ul>
+{% endfunc %}
+
+{% func renderTenantListEntry(t TenantView) %}
+    <li>
+        <a class="px-2 py-6 flex align-baseline gap-6 hover:bg-gray-50" href="#">
+            <div class="w-1/3">
+            <img src={%s t.ImageURL %}>
+            </div>
+            <div class="w-2/3">
+                <h3 class="text-lg">{%s t.Name %}</h3>
+            </div>
+        </a>
+    </li>
+{% endfunc %}

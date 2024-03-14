@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"sensorbucket.nl/sensorbucket/pkg/api"
+	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/routes"
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/views"
 )
@@ -19,7 +20,7 @@ type WebUI struct {
 	router chi.Router
 }
 
-func New(baseURLString, sensorbucketAPIEndpoint string) (*WebUI, error) {
+func New(baseURLString, sensorbucketAPIEndpoint string, tenantsService *tenants.TenantService) (*WebUI, error) {
 	ui := &WebUI{
 		router: chi.NewRouter(),
 	}
@@ -60,6 +61,7 @@ func New(baseURLString, sensorbucketAPIEndpoint string) (*WebUI, error) {
 	ui.router.Handle("/static/*", serveStatic())
 	ui.router.Mount("/auth", routes.SetupKratosRoutes())
 	ui.router.Mount("/api-keys", routes.SetupAPIKeyRoutes(client))
+	ui.router.Mount("/user", routes.SetupTenantSwitchingRoutes(tenantsService))
 
 	return ui, nil
 }
