@@ -42,8 +42,7 @@ func createPostgresServer(t *testing.T) *sqlx.DB {
 		ExposedPorts: []string{"5432/tcp"},
 		WaitingFor: wait.ForLog("database system is ready to accept connections").
 			WithOccurrence(2).
-			// This is a context timeout, if the container does not start within this time, it errors
-			WithStartupTimeout(10 * time.Second),
+			WithStartupTimeout(30 * time.Second),
 	}
 	pgc, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,

@@ -1,4 +1,4 @@
-package measurementsinfra_test
+package tenantsinfra_test
 
 import (
 	"context"
@@ -7,18 +7,15 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	"sensorbucket.nl/sensorbucket/internal/pagination"
-	"sensorbucket.nl/sensorbucket/services/core/measurements"
-	measurementsinfra "sensorbucket.nl/sensorbucket/services/core/measurements/infra"
-	"sensorbucket.nl/sensorbucket/services/core/migrations"
+	tenantsinfra "sensorbucket.nl/sensorbucket/services/tenants/infrastructure"
+	"sensorbucket.nl/sensorbucket/services/tenants/migrations"
+	"sensorbucket.nl/sensorbucket/services/tenants/sessions"
 )
 
 //go:embed seed_test.sql
@@ -70,39 +67,32 @@ func createPostgresServer(t *testing.T) *sqlx.DB {
 	return db
 }
 
-func timeParse(t *testing.T, s string) time.Time {
-	tim, err := time.Parse(time.RFC3339, s)
-	require.NoError(t, err, "failed to parse time")
-	return tim
-}
+const (
+	userID              = "67f55001-36f4-4882-8034-63311dcc7523"
+	tenantID            = 10
+	otherTenantID       = 11
+	nonExistingTenantID = 12
+)
 
-func TestShouldQueryCorrectly(t *testing.T) {
+func TestUserPreferedTenantStorePSQL(t *testing.T) {
 	db := createPostgresServer(t)
-	store := measurementsinfra.NewPSQL(db)
+	store := tenantsinfra.NewTenantsStorePSQL(db)
 
-	testCases := []struct {
-		desc string
-		filt measurements.Filter
-		req  pagination.Request
-		exp  []int
-	}{
-		{
-			desc: "",
-			filt: measurements.Filter{
-				Start: timeParse(t, "2022-01-01T04:00:00Z"),
-				End:   timeParse(t, "2022-01-01T09:00:00Z"),
-			},
-			req: pagination.Request{},
-			exp: []int{5, 6, 7, 8, 9, 10},
-		},
-	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
-			page, err := store.Query(tC.filt, tC.req)
-			assert.NoError(t, err)
-			ids := lo.Map(page.Data, func(d measurements.Measurement, ix int) int { return d.ID })
-			assert.Len(t, page.Data, len(tC.exp), "number of returned items differs from expected")
-			assert.ElementsMatch(t, tC.exp, ids, "expected ids not found")
-		})
-	}
+	t.Run("User should be member of tenant", func(t *testing.T) {
+		isMember, err := store.IsUserTenantMember(userID, tenantID)
+		assert.NoError(t, err)
+		assert.Equal(t, true, isMember)
+	})
+	t.Run("User should have no preferred tenant", func(t *testing.T) {
+		preferredTenant, err := store.ActiveTenantID(userID)
+		assert.ErrorIs(t, err, sessions.ErrPreferenceNotSet)
+		assert.EqualValues(t, 0, preferredTenant)
+	})
+	t.Run("Should be able to update active to tenant with membership", func(t *testing.T) {
+		err := store.SetActiveTenantID(userID, tenantID)
+		assert.NoError(t, err)
+		preferredTenant, err := store.ActiveTenantID(userID)
+		assert.NoError(t, err)
+		assert.EqualValues(t, tenantID, preferredTenant)
+	})
 }
