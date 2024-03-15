@@ -19,6 +19,7 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	tenantsinfra "sensorbucket.nl/sensorbucket/services/tenants/infrastructure"
 	"sensorbucket.nl/sensorbucket/services/tenants/migrations"
+	"sensorbucket.nl/sensorbucket/services/tenants/sessions"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 	tenantstransports "sensorbucket.nl/sensorbucket/services/tenants/transports"
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui"
@@ -118,8 +119,9 @@ func runWebUI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 	tenantStore := tenantsinfra.NewTenantsStorePSQL(db)
 	kratosAdmin := tenantsinfra.NewKratosUserValidator(KRATOS_ADMIN_API)
 	tenantSvc := tenants.NewTenantService(tenantStore, kratosAdmin)
+	userPreferences := sessions.NewUserPreferenceService(tenantStore)
 
-	ui, err := webui.New(HTTP_WEBUI_BASE, SB_API, tenantSvc)
+	ui, err := webui.New(HTTP_WEBUI_BASE, SB_API, tenantSvc, userPreferences)
 	if err != nil {
 		errC <- err
 		return noopCleanup, nil

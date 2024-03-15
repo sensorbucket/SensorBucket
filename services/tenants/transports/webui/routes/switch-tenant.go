@@ -2,28 +2,33 @@ package routes
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/services/tenants/sessions"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/views"
 )
 
 type TenantSwitchingPageHandler struct {
-	router        chi.Router
-	tenantService *tenants.TenantService
+	router          chi.Router
+	tenantService   *tenants.TenantService
+	userPreferences *sessions.UserPreferenceService
 }
 
-func SetupTenantSwitchingRoutes(tenantService *tenants.TenantService) *TenantSwitchingPageHandler {
+func SetupTenantSwitchingRoutes(tenantService *tenants.TenantService, userPreferences *sessions.UserPreferenceService) *TenantSwitchingPageHandler {
 	handler := &TenantSwitchingPageHandler{
-		router:        chi.NewRouter(),
-		tenantService: tenantService,
+		router:          chi.NewRouter(),
+		tenantService:   tenantService,
+		userPreferences: userPreferences,
 	}
 
 	// TODO: user must be authenticated to update org
 	handler.router.Get("/tenant", handler.httpSwitchTenantPage())
+	handler.router.Post("/tenant/switch", handler.httpDoSwitchTenantPage())
 
 	return handler
 }
@@ -41,7 +46,7 @@ func (handler *TenantSwitchingPageHandler) httpSwitchTenantPage() http.HandlerFu
 			w.Write([]byte("error occured" + err.Error()))
 			return
 		}
-		tenantViews := lo.Map(tenantsPage.Data, func(item tenants.CreateTenantDTO, index int) views.TenantView {
+		tenantViews := lo.Map(tenantsPage.Data, func(item tenants.CreateTenantDTO, _ int) views.TenantView {
 			logo := ""
 			if item.Logo != nil {
 				logo = *item.Logo
@@ -56,5 +61,18 @@ func (handler *TenantSwitchingPageHandler) httpSwitchTenantPage() http.HandlerFu
 			Tenants: tenantViews,
 		}
 		views.WriteLayout(w, p)
+	}
+}
+
+func (handler *TenantSwitchingPageHandler) httpDoSwitchTenantPage() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO: Validate CSRF
+		if err := r.ParseForm(); err != nil {
+		}
+		tenantIDString := r.FormValue("tenantID")
+		tenantID, err := strconv.ParseInt(tenantIDString, 10, 64)
+		if err != nil {
+		}
+		handler.userPreferences.SetActiveTenantID(r.Context(), "", tenantID)
 	}
 }
