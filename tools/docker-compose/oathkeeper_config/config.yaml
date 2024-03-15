@@ -32,7 +32,7 @@ mutators:
   id_token:
     enabled: true
     config:
-      issuer_url: http://localhost:3000/
+      issuer_url: http://127.0.0.1:3000/
       jwks_url: file:///etc/config/oathkeeper/jwks.json
       # TODO: tackle this when implementing auth(z) on services. Do we actually need anonymous users?
       #claims: '{"mai": "{{ print .Extra.identity.traits.email }}"}'

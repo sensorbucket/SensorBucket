@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"sensorbucket.nl/sensorbucket/pkg/api"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/routes"
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/views"
@@ -42,6 +43,8 @@ func New(baseURLString, sensorbucketAPIEndpoint string, tenantsService *tenants.
 	client := api.NewAPIClient(cfg)
 
 	ui.router.Use(middleware.Logger)
+	jwks := auth.NewJWKSHttpClient("http://oathkeeper:4456/.well-known/jwks.json")
+	ui.router.Use(auth.Authenticate(jwks))
 	// Middleware to pass on basic auth to the client api
 	// TODO: This also exists in dashboard/main.go, perhaps make it a package?
 	// Also this will become a JWT instead of basic auth!
