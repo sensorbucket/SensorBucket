@@ -301,4 +301,44 @@ func renderSidebar() string {
 
 //line transports/webui/views/layout.qtpl:73
 type Base struct {
+	CSRFToken string
+}
+
+//line transports/webui/views/layout.qtpl:77
+func (b *Base) streamrenderCSRFToken(qw422016 *qt422016.Writer) {
+//line transports/webui/views/layout.qtpl:77
+	qw422016.N().S(`
+<input type="hidden" name="csrf_token" value="`)
+//line transports/webui/views/layout.qtpl:78
+	qw422016.E().S(b.CSRFToken)
+//line transports/webui/views/layout.qtpl:78
+	qw422016.N().S(`">
+`)
+//line transports/webui/views/layout.qtpl:79
+}
+
+//line transports/webui/views/layout.qtpl:79
+func (b *Base) writerenderCSRFToken(qq422016 qtio422016.Writer) {
+//line transports/webui/views/layout.qtpl:79
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line transports/webui/views/layout.qtpl:79
+	b.streamrenderCSRFToken(qw422016)
+//line transports/webui/views/layout.qtpl:79
+	qt422016.ReleaseWriter(qw422016)
+//line transports/webui/views/layout.qtpl:79
+}
+
+//line transports/webui/views/layout.qtpl:79
+func (b *Base) renderCSRFToken() string {
+//line transports/webui/views/layout.qtpl:79
+	qb422016 := qt422016.AcquireByteBuffer()
+//line transports/webui/views/layout.qtpl:79
+	b.writerenderCSRFToken(qb422016)
+//line transports/webui/views/layout.qtpl:79
+	qs422016 := string(qb422016.B)
+//line transports/webui/views/layout.qtpl:79
+	qt422016.ReleaseByteBuffer(qb422016)
+//line transports/webui/views/layout.qtpl:79
+	return qs422016
+//line transports/webui/views/layout.qtpl:79
 }

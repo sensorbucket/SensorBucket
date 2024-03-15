@@ -17,6 +17,7 @@ type TenantView struct {
         <span class="text-sm font-bold" id="to-tenant-name">&nbsp;</span>
     </div>
     <form action="{%s U("/user/tenant/switch") %}" method="post" class="space-y-6">
+        {%= p.renderCSRFToken() %}
         {%= p.renderTenantList() %}
         <button 
             class="block w-full text-center p-2 border-2 border-secondary-500 text-secondary-500

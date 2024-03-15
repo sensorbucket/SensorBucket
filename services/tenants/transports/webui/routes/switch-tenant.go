@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ory/nosurf"
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
@@ -58,6 +59,9 @@ func (handler *TenantSwitchingPageHandler) httpSwitchTenantPage() http.HandlerFu
 			}
 		})
 		p := &views.TenantSwitchingPage{
+			Base: views.Base{
+				CSRFToken: nosurf.Token(r),
+			},
 			Tenants: tenantViews,
 		}
 		views.WriteLayout(w, p)

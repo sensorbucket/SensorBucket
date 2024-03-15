@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+	"github.com/ory/nosurf"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
@@ -130,7 +131,7 @@ func runWebUI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 		Addr:         HTTP_WEBUI_ADDR,
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
-		Handler:      ui,
+		Handler:      nosurf.New(ui),
 	}
 
 	go func() {
