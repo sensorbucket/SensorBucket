@@ -73,6 +73,6 @@ func (handler *TenantSwitchingPageHandler) httpDoSwitchTenantPage() http.Handler
 		tenantID, err := strconv.ParseInt(tenantIDString, 10, 64)
 		if err != nil {
 		}
-		handler.userPreferences.SetActiveTenantID(r.Context(), "", tenantID)
+		handler.userPreferences.SetActiveTenantIDForUser(r.Context(), "", tenantID)
 	}
 }
