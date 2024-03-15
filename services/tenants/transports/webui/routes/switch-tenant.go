@@ -68,11 +68,19 @@ func (handler *TenantSwitchingPageHandler) httpDoSwitchTenantPage() http.Handler
 	return func(w http.ResponseWriter, r *http.Request) {
 		// TODO: Validate CSRF
 		if err := r.ParseForm(); err != nil {
+			w.Write([]byte("error occured" + err.Error()))
+			return
 		}
 		tenantIDString := r.FormValue("tenantID")
 		tenantID, err := strconv.ParseInt(tenantIDString, 10, 64)
 		if err != nil {
+			w.Write([]byte("error occured" + err.Error()))
+			return
 		}
-		handler.userPreferences.SetActiveTenantIDForUser(r.Context(), "", tenantID)
+		if err := handler.userPreferences.SetActiveTenantID(r.Context(), tenantID); err != nil {
+			w.Write([]byte("error occured" + err.Error()))
+			return
+		}
+		w.Write([]byte("All good"))
 	}
 }
