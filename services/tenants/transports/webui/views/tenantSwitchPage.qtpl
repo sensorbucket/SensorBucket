@@ -16,8 +16,9 @@ type TenantView struct {
         <h2>Switch to tenant</h2>
         <span class="text-sm font-bold" id="to-tenant-name">&nbsp;</span>
     </div>
-    <form action="{%s U("/user/tenant/switch") %}" method="post" class="space-y-6">
+    <form action="{%s U("/switch") %}" method="post" class="space-y-6">
         {%= p.renderCSRFToken() %}
+        <input type="hidden" name="tenantName" id="tenantName" value="">
         {%= p.renderTenantList() %}
         <button 
             class="block w-full text-center p-2 border-2 border-secondary-500 text-secondary-500
@@ -25,6 +26,7 @@ type TenantView struct {
             type="submit"
             >Switch tenant</button>
     </form>
+    {%= p.Base.FlashMessagesContainer.Render() %}
 {% endfunc %}
 
 {% func (p *TenantSwitchingPage) renderTenantList() %}
@@ -45,7 +47,8 @@ type TenantView struct {
                 <h3 class="">{%s t.Name %}</h3>
             </div>
             <input type="radio" name="tenantID" value="{%dl t.ID %}" class="mt-1" 
-            _="on click set #to-tenant-name.innerHTML to '{%s t.Name %}'"
+            _="on click set #to-tenant-name.innerHTML to '{%s t.Name %}'
+                then set #tenantName.value to '{%s t.Name %}'"
             >
         </label>
     </li>

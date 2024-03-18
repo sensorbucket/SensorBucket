@@ -1,3 +1,4 @@
+{% import "sensorbucket.nl/sensorbucket/internal/flash_messages" %}
 {% interface Page {
     Body()
 } %}
@@ -72,8 +73,9 @@
 {% code
 type Base struct {
     CSRFToken string
+    flash_messages.FlashMessagesContainer
 }
 %}
 {% func (b *Base) renderCSRFToken() %}
-<input type="hidden" name="csrf_token" value="{%s b.CSRFToken %}">
+    <input type="hidden" name="csrf_token" value="{%s b.CSRFToken %}">
 {% endfunc %}

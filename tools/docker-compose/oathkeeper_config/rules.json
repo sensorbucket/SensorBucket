@@ -20,7 +20,7 @@
     {
         "id": "user_preferences",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/tenants/user<(/.+)?>",
+            "url": "http://<127.0.0.1|localhost>:3000/tenants/switch",
             "methods": [
                 "GET","POST","PATCH","PUT","DELETE"
             ]

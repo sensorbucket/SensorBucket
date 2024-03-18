@@ -65,7 +65,7 @@ func New(baseURLString, sensorbucketAPIEndpoint string, tenantsService *tenants.
 	ui.router.Handle("/static/*", serveStatic())
 	ui.router.Mount("/auth", routes.SetupKratosRoutes())
 	ui.router.Mount("/api-keys", routes.SetupAPIKeyRoutes(client))
-	ui.router.Mount("/user", routes.SetupTenantSwitchingRoutes(tenantsService, userPreferences))
+	ui.router.Mount("/", routes.SetupTenantSwitchingRoutes(tenantsService, userPreferences))
 
 	return ui, nil
 }

@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/ory/nosurf"
 	"github.com/samber/lo"
 
+	"sensorbucket.nl/sensorbucket/internal/flash_messages"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/tenants/sessions"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
@@ -28,8 +30,8 @@ func SetupTenantSwitchingRoutes(tenantService *tenants.TenantService, userPrefer
 	}
 
 	// TODO: user must be authenticated to update org
-	handler.router.Get("/tenant", handler.httpSwitchTenantPage())
-	handler.router.Post("/tenant/switch", handler.httpDoSwitchTenantPage())
+	handler.router.With(flash_messages.ExtractFlashMessage).Get("/switch", handler.httpSwitchTenantPage())
+	handler.router.Post("/switch", handler.httpDoSwitchTenantPage())
 
 	return handler
 }
@@ -64,27 +66,34 @@ func (handler *TenantSwitchingPageHandler) httpSwitchTenantPage() http.HandlerFu
 			},
 			Tenants: tenantViews,
 		}
+		flash_messages.AddContextFlashMessages(r, &p.FlashMessagesContainer)
 		views.WriteLayout(w, p)
 	}
 }
 
 func (handler *TenantSwitchingPageHandler) httpDoSwitchTenantPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Validate CSRF
+		flash_messages.AddErrorFlashMessage(w, r, "An error occured parsing the form, please try again")
+		http.Redirect(w, r, views.U("/switch"), http.StatusSeeOther)
+		return
 		if err := r.ParseForm(); err != nil {
-			w.Write([]byte("error occured" + err.Error()))
+			flash_messages.AddErrorFlashMessage(w, r, "An error occured parsing the form, please try again")
+			http.Redirect(w, r, views.U("/switch"), http.StatusSeeOther)
 			return
 		}
 		tenantIDString := r.FormValue("tenantID")
 		tenantID, err := strconv.ParseInt(tenantIDString, 10, 64)
 		if err != nil {
-			w.Write([]byte("error occured" + err.Error()))
+			flash_messages.AddErrorFlashMessage(w, r, "An error occured parsing the form, please try again")
+			http.Redirect(w, r, views.U("/switch"), http.StatusSeeOther)
 			return
 		}
 		if err := handler.userPreferences.SetActiveTenantID(r.Context(), tenantID); err != nil {
-			w.Write([]byte("error occured" + err.Error()))
+			flash_messages.AddErrorFlashMessage(w, r, "An error occured setting the new active organization, please try again")
+			http.Redirect(w, r, views.U("/switch"), http.StatusSeeOther)
 			return
 		}
-		w.Write([]byte("All good"))
+		flash_messages.AddSuccessFlashMessage(w, r, fmt.Sprintf("Succesfully switched to: %s", r.FormValue("tenantName")))
+		http.Redirect(w, r, views.U("/settings"), http.StatusSeeOther)
 	}
 }
