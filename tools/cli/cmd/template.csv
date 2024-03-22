@@ -1,0 +1,10 @@
+     device code,device description,device properties eui,sensor code,sensor brand,    sensor description,sensor external_id
+0000000000000000, MFM V4 Grondwater,     0000000000000000,    antenna,    Lynx WRT,               antenna,           antenna
+                ,                  ,                     ,   huba_1_1,        Huba,  Huba Module 1 Slot 1,          huba_1_1
+                ,                  ,                     ,   huba_1_2,        Huba,  Huba Module 1 Slot 2,          huba_1_2
+                ,                  ,                     ,   huba_2_1,        Huba,  Huba Module 2 Slot 1,          huba_2_1
+                ,                  ,                     ,   huba_2_2,        Huba,  Huba Module 2 Slot 2,          huba_2_2
+                ,                  ,                     , keller_1_1,      Keller,Keller Module 1 Slot 1,        keller_1_1
+                ,                  ,                     , keller_1_2,      Keller,Keller Module 1 Slot 2,        keller_1_2
+                ,                  ,                     , keller_2_1,      Keller,Keller Module 2 Slot 1,        keller_2_1
+                ,                  ,                     , keller_2_2,      Keller,Keller Module 2 Slot 2,        keller_2_2

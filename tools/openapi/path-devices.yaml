@@ -80,6 +80,12 @@ get:
         The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
       schema:
         type: integer
+    - in: query
+      name: code
+      description: |
+        Only match devices with this code
+      schema:
+        type: string
     - name: id
       description: |
         Filter by Device IDs

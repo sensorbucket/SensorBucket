@@ -99,6 +99,9 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[devices.Device]
 	if len(b.filters.ID) > 0 {
 		q = q.Where(sq.Eq{"devices.id": b.filters.ID})
 	}
+	if len(b.filters.Code) > 0 {
+		q = q.Where(sq.Eq{"devices.code": b.filters.Code})
+	}
 
 	// Fetch devices
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(db).Query()
