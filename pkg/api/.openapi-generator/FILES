@@ -12,6 +12,8 @@ client.go
 configuration.go
 model_add_sensor_to_sensor_group_201_response.go
 model_add_sensor_to_sensor_group_request.go
+model_add_tenant_member_201_response.go
+model_add_tenant_member_request.go
 model_api_error.go
 model_api_key.go
 model_api_key_created.go
@@ -67,6 +69,8 @@ model_paginated_response_links.go
 model_pipeline.go
 model_query_measurements_200_response.go
 model_query_measurements_200_response_all_of.go
+model_remove_tenant_member_200_response.go
+model_revoke_api_key_200_response.go
 model_sensor.go
 model_sensor_group.go
 model_tenant.go
@@ -78,6 +82,7 @@ model_update_pipeline_200_response.go
 model_update_pipeline_request.go
 model_update_sensor_group_200_response.go
 model_update_sensor_group_request.go
+model_update_tenant_member_request.go
 model_update_worker_200_response.go
 model_update_worker_request.go
 model_user_worker.go

@@ -3,7 +3,7 @@ Sensorbucket API
 
 SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex 
 
-API version: 1.0
+API version: 1.1-rc1
 Contact: info@pollex.nl
 */
 
@@ -1140,6 +1140,7 @@ type ApiListDevicesRequest struct {
 	distance *int32
 	cursor *string
 	limit *int32
+	code *string
 	id *[]int64
 	sensorGroup *[]int64
 }
@@ -1201,6 +1202,12 @@ func (r ApiListDevicesRequest) Cursor(cursor string) ApiListDevicesRequest {
 // The maximum amount of items per page. Not applicable if &#x60;cursor&#x60; parameter is given. System limits are in place. 
 func (r ApiListDevicesRequest) Limit(limit int32) ApiListDevicesRequest {
 	r.limit = &limit
+	return r
+}
+
+// Only match devices with this code 
+func (r ApiListDevicesRequest) Code(code string) ApiListDevicesRequest {
+	r.code = &code
 	return r
 }
 
@@ -1293,6 +1300,9 @@ func (a *DevicesApiService) ListDevicesExecute(r ApiListDevicesRequest) (*ListDe
 	}
 	if r.limit != nil {
 		localVarQueryParams.Add("limit", parameterToString(*r.limit, ""))
+	}
+	if r.code != nil {
+		localVarQueryParams.Add("code", parameterToString(*r.code, ""))
 	}
 	if r.id != nil {
 		t := *r.id

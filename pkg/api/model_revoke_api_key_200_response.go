@@ -15,30 +15,30 @@ import (
 	"encoding/json"
 )
 
-// UpdateSensorGroup200Response struct for UpdateSensorGroup200Response
-type UpdateSensorGroup200Response struct {
+// RevokeApiKey200Response struct for RevokeApiKey200Response
+type RevokeApiKey200Response struct {
 	Message *string `json:"message,omitempty"`
 }
 
-// NewUpdateSensorGroup200Response instantiates a new UpdateSensorGroup200Response object
+// NewRevokeApiKey200Response instantiates a new RevokeApiKey200Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewUpdateSensorGroup200Response() *UpdateSensorGroup200Response {
-	this := UpdateSensorGroup200Response{}
+func NewRevokeApiKey200Response() *RevokeApiKey200Response {
+	this := RevokeApiKey200Response{}
 	return &this
 }
 
-// NewUpdateSensorGroup200ResponseWithDefaults instantiates a new UpdateSensorGroup200Response object
+// NewRevokeApiKey200ResponseWithDefaults instantiates a new RevokeApiKey200Response object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewUpdateSensorGroup200ResponseWithDefaults() *UpdateSensorGroup200Response {
-	this := UpdateSensorGroup200Response{}
+func NewRevokeApiKey200ResponseWithDefaults() *RevokeApiKey200Response {
+	this := RevokeApiKey200Response{}
 	return &this
 }
 
 // GetMessage returns the Message field value if set, zero value otherwise.
-func (o *UpdateSensorGroup200Response) GetMessage() string {
+func (o *RevokeApiKey200Response) GetMessage() string {
 	if o == nil || isNil(o.Message) {
 		var ret string
 		return ret
@@ -48,7 +48,7 @@ func (o *UpdateSensorGroup200Response) GetMessage() string {
 
 // GetMessageOk returns a tuple with the Message field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *UpdateSensorGroup200Response) GetMessageOk() (*string, bool) {
+func (o *RevokeApiKey200Response) GetMessageOk() (*string, bool) {
 	if o == nil || isNil(o.Message) {
     return nil, false
 	}
@@ -56,7 +56,7 @@ func (o *UpdateSensorGroup200Response) GetMessageOk() (*string, bool) {
 }
 
 // HasMessage returns a boolean if a field has been set.
-func (o *UpdateSensorGroup200Response) HasMessage() bool {
+func (o *RevokeApiKey200Response) HasMessage() bool {
 	if o != nil && !isNil(o.Message) {
 		return true
 	}
@@ -65,11 +65,11 @@ func (o *UpdateSensorGroup200Response) HasMessage() bool {
 }
 
 // SetMessage gets a reference to the given string and assigns it to the Message field.
-func (o *UpdateSensorGroup200Response) SetMessage(v string) {
+func (o *RevokeApiKey200Response) SetMessage(v string) {
 	o.Message = &v
 }
 
-func (o UpdateSensorGroup200Response) MarshalJSON() ([]byte, error) {
+func (o RevokeApiKey200Response) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
 	if !isNil(o.Message) {
 		toSerialize["message"] = o.Message
@@ -77,38 +77,38 @@ func (o UpdateSensorGroup200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-type NullableUpdateSensorGroup200Response struct {
-	value *UpdateSensorGroup200Response
+type NullableRevokeApiKey200Response struct {
+	value *RevokeApiKey200Response
 	isSet bool
 }
 
-func (v NullableUpdateSensorGroup200Response) Get() *UpdateSensorGroup200Response {
+func (v NullableRevokeApiKey200Response) Get() *RevokeApiKey200Response {
 	return v.value
 }
 
-func (v *NullableUpdateSensorGroup200Response) Set(val *UpdateSensorGroup200Response) {
+func (v *NullableRevokeApiKey200Response) Set(val *RevokeApiKey200Response) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableUpdateSensorGroup200Response) IsSet() bool {
+func (v NullableRevokeApiKey200Response) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableUpdateSensorGroup200Response) Unset() {
+func (v *NullableRevokeApiKey200Response) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableUpdateSensorGroup200Response(val *UpdateSensorGroup200Response) *NullableUpdateSensorGroup200Response {
-	return &NullableUpdateSensorGroup200Response{value: val, isSet: true}
+func NewNullableRevokeApiKey200Response(val *RevokeApiKey200Response) *NullableRevokeApiKey200Response {
+	return &NullableRevokeApiKey200Response{value: val, isSet: true}
 }
 
-func (v NullableUpdateSensorGroup200Response) MarshalJSON() ([]byte, error) {
+func (v NullableRevokeApiKey200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableUpdateSensorGroup200Response) UnmarshalJSON(src []byte) error {
+func (v *NullableRevokeApiKey200Response) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
