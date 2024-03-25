@@ -23,8 +23,8 @@ func NewAPIKeyStorePSQL(db *sqlx.DB) *ApiKeyStore {
 }
 
 type apiKeyQueryPage struct {
-	Tenant  int64     `pagination:"keys.tenant_id,DESC"`
 	Created time.Time `pagination:"keys.created,DESC"`
+	KeyID   int64     `pagination:"keys.id,DESC"`
 }
 
 func (as *ApiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
@@ -35,25 +35,38 @@ func (as *ApiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 		return nil, fmt.Errorf("could not getcursor from pagination request: %w", err)
 	}
 
-	q := sq.
-		Select("keys.id", "keys.name", "keys.expiration_date", "keys.created", "keys.tenant_id", "tenants.name", "permissions.permission").
-		From("api_keys keys").
-		LeftJoin("api_key_permissions permissions on keys.id = permissions.api_key_id").
-		RightJoin("tenants on keys.tenant_id = tenants.id")
+	keyQuery := sq.Select("*").From("api_keys keys")
 	if len(filter.TenantID) > 0 {
-		q = q.Where(sq.Eq{"keys.tenant_id": filter.TenantID})
+		keyQuery = keyQuery.Where(sq.Eq{"keys.tenant_id": filter.TenantID})
 	}
-	q, err = pagination.Apply(q, cursor)
+	keyQuery, err = pagination.Apply(keyQuery, cursor)
 	if err != nil {
 		return nil, fmt.Errorf("could not apply pagination: %w", err)
 	}
+
+	q := sq.
+		Select(
+			"keys.id",
+			"keys.name",
+			"keys.expiration_date",
+			"keys.created",
+			"keys.tenant_id",
+			"tenants.name",
+			"permissions.permission",
+			"keys.created",
+			"keys.id",
+		).
+		FromSelect(keyQuery, "keys").
+		LeftJoin("tenants on keys.tenant_id = tenants.id").
+		LeftJoin("api_key_permissions permissions on keys.id = permissions.api_key_id")
+
+	fmt.Printf("sq.DebugSqlizer(q): %v\n", sq.DebugSqlizer(q))
+
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
 	if err != nil {
 		return nil, fmt.Errorf("error running database query: %w", err)
 	}
 	defer rows.Close()
-
-	// TODO: limit wont work with the way permissois are joined now
 
 	// For each key there are multiple records so all the permissions can be listed
 	// Track at which API key the rows are currently so we can add the correct permissions and move to the next key
@@ -72,8 +85,8 @@ func (as *ApiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 			&key.TenantID,
 			&key.TenantName,
 			&permission,
-			&cursor.Columns.Tenant,
 			&cursor.Columns.Created,
+			&cursor.Columns.KeyID,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row into api key w/ permission: %w", err)
