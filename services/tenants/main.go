@@ -121,8 +121,10 @@ func runWebUI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 	kratosAdmin := tenantsinfra.NewKratosUserValidator(KRATOS_ADMIN_API)
 	tenantSvc := tenants.NewTenantService(tenantStore, kratosAdmin)
 	userPreferences := sessions.NewUserPreferenceService(tenantStore)
+	apiKeyStore := tenantsinfra.NewAPIKeyStorePSQL(db)
+	apiKeySvc := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 
-	ui, err := webui.New(HTTP_WEBUI_BASE, SB_API, tenantSvc, userPreferences)
+	ui, err := webui.New(HTTP_WEBUI_BASE, SB_API, tenantSvc, apiKeySvc, userPreferences)
 	if err != nil {
 		errC <- err
 		return noopCleanup, nil
@@ -130,6 +132,7 @@ func runWebUI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 
 	httpHandler := nosurf.New(ui)
 	httpHandler.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("nosurf.Reason(r): %v\n", nosurf.Reason(r))
 		w.Header().Add("HX-Trigger", `{"error":"CSRF token was invalid"}`)
 		w.Write([]byte("A CSRF error occured. Reload the previous page and try again"))
 	}))

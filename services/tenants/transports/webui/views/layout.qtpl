@@ -82,5 +82,9 @@ type Base struct {
 }
 %}
 {% func (b *Base) renderCSRFToken() %}
-    <input type="hidden" name="csrf_token" value="{%s b.CSRFToken %}">
+    {%= renderCSRFToken(b.CSRFToken) %}
+{% endfunc %}
+
+{% func renderCSRFToken(token string) %}
+    <input type="hidden" name="csrf_token" value="{%s token %}">
 {% endfunc %}

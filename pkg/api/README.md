@@ -89,6 +89,7 @@ All URIs are relative to *https://sensorbucket.nl/api*
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *APIKeysApi* | [**CreateApiKey**](docs/APIKeysApi.md#createapikey) | **Post** /api-keys | Creates a new API key for the given Tenant
+*APIKeysApi* | [**GetAPIKey**](docs/APIKeysApi.md#getapikey) | **Get** /api-keys/{api_key_id} | Get an API Key by ID
 *APIKeysApi* | [**ListApiKeys**](docs/APIKeysApi.md#listapikeys) | **Get** /api-keys | List API Keys
 *APIKeysApi* | [**RevokeApiKey**](docs/APIKeysApi.md#revokeapikey) | **Delete** /api-keys/{api_key_id} | Revokes an API key
 *DevicesApi* | [**AddSensorToSensorGroup**](docs/DevicesApi.md#addsensortosensorgroup) | **Post** /sensor-groups/{id}/sensors | Add sensor to a sensor group

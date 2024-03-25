@@ -12,6 +12,7 @@ import (
 
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	"sensorbucket.nl/sensorbucket/services/tenants/sessions"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/routes"
@@ -22,7 +23,13 @@ type WebUI struct {
 	router chi.Router
 }
 
-func New(baseURLString, sensorbucketAPIEndpoint string, tenantsService *tenants.TenantService, userPreferences *sessions.UserPreferenceService) (*WebUI, error) {
+func New(
+	baseURLString,
+	sensorbucketAPIEndpoint string,
+	tenantsService *tenants.TenantService,
+	apiKeys *apikeys.Service,
+	userPreferences *sessions.UserPreferenceService,
+) (*WebUI, error) {
 	ui := &WebUI{
 		router: chi.NewRouter(),
 	}
@@ -64,7 +71,7 @@ func New(baseURLString, sensorbucketAPIEndpoint string, tenantsService *tenants.
 	})
 	ui.router.Handle("/static/*", serveStatic())
 	ui.router.Mount("/auth", routes.SetupKratosRoutes())
-	ui.router.Mount("/api-keys", routes.SetupAPIKeyRoutes(client))
+	ui.router.Mount("/api-keys", routes.SetupAPIKeyRoutes(client, apiKeys, tenantsService))
 	ui.router.Mount("/", routes.SetupTenantSwitchingRoutes(tenantsService, userPreferences))
 
 	return ui, nil

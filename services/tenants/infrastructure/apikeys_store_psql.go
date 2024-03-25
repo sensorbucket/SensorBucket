@@ -160,16 +160,21 @@ func (as *ApiKeyStore) DeleteApiKey(id int64) error {
 // Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.
 // Only returns the API key if the given tenant confirms to any state passed in the stateFilter
 func (as *ApiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
-	// TODO: how secure is this query?
 	q := sq.
-		Select("api_keys.id, api_keys.value, api_keys.tenant_id, api_keys.expiration_date", "api_key_permissions.permission").
-		From("api_keys").
-		Where(sq.Eq{"api_keys.id": id}).
-		Join("api_key_permissions on api_keys.id = api_key_permissions.api_key_id")
+		Select(
+			"key.id", "key.name", "key.value", "key.expiration_date",
+			"key.tenant_id",
+			"perm.permission",
+		).
+		Where(sq.Eq{"key.id": id}).
+		From("api_keys key").
+		LeftJoin("api_key_permissions perm on perm.api_key_id = key.id")
 	if len(stateFilter) > 0 {
-		q = q.Join("tenants on api_keys.tenant_id = tenants.id").
+		q = q.
+			LeftJoin("tenants on tenants.id = key.tenant_id").
 			Where(sq.Eq{"tenants.state": stateFilter})
 	}
+	fmt.Printf("sq.DebugSqlizer(q): %v\n", sq.DebugSqlizer(q))
 
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
 	if err != nil {
@@ -177,21 +182,28 @@ func (as *ApiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State
 	}
 	defer rows.Close()
 
-	k := apikeys.HashedApiKey{}
-	defer rows.Close()
-	if rows.Next() {
-		err = rows.Scan(
-			&k.ID,
-			&k.SecretHash,
-			&k.TenantID,
-			&k.ExpirationDate)
-		if err != nil {
-			return apikeys.HashedApiKey{}, err
-		}
-	} else {
-		return apikeys.HashedApiKey{}, apikeys.ErrKeyNotFound
+	key := apikeys.HashedApiKey{
+		Permissions: make([]string, 0),
 	}
-	return k, nil
+	for rows.Next() {
+		var permission string
+		err = rows.Scan(
+			&key.ID,
+			&key.Name,
+			&key.SecretHash,
+			&key.ExpirationDate,
+			&key.TenantID,
+			&permission,
+		)
+		if err != nil {
+			return key, err
+		}
+		key.Permissions = append(key.Permissions, permission)
+	}
+	if key.ID == 0 {
+		return key, apikeys.ErrKeyNotFound
+	}
+	return key, nil
 }
 
 // Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.

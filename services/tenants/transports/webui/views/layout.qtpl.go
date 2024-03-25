@@ -321,11 +321,11 @@ type Base struct {
 func (b *Base) streamrenderCSRFToken(qw422016 *qt422016.Writer) {
 //line transports/webui/views/layout.qtpl:84
 	qw422016.N().S(`
-    <input type="hidden" name="csrf_token" value="`)
+    `)
 //line transports/webui/views/layout.qtpl:85
-	qw422016.E().S(b.CSRFToken)
+	streamrenderCSRFToken(qw422016, b.CSRFToken)
 //line transports/webui/views/layout.qtpl:85
-	qw422016.N().S(`">
+	qw422016.N().S(`
 `)
 //line transports/webui/views/layout.qtpl:86
 }
@@ -354,4 +354,43 @@ func (b *Base) renderCSRFToken() string {
 //line transports/webui/views/layout.qtpl:86
 	return qs422016
 //line transports/webui/views/layout.qtpl:86
+}
+
+//line transports/webui/views/layout.qtpl:88
+func streamrenderCSRFToken(qw422016 *qt422016.Writer, token string) {
+//line transports/webui/views/layout.qtpl:88
+	qw422016.N().S(`
+    <input type="hidden" name="csrf_token" value="`)
+//line transports/webui/views/layout.qtpl:89
+	qw422016.E().S(token)
+//line transports/webui/views/layout.qtpl:89
+	qw422016.N().S(`">
+`)
+//line transports/webui/views/layout.qtpl:90
+}
+
+//line transports/webui/views/layout.qtpl:90
+func writerenderCSRFToken(qq422016 qtio422016.Writer, token string) {
+//line transports/webui/views/layout.qtpl:90
+	qw422016 := qt422016.AcquireWriter(qq422016)
+//line transports/webui/views/layout.qtpl:90
+	streamrenderCSRFToken(qw422016, token)
+//line transports/webui/views/layout.qtpl:90
+	qt422016.ReleaseWriter(qw422016)
+//line transports/webui/views/layout.qtpl:90
+}
+
+//line transports/webui/views/layout.qtpl:90
+func renderCSRFToken(token string) string {
+//line transports/webui/views/layout.qtpl:90
+	qb422016 := qt422016.AcquireByteBuffer()
+//line transports/webui/views/layout.qtpl:90
+	writerenderCSRFToken(qb422016, token)
+//line transports/webui/views/layout.qtpl:90
+	qs422016 := string(qb422016.B)
+//line transports/webui/views/layout.qtpl:90
+	qt422016.ReleaseByteBuffer(qb422016)
+//line transports/webui/views/layout.qtpl:90
+	return qs422016
+//line transports/webui/views/layout.qtpl:90
 }
