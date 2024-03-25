@@ -147,6 +147,15 @@ func multiColumnCompare(columns []whereCol) sq.Sqlizer {
 	return clause
 }
 
+func columnAlias(name string) string {
+	for i := len(name) - 1; i > 0; i-- {
+		if name[i] == '.' {
+			return "paginated_" + name[i+1:]
+		}
+	}
+	return "paginated_" + name
+}
+
 func Apply[T any](q sq.SelectBuilder, c Cursor[T]) (sq.SelectBuilder, error) {
 	q = q.Limit(c.Limit)
 	rt := reflect.TypeOf(c.Columns)
@@ -172,7 +181,7 @@ func Apply[T any](q sq.SelectBuilder, c Cursor[T]) (sq.SelectBuilder, error) {
 		if order != "ASC" && order != "DESC" {
 			return q, fmt.Errorf("invalid order in pagination tag on struct %s, for field %s", rt.Name(), rf.Name)
 		}
-		q = q.OrderBy(column + " " + order).Column(column)
+		q = q.OrderBy(column + " " + order).Column(column + " AS " + columnAlias(column))
 
 		rvf := rv.Field(ix)
 		if rvf.IsZero() {

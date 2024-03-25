@@ -4,6 +4,7 @@
 %}
 {% code
 type SettingsPage struct {
+    Base
     Flow *ory.SettingsFlow
 } %}
 
@@ -11,6 +12,7 @@ type SettingsPage struct {
         <section id="apiKeyContent" class="hidden px-6 mb-4 space-y-2"></section>
         <section id="mainContent" class="px-6 mb-4 space-y-2">
             <!-- <h1 class="text-center text-xl m-6">Account Settings</h1> -->
+            {%= p.Base.FlashMessagesContainer.Render() %}
             <span class="block text-center">{%= renderMessage(p.Flow.Ui) %}</span>
             <div class="space-y-8">
                 <section>

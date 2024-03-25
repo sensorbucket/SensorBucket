@@ -1,7 +1,9 @@
 package tenantstransports
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -38,6 +40,7 @@ func (t *APIKeysHTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 func (t *APIKeysHTTPTransport) setupRoutes(r chi.Router) {
 	r.Get("/api-keys", t.httpListApiKeys())
+	r.Get("/api-keys/{api_key_id}", t.httpGetApiKey())
 	r.Delete("/api-keys/{api_key_id}", t.httpRevokeApiKey())
 	r.Post("/api-keys", t.httpCreateApiKey())
 	r.Get("/api-keys/authenticate", t.httpAuthenticateApiKey())
@@ -168,6 +171,27 @@ func (t *APIKeysHTTPTransport) httpAuthenticateApiKey() http.HandlerFunc {
 	}
 }
 
+func (t *APIKeysHTTPTransport) httpGetApiKey() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		keyIDStr := chi.URLParam(r, "api_key_id")
+		fmt.Printf("keyIDStr: %v\n", keyIDStr)
+		keyID, err := strconv.ParseInt(keyIDStr, 10, 64)
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+		key, err := t.apiKeySvc.GetAPIKey(r.Context(), keyID)
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+
+		web.HTTPResponse(rw, http.StatusOK, web.APIResponseAny{
+			Data: key,
+		})
+	}
+}
+
 func (t *APIKeysHTTPTransport) httpListApiKeys() http.HandlerFunc {
 	type Params struct {
 		apikeys.Filter     `pagination:",squash"`
@@ -194,4 +218,5 @@ type ApiKeyService interface {
 	GenerateNewApiKey(name string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error)
 	RevokeApiKey(id int64) error
 	ListAPIKeys(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
+	GetAPIKey(ctx context.Context, id int64) (*apikeys.HashedApiKey, error)
 }

@@ -69,6 +69,14 @@ func (s *TenantService) CreateNewTenant(ctx context.Context, dto CreateTenantDTO
 	return res, nil
 }
 
+func (s *TenantService) GetTenantByID(ctx context.Context, id int64) (*Tenant, error) {
+	tenant, err := s.tenantStore.GetTenantByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return tenant, nil
+}
+
 // Sets a tenant's state to Archived
 // ErrTenantNotFound is returned if the tenant is not found or the state has already been set to Archived
 func (s *TenantService) ArchiveTenant(ctx context.Context, tenantID int64) error {

@@ -20,15 +20,15 @@ type ApiKey struct {
 }
 type HashedApiKey struct {
 	Key
-	SecretHash  string
-	TenantID    int64
-	Permissions []string
+	SecretHash  string   `json:"-"`
+	TenantID    int64    `json:"tenant_id"`
+	Permissions []string `json:"permissions"`
 }
 
 type Key struct {
-	ID             int64
-	Name           string
-	ExpirationDate *time.Time
+	ID             int64      `json:"id"`
+	Name           string     `json:"name"`
+	ExpirationDate *time.Time `json:"expiration_date"`
 }
 
 func (k *Key) IsExpired() bool {

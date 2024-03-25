@@ -18,9 +18,31 @@
         "mutators": [{"handler":"noop"}]
     },
     {
+        "id": "user_preferences",
+        "match": {
+            "url": "http://<127.0.0.1|localhost>:3000/tenants/switch",
+            "methods": [
+                "GET","POST","PATCH","PUT","DELETE"
+            ]
+        },
+        "authenticators": [
+            {
+                "handler": "cookie_session"
+            }
+        ],
+        "authorizer": {
+            "handler": "allow"
+        },
+        "mutators": [
+            {
+                "handler": "id_token"
+            }
+        ]
+    },
+    {
         "id": "authentication",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<tenants(/.+)?>",
+            "url": "http://<127.0.0.1|localhost>:3000/<tenants(/(auth|api-keys|static)(/.+)?)?>",
             "methods": [
                 "GET","POST","PATCH","PUT","DELETE"
             ]

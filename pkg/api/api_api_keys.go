@@ -3,7 +3,7 @@ Sensorbucket API
 
 SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex 
 
-API version: 1.0
+API version: 1.1-rc1
 Contact: info@pollex.nl
 */
 
@@ -21,12 +21,12 @@ import (
 )
 
 
-// ApiKeysApiService ApiKeysApi service
-type ApiKeysApiService service
+// APIKeysApiService APIKeysApi service
+type APIKeysApiService service
 
 type ApiCreateApiKeyRequest struct {
 	ctx context.Context
-	ApiService *ApiKeysApiService
+	ApiService *APIKeysApiService
 	createApiKeyRequest *CreateApiKeyRequest
 }
 
@@ -48,7 +48,7 @@ Create an API key for a tenant with an expiration date. Permissions for the API 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiCreateApiKeyRequest
 */
-func (a *ApiKeysApiService) CreateApiKey(ctx context.Context) ApiCreateApiKeyRequest {
+func (a *APIKeysApiService) CreateApiKey(ctx context.Context) ApiCreateApiKeyRequest {
 	return ApiCreateApiKeyRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -57,7 +57,7 @@ func (a *ApiKeysApiService) CreateApiKey(ctx context.Context) ApiCreateApiKeyReq
 
 // Execute executes the request
 //  @return ApiKeyCreated
-func (a *ApiKeysApiService) CreateApiKeyExecute(r ApiCreateApiKeyRequest) (*ApiKeyCreated, *http.Response, error) {
+func (a *APIKeysApiService) CreateApiKeyExecute(r ApiCreateApiKeyRequest) (*ApiKeyCreated, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
@@ -65,7 +65,7 @@ func (a *ApiKeysApiService) CreateApiKeyExecute(r ApiCreateApiKeyRequest) (*ApiK
 		localVarReturnValue  *ApiKeyCreated
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApiKeysApiService.CreateApiKey")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "APIKeysApiService.CreateApiKey")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -128,6 +128,143 @@ func (a *ApiKeysApiService) CreateApiKeyExecute(r ApiCreateApiKeyRequest) (*ApiK
             		newErr.model = v
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
+		if localVarHTTPResponse.StatusCode == 500 {
+			var v ApiError
+			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+            		newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+            		newErr.model = v
+			return localVarReturnValue, localVarHTTPResponse, newErr
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+type ApiGetAPIKeyRequest struct {
+	ctx context.Context
+	ApiService *APIKeysApiService
+	apiKeyId int64
+}
+
+func (r ApiGetAPIKeyRequest) Execute() (*ApiKey, *http.Response, error) {
+	return r.ApiService.GetAPIKeyExecute(r)
+}
+
+/*
+GetAPIKey Get an API Key by ID
+
+Get an API Key by ID
+
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param apiKeyId The identifier of the API key
+ @return ApiGetAPIKeyRequest
+*/
+func (a *APIKeysApiService) GetAPIKey(ctx context.Context, apiKeyId int64) ApiGetAPIKeyRequest {
+	return ApiGetAPIKeyRequest{
+		ApiService: a,
+		ctx: ctx,
+		apiKeyId: apiKeyId,
+	}
+}
+
+// Execute executes the request
+//  @return ApiKey
+func (a *APIKeysApiService) GetAPIKeyExecute(r ApiGetAPIKeyRequest) (*ApiKey, *http.Response, error) {
+	var (
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *ApiKey
+	)
+
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "APIKeysApiService.GetAPIKey")
+	if err != nil {
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api-keys/{api_key_id}"
+	localVarPath = strings.Replace(localVarPath, "{"+"api_key_id"+"}", url.PathEscape(parameterToString(r.apiKeyId, "")), -1)
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	// to determine the Content-Type header
+	localVarHTTPContentTypes := []string{}
+
+	// set Content-Type header
+	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
+	if localVarHTTPContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
+	}
+
+	// to determine the Accept header
+	localVarHTTPHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
+	if localVarHTTPHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
+	}
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.client.callAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarHTTPResponse.Body.Close()
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 400 {
+			var v ApiError
+			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+            		newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+            		newErr.model = v
+			return localVarReturnValue, localVarHTTPResponse, newErr
+		}
+		if localVarHTTPResponse.StatusCode == 500 {
+			var v ApiError
+			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+            		newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+            		newErr.model = v
+			return localVarReturnValue, localVarHTTPResponse, newErr
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -145,7 +282,7 @@ func (a *ApiKeysApiService) CreateApiKeyExecute(r ApiCreateApiKeyRequest) (*ApiK
 
 type ApiListApiKeysRequest struct {
 	ctx context.Context
-	ApiService *ApiKeysApiService
+	ApiService *APIKeysApiService
 	tenantId *int64
 	cursor *string
 	limit *int32
@@ -182,7 +319,7 @@ Lists API Keys
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiListApiKeysRequest
 */
-func (a *ApiKeysApiService) ListApiKeys(ctx context.Context) ApiListApiKeysRequest {
+func (a *APIKeysApiService) ListApiKeys(ctx context.Context) ApiListApiKeysRequest {
 	return ApiListApiKeysRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -191,7 +328,7 @@ func (a *ApiKeysApiService) ListApiKeys(ctx context.Context) ApiListApiKeysReque
 
 // Execute executes the request
 //  @return ListApiKeys200Response
-func (a *ApiKeysApiService) ListApiKeysExecute(r ApiListApiKeysRequest) (*ListApiKeys200Response, *http.Response, error) {
+func (a *APIKeysApiService) ListApiKeysExecute(r ApiListApiKeysRequest) (*ListApiKeys200Response, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -199,12 +336,12 @@ func (a *ApiKeysApiService) ListApiKeysExecute(r ApiListApiKeysRequest) (*ListAp
 		localVarReturnValue  *ListApiKeys200Response
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApiKeysApiService.ListApiKeys")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "APIKeysApiService.ListApiKeys")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/api-keys/list"
+	localVarPath := localBasePath + "/api-keys"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -269,6 +406,17 @@ func (a *ApiKeysApiService) ListApiKeysExecute(r ApiListApiKeysRequest) (*ListAp
             		newErr.model = v
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
+		if localVarHTTPResponse.StatusCode == 500 {
+			var v ApiError
+			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+            		newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+            		newErr.model = v
+			return localVarReturnValue, localVarHTTPResponse, newErr
+		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
@@ -286,11 +434,11 @@ func (a *ApiKeysApiService) ListApiKeysExecute(r ApiListApiKeysRequest) (*ListAp
 
 type ApiRevokeApiKeyRequest struct {
 	ctx context.Context
-	ApiService *ApiKeysApiService
+	ApiService *APIKeysApiService
 	apiKeyId int64
 }
 
-func (r ApiRevokeApiKeyRequest) Execute() (*http.Response, error) {
+func (r ApiRevokeApiKeyRequest) Execute() (*RevokeApiKey200Response, *http.Response, error) {
 	return r.ApiService.RevokeApiKeyExecute(r)
 }
 
@@ -304,7 +452,7 @@ Revokes an API key so that it can't be used anymore
  @param apiKeyId The identifier of the API key
  @return ApiRevokeApiKeyRequest
 */
-func (a *ApiKeysApiService) RevokeApiKey(ctx context.Context, apiKeyId int64) ApiRevokeApiKeyRequest {
+func (a *APIKeysApiService) RevokeApiKey(ctx context.Context, apiKeyId int64) ApiRevokeApiKeyRequest {
 	return ApiRevokeApiKeyRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -313,16 +461,18 @@ func (a *ApiKeysApiService) RevokeApiKey(ctx context.Context, apiKeyId int64) Ap
 }
 
 // Execute executes the request
-func (a *ApiKeysApiService) RevokeApiKeyExecute(r ApiRevokeApiKeyRequest) (*http.Response, error) {
+//  @return RevokeApiKey200Response
+func (a *APIKeysApiService) RevokeApiKeyExecute(r ApiRevokeApiKeyRequest) (*RevokeApiKey200Response, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		formFiles            []formFile
+		localVarReturnValue  *RevokeApiKey200Response
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApiKeysApiService.RevokeApiKey")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "APIKeysApiService.RevokeApiKey")
 	if err != nil {
-		return nil, &GenericOpenAPIError{error: err.Error()}
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/api-keys/{api_key_id}"
@@ -351,19 +501,19 @@ func (a *ApiKeysApiService) RevokeApiKeyExecute(r ApiRevokeApiKeyRequest) (*http
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -376,14 +526,34 @@ func (a *ApiKeysApiService) RevokeApiKeyExecute(r ApiRevokeApiKeyRequest) (*http
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
-				return localVarHTTPResponse, newErr
+				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
             		newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
             		newErr.model = v
-			return localVarHTTPResponse, newErr
+			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
-		return localVarHTTPResponse, newErr
+		if localVarHTTPResponse.StatusCode == 500 {
+			var v ApiError
+			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+            		newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+            		newErr.model = v
+			return localVarReturnValue, localVarHTTPResponse, newErr
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
-	return localVarHTTPResponse, nil
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
 }

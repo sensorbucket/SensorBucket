@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 )
 
 var (
@@ -41,7 +42,7 @@ func (userPreferenceService *UserPreferenceService) ActiveTenantID(ctx context.C
 		return 0, err
 	}
 	if !isMember {
-		err := userPreferenceService.SetActiveTenantID(ctx, userID, 0)
+		err := userPreferenceService.SetActiveTenantIDForUser(ctx, userID, 0)
 		if err != nil {
 			log.Printf("Tried resetting user active tenant since the user is not a member anymore, but the update failed: %v\n", err)
 		}
@@ -50,7 +51,7 @@ func (userPreferenceService *UserPreferenceService) ActiveTenantID(ctx context.C
 	return tenantID, nil
 }
 
-func (userPreferenceService *UserPreferenceService) SetActiveTenantID(ctx context.Context, userID string, tenantID int64) error {
+func (userPreferenceService *UserPreferenceService) SetActiveTenantIDForUser(ctx context.Context, userID string, tenantID int64) error {
 	// tenantID 0 is a special case and unsets the active tenant, therefor membership check is not required
 	if tenantID > 0 {
 		isMember, err := userPreferenceService.store.IsUserTenantMember(userID, tenantID)
@@ -62,4 +63,12 @@ func (userPreferenceService *UserPreferenceService) SetActiveTenantID(ctx contex
 		}
 	}
 	return userPreferenceService.store.SetActiveTenantID(userID, tenantID)
+}
+
+func (userPreferenceService *UserPreferenceService) SetActiveTenantID(ctx context.Context, tenantID int64) error {
+	userID, err := auth.GetUser(ctx)
+	if err != nil {
+		return fmt.Errorf("in SetActiveTenantID, error getting userID from context: %w", err)
+	}
+	return userPreferenceService.SetActiveTenantIDForUser(ctx, userID, tenantID)
 }

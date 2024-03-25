@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	ory "github.com/ory/client-go"
 
+	"sensorbucket.nl/sensorbucket/internal/flash_messages"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/views"
 )
@@ -43,7 +44,10 @@ func SetupKratosRoutes() *KratosRoutes {
 	k.router.Get("/", k.httpDefaultPage())
 	k.router.With(k.extractFlow(FlowLogin)).Get("/login", k.httpLoginPage())
 	k.router.With(k.extractFlow(FlowRecovery)).Get("/recovery", k.httpRecoveryPage())
-	k.router.With(k.extractFlow(FlowSettings)).Route("/settings", func(r chi.Router) {
+	k.router.With(
+		k.extractFlow(FlowSettings),
+		flash_messages.ExtractFlashMessage,
+	).Route("/settings", func(r chi.Router) {
 		r.Get("/", k.httpSettingsPage())
 	})
 	k.router.With(k.extractFlow(FlowError)).Get("/error", k.httpErrorPage())
@@ -137,7 +141,9 @@ func (k KratosRoutes) httpRecoveryPage() http.HandlerFunc {
 func (k KratosRoutes) httpSettingsPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		flow := settingsFlow(r)
-		views.WriteWideLayout(w, views.SettingsPage{Flow: flow})
+		page := views.SettingsPage{Flow: flow, Base: views.Base{FlashMessagesContainer: flash_messages.FlashMessagesContainer{}}}
+		flash_messages.AddContextFlashMessages(r, &page.FlashMessagesContainer)
+		views.WriteWideLayout(w, page)
 	}
 }
 

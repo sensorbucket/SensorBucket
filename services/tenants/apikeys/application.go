@@ -3,6 +3,7 @@ package apikeys
 //go:generate moq -pkg apikeys_test -out mock_test.go . ApiKeyStore TenantStore
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -18,9 +19,9 @@ import (
 )
 
 var (
-	ErrTenantIsNotValid                    = fmt.Errorf("tenant is not valid")
-	ErrKeyNotFound                         = fmt.Errorf("couldnt find key")
-	ErrInvalidEncoding                     = fmt.Errorf("API key was sent using an invalid encoding")
+	ErrTenantIsNotValid                    = web.NewError(http.StatusNotFound, "API Key not found", "ERR_KEY_NOT_FOUND")
+	ErrKeyNotFound                         = web.NewError(http.StatusNotFound, "API Key not found", "ERR_API_KEY_NOT_FOUND")
+	ErrInvalidEncoding                     = web.NewError(http.StatusNotFound, "API Key was sent using invalid encoding", "ERR_API_KEY_MALFORMED")
 	ErrKeyNameTenantIDCombinationNotUnique = web.NewError(http.StatusBadRequest, "API Key with name already exists for this tenant", "API_KEY_NAME_TENANT_COMBO_NOT_UNIQUE")
 )
 
@@ -109,6 +110,24 @@ func (s *Service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAu
 		return dto, nil
 	}
 	return ApiKeyAuthenticationDTO{}, ErrKeyNotFound
+}
+
+// GetAPIKey returns an api key by ID and removes the secret hash
+func (s *Service) GetAPIKey(ctx context.Context, id int64) (*HashedApiKey, error) {
+	hashed, err := s.apiKeyStore.GetHashedApiKeyById(id, []tenants.State{tenants.Active})
+	if err != nil {
+		return nil, err
+	}
+	if hashed.IsExpired() {
+		log.Println("[Info] detected expired API key, deleting")
+		if err := s.RevokeApiKey(id); err != nil {
+			log.Printf("[Warning] couldn't cleanup expired API key: '%s'\n", err)
+		}
+		return nil, ErrKeyNotFound
+	}
+	// Remove hash
+	hashed.SecretHash = ""
+	return &hashed, nil
 }
 
 type Filter struct {

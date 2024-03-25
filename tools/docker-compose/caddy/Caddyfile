@@ -5,7 +5,7 @@
 
     forward_auth oathkeeper:4456 {
         uri /decisions
-        copy_headers Authorization
+        copy_headers authorization
     }
 
     handle_path /.ory/* {

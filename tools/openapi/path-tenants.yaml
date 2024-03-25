@@ -23,7 +23,7 @@ get:
       name: is_member
       description: Only show tenants that this user is a member of
       schema:
-        type: bool
+        type: boolean
     - in: query
       name: cursor
       description: The cursor for the current page

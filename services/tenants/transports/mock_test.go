@@ -30,6 +30,9 @@ var _ tenantstransports.ApiKeyService = &ApiKeyServiceMock{}
 //			GenerateNewApiKeyFunc: func(name string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
 //				panic("mock out the GenerateNewApiKey method")
 //			},
+//			GetAPIKeyFunc: func(ctx context.Context, id int64) (*apikeys.HashedApiKey, error) {
+//				panic("mock out the GetAPIKey method")
+//			},
 //			ListAPIKeysFunc: func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
 //				panic("mock out the ListAPIKeys method")
 //			},
@@ -48,6 +51,9 @@ type ApiKeyServiceMock struct {
 
 	// GenerateNewApiKeyFunc mocks the GenerateNewApiKey method.
 	GenerateNewApiKeyFunc func(name string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error)
+
+	// GetAPIKeyFunc mocks the GetAPIKey method.
+	GetAPIKeyFunc func(ctx context.Context, id int64) (*apikeys.HashedApiKey, error)
 
 	// ListAPIKeysFunc mocks the ListAPIKeys method.
 	ListAPIKeysFunc func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
@@ -73,6 +79,13 @@ type ApiKeyServiceMock struct {
 			// Expiry is the expiry argument value.
 			Expiry *time.Time
 		}
+		// GetAPIKey holds details about calls to the GetAPIKey method.
+		GetAPIKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID int64
+		}
 		// ListAPIKeys holds details about calls to the ListAPIKeys method.
 		ListAPIKeys []struct {
 			// Filter is the filter argument value.
@@ -88,6 +101,7 @@ type ApiKeyServiceMock struct {
 	}
 	lockAuthenticateApiKey sync.RWMutex
 	lockGenerateNewApiKey  sync.RWMutex
+	lockGetAPIKey          sync.RWMutex
 	lockListAPIKeys        sync.RWMutex
 	lockRevokeApiKey       sync.RWMutex
 }
@@ -165,6 +179,42 @@ func (mock *ApiKeyServiceMock) GenerateNewApiKeyCalls() []struct {
 	mock.lockGenerateNewApiKey.RLock()
 	calls = mock.calls.GenerateNewApiKey
 	mock.lockGenerateNewApiKey.RUnlock()
+	return calls
+}
+
+// GetAPIKey calls GetAPIKeyFunc.
+func (mock *ApiKeyServiceMock) GetAPIKey(ctx context.Context, id int64) (*apikeys.HashedApiKey, error) {
+	if mock.GetAPIKeyFunc == nil {
+		panic("ApiKeyServiceMock.GetAPIKeyFunc: method is nil but ApiKeyService.GetAPIKey was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		ID  int64
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockGetAPIKey.Lock()
+	mock.calls.GetAPIKey = append(mock.calls.GetAPIKey, callInfo)
+	mock.lockGetAPIKey.Unlock()
+	return mock.GetAPIKeyFunc(ctx, id)
+}
+
+// GetAPIKeyCalls gets all the calls that were made to GetAPIKey.
+// Check the length with:
+//
+//	len(mockedApiKeyService.GetAPIKeyCalls())
+func (mock *ApiKeyServiceMock) GetAPIKeyCalls() []struct {
+	Ctx context.Context
+	ID  int64
+} {
+	var calls []struct {
+		Ctx context.Context
+		ID  int64
+	}
+	mock.lockGetAPIKey.RLock()
+	calls = mock.calls.GetAPIKey
+	mock.lockGetAPIKey.RUnlock()
 	return calls
 }
 

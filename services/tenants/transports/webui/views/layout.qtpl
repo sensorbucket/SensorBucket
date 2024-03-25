@@ -1,3 +1,4 @@
+{% import "sensorbucket.nl/sensorbucket/internal/flash_messages" %}
 {% interface Page {
     Body()
 } %}
@@ -65,11 +66,25 @@
                     class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
                     href="{%s U("/api-keys") %}">API Keys</a>
             </li>
+            <li>
+                <a
+                    class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                    href="{%s U("/switch") %}">Switch tenant</a>
+            </li>
         </ul>
     </section>
 {% endfunc %}
 
 {% code
 type Base struct {
+    CSRFToken string
+    flash_messages.FlashMessagesContainer
 }
 %}
+{% func (b *Base) renderCSRFToken() %}
+    {%= renderCSRFToken(b.CSRFToken) %}
+{% endfunc %}
+
+{% func renderCSRFToken(token string) %}
+    <input type="hidden" name="csrf_token" value="{%s token %}">
+{% endfunc %}

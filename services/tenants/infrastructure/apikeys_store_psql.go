@@ -23,8 +23,8 @@ func NewAPIKeyStorePSQL(db *sqlx.DB) *ApiKeyStore {
 }
 
 type apiKeyQueryPage struct {
-	Tenant  int64     `pagination:"keys.tenant_id,DESC"`
 	Created time.Time `pagination:"keys.created,DESC"`
+	KeyID   int64     `pagination:"keys.id,DESC"`
 }
 
 func (as *ApiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
@@ -35,25 +35,38 @@ func (as *ApiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 		return nil, fmt.Errorf("could not getcursor from pagination request: %w", err)
 	}
 
-	q := sq.
-		Select("keys.id", "keys.name", "keys.expiration_date", "keys.created", "keys.tenant_id", "tenants.name", "permissions.permission").
-		From("api_keys keys").
-		LeftJoin("api_key_permissions permissions on keys.id = permissions.api_key_id").
-		RightJoin("tenants on keys.tenant_id = tenants.id")
+	keyQuery := sq.Select("*").From("api_keys keys")
 	if len(filter.TenantID) > 0 {
-		q = q.Where(sq.Eq{"keys.tenant_id": filter.TenantID})
+		keyQuery = keyQuery.Where(sq.Eq{"keys.tenant_id": filter.TenantID})
 	}
-	q, err = pagination.Apply(q, cursor)
+	keyQuery, err = pagination.Apply(keyQuery, cursor)
 	if err != nil {
 		return nil, fmt.Errorf("could not apply pagination: %w", err)
 	}
+
+	q := sq.
+		Select(
+			"keys.id",
+			"keys.name",
+			"keys.expiration_date",
+			"keys.created",
+			"keys.tenant_id",
+			"tenants.name",
+			"permissions.permission",
+			"keys.created",
+			"keys.id",
+		).
+		FromSelect(keyQuery, "keys").
+		LeftJoin("tenants on keys.tenant_id = tenants.id").
+		LeftJoin("api_key_permissions permissions on keys.id = permissions.api_key_id")
+
+	fmt.Printf("sq.DebugSqlizer(q): %v\n", sq.DebugSqlizer(q))
+
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
 	if err != nil {
 		return nil, fmt.Errorf("error running database query: %w", err)
 	}
 	defer rows.Close()
-
-	// TODO: limit wont work with the way permissois are joined now
 
 	// For each key there are multiple records so all the permissions can be listed
 	// Track at which API key the rows are currently so we can add the correct permissions and move to the next key
@@ -72,8 +85,8 @@ func (as *ApiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 			&key.TenantID,
 			&key.TenantName,
 			&permission,
-			&cursor.Columns.Tenant,
 			&cursor.Columns.Created,
+			&cursor.Columns.KeyID,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row into api key w/ permission: %w", err)
@@ -147,16 +160,21 @@ func (as *ApiKeyStore) DeleteApiKey(id int64) error {
 // Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.
 // Only returns the API key if the given tenant confirms to any state passed in the stateFilter
 func (as *ApiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
-	// TODO: how secure is this query?
 	q := sq.
-		Select("api_keys.id, api_keys.value, api_keys.tenant_id, api_keys.expiration_date", "api_key_permissions.permission").
-		From("api_keys").
-		Where(sq.Eq{"api_keys.id": id}).
-		Join("api_key_permissions on api_keys.id = api_key_permissions.api_key_id")
+		Select(
+			"key.id", "key.name", "key.value", "key.expiration_date",
+			"key.tenant_id",
+			"perm.permission",
+		).
+		Where(sq.Eq{"key.id": id}).
+		From("api_keys key").
+		LeftJoin("api_key_permissions perm on perm.api_key_id = key.id")
 	if len(stateFilter) > 0 {
-		q = q.Join("tenants on api_keys.tenant_id = tenants.id").
+		q = q.
+			LeftJoin("tenants on tenants.id = key.tenant_id").
 			Where(sq.Eq{"tenants.state": stateFilter})
 	}
+	fmt.Printf("sq.DebugSqlizer(q): %v\n", sq.DebugSqlizer(q))
 
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
 	if err != nil {
@@ -164,21 +182,28 @@ func (as *ApiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State
 	}
 	defer rows.Close()
 
-	k := apikeys.HashedApiKey{}
-	defer rows.Close()
-	if rows.Next() {
-		err = rows.Scan(
-			&k.ID,
-			&k.SecretHash,
-			&k.TenantID,
-			&k.ExpirationDate)
-		if err != nil {
-			return apikeys.HashedApiKey{}, err
-		}
-	} else {
-		return apikeys.HashedApiKey{}, apikeys.ErrKeyNotFound
+	key := apikeys.HashedApiKey{
+		Permissions: make([]string, 0),
 	}
-	return k, nil
+	for rows.Next() {
+		var permission string
+		err = rows.Scan(
+			&key.ID,
+			&key.Name,
+			&key.SecretHash,
+			&key.ExpirationDate,
+			&key.TenantID,
+			&permission,
+		)
+		if err != nil {
+			return key, err
+		}
+		key.Permissions = append(key.Permissions, permission)
+	}
+	if key.ID == 0 {
+		return key, apikeys.ErrKeyNotFound
+	}
+	return key, nil
 }
 
 // Retrieves the hashed value of an API key, if the key is not found an ErrKeyNotFound is returned.

@@ -32,7 +32,7 @@ func GetTenant(ctx context.Context) (int64, error) {
 
 func GetUser(ctx context.Context) (string, error) {
 	val, ok := fromContext[string](ctx, ctxUserID)
-	if !ok {
+	if !ok || val == "" {
 		return "", ErrNoUserID
 	}
 	return val, nil

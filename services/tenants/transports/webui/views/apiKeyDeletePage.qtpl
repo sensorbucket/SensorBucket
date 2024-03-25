@@ -1,0 +1,35 @@
+{% func (p *APIKeyDeletePage) Body() %}
+    <h1 class="text-2xl mt-4 ">Delete API-Key</h1>
+    <div class="flex flex-col text-center gap-1 border">
+        <h2 class="text-xl pt-4">{%s p.KeyName %}</h2>
+        <small>for tenant</small>
+        <h2 class="text-xl pb-4">{%s p.KeyTenant %}</h2>
+    </div>
+    <span class="text-sm">
+        This will be effective immediatly and cannot be reverted.
+    </span>
+
+    <div class="flex gap-4">
+        <a 
+            href="{%s U("/api-keys") %}"
+            class="w-full text-center p-2 border-2 border-secondary-500 text-secondary-500
+            transition-colors duration-150 hover:bg-secondary-500 hover:text-white"
+            >CANCEL</a>
+            <form method="POST" action="">
+                {%= p.renderCSRFToken() %}
+                <button 
+                    type="submit"
+                    class="text-center p-2 border-2 border-secondary-500 text-secondary-500
+                    transition-colors duration-150 hover:bg-rose-500 hover:text-white"
+                    >DELETE</button>
+            </form>
+    </div>
+{% endfunc %}
+
+{% code
+type APIKeyDeletePage struct {
+    Base
+    KeyName string
+    KeyTenant string
+}
+%}

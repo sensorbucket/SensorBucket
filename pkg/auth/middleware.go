@@ -15,17 +15,16 @@ import (
 )
 
 type claims struct {
+	jwt.StandardClaims
 	TenantID    int64       `json:"tid"`
 	Permissions Permissions `json:"perms"`
-	UserID      string      `json:"uid"`
-	Expiration  int64       `json:"exp"`
 }
 
 func (c *claims) Valid() error {
 	if err := c.Permissions.Validate(); err != nil {
 		return err
 	}
-	if c.Expiration > time.Now().Unix() {
+	if c.ExpiresAt > time.Now().Unix() {
 		return nil
 	}
 	return fmt.Errorf("claims not valid")
@@ -36,12 +35,12 @@ type jwksClient interface {
 }
 
 type jwksHttpClient struct {
-	issuer     string
+	url        string
 	httpClient http.Client
 }
 
 func (c *jwksHttpClient) Get() (jose.JSONWebKeySet, error) {
-	res, err := c.httpClient.Get(fmt.Sprintf("%s/.well-known/jwks.json", c.issuer))
+	res, err := c.httpClient.Get(c.url)
 	if err != nil {
 		return jose.JSONWebKeySet{}, fmt.Errorf("failed to fetch jwks: %w", err)
 	}
@@ -52,9 +51,9 @@ func (c *jwksHttpClient) Get() (jose.JSONWebKeySet, error) {
 	return jwks, nil
 }
 
-func NewJWKSHttpClient(issuer string) *jwksHttpClient {
+func NewJWKSHttpClient(url string) *jwksHttpClient {
 	return &jwksHttpClient{
-		issuer:     issuer,
+		url:        url,
 		httpClient: http.Client{},
 	}
 }
@@ -116,7 +115,7 @@ func Authenticate(keyClient jwksClient) func(http.Handler) http.Handler {
 			// JWT itself is validated, pass it to the actual endpoint for further authorization
 			// First fill the context with user information
 			ctx := setTenantID(r.Context(), c.TenantID)
-			ctx = setUserID(ctx, c.UserID)
+			ctx = setUserID(ctx, c.Subject)
 			ctx = setPermissions(ctx, c.Permissions)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

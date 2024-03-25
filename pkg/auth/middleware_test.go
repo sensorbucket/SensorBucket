@@ -42,7 +42,7 @@ func TestAuthenticateWellKnownUnreachable(t *testing.T) {
 			"READ_DEVICES",
 			"READ_API_KEYS",
 		},
-		"uid": "00000000-0000-0000-0000-000000000000",
+		"sub": "00000000-0000-0000-0000-000000000000",
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
 	})
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -92,7 +92,7 @@ func TestProtectAndAuthenticatePassClaimsToNext(t *testing.T) {
 			"READ_DEVICES",
 			"READ_API_KEYS",
 		},
-		"uid": "00000000-0000-0000-0000-000000000000",
+		"sub": "00000000-0000-0000-0000-000000000000",
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
 	})
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -152,7 +152,7 @@ func TestProtect(t *testing.T) {
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
-		"uid is wrong type": {
+		"sub is wrong type": {
 			values: map[ctxKey]any{
 				ctxTenantID:    int64(13),
 				ctxPermissions: Permissions{READ_API_KEYS},
@@ -233,7 +233,7 @@ func TestAuthenticate(t *testing.T) {
 						"READ_DEVICES",
 						"READ_API_KEYS",
 					},
-					"uid": "00000000-0000-0000-0000-000000000000",
+					"sub": "00000000-0000-0000-0000-000000000000",
 					"exp": in24Hours,
 				},
 			)),
@@ -252,7 +252,7 @@ func TestAuthenticate(t *testing.T) {
 						"READ_API_KEYS",
 						"DOES_NOT_EXIST",
 					},
-					"uid": "00000000-0000-0000-0000-000000000000",
+					"sub": "00000000-0000-0000-0000-000000000000",
 					"exp": in24Hours,
 				},
 			)),
@@ -270,7 +270,7 @@ func TestAuthenticate(t *testing.T) {
 			authHeader: fmt.Sprintf("Bearer %s", createToken(
 				jwt.MapClaims{
 					"tid": 11,
-					"uid": "00000000-0000-0000-0000-000000000000",
+					"sub": "00000000-0000-0000-0000-000000000000",
 					"exp": in24Hours,
 				},
 			)),
@@ -287,7 +287,7 @@ func TestAuthenticate(t *testing.T) {
 						"READ_DEVICES",
 						"READ_API_KEYS",
 					},
-					"uid": "00000000-0000-0000-0000-000000000000",
+					"sub": "00000000-0000-0000-0000-000000000000",
 					"exp": time.Now().Add(-time.Hour * 24).Unix(),
 				},
 			)),

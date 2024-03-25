@@ -53,7 +53,7 @@ func TestSettingTenantWithoutMembershipShouldError(t *testing.T) {
 	}
 	service := sessions.NewUserPreferenceService(store)
 
-	err := service.SetActiveTenantID(ctx, userID, activeTenantID)
+	err := service.SetActiveTenantIDForUser(ctx, userID, activeTenantID)
 	assert.ErrorIs(t, err, sessions.ErrUserNotAMember)
 	assert.Len(t, store.calls.SetActiveTenantID, 0, "should not update active tenant if user is not a member")
 	assert.Len(t, store.calls.IsUserTenantMember, 1, "expected service to validate if user is a member")
