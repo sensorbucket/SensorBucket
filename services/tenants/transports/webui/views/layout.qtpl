@@ -66,6 +66,11 @@
                     class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
                     href="{%s U("/api-keys") %}">API Keys</a>
             </li>
+            <li>
+                <a
+                    class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                    href="{%s U("/switch") %}">Switch tenant</a>
+            </li>
         </ul>
     </section>
 {% endfunc %}

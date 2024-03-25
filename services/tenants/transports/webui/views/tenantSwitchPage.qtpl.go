@@ -20,7 +20,8 @@ var (
 //line transports/webui/views/tenantSwitchPage.qtpl:2
 type TenantSwitchingPage struct {
 	Base
-	Tenants []TenantView
+	Tenants    []TenantView
+	SuccessURL string
 }
 
 type TenantView struct {
@@ -29,29 +30,44 @@ type TenantView struct {
 	ImageURL string
 }
 
-//line transports/webui/views/tenantSwitchPage.qtpl:14
+//line transports/webui/views/tenantSwitchPage.qtpl:15
 func (p *TenantSwitchingPage) StreamBody(qw422016 *qt422016.Writer) {
-//line transports/webui/views/tenantSwitchPage.qtpl:14
+//line transports/webui/views/tenantSwitchPage.qtpl:15
 	qw422016.N().S(`
     <div class="text-center py-2">
         <h2>Switch to tenant</h2>
         <span class="text-sm font-bold" id="to-tenant-name">&nbsp;</span>
     </div>
     <form action="`)
-//line transports/webui/views/tenantSwitchPage.qtpl:19
+//line transports/webui/views/tenantSwitchPage.qtpl:20
 	qw422016.E().S(U("/switch"))
-//line transports/webui/views/tenantSwitchPage.qtpl:19
+//line transports/webui/views/tenantSwitchPage.qtpl:20
 	qw422016.N().S(`" method="post" class="space-y-6">
         `)
-//line transports/webui/views/tenantSwitchPage.qtpl:20
+//line transports/webui/views/tenantSwitchPage.qtpl:21
 	p.streamrenderCSRFToken(qw422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:20
+//line transports/webui/views/tenantSwitchPage.qtpl:21
 	qw422016.N().S(`
         <input type="hidden" name="tenantName" id="tenantName" value="">
         `)
-//line transports/webui/views/tenantSwitchPage.qtpl:22
+//line transports/webui/views/tenantSwitchPage.qtpl:23
+	if p.SuccessURL != "" {
+//line transports/webui/views/tenantSwitchPage.qtpl:23
+		qw422016.N().S(`
+        <input type="hidden" name="successURL" value=`)
+//line transports/webui/views/tenantSwitchPage.qtpl:24
+		qw422016.E().S(p.SuccessURL)
+//line transports/webui/views/tenantSwitchPage.qtpl:24
+		qw422016.N().S(`>
+        `)
+//line transports/webui/views/tenantSwitchPage.qtpl:25
+	}
+//line transports/webui/views/tenantSwitchPage.qtpl:25
+	qw422016.N().S(`
+        `)
+//line transports/webui/views/tenantSwitchPage.qtpl:26
 	p.streamrenderTenantList(qw422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:22
+//line transports/webui/views/tenantSwitchPage.qtpl:26
 	qw422016.N().S(`
         <button 
             class="block w-full text-center p-2 border-2 border-secondary-500 text-secondary-500
@@ -60,155 +76,155 @@ func (p *TenantSwitchingPage) StreamBody(qw422016 *qt422016.Writer) {
             >Switch tenant</button>
     </form>
     `)
-//line transports/webui/views/tenantSwitchPage.qtpl:29
+//line transports/webui/views/tenantSwitchPage.qtpl:33
 	p.Base.FlashMessagesContainer.StreamRender(qw422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:29
+//line transports/webui/views/tenantSwitchPage.qtpl:33
 	qw422016.N().S(`
 `)
-//line transports/webui/views/tenantSwitchPage.qtpl:30
+//line transports/webui/views/tenantSwitchPage.qtpl:34
 }
 
-//line transports/webui/views/tenantSwitchPage.qtpl:30
+//line transports/webui/views/tenantSwitchPage.qtpl:34
 func (p *TenantSwitchingPage) WriteBody(qq422016 qtio422016.Writer) {
-//line transports/webui/views/tenantSwitchPage.qtpl:30
+//line transports/webui/views/tenantSwitchPage.qtpl:34
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:30
+//line transports/webui/views/tenantSwitchPage.qtpl:34
 	p.StreamBody(qw422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:30
+//line transports/webui/views/tenantSwitchPage.qtpl:34
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:30
+//line transports/webui/views/tenantSwitchPage.qtpl:34
 }
 
-//line transports/webui/views/tenantSwitchPage.qtpl:30
+//line transports/webui/views/tenantSwitchPage.qtpl:34
 func (p *TenantSwitchingPage) Body() string {
-//line transports/webui/views/tenantSwitchPage.qtpl:30
+//line transports/webui/views/tenantSwitchPage.qtpl:34
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/tenantSwitchPage.qtpl:30
+//line transports/webui/views/tenantSwitchPage.qtpl:34
 	p.WriteBody(qb422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:30
+//line transports/webui/views/tenantSwitchPage.qtpl:34
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/tenantSwitchPage.qtpl:30
+//line transports/webui/views/tenantSwitchPage.qtpl:34
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:30
+//line transports/webui/views/tenantSwitchPage.qtpl:34
 	return qs422016
-//line transports/webui/views/tenantSwitchPage.qtpl:30
+//line transports/webui/views/tenantSwitchPage.qtpl:34
 }
 
-//line transports/webui/views/tenantSwitchPage.qtpl:32
+//line transports/webui/views/tenantSwitchPage.qtpl:36
 func (p *TenantSwitchingPage) streamrenderTenantList(qw422016 *qt422016.Writer) {
-//line transports/webui/views/tenantSwitchPage.qtpl:32
+//line transports/webui/views/tenantSwitchPage.qtpl:36
 	qw422016.N().S(`
     <ul class="flex flex-col max-h-[50vh] overflow-y-auto border-y">
         `)
-//line transports/webui/views/tenantSwitchPage.qtpl:34
+//line transports/webui/views/tenantSwitchPage.qtpl:38
 	for _, tenant := range p.Tenants {
-//line transports/webui/views/tenantSwitchPage.qtpl:34
+//line transports/webui/views/tenantSwitchPage.qtpl:38
 		qw422016.N().S(`
             `)
-//line transports/webui/views/tenantSwitchPage.qtpl:35
+//line transports/webui/views/tenantSwitchPage.qtpl:39
 		streamrenderTenantListEntry(qw422016, tenant)
-//line transports/webui/views/tenantSwitchPage.qtpl:35
+//line transports/webui/views/tenantSwitchPage.qtpl:39
 		qw422016.N().S(`
         `)
-//line transports/webui/views/tenantSwitchPage.qtpl:36
+//line transports/webui/views/tenantSwitchPage.qtpl:40
 	}
-//line transports/webui/views/tenantSwitchPage.qtpl:36
+//line transports/webui/views/tenantSwitchPage.qtpl:40
 	qw422016.N().S(`
     </ul>
 `)
-//line transports/webui/views/tenantSwitchPage.qtpl:38
+//line transports/webui/views/tenantSwitchPage.qtpl:42
 }
 
-//line transports/webui/views/tenantSwitchPage.qtpl:38
+//line transports/webui/views/tenantSwitchPage.qtpl:42
 func (p *TenantSwitchingPage) writerenderTenantList(qq422016 qtio422016.Writer) {
-//line transports/webui/views/tenantSwitchPage.qtpl:38
+//line transports/webui/views/tenantSwitchPage.qtpl:42
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:38
+//line transports/webui/views/tenantSwitchPage.qtpl:42
 	p.streamrenderTenantList(qw422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:38
+//line transports/webui/views/tenantSwitchPage.qtpl:42
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:38
+//line transports/webui/views/tenantSwitchPage.qtpl:42
 }
 
-//line transports/webui/views/tenantSwitchPage.qtpl:38
+//line transports/webui/views/tenantSwitchPage.qtpl:42
 func (p *TenantSwitchingPage) renderTenantList() string {
-//line transports/webui/views/tenantSwitchPage.qtpl:38
+//line transports/webui/views/tenantSwitchPage.qtpl:42
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/tenantSwitchPage.qtpl:38
+//line transports/webui/views/tenantSwitchPage.qtpl:42
 	p.writerenderTenantList(qb422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:38
+//line transports/webui/views/tenantSwitchPage.qtpl:42
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/tenantSwitchPage.qtpl:38
+//line transports/webui/views/tenantSwitchPage.qtpl:42
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:38
+//line transports/webui/views/tenantSwitchPage.qtpl:42
 	return qs422016
-//line transports/webui/views/tenantSwitchPage.qtpl:38
+//line transports/webui/views/tenantSwitchPage.qtpl:42
 }
 
-//line transports/webui/views/tenantSwitchPage.qtpl:40
+//line transports/webui/views/tenantSwitchPage.qtpl:44
 func streamrenderTenantListEntry(qw422016 *qt422016.Writer, t TenantView) {
-//line transports/webui/views/tenantSwitchPage.qtpl:40
+//line transports/webui/views/tenantSwitchPage.qtpl:44
 	qw422016.N().S(`
     <li>
         <label class="px-2 py-6 flex align-baseline gap-6 cursor-pointer hover:bg-gray-50">
             <div class="w-1/3">
             <img src=`)
-//line transports/webui/views/tenantSwitchPage.qtpl:44
+//line transports/webui/views/tenantSwitchPage.qtpl:48
 	qw422016.E().S(t.ImageURL)
-//line transports/webui/views/tenantSwitchPage.qtpl:44
+//line transports/webui/views/tenantSwitchPage.qtpl:48
 	qw422016.N().S(`>
             </div>
             <div class="w-2/3">
                 <h3 class="">`)
-//line transports/webui/views/tenantSwitchPage.qtpl:47
+//line transports/webui/views/tenantSwitchPage.qtpl:51
 	qw422016.E().S(t.Name)
-//line transports/webui/views/tenantSwitchPage.qtpl:47
+//line transports/webui/views/tenantSwitchPage.qtpl:51
 	qw422016.N().S(`</h3>
             </div>
             <input type="radio" name="tenantID" value="`)
-//line transports/webui/views/tenantSwitchPage.qtpl:49
+//line transports/webui/views/tenantSwitchPage.qtpl:53
 	qw422016.N().DL(t.ID)
-//line transports/webui/views/tenantSwitchPage.qtpl:49
+//line transports/webui/views/tenantSwitchPage.qtpl:53
 	qw422016.N().S(`" class="mt-1" 
             _="on click set #to-tenant-name.innerHTML to '`)
-//line transports/webui/views/tenantSwitchPage.qtpl:50
+//line transports/webui/views/tenantSwitchPage.qtpl:54
 	qw422016.E().S(t.Name)
-//line transports/webui/views/tenantSwitchPage.qtpl:50
+//line transports/webui/views/tenantSwitchPage.qtpl:54
 	qw422016.N().S(`'
                 then set #tenantName.value to '`)
-//line transports/webui/views/tenantSwitchPage.qtpl:51
+//line transports/webui/views/tenantSwitchPage.qtpl:55
 	qw422016.E().S(t.Name)
-//line transports/webui/views/tenantSwitchPage.qtpl:51
+//line transports/webui/views/tenantSwitchPage.qtpl:55
 	qw422016.N().S(`'"
             >
         </label>
     </li>
 `)
-//line transports/webui/views/tenantSwitchPage.qtpl:55
+//line transports/webui/views/tenantSwitchPage.qtpl:59
 }
 
-//line transports/webui/views/tenantSwitchPage.qtpl:55
+//line transports/webui/views/tenantSwitchPage.qtpl:59
 func writerenderTenantListEntry(qq422016 qtio422016.Writer, t TenantView) {
-//line transports/webui/views/tenantSwitchPage.qtpl:55
+//line transports/webui/views/tenantSwitchPage.qtpl:59
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:55
+//line transports/webui/views/tenantSwitchPage.qtpl:59
 	streamrenderTenantListEntry(qw422016, t)
-//line transports/webui/views/tenantSwitchPage.qtpl:55
+//line transports/webui/views/tenantSwitchPage.qtpl:59
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:55
+//line transports/webui/views/tenantSwitchPage.qtpl:59
 }
 
-//line transports/webui/views/tenantSwitchPage.qtpl:55
+//line transports/webui/views/tenantSwitchPage.qtpl:59
 func renderTenantListEntry(t TenantView) string {
-//line transports/webui/views/tenantSwitchPage.qtpl:55
+//line transports/webui/views/tenantSwitchPage.qtpl:59
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/tenantSwitchPage.qtpl:55
+//line transports/webui/views/tenantSwitchPage.qtpl:59
 	writerenderTenantListEntry(qb422016, t)
-//line transports/webui/views/tenantSwitchPage.qtpl:55
+//line transports/webui/views/tenantSwitchPage.qtpl:59
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/tenantSwitchPage.qtpl:55
+//line transports/webui/views/tenantSwitchPage.qtpl:59
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:55
+//line transports/webui/views/tenantSwitchPage.qtpl:59
 	return qs422016
-//line transports/webui/views/tenantSwitchPage.qtpl:55
+//line transports/webui/views/tenantSwitchPage.qtpl:59
 }

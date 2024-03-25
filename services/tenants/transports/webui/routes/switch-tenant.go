@@ -64,7 +64,8 @@ func (handler *TenantSwitchingPageHandler) httpSwitchTenantPage() http.HandlerFu
 			Base: views.Base{
 				CSRFToken: nosurf.Token(r),
 			},
-			Tenants: tenantViews,
+			Tenants:    tenantViews,
+			SuccessURL: r.URL.Query().Get("success_url"),
 		}
 		flash_messages.AddContextFlashMessages(r, &p.FlashMessagesContainer)
 		views.WriteLayout(w, p)
@@ -73,9 +74,6 @@ func (handler *TenantSwitchingPageHandler) httpSwitchTenantPage() http.HandlerFu
 
 func (handler *TenantSwitchingPageHandler) httpDoSwitchTenantPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		flash_messages.AddErrorFlashMessage(w, r, "An error occured parsing the form, please try again")
-		http.Redirect(w, r, views.U("/switch"), http.StatusSeeOther)
-		return
 		if err := r.ParseForm(); err != nil {
 			flash_messages.AddErrorFlashMessage(w, r, "An error occured parsing the form, please try again")
 			http.Redirect(w, r, views.U("/switch"), http.StatusSeeOther)
@@ -94,6 +92,14 @@ func (handler *TenantSwitchingPageHandler) httpDoSwitchTenantPage() http.Handler
 			return
 		}
 		flash_messages.AddSuccessFlashMessage(w, r, fmt.Sprintf("Succesfully switched to: %s", r.FormValue("tenantName")))
-		http.Redirect(w, r, views.U("/settings"), http.StatusSeeOther)
+		successRedirect(w, r, "/tenants/auth/settings")
 	}
+}
+
+func successRedirect(w http.ResponseWriter, r *http.Request, fallback string) {
+	url := fallback
+	if successURL := r.FormValue("successURL"); successURL != "" {
+		url = successURL
+	}
+	http.Redirect(w, r, url, http.StatusSeeOther)
 }

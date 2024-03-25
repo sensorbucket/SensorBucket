@@ -2,6 +2,7 @@
 type TenantSwitchingPage struct {
     Base
     Tenants []TenantView
+    SuccessURL string
 }
 
 type TenantView struct {
@@ -19,6 +20,9 @@ type TenantView struct {
     <form action="{%s U("/switch") %}" method="post" class="space-y-6">
         {%= p.renderCSRFToken() %}
         <input type="hidden" name="tenantName" id="tenantName" value="">
+        {% if p.SuccessURL != "" %}
+        <input type="hidden" name="successURL" value={%s p.SuccessURL %}>
+        {% endif %}
         {%= p.renderTenantList() %}
         <button 
             class="block w-full text-center p-2 border-2 border-secondary-500 text-secondary-500
