@@ -42,11 +42,23 @@ func (handler TenantSwitchingPageHandler) ServeHTTP(w http.ResponseWriter, r *ht
 
 func (handler *TenantSwitchingPageHandler) httpSwitchTenantPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		p := &views.TenantSwitchingPage{
+			Base: views.Base{
+				CSRFToken: nosurf.Token(r),
+			},
+			SuccessURL: r.URL.Query().Get("success_url"),
+		}
+		defer func() {
+			flash_messages.AddContextFlashMessages(r, &p.FlashMessagesContainer)
+			views.WriteLayout(w, p)
+		}()
+
 		tenantsPage, err := handler.tenantService.ListTenants(r.Context(), tenants.Filter{
 			IsMember: true,
 		}, pagination.Request{})
 		if err != nil {
-			w.Write([]byte("error occured" + err.Error()))
+			fmt.Printf("in httpSwitchTenantPage(), Error listing tenants: %v\n", err)
+			flash_messages.AddErrorFlashMessageToPage(r, &p.FlashMessagesContainer, "An error occured listing tenants, please try again")
 			return
 		}
 		tenantViews := lo.Map(tenantsPage.Data, func(item tenants.CreateTenantDTO, _ int) views.TenantView {
@@ -60,15 +72,7 @@ func (handler *TenantSwitchingPageHandler) httpSwitchTenantPage() http.HandlerFu
 				ImageURL: logo,
 			}
 		})
-		p := &views.TenantSwitchingPage{
-			Base: views.Base{
-				CSRFToken: nosurf.Token(r),
-			},
-			Tenants:    tenantViews,
-			SuccessURL: r.URL.Query().Get("success_url"),
-		}
-		flash_messages.AddContextFlashMessages(r, &p.FlashMessagesContainer)
-		views.WriteLayout(w, p)
+		p.Tenants = tenantViews
 	}
 }
 

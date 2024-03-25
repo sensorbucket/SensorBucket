@@ -34,40 +34,45 @@ type TenantView struct {
 func (p *TenantSwitchingPage) StreamBody(qw422016 *qt422016.Writer) {
 //line transports/webui/views/tenantSwitchPage.qtpl:15
 	qw422016.N().S(`
+    `)
+//line transports/webui/views/tenantSwitchPage.qtpl:16
+	p.Base.FlashMessagesContainer.StreamRender(qw422016)
+//line transports/webui/views/tenantSwitchPage.qtpl:16
+	qw422016.N().S(`
     <div class="text-center py-2">
         <h2>Switch to tenant</h2>
         <span class="text-sm font-bold" id="to-tenant-name">&nbsp;</span>
     </div>
     <form action="`)
-//line transports/webui/views/tenantSwitchPage.qtpl:20
+//line transports/webui/views/tenantSwitchPage.qtpl:21
 	qw422016.E().S(U("/switch"))
-//line transports/webui/views/tenantSwitchPage.qtpl:20
+//line transports/webui/views/tenantSwitchPage.qtpl:21
 	qw422016.N().S(`" method="post" class="space-y-6">
         `)
-//line transports/webui/views/tenantSwitchPage.qtpl:21
+//line transports/webui/views/tenantSwitchPage.qtpl:22
 	p.streamrenderCSRFToken(qw422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:21
+//line transports/webui/views/tenantSwitchPage.qtpl:22
 	qw422016.N().S(`
         <input type="hidden" name="tenantName" id="tenantName" value="">
         `)
-//line transports/webui/views/tenantSwitchPage.qtpl:23
+//line transports/webui/views/tenantSwitchPage.qtpl:24
 	if p.SuccessURL != "" {
-//line transports/webui/views/tenantSwitchPage.qtpl:23
+//line transports/webui/views/tenantSwitchPage.qtpl:24
 		qw422016.N().S(`
         <input type="hidden" name="successURL" value=`)
-//line transports/webui/views/tenantSwitchPage.qtpl:24
+//line transports/webui/views/tenantSwitchPage.qtpl:25
 		qw422016.E().S(p.SuccessURL)
-//line transports/webui/views/tenantSwitchPage.qtpl:24
+//line transports/webui/views/tenantSwitchPage.qtpl:25
 		qw422016.N().S(`>
         `)
-//line transports/webui/views/tenantSwitchPage.qtpl:25
+//line transports/webui/views/tenantSwitchPage.qtpl:26
 	}
-//line transports/webui/views/tenantSwitchPage.qtpl:25
+//line transports/webui/views/tenantSwitchPage.qtpl:26
 	qw422016.N().S(`
         `)
-//line transports/webui/views/tenantSwitchPage.qtpl:26
+//line transports/webui/views/tenantSwitchPage.qtpl:27
 	p.streamrenderTenantList(qw422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:26
+//line transports/webui/views/tenantSwitchPage.qtpl:27
 	qw422016.N().S(`
         <button 
             class="block w-full text-center p-2 border-2 border-secondary-500 text-secondary-500
@@ -75,11 +80,6 @@ func (p *TenantSwitchingPage) StreamBody(qw422016 *qt422016.Writer) {
             type="submit"
             >Switch tenant</button>
     </form>
-    `)
-//line transports/webui/views/tenantSwitchPage.qtpl:33
-	p.Base.FlashMessagesContainer.StreamRender(qw422016)
-//line transports/webui/views/tenantSwitchPage.qtpl:33
-	qw422016.N().S(`
 `)
 //line transports/webui/views/tenantSwitchPage.qtpl:34
 }

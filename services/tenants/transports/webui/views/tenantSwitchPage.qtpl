@@ -13,6 +13,7 @@ type TenantView struct {
 %}
 
 {% func (p *TenantSwitchingPage) Body() %}
+    {%= p.Base.FlashMessagesContainer.Render() %}
     <div class="text-center py-2">
         <h2>Switch to tenant</h2>
         <span class="text-sm font-bold" id="to-tenant-name">&nbsp;</span>
@@ -30,7 +31,6 @@ type TenantView struct {
             type="submit"
             >Switch tenant</button>
     </form>
-    {%= p.Base.FlashMessagesContainer.Render() %}
 {% endfunc %}
 
 {% func (p *TenantSwitchingPage) renderTenantList() %}
