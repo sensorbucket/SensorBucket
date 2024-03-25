@@ -29,7 +29,6 @@ func SetupTenantSwitchingRoutes(tenantService *tenants.TenantService, userPrefer
 		userPreferences: userPreferences,
 	}
 
-	// TODO: user must be authenticated to update org
 	handler.router.With(flash_messages.ExtractFlashMessage).Get("/switch", handler.httpSwitchTenantPage())
 	handler.router.Post("/switch", handler.httpDoSwitchTenantPage())
 

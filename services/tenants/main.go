@@ -134,6 +134,7 @@ func runWebUI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 	httpHandler.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("nosurf.Reason(r): %v\n", nosurf.Reason(r))
 		w.Header().Add("HX-Trigger", `{"error":"CSRF token was invalid"}`)
+		//nolint
 		w.Write([]byte("A CSRF error occured. Reload the previous page and try again"))
 	}))
 	srv := &http.Server{

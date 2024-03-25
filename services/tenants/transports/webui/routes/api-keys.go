@@ -38,11 +38,15 @@ func SetupAPIKeyRoutes(client *api.APIClient, apiKeys *apikeys.Service, tenants 
 	}
 	handler.router.With(flash_messages.ExtractFlashMessage).Get("/", handler.apiKeysListPage())
 	handler.router.With(flash_messages.ExtractFlashMessage).Get("/create", handler.createAPIKeyView())
-	handler.router.Get("/revoke/{api_key_id}", handler.revokeAPIKey())
-	handler.router.Delete("/revoke/{api_key_id}", handler.revokeAPIKey())
-	handler.router.Post("/revoke/{api_key_id}", handler.revokeAPIKey())
 	handler.router.Get("/table", handler.apiKeysGetTableRows())
 	handler.router.Post("/create", handler.createAPIKey())
+
+	handler.router.Route("/revoke/{api_key_id}", func(r chi.Router) {
+		r.Get("/", handler.revokeAPIKey())
+		r.Delete("/", handler.revokeAPIKey())
+		// Post also here since html forms can only GET/POST...
+		r.Post("/", handler.revokeAPIKey())
+	})
 	return handler
 }
 
