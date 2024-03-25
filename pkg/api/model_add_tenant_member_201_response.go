@@ -15,30 +15,30 @@ import (
 	"encoding/json"
 )
 
-// UpdateSensorGroup200Response struct for UpdateSensorGroup200Response
-type UpdateSensorGroup200Response struct {
+// AddTenantMember201Response struct for AddTenantMember201Response
+type AddTenantMember201Response struct {
 	Message *string `json:"message,omitempty"`
 }
 
-// NewUpdateSensorGroup200Response instantiates a new UpdateSensorGroup200Response object
+// NewAddTenantMember201Response instantiates a new AddTenantMember201Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewUpdateSensorGroup200Response() *UpdateSensorGroup200Response {
-	this := UpdateSensorGroup200Response{}
+func NewAddTenantMember201Response() *AddTenantMember201Response {
+	this := AddTenantMember201Response{}
 	return &this
 }
 
-// NewUpdateSensorGroup200ResponseWithDefaults instantiates a new UpdateSensorGroup200Response object
+// NewAddTenantMember201ResponseWithDefaults instantiates a new AddTenantMember201Response object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewUpdateSensorGroup200ResponseWithDefaults() *UpdateSensorGroup200Response {
-	this := UpdateSensorGroup200Response{}
+func NewAddTenantMember201ResponseWithDefaults() *AddTenantMember201Response {
+	this := AddTenantMember201Response{}
 	return &this
 }
 
 // GetMessage returns the Message field value if set, zero value otherwise.
-func (o *UpdateSensorGroup200Response) GetMessage() string {
+func (o *AddTenantMember201Response) GetMessage() string {
 	if o == nil || isNil(o.Message) {
 		var ret string
 		return ret
@@ -48,7 +48,7 @@ func (o *UpdateSensorGroup200Response) GetMessage() string {
 
 // GetMessageOk returns a tuple with the Message field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *UpdateSensorGroup200Response) GetMessageOk() (*string, bool) {
+func (o *AddTenantMember201Response) GetMessageOk() (*string, bool) {
 	if o == nil || isNil(o.Message) {
     return nil, false
 	}
@@ -56,7 +56,7 @@ func (o *UpdateSensorGroup200Response) GetMessageOk() (*string, bool) {
 }
 
 // HasMessage returns a boolean if a field has been set.
-func (o *UpdateSensorGroup200Response) HasMessage() bool {
+func (o *AddTenantMember201Response) HasMessage() bool {
 	if o != nil && !isNil(o.Message) {
 		return true
 	}
@@ -65,11 +65,11 @@ func (o *UpdateSensorGroup200Response) HasMessage() bool {
 }
 
 // SetMessage gets a reference to the given string and assigns it to the Message field.
-func (o *UpdateSensorGroup200Response) SetMessage(v string) {
+func (o *AddTenantMember201Response) SetMessage(v string) {
 	o.Message = &v
 }
 
-func (o UpdateSensorGroup200Response) MarshalJSON() ([]byte, error) {
+func (o AddTenantMember201Response) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
 	if !isNil(o.Message) {
 		toSerialize["message"] = o.Message
@@ -77,38 +77,38 @@ func (o UpdateSensorGroup200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-type NullableUpdateSensorGroup200Response struct {
-	value *UpdateSensorGroup200Response
+type NullableAddTenantMember201Response struct {
+	value *AddTenantMember201Response
 	isSet bool
 }
 
-func (v NullableUpdateSensorGroup200Response) Get() *UpdateSensorGroup200Response {
+func (v NullableAddTenantMember201Response) Get() *AddTenantMember201Response {
 	return v.value
 }
 
-func (v *NullableUpdateSensorGroup200Response) Set(val *UpdateSensorGroup200Response) {
+func (v *NullableAddTenantMember201Response) Set(val *AddTenantMember201Response) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableUpdateSensorGroup200Response) IsSet() bool {
+func (v NullableAddTenantMember201Response) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableUpdateSensorGroup200Response) Unset() {
+func (v *NullableAddTenantMember201Response) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableUpdateSensorGroup200Response(val *UpdateSensorGroup200Response) *NullableUpdateSensorGroup200Response {
-	return &NullableUpdateSensorGroup200Response{value: val, isSet: true}
+func NewNullableAddTenantMember201Response(val *AddTenantMember201Response) *NullableAddTenantMember201Response {
+	return &NullableAddTenantMember201Response{value: val, isSet: true}
 }
 
-func (v NullableUpdateSensorGroup200Response) MarshalJSON() ([]byte, error) {
+func (v NullableAddTenantMember201Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableUpdateSensorGroup200Response) UnmarshalJSON(src []byte) error {
+func (v *NullableAddTenantMember201Response) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
