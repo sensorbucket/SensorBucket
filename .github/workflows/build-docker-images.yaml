@@ -52,6 +52,9 @@ jobs:
           - image: sensorbucket/dashboard
             dockerfile: services/dashboard/Dockerfile
             context: .
+          - image: sensorbucket/tenants
+            dockerfile: services/tenants/Dockerfile
+            context: .
           - image: sensorbucket/fission-user-workers
             dockerfile: services/fission-user-workers/Dockerfile
             context: .
