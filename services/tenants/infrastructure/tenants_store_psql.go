@@ -360,7 +360,7 @@ func (store *PSQLTenantStore) GetImplicitMemberPermissions(tenantID int64, userI
 	// at last it unnests the permissions column (which is a VARCHAR array) and makes it
 	// distinct, so that we have all unique permissions from the whole tenant hierarchy
 	// for this user
-	var permissions auth.Permissions
+	permissions := auth.Permissions{}
 	err := store.db.Select(&permissions,
 		`WITH permissionList AS (
           WITH RECURSIVE hierarchy AS (
