@@ -55,6 +55,7 @@
         reverse_proxy mail-server:8025
     }
 
+    redir / /dashboard/
     redir /dashboard /dashboard/
     handle_path /dashboard/* {
         reverse_proxy dashboard:3000
