@@ -221,7 +221,68 @@ func (ts *PSQLTenantStore) Update(tenant *tenants.Tenant) error {
 	return nil
 }
 
-func (store *PSQLTenantStore) GetTenantMember(tenantID int64, userID string) (*tenants.Member, error) {
+func (store *PSQLTenantStore) GetTenantHierarchyChildren(startingTenantIDs []int64) ([]tenants.Tenant, error) {
+	anchor := sq.Select("t.*").From("tenants t").Where(sq.Eq{"t.id": startingTenantIDs})
+	return getTenantHierarchy(store.db, anchor)
+}
+
+func (store *PSQLTenantStore) GetUserTenants(userID string) ([]tenants.Tenant, error) {
+	anchor := sq.Select("t.*").From("tenant_members m").Where(sq.Eq{"user_id": userID}).LeftJoin("tenants t ON m.tenant_id = t.id")
+	return getTenantHierarchy(store.db, anchor)
+}
+
+// getTenantHierarchy anchor point is a select query that must return at least an id and pare
+func getTenantHierarchy(db *sqlx.DB, anchor sq.SelectBuilder) ([]tenants.Tenant, error) {
+	recursive := sq.Select("t.*").From("tenants t").InnerJoin("children c ON t.parent_tenant_id = c.id")
+	cte := anchor.SuffixExpr(sq.ConcatExpr(" UNION ", recursive)).Prefix("WITH RECURSIVE children AS (").Suffix(")")
+	q := sq.Select(
+		"id",
+		"name",
+		"address",
+		"zip_code",
+		"city",
+		"chamber_of_commerce_id",
+		"headquarter_id",
+		"archive_time",
+		"logo",
+		"parent_tenant_id",
+	).From("children").PrefixExpr(cte)
+
+	query, params, err := q.PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	row, err := db.Queryx(query, params...)
+	if err != nil {
+		return nil, err
+	}
+	defer row.Close()
+
+	tenantList := make([]tenants.Tenant, 0)
+	for row.Next() {
+		var tenant tenants.Tenant
+		err = row.Scan(
+			&tenant.ID,
+			&tenant.Name,
+			&tenant.Address,
+			&tenant.ZipCode,
+			&tenant.City,
+			&tenant.ChamberOfCommerceID,
+			&tenant.HeadquarterID,
+			&tenant.ArchiveTime,
+			&tenant.Logo,
+			&tenant.ParentID,
+		)
+		if err != nil {
+			return nil, err
+		}
+		tenantList = append(tenantList, tenant)
+	}
+	return tenantList, nil
+}
+
+func (store *PSQLTenantStore) GetMember(tenantID int64, userID string) (*tenants.Member, error) {
 	var member tenants.Member
 	var permissions pgt.FlatArray[auth.Permission]
 	// TODO: This is a hack, it grabs the underlying PGX connection to scan the row
@@ -258,6 +319,65 @@ func (store *PSQLTenantStore) GetTenantMember(tenantID int64, userID string) (*t
 	}
 	member.Permissions = auth.Permissions(permissions)
 	return &member, nil
+}
+
+func (store *PSQLTenantStore) IsMember(tenantID int64, userID string, explicit bool) (bool, error) {
+	var count int64
+	if explicit {
+		q := sq.Select("count(*)").From("tenant_members m").Where(sq.Eq{"user_id": userID, "tenant_id": tenantID})
+		err := q.PlaceholderFormat(sq.Dollar).RunWith(store.db).Scan(&count)
+		if err != nil {
+			return false, fmt.Errorf("in IsMember PSQLStore: %w", err)
+		}
+		return count > 0, nil
+	}
+
+	// Recursively create parent chain for this tenant,
+	// inner join to tenant_members and count rows
+	// if count > 0, then atleast one tenant in this chain has an explicit membership
+
+	anchor := sq.Select("t.id", "t.parent_tenant_id").From("tenants t").Where(sq.Eq{"t.id": tenantID})
+	recursive := sq.Select("t.id", "t.parent_tenant_id").From("tenants t").
+		InnerJoin("(SELECT * FROM tenant_members WHERE user_id = ?) options ON options.tenant_id = t.id", userID).
+		InnerJoin("children c ON t.id = c.parent_tenant_id")
+	cte := anchor.SuffixExpr(sq.ConcatExpr(" UNION ", recursive)).Prefix("WITH RECURSIVE children AS (").Suffix(")")
+	q := sq.Select("count(id)").From("children").PrefixExpr(cte)
+
+	if err := q.PlaceholderFormat(sq.Dollar).RunWith(store.db).Scan(&count); err != nil {
+		return false, fmt.Errorf("in IsMember PSQLStore: %w", err)
+	}
+	return count > 0, nil
+}
+
+func (store *PSQLTenantStore) GetImplicitMemberPermissions(tenantID int64, userID string) (auth.Permissions, error) {
+	// This is a cool query
+	// It starts at tenant with id=tenantID, then recursively finds its parent
+	// and its parent's parent, etc...
+	// then join this hierarchy with the tenant_members table where user_id=userID
+	// at last it unnests the permissions column (which is a VARCHAR array) and makes it
+	// distinct, so that we have all unique permissions from the whole tenant hierarchy
+	// for this user
+	var permissions auth.Permissions
+	err := store.db.Select(&permissions,
+		`WITH permissionList AS (
+          WITH RECURSIVE hierarchy AS (
+             SELECT id, parent_tenant_id FROM tenants WHERE id = $1 
+             UNION
+             SELECT t.id, t.parent_tenant_id FROM tenants t INNER JOIN hierarchy p ON t.id = p.parent_tenant_id
+          )
+          SELECT permissions FROM tenant_members member LEFT JOIN hierarchy h ON member.tenant_id = h.id 
+            WHERE user_id = $2
+        )
+        SELECT DISTINCT unnest(permissions) FROM permissionList`,
+		tenantID, userID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("in GetTenantMember PSQL Store, could not query member permissions: %w", err)
+	}
+	if err := permissions.Validate(); err != nil {
+		return nil, err
+	}
+	return permissions, nil
 }
 
 func (s *PSQLTenantStore) SaveMember(tenantID int64, member *tenants.Member) error {

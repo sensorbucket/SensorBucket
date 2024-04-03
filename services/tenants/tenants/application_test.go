@@ -312,7 +312,7 @@ func TestCreateTenantMember(t *testing.T) {
 		SaveMemberFunc: func(tenantID int64, member *tenants.Member) error {
 			return nil
 		},
-		GetTenantMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
+		GetMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
 			return nil, tenants.ErrTenantMemberNotFound
 		},
 	}
@@ -358,7 +358,7 @@ func TestTenantAddMemberShouldErrorWithInvalidPermissions(t *testing.T) {
 		SaveMemberFunc: func(tenantID int64, member *tenants.Member) error {
 			return nil
 		},
-		GetTenantMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
+		GetMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
 			return nil, tenants.ErrTenantMemberNotFound
 		},
 	}
@@ -400,7 +400,7 @@ func TestTenantModifyMemberShouldErrorWithInvalidPermissions(t *testing.T) {
 		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
 			return &tenant, nil
 		},
-		GetTenantMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
+		GetMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
 			return &member, nil
 		},
 		SaveMemberFunc: func(tenantID int64, member *tenants.Member) error {
@@ -443,7 +443,7 @@ func TestTenantAddMemberShouldErrorIfUserDoesNotExist(t *testing.T) {
 		SaveMemberFunc: func(tenantID int64, member *tenants.Member) error {
 			return nil
 		},
-		GetTenantMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
+		GetMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
 			return nil, tenants.ErrTenantMemberNotFound
 		},
 	}
@@ -487,7 +487,7 @@ func TestTenantModifyMemberChangesPermissions(t *testing.T) {
 		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
 			return &tenant, nil
 		},
-		GetTenantMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
+		GetMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
 			return &member, nil
 		},
 		SaveMemberFunc: func(tenantID int64, member *tenants.Member) error {
