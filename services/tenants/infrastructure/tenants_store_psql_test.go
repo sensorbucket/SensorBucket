@@ -17,15 +17,6 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
-func TestGetPermissions(t *testing.T) {
-	db := createPostgresServer(t, true)
-	store := tenantsinfra.NewTenantsStorePSQL(db)
-
-	permissions, err := store.GetImplicitMemberPermissions(tenantID, userID)
-	assert.NoError(t, err)
-	assert.ElementsMatch(t, auth.Permissions{"WRITE_DEVICES", "READ_DEVICES", "WRITE_API_KEYS"}, permissions)
-}
-
 type tenant struct {
 	id       int64
 	name     string
@@ -339,5 +330,58 @@ func TestGetUserTenants(t *testing.T) {
 		tenantList, err := store.GetUserTenants("00000000-0000-0000-0000-000000000000")
 		assert.NoError(t, err)
 		assert.Len(t, tenantList, 0)
+	})
+}
+
+func TestGetPermissions(t *testing.T) {
+	db := createPostgresServer(t, false)
+	store := tenantsinfra.NewTenantsStorePSQL(db)
+
+	// ROOT TENANT
+	hierarchy := &tenant{
+		members: []lo.Tuple2[string, auth.Permissions]{
+			{A: userID, B: auth.Permissions{auth.WRITE_DEVICES}},
+		},
+		children: []tenant{
+			// ROOT->CHILD_1
+			{
+				members: []lo.Tuple2[string, auth.Permissions]{
+					{A: userID, B: auth.Permissions{auth.READ_DEVICES}},
+				},
+				children: []tenant{
+					// ROOT->CHILD_1->CHILD_1
+					{
+						members: []lo.Tuple2[string, auth.Permissions]{},
+						children: []tenant{
+							{},
+						},
+					},
+				},
+			},
+		},
+	}
+	hierarchy.create(t, db, 1)
+	isolatedTenant := &tenant{
+		members: []lo.Tuple2[string, auth.Permissions]{
+			{A: userID, B: auth.Permissions{auth.WRITE_API_KEYS}},
+		},
+		children: []tenant{},
+	}
+	isolatedTenant.create(t, db, 10)
+
+	t.Run("Get explicit permissions (no parent tenant)", func(t *testing.T) {
+		permissions, err := store.GetImplicitMemberPermissions(hierarchy.id, userID)
+		assert.NoError(t, err)
+		assert.ElementsMatch(t, auth.Permissions{auth.WRITE_DEVICES}, permissions)
+	})
+	t.Run("Get permissions and inherit parent tenant permissions", func(t *testing.T) {
+		permissions, err := store.GetImplicitMemberPermissions(hierarchy.children[0].id, userID)
+		assert.NoError(t, err)
+		assert.ElementsMatch(t, auth.Permissions{auth.WRITE_DEVICES, auth.READ_DEVICES}, permissions)
+	})
+	t.Run("Get isolated tenant permissions", func(t *testing.T) {
+		permissions, err := store.GetImplicitMemberPermissions(isolatedTenant.id, userID)
+		assert.NoError(t, err)
+		assert.ElementsMatch(t, auth.Permissions{auth.WRITE_API_KEYS}, permissions)
 	})
 }

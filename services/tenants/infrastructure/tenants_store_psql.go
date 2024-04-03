@@ -368,7 +368,7 @@ func (store *PSQLTenantStore) GetImplicitMemberPermissions(tenantID int64, userI
              UNION
              SELECT t.id, t.parent_tenant_id FROM tenants t INNER JOIN hierarchy p ON t.id = p.parent_tenant_id
           )
-          SELECT permissions FROM tenant_members member LEFT JOIN hierarchy h ON member.tenant_id = h.id 
+          SELECT permissions FROM tenant_members member INNER JOIN hierarchy h ON member.tenant_id = h.id 
             WHERE user_id = $2
         )
         SELECT DISTINCT unnest(permissions) FROM permissionList`,
