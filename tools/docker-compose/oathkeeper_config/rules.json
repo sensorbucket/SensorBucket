@@ -52,9 +52,6 @@
         },
         "authenticators": [
             {
-                "handler": "cookie_session"
-            },
-            {
                 "handler": "noop"
             }
         ],

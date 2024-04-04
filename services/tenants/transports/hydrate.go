@@ -46,8 +46,11 @@ func (ep *OathkeeperEndpoint) setupRoutes() {
 			web.HTTPError(w, err)
 			return
 		}
+		if session.Extra == nil {
+			session.Extra = map[string]any{}
+		}
 		session.Extra["tid"] = 0
-		session.Extra["pms"] = []string{}
+		session.Extra["perms"] = []string{}
 
 		defer web.HTTPResponse(w, http.StatusOK, session)
 
@@ -63,6 +66,6 @@ func (ep *OathkeeperEndpoint) setupRoutes() {
 		}
 
 		session.Extra["tid"] = tID
-		session.Extra["pms"] = permissions
+		session.Extra["perms"] = permissions
 	})
 }

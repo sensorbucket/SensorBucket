@@ -38,9 +38,9 @@ mutators:
       claims: |
         {
           "tid": {{ print .Extra.tid }},
-          "pms": [
-          {{- $length := len .Extra.pms -}}
-          {{- range $index, $element := .Extra.pms }}
+          "perms": [
+          {{- $length := len .Extra.perms -}}
+          {{- range $index, $element := .Extra.perms }}
             "{{- $element -}}"{{ if ne $index (sub $length 1) }},{{ end }}
           {{- end }}
           ]
