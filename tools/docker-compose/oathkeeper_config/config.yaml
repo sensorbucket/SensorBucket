@@ -37,13 +37,8 @@ mutators:
       # TODO: tackle this when implementing auth(z) on services. Do we actually need anonymous users?
       claims: |
         {
-          "tid": {{ print .Extra.tid }},
-          "perms": [
-          {{- $length := len .Extra.perms -}}
-          {{- range $index, $element := .Extra.perms }}
-            "{{- $element -}}"{{ if ne $index (sub $length 1) }},{{ end }}
-          {{- end }}
-          ]
+          "tid": {{ toJson .Extra.tid }},
+          "perms": {{ toJson .Extra.perms }}
         }
 
 authorizers:
@@ -67,7 +62,7 @@ authenticators:
   bearer_token:
     enabled: true
     config:
-      check_session_url: "http://tenants:3000/tenants/api-keys/authenticate"
+      check_session_url: "http://tenants:3000/api-keys/authenticate"
       preserve_path: true
       token_from:
         header: Authorization

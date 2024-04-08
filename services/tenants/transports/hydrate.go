@@ -46,13 +46,16 @@ func (ep *OathkeeperEndpoint) setupRoutes() {
 			web.HTTPError(w, err)
 			return
 		}
+		defer web.HTTPResponse(w, http.StatusOK, session)
+
+		if session.Subject == "" {
+			return
+		}
 		if session.Extra == nil {
 			session.Extra = map[string]any{}
 		}
 		session.Extra["tid"] = 0
 		session.Extra["perms"] = []string{}
-
-		defer web.HTTPResponse(w, http.StatusOK, session)
 
 		tID, err := ep.users.ActiveTenantID(r.Context(), session.Subject)
 		if err != nil {

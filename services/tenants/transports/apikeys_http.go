@@ -143,6 +143,12 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 }
 
 func (t *APIKeysHTTPTransport) httpAuthenticateApiKey() http.HandlerFunc {
+	type AuthenticationSession struct {
+		Subject      string         `json:"subject"`
+		Extra        map[string]any `json:"extra"`
+		Header       any            `json:"header"`
+		MatchContext any            `json:"match_context"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
@@ -152,9 +158,16 @@ func (t *APIKeysHTTPTransport) httpAuthenticateApiKey() http.HandlerFunc {
 			return
 		}
 		idAndKeyCombination := strings.TrimPrefix(authHeader, "Bearer ")
-		validResp, err := t.apiKeySvc.AuthenticateApiKey(idAndKeyCombination)
+		keyInfo, err := t.apiKeySvc.AuthenticateApiKey(idAndKeyCombination)
 		if err == nil {
-			web.HTTPResponse(w, http.StatusOK, validResp)
+			session := AuthenticationSession{
+				Subject: "",
+				Extra: map[string]any{
+					"tid":   keyInfo.TenantID,
+					"perms": keyInfo.Permissions,
+				},
+			}
+			web.HTTPResponse(w, http.StatusOK, session)
 			return
 		} else if errors.Is(err, apikeys.ErrInvalidEncoding) {
 			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{

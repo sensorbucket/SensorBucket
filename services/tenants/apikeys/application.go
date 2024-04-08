@@ -91,16 +91,18 @@ func (s *Service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAu
 		return ApiKeyAuthenticationDTO{}, err
 	}
 	if hashed.IsExpired() {
-		log.Println("[Info] detected expired API key, deleting")
-		if err := s.RevokeApiKey(apiKeyId); err != nil {
-			log.Printf("[Warning] couldn't cleanup expired API key: '%s'\n", err)
-		}
+		go func() {
+			log.Println("[Info] detected expired API key, deleting")
+			if err := s.RevokeApiKey(apiKeyId); err != nil {
+				log.Printf("[Warning] couldn't cleanup expired API key: '%s'\n", err)
+			}
+		}()
 		return ApiKeyAuthenticationDTO{}, ErrKeyNotFound
 	}
 	isValid := hashed.compare(apiKey)
 	if isValid {
 		dto := ApiKeyAuthenticationDTO{
-			TenantID:    fmt.Sprintf("%d", hashed.TenantID),
+			TenantID:    hashed.TenantID,
 			Permissions: hashed.Permissions,
 		}
 		if hashed.ExpirationDate != nil {
@@ -135,19 +137,19 @@ type Filter struct {
 }
 
 type ApiKeyAuthenticationDTO struct {
-	TenantID    string   `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
-	Expiration  *int64   `json:"expiration_date"`
-	Permissions []string `json:"permissions"`
+	TenantID    int64            `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
+	Expiration  *int64           `json:"expiration_date"`
+	Permissions auth.Permissions `json:"permissions"`
 }
 
 type ApiKeyDTO struct {
-	ID             int64      `json:"id"`
-	Name           string     `json:"name"`
-	TenantID       int64      `json:"tenant_id"`
-	TenantName     string     `json:"tenant_name"`
-	ExpirationDate *time.Time `json:"expiration_date"`
-	Created        time.Time  `json:"created"`
-	Permissions    []string   `json:"permissions"`
+	ID             int64            `json:"id"`
+	Name           string           `json:"name"`
+	TenantID       int64            `json:"tenant_id"`
+	TenantName     string           `json:"tenant_name"`
+	ExpirationDate *time.Time       `json:"expiration_date"`
+	Created        time.Time        `json:"created"`
+	Permissions    auth.Permissions `json:"permissions"`
 }
 
 func apiKeyAndIdFromBase64(base64Src string) (int64, string, error) {

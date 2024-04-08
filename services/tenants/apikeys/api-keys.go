@@ -10,6 +10,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 )
 
 var ErrPermissionsInvalid = web.NewError(http.StatusBadRequest, "Some permissions were not valid", "INVALID_PERMISSIONS")
@@ -20,9 +21,9 @@ type ApiKey struct {
 }
 type HashedApiKey struct {
 	Key
-	SecretHash  string   `json:"-"`
-	TenantID    int64    `json:"tenant_id"`
-	Permissions []string `json:"permissions"`
+	SecretHash  string           `json:"-"`
+	TenantID    int64            `json:"tenant_id"`
+	Permissions auth.Permissions `json:"permissions"`
 }
 
 type Key struct {

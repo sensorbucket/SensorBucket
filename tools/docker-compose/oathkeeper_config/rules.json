@@ -81,6 +81,9 @@
                 "handler": "cookie_session"
             },
             {
+                "handler": "bearer_token"
+            },
+            {
                 "handler": "noop"
             }
         ],
