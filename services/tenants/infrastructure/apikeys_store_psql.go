@@ -215,7 +215,9 @@ func (as *ApiKeyStore) GetHashedAPIKeyByNameAndTenantID(name string, tenantID in
 		return apikeys.HashedApiKey{}, err
 	}
 	defer rows.Close()
-	k := apikeys.HashedApiKey{}
+	k := apikeys.HashedApiKey{
+		Permissions: auth.Permissions{},
+	}
 	for rows.Next() {
 		var permission auth.Permission
 		err = rows.Scan(

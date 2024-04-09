@@ -144,10 +144,10 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 
 func (t *APIKeysHTTPTransport) httpAuthenticateApiKey() http.HandlerFunc {
 	type AuthenticationSession struct {
-		Subject      string         `json:"subject"`
-		Extra        map[string]any `json:"extra"`
-		Header       any            `json:"header"`
-		MatchContext any            `json:"match_context"`
+		Subject      string         `json:"subject,omitempty"`
+		Extra        map[string]any `json:"extra,omitempty"`
+		Header       any            `json:"header,omitempty"`
+		MatchContext any            `json:"match_context,omitempty"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -166,6 +166,9 @@ func (t *APIKeysHTTPTransport) httpAuthenticateApiKey() http.HandlerFunc {
 					"tid":   keyInfo.TenantID,
 					"perms": keyInfo.Permissions,
 				},
+			}
+			if keyInfo.Expiration != nil {
+				session.Extra["exp"] = *keyInfo.Expiration
 			}
 			web.HTTPResponse(w, http.StatusOK, session)
 			return

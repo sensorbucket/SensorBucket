@@ -91,12 +91,10 @@ func (s *Service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAu
 		return ApiKeyAuthenticationDTO{}, err
 	}
 	if hashed.IsExpired() {
-		go func() {
-			log.Println("[Info] detected expired API key, deleting")
-			if err := s.RevokeApiKey(apiKeyId); err != nil {
-				log.Printf("[Warning] couldn't cleanup expired API key: '%s'\n", err)
-			}
-		}()
+		log.Println("[Info] detected expired API key, deleting")
+		if err := s.RevokeApiKey(apiKeyId); err != nil {
+			log.Printf("[Warning] couldn't cleanup expired API key: '%s'\n", err)
+		}
 		return ApiKeyAuthenticationDTO{}, ErrKeyNotFound
 	}
 	isValid := hashed.compare(apiKey)

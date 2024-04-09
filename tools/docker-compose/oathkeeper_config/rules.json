@@ -18,62 +18,15 @@
         "mutators": [{"handler":"noop"}]
     },
     {
-        "id": "user_preferences",
+        "id": "auth",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/tenants/switch",
+            "url": "http://<127.0.0.1|localhost>:3000</tenants|/dashboard|/api><(/.*)?>",
             "methods": [
-                "GET","POST","PATCH","PUT","DELETE"
-            ]
-        },
-        "authenticators": [
-            {
-                "handler": "cookie_session"
-            }
-        ],
-        "authorizer": {
-            "handler": "allow"
-        },
-        "mutators": [
-            {
-                "handler": "hydrator"
-            },
-            {
-                "handler": "id_token"
-            }
-        ]
-    },
-    {
-        "id": "authentication",
-        "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<tenants(/(auth|api-keys|static)(/.+)?)?>",
-            "methods": [
-                "GET","POST","PATCH","PUT","DELETE"
-            ]
-        },
-        "authenticators": [
-            {
-                "handler": "noop"
-            }
-        ],
-        "authorizer": {
-            "handler": "allow"
-        },
-        "mutators": [
-            {
-                "handler": "hydrator"
-            },
-            {
-                "handler": "id_token",
-                "config": {}
-            }
-        ]
-    },
-    {
-        "id": "default",
-        "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<(dashboard|api)(/.*)?>",
-            "methods": [
-                "GET","POST","PATCH","PUT","DELETE"
+                "GET",
+                "POST",
+                "PATCH",
+                "PUT",
+                "DELETE"
             ]
         },
         "authenticators": [
@@ -101,14 +54,24 @@
         ]
     },
     {
-        "id": "internal",
+        "id": "auth",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<(dev)(/.*)?>",
+            "url": "http://caddy<.*>",
             "methods": [
-                "GET","POST","PATCH","PUT","DELETE"
+                "GET",
+                "POST",
+                "PATCH",
+                "PUT",
+                "DELETE"
             ]
         },
         "authenticators": [
+            {
+                "handler": "cookie_session"
+            },
+            {
+                "handler": "bearer_token"
+            },
             {
                 "handler": "noop"
             }
@@ -118,29 +81,11 @@
         },
         "mutators": [
             {
-                "handler": "noop"
-            }
-        ]
-    },
-    {
-        "id": "internal-docker",
-        "match": {
-            "url": "http://<(?!localhost|127.0.0.1).*>",
-            "methods": [
-                "GET","POST","PATCH","PUT","DELETE"
-            ]
-        },
-        "authenticators": [
+                "handler": "hydrator"
+            },
             {
-                "handler": "noop"
-            }
-        ],
-        "authorizer": {
-            "handler": "allow"
-        },
-        "mutators": [
-            {
-                "handler": "noop"
+                "handler": "id_token",
+                "config": {}
             }
         ]
     }
