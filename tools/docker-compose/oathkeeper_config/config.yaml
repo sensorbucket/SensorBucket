@@ -28,14 +28,18 @@ mutators:
     enabled: true
     config:
       api:
-        url: http://tenants:3000/session/hydrate
+        url: http://tenants:3000/oathkeeper/hydrate
   id_token:
     enabled: true
     config:
       issuer_url: http://127.0.0.1:3000/
       jwks_url: file:///etc/config/oathkeeper/jwks.json
       # TODO: tackle this when implementing auth(z) on services. Do we actually need anonymous users?
-      #claims: '{"mai": "{{ print .Extra.identity.traits.email }}"}'
+      claims: |
+        {
+          "tid": {{ toJson .Extra.tid }},
+          "perms": {{ toJson .Extra.perms }}
+        }
 
 authorizers:
   allow:
@@ -58,7 +62,7 @@ authenticators:
   bearer_token:
     enabled: true
     config:
-      check_session_url: "http://tenants:3000/tenants/api-keys/authenticate"
+      check_session_url: "http://tenants:3000/api-keys/authenticate"
       preserve_path: true
       token_from:
         header: Authorization

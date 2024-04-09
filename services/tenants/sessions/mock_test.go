@@ -21,8 +21,8 @@ var _ sessions.UserPreferenceStore = &UserPreferenceStoreMock{}
 //			ActiveTenantIDFunc: func(userID string) (int64, error) {
 //				panic("mock out the ActiveTenantID method")
 //			},
-//			IsUserTenantMemberFunc: func(userID string, tenantID int64) (bool, error) {
-//				panic("mock out the IsUserTenantMember method")
+//			IsMemberFunc: func(tenantID int64, userID string, explicit bool) (bool, error) {
+//				panic("mock out the IsMember method")
 //			},
 //			SetActiveTenantIDFunc: func(userID string, tenantID int64) error {
 //				panic("mock out the SetActiveTenantID method")
@@ -37,8 +37,8 @@ type UserPreferenceStoreMock struct {
 	// ActiveTenantIDFunc mocks the ActiveTenantID method.
 	ActiveTenantIDFunc func(userID string) (int64, error)
 
-	// IsUserTenantMemberFunc mocks the IsUserTenantMember method.
-	IsUserTenantMemberFunc func(userID string, tenantID int64) (bool, error)
+	// IsMemberFunc mocks the IsMember method.
+	IsMemberFunc func(tenantID int64, userID string, explicit bool) (bool, error)
 
 	// SetActiveTenantIDFunc mocks the SetActiveTenantID method.
 	SetActiveTenantIDFunc func(userID string, tenantID int64) error
@@ -50,12 +50,14 @@ type UserPreferenceStoreMock struct {
 			// UserID is the userID argument value.
 			UserID string
 		}
-		// IsUserTenantMember holds details about calls to the IsUserTenantMember method.
-		IsUserTenantMember []struct {
-			// UserID is the userID argument value.
-			UserID string
+		// IsMember holds details about calls to the IsMember method.
+		IsMember []struct {
 			// TenantID is the tenantID argument value.
 			TenantID int64
+			// UserID is the userID argument value.
+			UserID string
+			// Explicit is the explicit argument value.
+			Explicit bool
 		}
 		// SetActiveTenantID holds details about calls to the SetActiveTenantID method.
 		SetActiveTenantID []struct {
@@ -65,9 +67,9 @@ type UserPreferenceStoreMock struct {
 			TenantID int64
 		}
 	}
-	lockActiveTenantID     sync.RWMutex
-	lockIsUserTenantMember sync.RWMutex
-	lockSetActiveTenantID  sync.RWMutex
+	lockActiveTenantID    sync.RWMutex
+	lockIsMember          sync.RWMutex
+	lockSetActiveTenantID sync.RWMutex
 }
 
 // ActiveTenantID calls ActiveTenantIDFunc.
@@ -102,39 +104,43 @@ func (mock *UserPreferenceStoreMock) ActiveTenantIDCalls() []struct {
 	return calls
 }
 
-// IsUserTenantMember calls IsUserTenantMemberFunc.
-func (mock *UserPreferenceStoreMock) IsUserTenantMember(userID string, tenantID int64) (bool, error) {
-	if mock.IsUserTenantMemberFunc == nil {
-		panic("UserPreferenceStoreMock.IsUserTenantMemberFunc: method is nil but UserPreferenceStore.IsUserTenantMember was just called")
+// IsMember calls IsMemberFunc.
+func (mock *UserPreferenceStoreMock) IsMember(tenantID int64, userID string, explicit bool) (bool, error) {
+	if mock.IsMemberFunc == nil {
+		panic("UserPreferenceStoreMock.IsMemberFunc: method is nil but UserPreferenceStore.IsMember was just called")
 	}
 	callInfo := struct {
-		UserID   string
 		TenantID int64
+		UserID   string
+		Explicit bool
 	}{
-		UserID:   userID,
 		TenantID: tenantID,
+		UserID:   userID,
+		Explicit: explicit,
 	}
-	mock.lockIsUserTenantMember.Lock()
-	mock.calls.IsUserTenantMember = append(mock.calls.IsUserTenantMember, callInfo)
-	mock.lockIsUserTenantMember.Unlock()
-	return mock.IsUserTenantMemberFunc(userID, tenantID)
+	mock.lockIsMember.Lock()
+	mock.calls.IsMember = append(mock.calls.IsMember, callInfo)
+	mock.lockIsMember.Unlock()
+	return mock.IsMemberFunc(tenantID, userID, explicit)
 }
 
-// IsUserTenantMemberCalls gets all the calls that were made to IsUserTenantMember.
+// IsMemberCalls gets all the calls that were made to IsMember.
 // Check the length with:
 //
-//	len(mockedUserPreferenceStore.IsUserTenantMemberCalls())
-func (mock *UserPreferenceStoreMock) IsUserTenantMemberCalls() []struct {
-	UserID   string
+//	len(mockedUserPreferenceStore.IsMemberCalls())
+func (mock *UserPreferenceStoreMock) IsMemberCalls() []struct {
 	TenantID int64
+	UserID   string
+	Explicit bool
 } {
 	var calls []struct {
-		UserID   string
 		TenantID int64
+		UserID   string
+		Explicit bool
 	}
-	mock.lockIsUserTenantMember.RLock()
-	calls = mock.calls.IsUserTenantMember
-	mock.lockIsUserTenantMember.RUnlock()
+	mock.lockIsMember.RLock()
+	calls = mock.calls.IsMember
+	mock.lockIsMember.RUnlock()
 	return calls
 }
 

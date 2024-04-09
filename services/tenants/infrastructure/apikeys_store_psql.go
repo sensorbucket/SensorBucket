@@ -60,8 +60,6 @@ func (as *ApiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 		LeftJoin("tenants on keys.tenant_id = tenants.id").
 		LeftJoin("api_key_permissions permissions on keys.id = permissions.api_key_id")
 
-	fmt.Printf("sq.DebugSqlizer(q): %v\n", sq.DebugSqlizer(q))
-
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
 	if err != nil {
 		return nil, fmt.Errorf("error running database query: %w", err)
@@ -97,12 +95,13 @@ func (as *ApiKeyStore) List(filter apikeys.Filter, r pagination.Request) (*pagin
 		}
 		currentPermissions = append(currentPermissions, permission)
 		lastId = currentId
+		// TODO: These permissions should most likely be validated
 		if len(list) > 0 && list[len(list)-1].ID == key.ID {
 			// Still at the same key, append the permission to the last key
-			list[len(list)-1].Permissions = append(list[len(list)-1].Permissions, permission)
+			list[len(list)-1].Permissions = append(list[len(list)-1].Permissions, auth.Permission(permission))
 		} else {
 			// Otherwise the result set arrived at a new api key
-			key.Permissions = []string{permission}
+			key.Permissions = auth.Permissions{auth.Permission(permission)}
 			list = append(list, key)
 		}
 	}
@@ -174,7 +173,6 @@ func (as *ApiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State
 			LeftJoin("tenants on tenants.id = key.tenant_id").
 			Where(sq.Eq{"tenants.state": stateFilter})
 	}
-	fmt.Printf("sq.DebugSqlizer(q): %v\n", sq.DebugSqlizer(q))
 
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(as.db).Query()
 	if err != nil {
@@ -183,10 +181,10 @@ func (as *ApiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State
 	defer rows.Close()
 
 	key := apikeys.HashedApiKey{
-		Permissions: make([]string, 0),
+		Permissions: auth.Permissions{},
 	}
 	for rows.Next() {
-		var permission string
+		var permission auth.Permission
 		err = rows.Scan(
 			&key.ID,
 			&key.Name,
@@ -217,9 +215,11 @@ func (as *ApiKeyStore) GetHashedAPIKeyByNameAndTenantID(name string, tenantID in
 		return apikeys.HashedApiKey{}, err
 	}
 	defer rows.Close()
-	k := apikeys.HashedApiKey{}
+	k := apikeys.HashedApiKey{
+		Permissions: auth.Permissions{},
+	}
 	for rows.Next() {
-		permission := ""
+		var permission auth.Permission
 		err = rows.Scan(
 			&k.ID,
 			&k.SecretHash,

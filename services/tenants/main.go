@@ -93,6 +93,11 @@ func runAPI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 	apiKeySvc := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 	_ = tenantstransports.NewAPIKeysHTTP(r, apiKeySvc, HTTP_API_BASE)
 
+	// Setup oathkeeper endpoint
+	userPreferences := sessions.NewUserPreferenceService(tenantStore)
+	oathkeeperTransport := tenantstransports.NewOathkeeperEndpoint(userPreferences, tenantSvc)
+	r.Mount("/oathkeeper", oathkeeperTransport)
+
 	// Run the HTTP Server
 	srv := &http.Server{
 		Addr:         HTTP_API_ADDR,

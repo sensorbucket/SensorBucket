@@ -101,8 +101,11 @@ func (ts *PSQLTenantStore) List(filter tenants.StoreFilter, r pagination.Request
 		q = q.Where(sq.Eq{"state": filter.State})
 	}
 	if filter.MemberID != "" {
-		subQ := sq.Select("member.tenant_id").From("tenant_members member").Where(sq.Eq{"user_id": filter.MemberID})
-		q = q.Where(subQ.Prefix("id IN (")).Suffix(")")
+		// Calculate tenant hierarchy
+		anchor := sq.Select("t.*").From("tenant_members m").Where(sq.Eq{"user_id": filter.MemberID}).LeftJoin("tenants t ON m.tenant_id = t.id")
+		recursive := sq.Select("t.*").From("tenants t").InnerJoin("children c ON t.parent_tenant_id = c.id")
+		cte := anchor.SuffixExpr(sq.ConcatExpr(" UNION ", recursive)).Prefix("WITH RECURSIVE children AS (").Suffix(")")
+		q = q.From("children").PrefixExpr(cte)
 	}
 	q, err = pagination.Apply(q, cursor)
 	if err != nil {
@@ -357,7 +360,7 @@ func (store *PSQLTenantStore) GetImplicitMemberPermissions(tenantID int64, userI
 	// at last it unnests the permissions column (which is a VARCHAR array) and makes it
 	// distinct, so that we have all unique permissions from the whole tenant hierarchy
 	// for this user
-	var permissions auth.Permissions
+	permissions := auth.Permissions{}
 	err := store.db.Select(&permissions,
 		`WITH permissionList AS (
           WITH RECURSIVE hierarchy AS (
@@ -365,7 +368,7 @@ func (store *PSQLTenantStore) GetImplicitMemberPermissions(tenantID int64, userI
              UNION
              SELECT t.id, t.parent_tenant_id FROM tenants t INNER JOIN hierarchy p ON t.id = p.parent_tenant_id
           )
-          SELECT permissions FROM tenant_members member LEFT JOIN hierarchy h ON member.tenant_id = h.id 
+          SELECT permissions FROM tenant_members member INNER JOIN hierarchy h ON member.tenant_id = h.id 
             WHERE user_id = $2
         )
         SELECT DISTINCT unnest(permissions) FROM permissionList`,

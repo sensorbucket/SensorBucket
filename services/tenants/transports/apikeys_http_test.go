@@ -401,9 +401,9 @@ func TestAuthenticateApiKeyIsValidNoExpirationDate(t *testing.T) {
 		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{
-				TenantID:    "431",
+				TenantID:    431,
 				Expiration:  nil,
-				Permissions: nil,
+				Permissions: auth.Permissions{},
 			}, nil
 		},
 	}
@@ -417,7 +417,7 @@ func TestAuthenticateApiKeyIsValidNoExpirationDate(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, `{"sub":"431","expiration_date":null,"permissions":null}`+"\n", rr.Body.String())
+	assert.Equal(t, `{"extra":{"perms":[],"tid":431}}`+"\n", rr.Body.String())
 	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
 }
 
@@ -427,9 +427,9 @@ func TestAuthenticateApiKeyWithPermissions(t *testing.T) {
 		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{
-				TenantID:    "431",
+				TenantID:    431,
 				Expiration:  nil,
-				Permissions: []string{"READ_DEVICES", "WRITE_DEVICES", "READ_API_KEYS", "WRITE_API_KEYS"},
+				Permissions: auth.Permissions{"READ_DEVICES", "WRITE_DEVICES", "READ_API_KEYS", "WRITE_API_KEYS"},
 			}, nil
 		},
 	}
@@ -443,7 +443,7 @@ func TestAuthenticateApiKeyWithPermissions(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, `{"sub":"431","expiration_date":null,"permissions":["READ_DEVICES","WRITE_DEVICES","READ_API_KEYS","WRITE_API_KEYS"]}`+"\n", rr.Body.String())
+	assert.Equal(t, `{"extra":{"perms":["READ_DEVICES","WRITE_DEVICES","READ_API_KEYS","WRITE_API_KEYS"],"tid":431}}`+"\n", rr.Body.String())
 	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
 }
 
@@ -454,9 +454,9 @@ func TestAuthenticateApiKeyIsValidWithExpirationDate(t *testing.T) {
 		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{
-				TenantID:    "431",
+				TenantID:    431,
 				Expiration:  &exp,
-				Permissions: nil,
+				Permissions: auth.Permissions{},
 			}, nil
 		},
 	}
@@ -470,7 +470,7 @@ func TestAuthenticateApiKeyIsValidWithExpirationDate(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, fmt.Sprintf(`{"sub":"431","expiration_date":%d,"permissions":null}`+"\n", exp), rr.Body.String())
+	assert.Equal(t, fmt.Sprintf(`{"extra":{"exp":%d,"perms":[],"tid":431}}`+"\n", exp), rr.Body.String())
 	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
 }
 
@@ -483,11 +483,11 @@ func TestListApiKeysReturnsPaginatedList(t *testing.T) {
 				Data: []apikeys.ApiKeyDTO{
 					{
 						Name:        "api-key-1",
-						Permissions: []string{"READ_API_KEYS"},
+						Permissions: auth.Permissions{"READ_API_KEYS"},
 					},
 					{
 						Name:        "api-key-2",
-						Permissions: []string{"READ_DEVICES", "WRITE_DEVICES"},
+						Permissions: auth.Permissions{"READ_DEVICES", "WRITE_DEVICES"},
 					},
 				},
 			}, nil
