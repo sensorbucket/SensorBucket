@@ -135,7 +135,7 @@ type Filter struct {
 }
 
 type ApiKeyAuthenticationDTO struct {
-	TenantID    int64            `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
+	TenantID    int64            `json:"tenant_id"`
 	Expiration  *int64           `json:"expiration_date"`
 	Permissions auth.Permissions `json:"permissions"`
 }
