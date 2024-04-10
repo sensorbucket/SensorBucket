@@ -65,6 +65,7 @@ services:
       - STATIC_PATH=services/tenants/static
       - HTTP_WEBUI_BASE=/tenants
       - KRATOS_ADMIN_API=http://kratos:4434
+      - KRATOS_SERVER_API=http://127.0.0.1:3000/.ory
       - SB_API=http://caddy
 
   userworkers:

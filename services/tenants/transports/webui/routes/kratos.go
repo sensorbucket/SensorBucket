@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	ory "github.com/ory/client-go"
 
+	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/flash_messages"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/views"
@@ -24,19 +25,23 @@ const (
 )
 
 type KratosRoutes struct {
-	ory    *ory.APIClient
-	router chi.Router
+	ory             *ory.APIClient
+	router          chi.Router
+	kratosPublicURI string
+	kratosServerURI string
 }
 
 func SetupKratosRoutes() *KratosRoutes {
 	k := &KratosRoutes{
-		router: chi.NewRouter(),
+		router:          chi.NewRouter(),
+		kratosPublicURI: env.Could("KRATOS_PUBLIC_URI", "/.ory"),
+		kratosServerURI: env.Could("KRATOS_SERVER_URI", "http://kratos:4433"),
 	}
 
 	oryConfig := ory.NewConfiguration()
 	oryConfig.Servers = ory.ServerConfigurations{
 		{
-			URL: "http://kratos:4433/",
+			URL: k.kratosServerURI,
 		},
 	}
 	k.ory = ory.NewAPIClient(oryConfig)
@@ -71,7 +76,7 @@ func (k KratosRoutes) httpDefaultPage() http.HandlerFunc {
 var ctxFlow = struct{}{}
 
 func (k KratosRoutes) redirectStartFlow(w http.ResponseWriter, r *http.Request, flow KratosFlow) {
-	http.Redirect(w, r, fmt.Sprintf("http://127.0.0.1:3000/.ory/self-service/%s/browser", flow), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("%s/self-service/%s/browser", k.kratosPublicURI, flow), http.StatusSeeOther)
 }
 
 func (k KratosRoutes) extractFlow(flow KratosFlow) func(next http.Handler) http.Handler {
