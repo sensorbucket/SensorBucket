@@ -106,7 +106,7 @@ func (k KratosRoutes) extractFlow(flow KratosFlow) func(next http.Handler) http.
 				flowData, resp, err = k.ory.FrontendAPI.CreateBrowserLogoutFlow(r.Context()).Cookie(cookie).Execute()
 			}
 			if err != nil {
-				if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusGone {
+				if resp != nil && (resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusGone) {
 					k.redirectStartFlow(w, r, flow)
 					return
 				}
