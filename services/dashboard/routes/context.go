@@ -26,7 +26,7 @@ func getPipelineWorkers(ctx context.Context) []api.UserWorker {
 }
 
 func getPipeline(ctx context.Context) *api.Pipeline {
-	value, ok := ctx.Value(ctxPipelineWorkers).(*api.Pipeline)
+	value, ok := ctx.Value(ctxPipeline).(*api.Pipeline)
 	if !ok {
 		return nil
 	}
