@@ -341,10 +341,13 @@ func (store *PSQLTenantStore) IsMember(tenantID int64, userID string, explicit b
 
 	anchor := sq.Select("t.id", "t.parent_tenant_id").From("tenants t").Where(sq.Eq{"t.id": tenantID})
 	recursive := sq.Select("t.id", "t.parent_tenant_id").From("tenants t").
-		InnerJoin("(SELECT * FROM tenant_members WHERE user_id = ?) options ON options.tenant_id = t.id", userID).
-		InnerJoin("children c ON t.id = c.parent_tenant_id")
-	cte := anchor.SuffixExpr(sq.ConcatExpr(" UNION ", recursive)).Prefix("WITH RECURSIVE children AS (").Suffix(")")
-	q := sq.Select("count(id)").From("children").PrefixExpr(cte)
+		RightJoin("hierarchy h ON t.id = h.parent_tenant_id")
+	cte := anchor.SuffixExpr(sq.ConcatExpr(" UNION ", recursive)).Prefix("WITH RECURSIVE hierarchy AS (").Suffix(")")
+	q := sq.Select("count(id)").From("hierarchy h").
+		InnerJoin("tenant_members m ON m.tenant_id = h.id AND m.user_id = ?", userID).
+		PrefixExpr(cte)
+
+	fmt.Printf("sq.DebugSqlizer(q): %v\n", sq.DebugSqlizer(q))
 
 	if err := q.PlaceholderFormat(sq.Dollar).RunWith(store.db).Scan(&count); err != nil {
 		return false, fmt.Errorf("in IsMember PSQLStore: %w", err)

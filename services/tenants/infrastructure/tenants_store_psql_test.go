@@ -273,7 +273,12 @@ func TestIsMember(t *testing.T) {
 	t.Run("not a member", func(t *testing.T) {
 		member, err := store.IsMember(hierarchy.children[0].id, userID, false)
 		require.NoError(t, err)
-		assert.True(t, member)
+		assert.False(t, member)
+	})
+	t.Run("not a member", func(t *testing.T) {
+		member, err := store.IsMember(hierarchy.children[1].id, userID, false)
+		require.NoError(t, err)
+		assert.False(t, member)
 	})
 }
 
