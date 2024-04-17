@@ -347,8 +347,6 @@ func (store *PSQLTenantStore) IsMember(tenantID int64, userID string, explicit b
 		InnerJoin("tenant_members m ON m.tenant_id = h.id AND m.user_id = ?", userID).
 		PrefixExpr(cte)
 
-	fmt.Printf("sq.DebugSqlizer(q): %v\n", sq.DebugSqlizer(q))
-
 	if err := q.PlaceholderFormat(sq.Dollar).RunWith(store.db).Scan(&count); err != nil {
 		return false, fmt.Errorf("in IsMember PSQLStore: %w", err)
 	}
