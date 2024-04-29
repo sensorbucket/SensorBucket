@@ -65,10 +65,10 @@ func Protect() func(http.Handler) http.Handler {
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
-			if _, err := GetUser(r.Context()); err != nil {
-				web.HTTPError(w, ErrUnauthorized)
-				return
-			}
+			//if _, err := GetUser(r.Context()); err != nil {
+			//	web.HTTPError(w, ErrUnauthorized)
+			//	return
+			//}
 			if _, err := GetPermissions(r.Context()); err != nil {
 				web.HTTPError(w, ErrUnauthorized)
 				return
