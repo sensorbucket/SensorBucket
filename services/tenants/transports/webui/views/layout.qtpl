@@ -54,7 +54,7 @@
 {% func renderSidebar() %}
     <section class="flex flex-col border-r">
         <h1 class="p-6 text-lg text-center">Settings</h1>
-        <hr class="px-6 py-1">
+        <hr class="px-6 my-1">
         <ul class="flex flex-col">
             <li>
                 <a
@@ -70,6 +70,14 @@
                 <a
                     class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
                     href="{%s U("/switch") %}">Switch tenant</a>
+            </li>
+        </ul>
+        <hr class="px-6 my-1">
+        <ul class="flex flex-col">
+            <li>
+                <a
+                    class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                    href="{%s U("/auth/logout") %}">Logout</a>
             </li>
         </ul>
     </section>
