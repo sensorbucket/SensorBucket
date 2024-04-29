@@ -52,7 +52,7 @@ func New(
 
 	ui.router.Use(middleware.Logger)
 	jwks := auth.NewJWKSHttpClient("http://oathkeeper:4456/.well-known/jwks.json")
-	ui.router.Use(auth.Authenticate(jwks))
+	authMW := auth.Authenticate(jwks)
 	// Middleware to pass on basic auth to the client api
 	// TODO: This also exists in dashboard/main.go, perhaps make it a package?
 	// Also this will become a JWT instead of basic auth!
@@ -71,8 +71,8 @@ func New(
 	})
 	ui.router.Handle("/static/*", serveStatic())
 	ui.router.Mount("/auth", routes.SetupKratosRoutes())
-	ui.router.Mount("/api-keys", routes.SetupAPIKeyRoutes(client, apiKeys, tenantsService))
-	ui.router.Mount("/", routes.SetupTenantSwitchingRoutes(tenantsService, userPreferences))
+	ui.router.With(authMW).Mount("/api-keys", routes.SetupAPIKeyRoutes(client, apiKeys, tenantsService))
+	ui.router.With(authMW).Mount("/", routes.SetupTenantSwitchingRoutes(tenantsService, userPreferences))
 
 	return ui, nil
 }

@@ -2,7 +2,7 @@
     {
         "id": "passthrough-authentication",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<\\.ory(/.+)?>",
+            "url": "http://<127.0.0.1|localhost>:3000/<(\\.ory|tenants/auth/settings|tenants/auth/login|tenants/auth/logout|tenants/static)(/.+)?>",
             "methods": [
                 "GET","POST","PATCH","PUT","DELETE"
             ]
@@ -20,7 +20,7 @@
     {
         "id": "auth",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000</tenants|/dashboard|/api><(/.*)?>",
+            "url": "http://<127.0.0.1|localhost>:3000/<tenants/auth|((tenants/switch|tenants/api-keys|dashboard|api)(/.*)?)>",
             "methods": [
                 "GET",
                 "POST",
@@ -35,9 +35,6 @@
             },
             {
                 "handler": "bearer_token"
-            },
-            {
-                "handler": "noop"
             }
         ],
         "authorizer": {
@@ -48,8 +45,7 @@
                 "handler": "hydrator"
             },
             {
-                "handler": "id_token",
-                "config": {}
+                "handler": "id_token"
             }
         ]
     },
@@ -67,12 +63,6 @@
         },
         "authenticators": [
             {
-                "handler": "cookie_session"
-            },
-            {
-                "handler": "bearer_token"
-            },
-            {
                 "handler": "noop"
             }
         ],
@@ -81,11 +71,7 @@
         },
         "mutators": [
             {
-                "handler": "hydrator"
-            },
-            {
-                "handler": "id_token",
-                "config": {}
+                "handler": "noop"
             }
         ]
     }

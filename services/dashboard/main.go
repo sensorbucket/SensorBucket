@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -16,6 +17,7 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/api"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/dashboard/routes"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
 )
@@ -41,7 +43,8 @@ func Run() error {
 	defer cancel()
 
 	router := chi.NewRouter()
-	router.Use(middleware.Logger)
+	jwks := auth.NewJWKSHttpClient("http://oathkeeper:4456/.well-known/jwks.json")
+	router.Use(middleware.Logger, auth.Authenticate(jwks), auth.Protect())
 
 	var baseURL *url.URL
 	if HTTP_BASE != "" {
@@ -52,14 +55,13 @@ func Run() error {
 	// Middleware to pass on basic auth to the client api
 	router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			user, pass, ok := r.BasicAuth()
-			if ok {
-				r = r.WithContext(context.WithValue(
-					r.Context(), api.ContextBasicAuth, api.BasicAuth{
-						UserName: user,
-						Password: pass,
-					}))
-			}
+			key := r.Header.Get("Authorization")
+			key = strings.Join(strings.Split(key, " ")[1:], "")
+			r = r.WithContext(context.WithValue(
+				r.Context(), api.ContextAPIKeys, api.APIKey{
+					Key:    key,
+					Prefix: "Bearer",
+				}))
 			next.ServeHTTP(w, r)
 		})
 	})
