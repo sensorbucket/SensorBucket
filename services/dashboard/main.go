@@ -29,9 +29,10 @@ func main() {
 }
 
 var (
-	HTTP_ADDR = env.Could("HTTP_ADDR", ":3000")
-	HTTP_BASE = env.Could("HTTP_BASE", "")
-	SB_API    = env.Must("SB_API")
+	HTTP_ADDR     = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE     = env.Could("HTTP_BASE", "")
+	AUTH_JWKS_URL = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
+	SB_API        = env.Must("SB_API")
 )
 
 //go:embed static/*
@@ -43,7 +44,7 @@ func Run() error {
 	defer cancel()
 
 	router := chi.NewRouter()
-	jwks := auth.NewJWKSHttpClient("http://oathkeeper:4456/.well-known/jwks.json")
+	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
 	router.Use(middleware.Logger, auth.Authenticate(jwks), auth.Protect())
 
 	var baseURL *url.URL
