@@ -25,6 +25,7 @@ type WebUI struct {
 
 func New(
 	baseURLString,
+	jwksURL,
 	sensorbucketAPIEndpoint string,
 	tenantsService *tenants.TenantService,
 	apiKeys *apikeys.Service,
@@ -51,7 +52,7 @@ func New(
 	client := api.NewAPIClient(cfg)
 
 	ui.router.Use(middleware.Logger)
-	jwks := auth.NewJWKSHttpClient("http://oathkeeper:4456/.well-known/jwks.json")
+	jwks := auth.NewJWKSHttpClient(jwksURL)
 	ui.router.Use(auth.Authenticate(jwks))
 	// Middleware to pass on basic auth to the client api
 	// TODO: This also exists in dashboard/main.go, perhaps make it a package?
