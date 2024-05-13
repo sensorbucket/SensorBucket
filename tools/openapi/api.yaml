@@ -86,16 +86,12 @@ components:
         An API Key given through the Authorization header will authenticate an organisation
       type: http
       scheme: Bearer
-    Noop:
-      description: |
-        Bypasses all authentication
 x-oathkeeper-mutators:
   - Hydrate
   - IDToken
 security:
   - CookieSession: []
   - APIKey: []
-  - Noop: []
 tags:
   - name: Devices
   - name: Pipelines
