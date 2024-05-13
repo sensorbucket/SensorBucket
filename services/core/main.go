@@ -18,6 +18,7 @@ import (
 	"github.com/rs/cors"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
@@ -45,6 +46,7 @@ var (
 	AMQP_PREFETCH                = env.Could("AMQP_PREFETCH", "5")
 	HTTP_ADDR                    = env.Could("HTTP_ADDR", ":3000")
 	HTTP_BASE                    = env.Could("HTTP_BASE", "http://localhost:3000/api")
+	AUTH_JWKS_URL                = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
 	SYS_ARCHIVE_TIME             = env.Could("SYS_ARCHIVE_TIME", "30")
 )
 
@@ -91,7 +93,8 @@ func Run() error {
 
 	// Setup HTTP Transport
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
+	r.Use(middleware.Logger, auth.Authenticate(jwks), auth.Protect())
 	deviceshttp.SetupRoutes(r)
 	measurementhttp.SetupRoutes(r)
 	processinghttp.SetupRoutes(r)

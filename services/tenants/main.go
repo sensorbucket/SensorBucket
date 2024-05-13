@@ -86,17 +86,17 @@ func runAPI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 	// Setup Tenants service
 	tenantStore := tenantsinfra.NewTenantsStorePSQL(db)
 	kratosAdmin := tenantsinfra.NewKratosUserValidator(KRATOS_ADMIN_API)
-	tenantSvc := tenants.NewTenantService(tenantStore, kratosAdmin)
-	_ = tenantstransports.NewTenantsHTTP(r, tenantSvc, HTTP_API_BASE)
+	tenantSVC := tenants.NewTenantService(tenantStore, kratosAdmin)
+	_ = tenantstransports.NewTenantsHTTP(r, tenantSVC, HTTP_API_BASE)
 
 	// Setup API keys service
 	apiKeyStore := tenantsinfra.NewAPIKeyStorePSQL(db)
-	apiKeySvc := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
-	_ = tenantstransports.NewAPIKeysHTTP(r, apiKeySvc, HTTP_API_BASE)
+	apiKeySVC := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
+	_ = tenantstransports.NewAPIKeysHTTP(r, apiKeySVC, HTTP_API_BASE)
 
 	// Setup oathkeeper endpoint
 	userPreferences := sessions.NewUserPreferenceService(tenantStore)
-	oathkeeperTransport := tenantstransports.NewOathkeeperEndpoint(userPreferences, tenantSvc)
+	oathkeeperTransport := tenantstransports.NewOathkeeperEndpoint(userPreferences, tenantSVC)
 	r.Mount("/oathkeeper", oathkeeperTransport)
 
 	// Run the HTTP Server
@@ -133,7 +133,6 @@ func runWebUI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 	ui, err := webui.New(
 		HTTP_WEBUI_BASE,
 		AUTH_JWKS_URL,
-		SB_API,
 		tenantSvc,
 		apiKeySvc,
 		userPreferences,

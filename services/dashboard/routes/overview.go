@@ -23,14 +23,16 @@ import (
 )
 
 type OverviewRoute struct {
-	router chi.Router
-	client *api.APIClient
+	router             chi.Router
+	measurementsClient *api.APIClient
+	coreClient         *api.APIClient
 }
 
-func CreateOverviewPageHandler(client *api.APIClient) *OverviewRoute {
+func CreateOverviewPageHandler(measurements, core *api.APIClient) *OverviewRoute {
 	t := &OverviewRoute{
-		client: client,
-		router: chi.NewRouter(),
+		measurementsClient: measurements,
+		coreClient:         core,
+		router:             chi.NewRouter(),
 	}
 	t.SetupRoutes(t.router)
 	return t
@@ -76,14 +78,14 @@ func (t *OverviewRoute) createSensorGroup() http.HandlerFunc {
 				web.HTTPError(w, err)
 				return
 			}
-			res, _, err := t.client.DevicesApi.GetSensorGroup(r.Context(), sgID).Execute()
+			res, _, err := t.coreClient.DevicesApi.GetSensorGroup(r.Context(), sgID).Execute()
 			if err != nil {
 				web.HTTPError(w, err)
 				return
 			}
 			sg = res.Data
 		}
-		req := t.client.DevicesApi.ListDevices(r.Context())
+		req := t.coreClient.DevicesApi.ListDevices(r.Context())
 		if sg != nil {
 			req = req.SensorGroup([]int64{sg.GetId()})
 		}
@@ -101,7 +103,7 @@ func (t *OverviewRoute) createSensorGroup() http.HandlerFunc {
 
 func (t *OverviewRoute) deleteSensorGroup() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		res, _, err := t.client.DevicesApi.ListDevices(r.Context()).Execute()
+		res, _, err := t.coreClient.DevicesApi.ListDevices(r.Context()).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -115,7 +117,7 @@ func (t *OverviewRoute) deleteSensorGroup() http.HandlerFunc {
 
 func (t *OverviewRoute) getDevicesTable() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := t.client.DevicesApi.ListDevices(r.Context())
+		req := t.coreClient.DevicesApi.ListDevices(r.Context())
 		if r.URL.Query().Has("sensor_group") {
 			sgID, err := strconv.ParseInt(r.URL.Query().Get("sensor_group"), 10, 64)
 			if err != nil {
@@ -143,7 +145,7 @@ func (t *OverviewRoute) getDevicesTable() http.HandlerFunc {
 
 func (t *OverviewRoute) searchSensorGroups() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		res, _, err := t.client.DevicesApi.ListSensorGroups(r.Context()).Execute()
+		res, _, err := t.coreClient.DevicesApi.ListSensorGroups(r.Context()).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -163,14 +165,14 @@ func (t *OverviewRoute) deviceListPage() http.HandlerFunc {
 				web.HTTPError(w, web.NewError(http.StatusBadRequest, "Sensor Group ID is not an integer", "ERR_BAD_REQUEST"))
 				return
 			}
-			res, _, err := t.client.DevicesApi.GetSensorGroup(r.Context(), sensorGroupID).Execute()
+			res, _, err := t.coreClient.DevicesApi.GetSensorGroup(r.Context(), sensorGroupID).Execute()
 			if err != nil {
 				web.HTTPError(w, fmt.Errorf("error getting sensor group: %w", err))
 				return
 			}
 			page.SensorGroup = res.Data
 		}
-		req := t.client.DevicesApi.ListDevices(r.Context())
+		req := t.coreClient.DevicesApi.ListDevices(r.Context())
 		if page.SensorGroup != nil {
 			req = req.SensorGroup([]int64{page.SensorGroup.GetId()})
 		}
@@ -215,7 +217,7 @@ func (t *OverviewRoute) sensorDetailPage() http.HandlerFunc {
 		device, _ := getDevice(r.Context())
 		sensor, _ := getSensor(r.Context())
 
-		res, _, err := t.client.MeasurementsApi.ListDatastreams(r.Context()).Sensor([]int64{sensor.Id}).Execute()
+		res, _, err := t.measurementsClient.MeasurementsApi.ListDatastreams(r.Context()).Sensor([]int64{sensor.Id}).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -240,14 +242,16 @@ func (t *OverviewRoute) devicesStreamMap() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		var sgID int64 = 0
+		var sensorGroups []int64
 		if r.URL.Query().Has("sensor_group") {
-			id, err := strconv.ParseInt(r.URL.Query().Get("sensor_group"), 10, 64)
-			if err != nil {
-				web.HTTPError(w, err)
-				return
+			for _, idString := range r.URL.Query()["sensor_group"] {
+				id, err := strconv.ParseInt(idString, 10, 64)
+				if err != nil {
+					web.HTTPError(w, err)
+					return
+				}
+				sensorGroups = append(sensorGroups, id)
 			}
-			sgID = id
 		}
 
 		ws, err := upgrader.Upgrade(w, r, nil)
@@ -256,14 +260,16 @@ func (t *OverviewRoute) devicesStreamMap() http.HandlerFunc {
 			return
 		}
 
-		go func() {
-			ctx, cancel := context.WithCancel(context.TODO())
+		// Build websocket context and copy auth token
+		wsCTX, cancel := context.WithCancel(context.Background())
+		wsCTX = context.WithValue(wsCTX, api.ContextAccessToken, r.Context().Value(api.ContextAccessToken))
+		go func(ctx context.Context) {
 			defer cancel()
 			defer ws.Close()
 			var nextCursor string
 			for {
 				// Start fetching pages of devices and stream them to the client
-				res, _, err := t.client.DevicesApi.ListDevices(ctx).Cursor(nextCursor).SensorGroup([]int64{sgID}).Execute()
+				res, _, err := t.coreClient.DevicesApi.ListDevices(ctx).Cursor(nextCursor).SensorGroup(sensorGroups).Execute()
 				if err != nil {
 					log.Printf("Failed to fetch devices for client: %v\n", err)
 					return
@@ -290,7 +296,7 @@ func (t *OverviewRoute) devicesStreamMap() http.HandlerFunc {
 					return
 				}
 			}
-		}()
+		}(wsCTX)
 	}
 }
 
@@ -324,7 +330,7 @@ func (t *OverviewRoute) overviewDatastream() http.HandlerFunc {
 			end = time.Now()
 		}
 
-		res, _, err := t.client.MeasurementsApi.GetDatastream(r.Context(), chi.URLParam(r, "id")).Execute()
+		res, _, err := t.measurementsClient.MeasurementsApi.GetDatastream(r.Context(), chi.URLParam(r, "id")).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -368,14 +374,16 @@ func (t *OverviewRoute) overviewDatastreamStream() http.HandlerFunc {
 			return
 		}
 
-		go func() {
-			ctx, cancel := context.WithCancel(context.TODO())
+		// Build websocket context and copy auth token
+		wsCTX := context.WithValue(context.Background(), api.ContextAccessToken, r.Context().Value(api.ContextAccessToken))
+		go func(ctx context.Context) {
+			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 			var nextCursor string
 			defer ws.Close()
 			for {
 				// Start fetching pages of measurements and stream them to the client
-				res, _, err := t.client.MeasurementsApi.QueryMeasurements(ctx).
+				res, _, err := t.measurementsClient.MeasurementsApi.QueryMeasurements(ctx).
 					Cursor(nextCursor).
 					Datastream(datastreamID).
 					Start(start).
@@ -405,7 +413,7 @@ func (t *OverviewRoute) overviewDatastreamStream() http.HandlerFunc {
 					return
 				}
 			}
-		}()
+		}(wsCTX)
 	}
 }
 
@@ -431,7 +439,7 @@ func (t *OverviewRoute) resolveDevice(next http.Handler) http.Handler {
 			web.HTTPError(w, err)
 			return
 		}
-		res, _, err := t.client.DevicesApi.GetDevice(r.Context(), deviceID).Execute()
+		res, _, err := t.coreClient.DevicesApi.GetDevice(r.Context(), deviceID).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return

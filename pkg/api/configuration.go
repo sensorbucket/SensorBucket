@@ -1,7 +1,7 @@
 /*
 Sensorbucket API
 
-SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex 
+SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex' 
 
 API version: 1.1-rc1
 Contact: info@pollex.nl
@@ -108,10 +108,6 @@ func NewConfiguration() *Configuration {
 			{
 				URL: "https://sensorbucket.nl/api",
 				Description: "Production",
-			},
-			{
-				URL: "http://localhost:3000/api",
-				Description: "Local docker environment",
 			},
 		},
 		OperationServers: map[string]ServerConfigurations{

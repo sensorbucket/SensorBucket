@@ -1,6 +1,7 @@
 package apikeys_test
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"testing"
@@ -42,7 +43,7 @@ func TestGenerateNewApiKeyCreatesNewApiKey(t *testing.T) {
 	}
 	s := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 905, auth.Permissions{auth.READ_DEVICES}, &exp)
+	res, err := s.GenerateNewApiKey(context.Background(), "whatever", 905, auth.Permissions{auth.READ_DEVICES}, &exp)
 
 	// Assert
 	assert.NoError(t, err)
@@ -78,7 +79,7 @@ func TestGenerateNewAPIKeyNameAndTenantCombinationNotUnique(t *testing.T) {
 	s := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 905, auth.Permissions{auth.READ_API_KEYS}, &exp)
+	res, err := s.GenerateNewApiKey(context.Background(), "whatever", 905, auth.Permissions{auth.READ_API_KEYS}, &exp)
 
 	// Assert
 	assert.ErrorIs(t, err, apikeys.ErrKeyNameTenantIDCombinationNotUnique)
@@ -108,7 +109,7 @@ func TestGenerateNewAPIKeyCheckCombinationUniqueErrorOccurs(t *testing.T) {
 	s := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 905, auth.Permissions{auth.READ_DEVICES}, &exp)
+	res, err := s.GenerateNewApiKey(context.Background(), "whatever", 905, auth.Permissions{auth.READ_DEVICES}, &exp)
 
 	// Assert
 	assert.Error(t, err)
@@ -144,7 +145,7 @@ func TestGenerateNewApiKeyErrorOccursWhileAddingApiKeyToStore(t *testing.T) {
 	s := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 905, auth.Permissions{auth.READ_DEVICES}, nil)
+	res, err := s.GenerateNewApiKey(context.Background(), "whatever", 905, auth.Permissions{auth.READ_DEVICES}, nil)
 
 	// Assert
 	assert.Error(t, err)
@@ -160,7 +161,7 @@ func TestGenerateNewApiKeyPermissionsContains1InvalidPermission(t *testing.T) {
 	s := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 905, auth.Permissions{auth.READ_API_KEYS, auth.READ_DEVICES, auth.Permission("invalidpermission")}, nil)
+	res, err := s.GenerateNewApiKey(context.Background(), "whatever", 905, auth.Permissions{auth.READ_API_KEYS, auth.READ_DEVICES, auth.Permission("invalidpermission")}, nil)
 
 	// Assert
 	assert.ErrorIs(t, err, apikeys.ErrPermissionsInvalid)
@@ -182,7 +183,7 @@ func TestGenerateNewApiKeyErrorOccursWhenRetrievingTenant(t *testing.T) {
 	s := apikeys.NewAPIKeyService(tenantStore, &ApiKeyStoreMock{})
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 905, auth.Permissions{auth.READ_DEVICES}, nil)
+	res, err := s.GenerateNewApiKey(context.Background(), "whatever", 905, auth.Permissions{auth.READ_DEVICES}, nil)
 
 	// Assert
 	assert.Error(t, err)
@@ -201,7 +202,7 @@ func TestGenerateNewApiKeyTenantDoesNotExist(t *testing.T) {
 	s := apikeys.NewAPIKeyService(tenantStore, &ApiKeyStoreMock{})
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 334, auth.Permissions{auth.READ_DEVICES}, nil)
+	res, err := s.GenerateNewApiKey(context.Background(), "whatever", 334, auth.Permissions{auth.READ_DEVICES}, nil)
 
 	// Assert
 	assert.ErrorIs(t, err, apikeys.ErrTenantIsNotValid)
@@ -222,7 +223,7 @@ func TestGenerateNewApiKeyTenantIsNottenantsActive(t *testing.T) {
 	s := apikeys.NewAPIKeyService(tenantStore, &ApiKeyStoreMock{})
 
 	// Act
-	res, err := s.GenerateNewApiKey("whatever", 334, auth.Permissions{auth.READ_DEVICES}, nil)
+	res, err := s.GenerateNewApiKey(context.Background(), "whatever", 334, auth.Permissions{auth.READ_DEVICES}, nil)
 
 	// Assert
 	assert.ErrorIs(t, err, apikeys.ErrTenantIsNotValid)
@@ -241,7 +242,7 @@ func TestRevokeApiKeyDeletesKey(t *testing.T) {
 	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
-	err := s.RevokeApiKey(665213432)
+	err := s.RevokeApiKey(context.Background(), 665213432)
 
 	// Assert
 	assert.NoError(t, err)
@@ -259,7 +260,7 @@ func TestRevokeApiKeyErrorOccurs(t *testing.T) {
 	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
-	err := s.RevokeApiKey(83245345)
+	err := s.RevokeApiKey(context.Background(), 83245345)
 
 	// Assert
 	assert.Error(t, err)
@@ -277,7 +278,7 @@ func TestRevokeApiKeyWasNotDeletedByStore(t *testing.T) {
 	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
-	err := s.RevokeApiKey(83245345)
+	err := s.RevokeApiKey(context.Background(), 83245345)
 
 	// Assert
 	assert.ErrorIs(t, err, apikeys.ErrKeyNotFound)
@@ -297,7 +298,7 @@ func TestValidateApiKeyInvalidEncoding(t *testing.T) {
 		t.Run(scenario, func(t *testing.T) {
 			// Act
 			s := &apikeys.Service{}
-			res, err := s.AuthenticateApiKey(input)
+			res, err := s.AuthenticateApiKey(context.Background(), input)
 
 			// Assert
 			assert.EqualValues(t, 0, res.TenantID)
@@ -318,7 +319,7 @@ func TestValidateApiKeyErrorOccursWhileRetrievingKey(t *testing.T) {
 	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
-	res, err := s.AuthenticateApiKey(asBase64("43214:somevalidapikey"))
+	res, err := s.AuthenticateApiKey(context.Background(), asBase64("43214:somevalidapikey"))
 
 	// Assert
 	assert.EqualValues(t, 0, res.TenantID)
@@ -344,7 +345,7 @@ func TestValidateApiKeyInvalidKey(t *testing.T) {
 	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
-	res, err := s.AuthenticateApiKey(asBase64("43214:someinvalidapikey"))
+	res, err := s.AuthenticateApiKey(context.Background(), asBase64("43214:someinvalidapikey"))
 
 	// Assert
 	assert.EqualValues(t, 0, res.TenantID)
@@ -376,7 +377,7 @@ func TestValidateApiKeyKeyIsExpired(t *testing.T) {
 	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
-	res, err := s.AuthenticateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
+	res, err := s.AuthenticateApiKey(context.Background(), asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
 
 	// Assert
 	assert.EqualValues(t, 0, res.TenantID)
@@ -409,7 +410,7 @@ func TestValidateApiKeyKeyIsExpiredDeleteErrorOccurs(t *testing.T) {
 	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
-	res, err := s.AuthenticateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
+	res, err := s.AuthenticateApiKey(context.Background(), asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
 
 	// Assert
 	assert.EqualValues(t, 0, res.TenantID)
@@ -436,7 +437,7 @@ func TestValidateApiKeyValidKey(t *testing.T) {
 	s := apikeys.NewAPIKeyService(&TenantStoreMock{}, apiKeyStore)
 
 	// Act
-	res, err := s.AuthenticateApiKey(asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
+	res, err := s.AuthenticateApiKey(context.Background(), asBase64("43214:kayJhmgiCNNQAKwtvewxN6BWSTiEINOy"))
 
 	// Assert
 	assert.EqualValues(t, 534, res.TenantID)

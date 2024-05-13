@@ -19,10 +19,17 @@ import (
 
 var STORAGE_STEP = env.Could("STORAGE_STEP", "storage")
 
-func CreatePipelinePageHandler(client *api.APIClient) http.Handler {
+type PipelinePageHandler struct {
+	router        chi.Router
+	workersClient *api.APIClient
+	coreClient    *api.APIClient
+}
+
+func CreatePipelinePageHandler(workers, core *api.APIClient) http.Handler {
 	handler := &PipelinePageHandler{
-		router: chi.NewRouter(),
-		client: client,
+		router:        chi.NewRouter(),
+		workersClient: workers,
+		coreClient:    core,
 	}
 
 	// Setup routes
@@ -53,18 +60,13 @@ func CreatePipelinePageHandler(client *api.APIClient) http.Handler {
 	return handler
 }
 
-type PipelinePageHandler struct {
-	router chi.Router
-	client *api.APIClient
-}
-
 func (h PipelinePageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.router.ServeHTTP(w, r)
 }
 
 func (h *PipelinePageHandler) pipelineListPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pipelines, _, err := h.client.PipelinesApi.ListPipelines(r.Context()).Execute()
+		pipelines, _, err := h.coreClient.PipelinesApi.ListPipelines(r.Context()).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -101,7 +103,7 @@ func (h *PipelinePageHandler) createPipeline() http.HandlerFunc {
 		dto.SetDescription(r.FormValue("pipeline-descr"))
 		dto.SetSteps(stepsFromWorkersList(allWorkers))
 
-		_, resp, err := h.client.PipelinesApi.CreatePipeline(r.Context()).CreatePipelineRequest(dto).Execute()
+		_, resp, err := h.coreClient.PipelinesApi.CreatePipeline(r.Context()).CreatePipelineRequest(dto).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -219,7 +221,7 @@ func (h *PipelinePageHandler) updatePipeline(next http.Handler) http.Handler {
 		updateDto.SetDescription(pipelineDescr[0])
 		updateDto.SetSteps(stepsFromWorkersList(allWorkers))
 
-		_, resp, err := h.client.PipelinesApi.UpdatePipeline(r.Context(), pipelineId).UpdatePipelineRequest(updateDto).Execute()
+		_, resp, err := h.coreClient.PipelinesApi.UpdatePipeline(r.Context(), pipelineId).UpdatePipelineRequest(updateDto).Execute()
 		if err != nil {
 			SnackbarSomethingWentWrong(w)
 			return
@@ -345,7 +347,7 @@ func stepsFromWorkersList(workers []api.UserWorker) []string {
 
 func (h *PipelinePageHandler) getWorkersTable() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := h.client.WorkersApi.ListWorkers(r.Context())
+		req := h.workersClient.WorkersApi.ListWorkers(r.Context())
 		if r.URL.Query().Has("cursor") {
 			req = req.Cursor(r.URL.Query().Get("cursor"))
 		}
@@ -364,7 +366,7 @@ func (h *PipelinePageHandler) getWorkersTable() func(w http.ResponseWriter, r *h
 
 func (h *PipelinePageHandler) getPipelinesTable() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := h.client.PipelinesApi.ListPipelines(r.Context())
+		req := h.coreClient.PipelinesApi.ListPipelines(r.Context())
 		if r.URL.Query().Has("cursor") {
 			req = req.Cursor(r.URL.Query().Get("cursor"))
 		}
@@ -384,7 +386,7 @@ func (h *PipelinePageHandler) getPipelinesTable() func(w http.ResponseWriter, r 
 
 func (h *PipelinePageHandler) resolvePipeline(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		pipeline, resp, err := h.client.PipelinesApi.GetPipeline(r.Context(), chi.URLParam(r, "pipeline_id")).Execute()
+		pipeline, resp, err := h.coreClient.PipelinesApi.GetPipeline(r.Context(), chi.URLParam(r, "pipeline_id")).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -401,7 +403,7 @@ func (h *PipelinePageHandler) resolvePipeline(next http.Handler) http.Handler {
 			context.WithValue(
 				r.Context(),
 				ctxPipeline,
-				*pipeline.Data,
+				pipeline.Data,
 			),
 		)
 		next.ServeHTTP(w, r)
@@ -435,7 +437,7 @@ func (h *PipelinePageHandler) resolveWorkersInPipeline(next http.Handler) http.H
 
 func (h *PipelinePageHandler) resolveWorkers(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		workers, resp, err := h.client.WorkersApi.ListWorkers(r.Context()).Cursor("").Execute()
+		workers, resp, err := h.workersClient.WorkersApi.ListWorkers(r.Context()).Cursor("").Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -459,7 +461,7 @@ func (h *PipelinePageHandler) resolveWorkers(next http.Handler) http.Handler {
 		ctx = context.WithValue(
 			ctx,
 			ctxWorkersCursor,
-			nextCursor,
+			&nextCursor,
 		)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
@@ -475,7 +477,7 @@ func (h *PipelinePageHandler) resolveWorkers(next http.Handler) http.Handler {
 func (h *PipelinePageHandler) getWorkersForSteps(r *http.Request, steps []string) ([]api.UserWorker, error) {
 	// Try and fetch all workers from user-workers service.
 	// For any worker not found create a "placeholder" worker
-	res, _, err := h.client.WorkersApi.ListWorkers(r.Context()).Id(steps).Execute()
+	res, _, err := h.workersClient.WorkersApi.ListWorkers(r.Context()).Id(steps).Execute()
 	if err != nil {
 		return nil, err
 	}

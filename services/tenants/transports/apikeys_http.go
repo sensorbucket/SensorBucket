@@ -62,7 +62,7 @@ func (t *APIKeysHTTPTransport) httpRevokeApiKey() http.HandlerFunc {
 			})
 			return
 		}
-		if err = t.apiKeySvc.RevokeApiKey(apiKeyId); err != nil {
+		if err = t.apiKeySvc.RevokeApiKey(r.Context(), apiKeyId); err != nil {
 			if errors.Is(err, apikeys.ErrKeyNotFound) {
 				web.HTTPResponse(w, http.StatusNotFound, web.APIResponseAny{
 					Message: "Key does not exist",
@@ -124,7 +124,7 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 			return
 		}
 
-		apiKey, err := t.apiKeySvc.GenerateNewApiKey(params.Name, params.TenantID, params.Permissions, params.ExpirationDate)
+		apiKey, err := t.apiKeySvc.GenerateNewApiKey(r.Context(), params.Name, params.TenantID, params.Permissions, params.ExpirationDate)
 		if err != nil {
 			if errors.Is(err, apikeys.ErrTenantIsNotValid) {
 				web.HTTPResponse(w, http.StatusNotFound, web.APIResponseAny{
@@ -158,7 +158,7 @@ func (t *APIKeysHTTPTransport) httpAuthenticateApiKey() http.HandlerFunc {
 			return
 		}
 		idAndKeyCombination := strings.TrimPrefix(authHeader, "Bearer ")
-		keyInfo, err := t.apiKeySvc.AuthenticateApiKey(idAndKeyCombination)
+		keyInfo, err := t.apiKeySvc.AuthenticateApiKey(r.Context(), idAndKeyCombination)
 		if err == nil {
 			session := AuthenticationSession{
 				Subject: "",
@@ -219,7 +219,7 @@ func (t *APIKeysHTTPTransport) httpListApiKeys() http.HandlerFunc {
 			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "invalid params", ""))
 			return
 		}
-		page, err := t.apiKeySvc.ListAPIKeys(params.Filter, params.Request)
+		page, err := t.apiKeySvc.ListAPIKeys(r.Context(), params.Filter, params.Request)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
@@ -230,9 +230,9 @@ func (t *APIKeysHTTPTransport) httpListApiKeys() http.HandlerFunc {
 }
 
 type ApiKeyService interface {
-	AuthenticateApiKey(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error)
-	GenerateNewApiKey(name string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error)
-	RevokeApiKey(id int64) error
-	ListAPIKeys(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
+	AuthenticateApiKey(ctx context.Context, base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error)
+	GenerateNewApiKey(ctx context.Context, name string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error)
+	RevokeApiKey(ctx context.Context, id int64) error
+	ListAPIKeys(ctx context.Context, filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
 	GetAPIKey(ctx context.Context, id int64) (*apikeys.HashedApiKey, error)
 }

@@ -250,7 +250,7 @@ func streamrenderSidebar(qw422016 *qt422016.Writer) {
 	qw422016.N().S(`
     <section class="flex flex-col border-r">
         <h1 class="p-6 text-lg text-center">Settings</h1>
-        <hr class="px-6 py-1">
+        <hr class="px-6 my-1">
         <ul class="flex flex-col">
             <li>
                 <a
@@ -280,117 +280,129 @@ func streamrenderSidebar(qw422016 *qt422016.Writer) {
 	qw422016.N().S(`">Switch tenant</a>
             </li>
         </ul>
+        <hr class="px-6 my-1">
+        <ul class="flex flex-col">
+            <li>
+                <a
+                    class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                    href="`)
+//line transports/webui/views/layout.qtpl:80
+	qw422016.E().S(U("/auth/logout"))
+//line transports/webui/views/layout.qtpl:80
+	qw422016.N().S(`">Logout</a>
+            </li>
+        </ul>
     </section>
 `)
-//line transports/webui/views/layout.qtpl:76
+//line transports/webui/views/layout.qtpl:84
 }
 
-//line transports/webui/views/layout.qtpl:76
+//line transports/webui/views/layout.qtpl:84
 func writerenderSidebar(qq422016 qtio422016.Writer) {
-//line transports/webui/views/layout.qtpl:76
+//line transports/webui/views/layout.qtpl:84
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/layout.qtpl:76
+//line transports/webui/views/layout.qtpl:84
 	streamrenderSidebar(qw422016)
-//line transports/webui/views/layout.qtpl:76
+//line transports/webui/views/layout.qtpl:84
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/layout.qtpl:76
+//line transports/webui/views/layout.qtpl:84
 }
 
-//line transports/webui/views/layout.qtpl:76
+//line transports/webui/views/layout.qtpl:84
 func renderSidebar() string {
-//line transports/webui/views/layout.qtpl:76
+//line transports/webui/views/layout.qtpl:84
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/layout.qtpl:76
+//line transports/webui/views/layout.qtpl:84
 	writerenderSidebar(qb422016)
-//line transports/webui/views/layout.qtpl:76
+//line transports/webui/views/layout.qtpl:84
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/layout.qtpl:76
+//line transports/webui/views/layout.qtpl:84
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/layout.qtpl:76
+//line transports/webui/views/layout.qtpl:84
 	return qs422016
-//line transports/webui/views/layout.qtpl:76
+//line transports/webui/views/layout.qtpl:84
 }
 
-//line transports/webui/views/layout.qtpl:79
+//line transports/webui/views/layout.qtpl:87
 type Base struct {
 	CSRFToken string
 	flash_messages.FlashMessagesContainer
 }
 
-//line transports/webui/views/layout.qtpl:84
+//line transports/webui/views/layout.qtpl:92
 func (b *Base) streamrenderCSRFToken(qw422016 *qt422016.Writer) {
-//line transports/webui/views/layout.qtpl:84
+//line transports/webui/views/layout.qtpl:92
 	qw422016.N().S(`
     `)
-//line transports/webui/views/layout.qtpl:85
+//line transports/webui/views/layout.qtpl:93
 	streamrenderCSRFToken(qw422016, b.CSRFToken)
-//line transports/webui/views/layout.qtpl:85
+//line transports/webui/views/layout.qtpl:93
 	qw422016.N().S(`
 `)
-//line transports/webui/views/layout.qtpl:86
+//line transports/webui/views/layout.qtpl:94
 }
 
-//line transports/webui/views/layout.qtpl:86
+//line transports/webui/views/layout.qtpl:94
 func (b *Base) writerenderCSRFToken(qq422016 qtio422016.Writer) {
-//line transports/webui/views/layout.qtpl:86
+//line transports/webui/views/layout.qtpl:94
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/layout.qtpl:86
+//line transports/webui/views/layout.qtpl:94
 	b.streamrenderCSRFToken(qw422016)
-//line transports/webui/views/layout.qtpl:86
+//line transports/webui/views/layout.qtpl:94
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/layout.qtpl:86
+//line transports/webui/views/layout.qtpl:94
 }
 
-//line transports/webui/views/layout.qtpl:86
+//line transports/webui/views/layout.qtpl:94
 func (b *Base) renderCSRFToken() string {
-//line transports/webui/views/layout.qtpl:86
+//line transports/webui/views/layout.qtpl:94
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/layout.qtpl:86
+//line transports/webui/views/layout.qtpl:94
 	b.writerenderCSRFToken(qb422016)
-//line transports/webui/views/layout.qtpl:86
+//line transports/webui/views/layout.qtpl:94
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/layout.qtpl:86
+//line transports/webui/views/layout.qtpl:94
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/layout.qtpl:86
+//line transports/webui/views/layout.qtpl:94
 	return qs422016
-//line transports/webui/views/layout.qtpl:86
+//line transports/webui/views/layout.qtpl:94
 }
 
-//line transports/webui/views/layout.qtpl:88
+//line transports/webui/views/layout.qtpl:96
 func streamrenderCSRFToken(qw422016 *qt422016.Writer, token string) {
-//line transports/webui/views/layout.qtpl:88
+//line transports/webui/views/layout.qtpl:96
 	qw422016.N().S(`
     <input type="hidden" name="csrf_token" value="`)
-//line transports/webui/views/layout.qtpl:89
+//line transports/webui/views/layout.qtpl:97
 	qw422016.E().S(token)
-//line transports/webui/views/layout.qtpl:89
+//line transports/webui/views/layout.qtpl:97
 	qw422016.N().S(`">
 `)
-//line transports/webui/views/layout.qtpl:90
+//line transports/webui/views/layout.qtpl:98
 }
 
-//line transports/webui/views/layout.qtpl:90
+//line transports/webui/views/layout.qtpl:98
 func writerenderCSRFToken(qq422016 qtio422016.Writer, token string) {
-//line transports/webui/views/layout.qtpl:90
+//line transports/webui/views/layout.qtpl:98
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line transports/webui/views/layout.qtpl:90
+//line transports/webui/views/layout.qtpl:98
 	streamrenderCSRFToken(qw422016, token)
-//line transports/webui/views/layout.qtpl:90
+//line transports/webui/views/layout.qtpl:98
 	qt422016.ReleaseWriter(qw422016)
-//line transports/webui/views/layout.qtpl:90
+//line transports/webui/views/layout.qtpl:98
 }
 
-//line transports/webui/views/layout.qtpl:90
+//line transports/webui/views/layout.qtpl:98
 func renderCSRFToken(token string) string {
-//line transports/webui/views/layout.qtpl:90
+//line transports/webui/views/layout.qtpl:98
 	qb422016 := qt422016.AcquireByteBuffer()
-//line transports/webui/views/layout.qtpl:90
+//line transports/webui/views/layout.qtpl:98
 	writerenderCSRFToken(qb422016, token)
-//line transports/webui/views/layout.qtpl:90
+//line transports/webui/views/layout.qtpl:98
 	qs422016 := string(qb422016.B)
-//line transports/webui/views/layout.qtpl:90
+//line transports/webui/views/layout.qtpl:98
 	qt422016.ReleaseByteBuffer(qb422016)
-//line transports/webui/views/layout.qtpl:90
+//line transports/webui/views/layout.qtpl:98
 	return qs422016
-//line transports/webui/views/layout.qtpl:90
+//line transports/webui/views/layout.qtpl:98
 }

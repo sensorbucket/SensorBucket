@@ -1,0 +1,48 @@
+[Rules.Dashboard]
+Description = "Dashboard (sub)paths"
+Authenticators = ["CookieSession", "Noop"]
+Mutators = ["Hydrate", "IDToken"]
+Path = "/dashboard<(/.+)?>"
+Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
+
+[Rules.TenantsAuthLogin]
+Description = "Login flow"
+Authenticators = ["Noop"]
+Mutators = ["Noop"]
+Path = "/tenants/auth/login"
+Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
+
+[Rules.TenantsAuthSettings]
+Description = "Settings flow"
+Authenticators = ["Noop"]
+Mutators = ["Noop"]
+Path = "/tenants/auth/settings"
+Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
+
+[Rules.TenantsSwitch]
+Description = "Switch tenants flow"
+Authenticators = ["CookieSession", "Noop"]
+Mutators = ["Hydrate", "IDToken"]
+Path = "/tenants/switch"
+Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
+
+[Rules.TenantsAPIKeys]
+Description = "APIKeys ui"
+Authenticators = ["CookieSession", "Noop"]
+Mutators = ["Hydrate", "IDToken"]
+Path = "/tenants/api-keys"
+Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
+
+[Rules.TenantsAuthCheck]
+Description = "Check auth token"
+Authenticators = ["APIKey", "CookieSession", "Noop"]
+Mutators = ["Hydrate", "IDToken"]
+Path = "/tenants/auth"
+Methods = ["GET"]
+
+[Rules.TenantsPublicStatic]
+Description = "Static UI Files"
+Authenticators = ["Noop"]
+Mutators = ["Noop"]
+Path = "/tenants/static/<.+>"
+Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]

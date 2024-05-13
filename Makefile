@@ -77,3 +77,8 @@ golib: golib-clean
 admin: 
 	echo '{"schema_id":"default", "traits": {"email":"a@pollex.nl"}}' | http post 127.0.0.1:4434/admin/identities | jq .id | \
 	 xargs -I uid echo '{"identity_id":"uid"}' | http post 127.0.0.1:4434/admin/recovery/code
+
+oathkeeper:
+	-@mkdir -p $(CURDIR)/tools/oathkeeper
+	@docker run --rm --init -v $(CURDIR):/project redocly/cli bundle /project/tools/openapi/api.yaml > $(CURDIR)/tools/oathkeeper/bundled_openapi.yaml
+	@openkeeper generate --config $(CURDIR)/tools/oathkeeper/openkeeper.toml > $(CURDIR)/tools/oathkeeper/generated_rules.json

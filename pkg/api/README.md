@@ -8,7 +8,7 @@ that receives data from an AMQP source, process said data and output in the expe
 
 Find out more at: https://developer.sensorbucket.nl/
 
-Developed and designed by Provincie Zeeland and Pollex
+Developed and designed by Provincie Zeeland and Pollex'
 
 
 ## Overview
@@ -213,19 +213,25 @@ Class | Method | HTTP request | Description
 
 
 
-### basicAuth
+### APIKey
 
-- **Type**: HTTP basic authentication
+- **Type**: HTTP Bearer token authentication
 
 Example
 
 ```golang
-auth := context.WithValue(context.Background(), sw.ContextBasicAuth, sw.BasicAuth{
-    UserName: "username",
-    Password: "password",
-})
+auth := context.WithValue(context.Background(), sw.ContextAccessToken, "BEARER_TOKEN_STRING")
 r, err := client.Service.Operation(auth, args)
 ```
+
+
+### CookieSession
+
+- **Type**: API key
+- **API key parameter name**: SID
+- **Location**: 
+
+Note, each API key must be added to a map of `map[string]APIKey` where the key is: SID and passed in as the auth context for each request.
 
 
 ## Documentation for Utility Methods

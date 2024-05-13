@@ -1,7 +1,6 @@
 package webui
 
 import (
-	"context"
 	"embed"
 	"fmt"
 	"net/http"
@@ -10,7 +9,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	"sensorbucket.nl/sensorbucket/services/tenants/sessions"
@@ -25,8 +23,7 @@ type WebUI struct {
 
 func New(
 	baseURLString,
-	jwksURL,
-	sensorbucketAPIEndpoint string,
+	jwksURL string,
 	tenantsService *tenants.TenantService,
 	apiKeys *apikeys.Service,
 	userPreferences *sessions.UserPreferenceService,
@@ -41,39 +38,13 @@ func New(
 		baseURL, _ = url.Parse(baseURLString)
 		views.SetBase(baseURL)
 	}
-
-	sbURL, err := url.Parse(sensorbucketAPIEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse SB_API url: %w", err)
-	}
-	cfg := api.NewConfiguration()
-	cfg.Scheme = sbURL.Scheme
-	cfg.Host = sbURL.Host
-	client := api.NewAPIClient(cfg)
-
 	ui.router.Use(middleware.Logger)
 	jwks := auth.NewJWKSHttpClient(jwksURL)
-	ui.router.Use(auth.Authenticate(jwks))
-	// Middleware to pass on basic auth to the client api
-	// TODO: This also exists in dashboard/main.go, perhaps make it a package?
-	// Also this will become a JWT instead of basic auth!
-	ui.router.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			user, pass, ok := r.BasicAuth()
-			if ok {
-				r = r.WithContext(context.WithValue(
-					r.Context(), api.ContextBasicAuth, api.BasicAuth{
-						UserName: user,
-						Password: pass,
-					}))
-			}
-			next.ServeHTTP(w, r)
-		})
-	})
+	authMW := auth.Authenticate(jwks)
 	ui.router.Handle("/static/*", serveStatic())
 	ui.router.Mount("/auth", routes.SetupKratosRoutes())
-	ui.router.Mount("/api-keys", routes.SetupAPIKeyRoutes(client, apiKeys, tenantsService))
-	ui.router.Mount("/", routes.SetupTenantSwitchingRoutes(tenantsService, userPreferences))
+	ui.router.With(authMW).Mount("/api-keys", routes.SetupAPIKeyRoutes(apiKeys, tenantsService))
+	ui.router.With(authMW).Mount("/switch", routes.SetupTenantSwitchingRoutes(tenantsService, userPreferences))
 
 	return ui, nil
 }

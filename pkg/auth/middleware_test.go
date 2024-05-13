@@ -17,6 +17,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // test jwks is unreachable
@@ -82,9 +83,8 @@ func TestProtectAndAuthenticatePassClaimsToNext(t *testing.T) {
 	s.Handle("/", auth(protect(next)))
 
 	req, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	rr := httptest.NewRecorder()
 	token := createToken(jwt.MapClaims{
 		"tid": 11,
@@ -175,9 +175,8 @@ func TestProtect(t *testing.T) {
 	for scene, cfg := range scenarios {
 		t.Run(scene, func(t *testing.T) {
 			req, err := http.NewRequest("GET", "/", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
+
 			rr := httptest.NewRecorder()
 			ctx := createTestContext(context.Background(), cfg.values)
 
