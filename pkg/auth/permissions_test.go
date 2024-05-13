@@ -29,7 +29,7 @@ func TestStringToPermissions(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			perms, err := stringsToPermissions(tC.strings)
+			perms, err := StringsToPermissions(tC.strings)
 			assert.ErrorIs(t, err, tC.expectedError)
 			assert.Equal(t, tC.expectedPermissions, perms)
 		})

@@ -29,8 +29,8 @@ func SetupTenantSwitchingRoutes(tenantService *tenants.TenantService, userPrefer
 		userPreferences: userPreferences,
 	}
 
-	handler.router.With(flash_messages.ExtractFlashMessage).Get("/switch", handler.httpSwitchTenantPage())
-	handler.router.Post("/switch", handler.httpDoSwitchTenantPage())
+	handler.router.With(flash_messages.ExtractFlashMessage).Get("/", handler.httpSwitchTenantPage())
+	handler.router.Post("/", handler.httpDoSwitchTenantPage())
 
 	return handler
 }
