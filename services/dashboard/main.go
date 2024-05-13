@@ -5,11 +5,11 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -29,10 +29,13 @@ func main() {
 }
 
 var (
-	HTTP_ADDR     = env.Could("HTTP_ADDR", ":3000")
-	HTTP_BASE     = env.Could("HTTP_BASE", "")
-	AUTH_JWKS_URL = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
-	SB_API        = env.Must("SB_API")
+	HTTP_ADDR       = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE       = env.Could("HTTP_BASE", "")
+	AUTH_JWKS_URL   = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
+	EP_CORE         = env.Must("EP_CORE")
+	EP_WORKERS      = env.Must("EP_WORKERS")
+	EP_TRACING      = env.Must("EP_TRACING")
+	EP_MEASUREMENTS = env.Must("EP_MEASUREMENTS")
 )
 
 //go:embed static/*
@@ -45,7 +48,12 @@ func Run() error {
 
 	router := chi.NewRouter()
 	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
-	router.Use(middleware.Logger, auth.Authenticate(jwks), auth.Protect())
+	router.Use(
+		middleware.Logger,
+		auth.ForwardRequestAuthentication(),
+		auth.Authenticate(jwks),
+		auth.Protect(),
+	)
 
 	var baseURL *url.URL
 	if HTTP_BASE != "" {
@@ -53,32 +61,9 @@ func Run() error {
 		views.SetBase(baseURL)
 	}
 
-	// Middleware to pass on basic auth to the client api
-	router.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			key := r.Header.Get("Authorization")
-			key = strings.Join(strings.Split(key, " ")[1:], "")
-			r = r.WithContext(context.WithValue(
-				r.Context(), api.ContextAPIKeys, api.APIKey{
-					Key:    key,
-					Prefix: "Bearer",
-				}))
-			next.ServeHTTP(w, r)
-		})
-	})
-
 	// Serve static files
 	fileServer := http.FileServer(http.FS(staticFS))
 	router.Handle("/static/*", fileServer)
-
-	sbURL, err := url.Parse(SB_API)
-	if err != nil {
-		return fmt.Errorf("could not parse SB_API url: %w", err)
-	}
-	cfg := api.NewConfiguration()
-	cfg.Scheme = sbURL.Scheme
-	cfg.Host = sbURL.Host
-	apiClient := api.NewAPIClient(cfg)
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		u := "/overview"
@@ -87,10 +72,22 @@ func Run() error {
 		}
 		http.Redirect(w, r, u, http.StatusFound)
 	})
-	router.Mount("/overview", routes.CreateOverviewPageHandler(apiClient))
-	router.Mount("/ingress", routes.CreateIngressPageHandler(apiClient))
-	router.Mount("/workers", routes.CreateWorkerPageHandler(apiClient))
-	router.Mount("/pipelines", routes.CreatePipelinePageHandler(apiClient))
+	router.Mount("/overview", routes.CreateOverviewPageHandler(
+		createAPIClient(EP_CORE),
+		createAPIClient(EP_MEASUREMENTS),
+	))
+	router.Mount("/ingress", routes.CreateIngressPageHandler(
+		createAPIClient(EP_CORE),
+		createAPIClient(EP_TRACING),
+		createAPIClient(EP_WORKERS),
+	))
+	router.Mount("/workers", routes.CreateWorkerPageHandler(
+		createAPIClient(EP_WORKERS),
+	))
+	router.Mount("/pipelines", routes.CreatePipelinePageHandler(
+		createAPIClient(EP_WORKERS),
+		createAPIClient(EP_CORE),
+	))
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
 		WriteTimeout: 5 * time.Second,
@@ -106,6 +103,7 @@ func Run() error {
 	fmt.Printf("HTTP Server listening on: %s\n", srv.Addr)
 
 	// Wait for fatal error or interrupt signal
+	var err error
 	select {
 	case <-ctx.Done():
 	case err = <-errC:
@@ -120,4 +118,15 @@ func Run() error {
 	}
 
 	return err
+}
+
+func createAPIClient(baseurl string) *api.APIClient {
+	sbURL, err := url.Parse(baseurl)
+	if err != nil {
+		log.Fatalf("could not parse APIClient url: %s\n", err)
+	}
+	cfg := api.NewConfiguration()
+	cfg.Scheme = sbURL.Scheme
+	cfg.Host = sbURL.Host
+	return api.NewAPIClient(cfg)
 }

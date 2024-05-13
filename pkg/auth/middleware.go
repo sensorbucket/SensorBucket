@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -12,6 +13,7 @@ import (
 	"github.com/golang-jwt/jwt"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/api"
 )
 
 type claims struct {
@@ -62,6 +64,7 @@ func Protect() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if _, err := GetTenant(r.Context()); err != nil {
+				log.Println("[Auth] token is missing tenant!")
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
@@ -70,10 +73,23 @@ func Protect() func(http.Handler) http.Handler {
 			//	return
 			//}
 			if _, err := GetPermissions(r.Context()); err != nil {
+				log.Println("[Auth] token is missing permissions!")
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
 			// All required authentication values are present, allow the request
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func ForwardRequestAuthentication() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			token := strings.TrimPrefix(strings.TrimPrefix(r.Header.Get("Authorization"), "bearer "), "Bearer ")
+			r = r.WithContext(context.WithValue(
+				r.Context(), api.ContextAccessToken, token,
+			))
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -93,8 +109,10 @@ func Authenticate(keyClient jwksClient) func(http.Handler) http.Handler {
 				return
 			}
 
-			tokenStr, ok := strings.CutPrefix(auth, "Bearer ")
+			// Cheating, removes Bearer and bearer case independently
+			tokenStr, ok := strings.CutPrefix(auth[1:], "earer ")
 			if !ok {
+				log.Printf("[Error] authentication failed err because the Authorization header is malformed\n")
 				web.HTTPError(w, ErrAuthHeaderInvalidFormat)
 				return
 			}
@@ -103,12 +121,12 @@ func Authenticate(keyClient jwksClient) func(http.Handler) http.Handler {
 			c := claims{}
 			token, err := jwt.ParseWithClaims(tokenStr, &c, validateJWTFunc(keyClient))
 			if err != nil {
-				log.Printf("[Error] authentication failed err: %s", err)
+				log.Printf("[Error] authentication failed err: %s\n", err)
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
 			if !token.Valid {
-				log.Printf("[Error] authentication failed err: %s", err)
+				log.Printf("[Error] authentication failed err: %s\n", err)
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}

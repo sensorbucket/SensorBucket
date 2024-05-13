@@ -19,7 +19,10 @@ services:
     environment:
     - STATIC_PATH=services/dashboard/static
     - HTTP_BASE=/dashboard
-    - SB_API=http://caddy
+    - EP_CORE=http://caddy
+    - EP_TRACING=http://caddy
+    - EP_WORKERS=http://caddy
+    - EP_MEASUREMENTS=http://caddy
 
   core:
     build:

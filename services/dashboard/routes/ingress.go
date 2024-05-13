@@ -17,14 +17,18 @@ import (
 )
 
 type IngressPageHandler struct {
-	router chi.Router
-	client *api.APIClient
+	router        chi.Router
+	coreClient    *api.APIClient
+	tracingClient *api.APIClient
+	workersClient *api.APIClient
 }
 
-func CreateIngressPageHandler(client *api.APIClient) *IngressPageHandler {
+func CreateIngressPageHandler(core, tracing, workers *api.APIClient) *IngressPageHandler {
 	handler := &IngressPageHandler{
-		router: chi.NewRouter(),
-		client: client,
+		router:        chi.NewRouter(),
+		coreClient:    core,
+		tracingClient: tracing,
+		workersClient: workers,
 	}
 	handler.SetupRoutes(handler.router)
 	return handler
@@ -40,18 +44,18 @@ func (h *IngressPageHandler) SetupRoutes(r chi.Router) {
 }
 
 func (h *IngressPageHandler) createViewIngresses(ctx context.Context) ([]views.Ingress, error) {
-	resIngresses, _, err := h.client.TracingApi.ListIngresses(ctx).Limit(30).Execute()
+	resIngresses, _, err := h.tracingClient.TracingApi.ListIngresses(ctx).Limit(30).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("error listing ingresses: %w", err)
 	}
-	resPipelines, _, err := h.client.PipelinesApi.ListPipelines(ctx).Execute()
+	resPipelines, _, err := h.coreClient.PipelinesApi.ListPipelines(ctx).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("error listing pipelines: %w", err)
 	}
 
 	plSteps := lo.FlatMap(resPipelines.Data, func(p api.Pipeline, _ int) []string { return p.Steps })
 	plSteps = lo.Uniq(plSteps)
-	resWorkers, _, err := h.client.WorkersApi.ListWorkers(ctx).Id(plSteps).Execute()
+	resWorkers, _, err := h.workersClient.WorkersApi.ListWorkers(ctx).Id(plSteps).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("error listing workers: %w", err)
 	}
@@ -61,7 +65,7 @@ func (h *IngressPageHandler) createViewIngresses(ctx context.Context) ([]views.I
 
 	traceIDs := lo.Map(resIngresses.Data, func(ing api.ArchivedIngress, _ int) string { return ing.GetTracingId() })
 	traceIDs = lo.Uniq(traceIDs)
-	resLogs, _, err := h.client.TracingApi.ListTraces(ctx).TracingId(traceIDs).Execute()
+	resLogs, _, err := h.tracingClient.TracingApi.ListTraces(ctx).TracingId(traceIDs).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("error listing traces: %w", err)
 	}
@@ -72,7 +76,7 @@ func (h *IngressPageHandler) createViewIngresses(ctx context.Context) ([]views.I
 	deviceIDs := lo.FilterMap(resLogs.Data, func(traceLog api.Trace, _ int) (int64, bool) {
 		return traceLog.DeviceId, traceLog.DeviceId > 0
 	})
-	resDevices, _, err := h.client.DevicesApi.ListDevices(ctx).Id(lo.Uniq(deviceIDs)).Execute()
+	resDevices, _, err := h.coreClient.DevicesApi.ListDevices(ctx).Id(lo.Uniq(deviceIDs)).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("error listing devices: %w", err)
 	}
