@@ -186,7 +186,7 @@ func TestGetTenant(t *testing.T) {
 
 			// Assert
 			assert.Equal(t, cfg.expectedRes, result)
-			assert.Equal(t, cfg.expectedErr, err)
+			assert.ErrorIs(t, err, cfg.expectedErr)
 		})
 	}
 }

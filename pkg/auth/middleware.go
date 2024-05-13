@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -64,16 +65,17 @@ func Protect() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if _, err := GetTenant(r.Context()); err != nil {
-				log.Println("[Auth] token is missing tenant!")
+				log.Printf("[Auth] %v\n", err)
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
-			//if _, err := GetUser(r.Context()); err != nil {
-			//	web.HTTPError(w, ErrUnauthorized)
-			//	return
-			//}
+			if _, err := GetUser(r.Context()); err != nil && !errors.Is(err, ErrContextMissing) {
+				log.Printf("[Auth] %v\n", err)
+				web.HTTPError(w, ErrUnauthorized)
+				return
+			}
 			if _, err := GetPermissions(r.Context()); err != nil {
-				log.Println("[Auth] token is missing permissions!")
+				log.Printf("[Auth] %v\n", err)
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
