@@ -42,7 +42,7 @@ func getWorkers(ctx context.Context) []api.UserWorker {
 }
 
 func getWorkersCursor(ctx context.Context) *string {
-	value, ok := ctx.Value(ctxWorkers).(*string)
+	value, ok := ctx.Value(ctxWorkersCursor).(*string)
 	if !ok {
 		return nil
 	}

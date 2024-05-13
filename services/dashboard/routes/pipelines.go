@@ -403,7 +403,7 @@ func (h *PipelinePageHandler) resolvePipeline(next http.Handler) http.Handler {
 			context.WithValue(
 				r.Context(),
 				ctxPipeline,
-				*pipeline.Data,
+				pipeline.Data,
 			),
 		)
 		next.ServeHTTP(w, r)
@@ -461,7 +461,7 @@ func (h *PipelinePageHandler) resolveWorkers(next http.Handler) http.Handler {
 		ctx = context.WithValue(
 			ctx,
 			ctxWorkersCursor,
-			nextCursor,
+			&nextCursor,
 		)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
