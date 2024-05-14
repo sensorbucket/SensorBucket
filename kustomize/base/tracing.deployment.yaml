@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracing
+  namespace: default
+  labels:
+    app: tracing
+spec:
+  selector:
+    matchLabels:
+      app: tracing
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container:  tracing
+      labels:
+        app: tracing
+    spec:
+      containers:
+      - name: tracing
+        image: "ghcr.io/sensorbucket/tracing:edge"
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        livenessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_status/healthz
+            port: 3000
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        env:
+        - name: HTTP_ADDR                        
+          valueFrom:
+            configMapKeyRef:
+              name: tracing
+              key: HTTP_ADDR
+        - name: HTTP_BASE                        
+          valueFrom:
+            configMapKeyRef:
+              name: tracing
+              key: HTTP_BASE
+        - name: DB_DSN                           
+          valueFrom:
+            configMapKeyRef:
+              name: tracing
+              key: DB_DSN
+        - name: AMQP_HOST                        
+          valueFrom:
+            configMapKeyRef:
+              name: tracing
+              key: AMQP_HOST
+        - name: AMQP_QUEUE_PIPELINEMESSAGES      
+          valueFrom:
+            configMapKeyRef:
+              name: tracing
+              key: AMQP_QUEUE_PIPELINEMESSAGES
+        - name: AMQP_XCHG_PIPELINEMESSAGES       
+          valueFrom:
+            configMapKeyRef:
+              name: tracing
+              key: AMQP_XCHG_PIPELINEMESSAGES
+        - name: AMQP_XCHG_PIPELINEMESSAGES_TOPIC 
+          valueFrom:
+            configMapKeyRef:
+              name: tracing
+              key: AMQP_XCHG_PIPELINEMESSAGES_TOPIC
+        - name: AMQP_QUEUE_INGRESS               
+          valueFrom:
+            configMapKeyRef:
+              name: tracing
+              key: AMQP_QUEUE_INGRESS
+        - name: AMQP_XCHG_INGRESS                
+          valueFrom:
+            configMapKeyRef:
+              name: tracing
+              key: AMQP_XCHG_INGRESS
+        - name: AMQP_XCHG_INGRESS_TOPIC          
+          valueFrom:
+            configMapKeyRef:
+              name: tracing
+              key: AMQP_XCHG_INGRESS_TOPIC
+        ports:
+        - containerPort: 3000
+      restartPolicy: Always

@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- core.deployment.yaml
+- core.ingress.yaml
+- core.service.yaml
+- dashboard.deployment.yaml
+- dashboard.ingress.yaml
+- dashboard.service.yaml
+- http-ingress.deployment.yaml
+- http-ingress.ingress.yaml
+- http-ingress.service.yaml
+- replace-api-prefix.middleware.yaml
+- tenants.deployment.yaml
+- tenants.ingress.yaml
+- tenants.service.yaml
+- tracing.deployment.yaml
+- tracing.ingress.yaml
+- tracing.service.yaml
+- user-workers.deployment.yaml
+- user-workers.ingress.yaml
+- user-workers.service.yaml

@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tenants
+  namespace: default
+  labels:
+    app: tenants
+spec:
+  selector:
+    matchLabels:
+      app: tenants
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container:  tenants
+      labels:
+        app: tenants
+    spec:
+      containers:
+      - name: tenants
+        image: "ghcr.io/sensorbucket/tenants:edge"
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        livenessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_status/healthz
+            port: 3000
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        env:
+        - name: HTTP_API_ADDR    
+          valueFrom:
+            configMapKeyRef:
+              name: tenants
+              key: HTTP_API_ADDR
+        - name: HTTP_API_BASE    
+          valueFrom:
+            configMapKeyRef:
+              name: tenants
+              key: HTTP_API_BASE
+        - name: HTTP_WEBUI_ADDR  
+          valueFrom:
+            configMapKeyRef:
+              name: tenants
+              key: HTTP_WEBUI_ADDR
+        - name: HTTP_WEBUI_BASE  
+          valueFrom:
+            configMapKeyRef:
+              name: tenants
+              key: HTTP_WEBUI_BASE
+        - name: KRATOS_ADMIN_API 
+          valueFrom:
+            configMapKeyRef:
+              name: tenants
+              key: KRATOS_ADMIN_API
+        - name: AUTH_JWKS_URL    
+          valueFrom:
+            configMapKeyRef:
+              name: tenants
+              key: AUTH_JWKS_URL
+        - name: SB_API           
+          valueFrom:
+            configMapKeyRef:
+              name: tenants
+              key: SB_API
+        - name: DB_DSN           
+          valueFrom:
+            configMapKeyRef:
+              name: tenants
+              key: DB_DSN
+        ports:
+        - containerPort: 3000
+        - containerPort: 3001
+      restartPolicy: Always

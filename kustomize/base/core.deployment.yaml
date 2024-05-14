@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: core
+  namespace: default
+  labels:
+    app: core
+spec:
+  selector:
+    matchLabels:
+      app: core
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container:  core
+      labels:
+        app: core
+    spec:
+      containers:
+      - name: core
+        image: "ghcr.io/sensorbucket/core:edge"
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        livenessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_status/healthz
+            port: 3000
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        env:
+        - name: HTTP_ADDR
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: HTTP_ADDR
+        - name: HTTP_BASE                    
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: HTTP_BASE
+        - name: DB_DSN                       
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: DB_DSN
+        - name: AMQP_HOST                    
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: AMQP_HOST
+        - name: AMQP_XCHG_INGRESS_TOPIC      
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: AMQP_XCHG_INGRESS_TOPIC
+        - name: AMQP_XCHG_PIPELINE_MESSAGES  
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: AMQP_XCHG_PIPELINE_MESSAGES
+        - name: AMQP_QUEUE_MEASUREMENTS      
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: AMQP_QUEUE_MEASUREMENTS
+        - name: AMQP_XCHG_MEASUREMENTS_TOPIC 
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: AMQP_XCHG_MEASUREMENTS_TOPIC
+        - name: AMQP_QUEUE_INGRESS           
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: AMQP_QUEUE_INGRESS
+        - name: AMQP_XCHG_INGRESS            
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: AMQP_XCHG_INGRESS
+        - name: AMQP_QUEUE_ERRORS            
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: AMQP_QUEUE_ERRORS
+        - name: AMQP_PREFETCH                
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: AMQP_PREFETCH
+        - name: AUTH_JWKS_URL                
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: AUTH_JWKS_URL
+        - name: SYS_ARCHIVE_TIME             
+          valueFrom:
+            configMapKeyRef:
+              name: core
+              key: SYS_ARCHIVE_TIME
+        ports:
+        - containerPort: 3000
+      restartPolicy: Always

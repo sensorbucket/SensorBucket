@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tenants-ui
+  namespace: default
+spec:
+  selector:
+    app: tenants
+  type: ClusterIP
+  ports:
+  - name: tenants-api
+    protocol: TCP
+    port: 80
+    targetPort: 3000
+  - name: tenants-ui
+    protocol: TCP
+    port: 81
+    targetPort: 3000

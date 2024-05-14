@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tracing-ingress
+  namespace: default
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: strip-api-prefix@default
+spec:
+  rules:
+  - host: sensorbucket.nl
+    http:
+      paths:
+      - path: /api/tracing
+        pathType: Prefix
+        backend:
+          service:
+            name: tracing
+            port:
+              name: tracing
+      - path: /api/ingress
+        pathType: Prefix
+        backend:
+          service:
+            name: tracing
+            port:
+              name: tracing

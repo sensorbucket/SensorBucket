@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard
+  namespace: default
+  labels:
+    app: dashboard
+spec:
+  selector:
+    matchLabels:
+      app: dashboard
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container:  dashboard
+      labels:
+        app: dashboard
+    spec:
+      containers:
+      - name: dashboard
+        image: "ghcr.io/sensorbucket/dashboard:edge"
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        livenessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_status/healthz
+            port: 3000
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        env:
+        - name: HTTP_ADDR       
+          valueFrom:
+            configMapKeyRef:
+              name: dashboard
+              key: HTTP_ADDR
+        - name: HTTP_BASE       
+          valueFrom:
+            configMapKeyRef:
+              name: dashboard
+              key: HTTP_BASE
+        - name: AUTH_JWKS_URL   
+          valueFrom:
+            configMapKeyRef:
+              name: dashboard
+              key: AUTH_JWKS_URL
+        - name: EP_CORE         
+          valueFrom:
+            configMapKeyRef:
+              name: dashboard
+              key: EP_CORE
+        - name: EP_WORKERS      
+          valueFrom:
+            configMapKeyRef:
+              name: dashboard
+              key: EP_WORKERS
+        - name: EP_TRACING      
+          valueFrom:
+            configMapKeyRef:
+              name: dashboard
+              key: EP_TRACING
+        - name: EP_MEASUREMENTS 
+          valueFrom:
+            configMapKeyRef:
+              name: dashboard
+              key: EP_MEASUREMENTS
+        ports:
+        - containerPort: 3000
+      restartPolicy: Always

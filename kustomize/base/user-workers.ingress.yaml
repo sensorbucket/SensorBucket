@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: user-workers-ingress
+  namespace: default
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: strip-api-prefix@default
+spec:
+  rules:
+  - host: sensorbucket.nl
+    http:
+      paths:
+      - path: /api/workers
+        pathType: Prefix
+        backend:
+          service:
+            name: user-workers
+            port:
+              name: user-workers

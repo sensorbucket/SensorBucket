@@ -1,0 +1,72 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../base
+
+generatorOptions:
+  labels:
+    kustomize-environment: sensorbucket-acc
+
+configMapGenerator:
+  - name: core
+    literals:
+    - DB_DSN=123
+    - AMQP_HOST=123
+    - AMQP_XCHG_INGRESS_TOPIC=123
+    - AMQP_XCHG_PIPELINE_MESSAGES=123
+    - AMQP_QUEUE_MEASUREMENTS=123
+    - AMQP_XCHG_MEASUREMENTS_TOPIC=123
+    - AMQP_QUEUE_INGRESS=123
+    - AMQP_XCHG_INGRESS=123
+    - AMQP_QUEUE_ERRORS=123
+    - AMQP_PREFETCH=123
+    - HTTP_ADDR=123
+    - HTTP_BASE=123
+    - AUTH_JWKS_URL=123
+    - SYS_ARCHIVE_TIME=123
+  - name: dashboard
+    literals:
+    - HTTP_ADDR=123
+    - HTTP_BASE=123
+    - AUTH_JWKS_URL=123
+    - EP_CORE=123
+    - EP_WORKERS=123
+    - EP_TRACING=123
+    - EP_MEASUREMENTS=123
+  - name: http-ingress
+    literals:
+    - HTTP_ADDR=123
+    - HEALTH_ADDR=123
+    - AMQP_HOST=123
+    - AMQP_XCHG=123
+    - AMQP_XCHG_TOPIC=123
+  - name: tenants
+    literals:
+    - HTTP_API_ADDR=123
+    - HTTP_API_BASE=123
+    - HTTP_WEBUI_ADDR=123
+    - HTTP_WEBUI_BASE=123
+    - KRATOS_ADMIN_API=123
+    - AUTH_JWKS_URL=123
+    - SB_API=123
+    - DB_DSN=123
+  - name: tracing
+    literals:
+    - HTTP_ADDR=123
+    - HTTP_BASE=123
+    - DB_DSN=123
+    - AMQP_HOST=123
+    - AMQP_QUEUE_PIPELINEMESSAGES=123
+    - AMQP_XCHG_PIPELINEMESSAGES=123
+    - AMQP_XCHG_PIPELINEMESSAGES_TOPIC=123
+    - AMQP_QUEUE_INGRESS=123
+    - AMQP_XCHG_INGRESS=123
+    - AMQP_XCHG_INGRESS_TOPIC=123
+  - name: user-workers
+    literals:
+    - HTTP_ADDR=123
+    - HTTP_BASE=123
+    - CTRL_TYPE=123
+    - DB_DSN=123
+    - AMQP_XCHG=123

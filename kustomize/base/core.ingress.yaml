@@ -1,0 +1,54 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: core-ingress
+  namespace: default
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: strip-api-prefix@default
+spec:
+  rules:
+  - host: sensorbucket.nl
+    http:
+      paths:
+      - path: /api/devices
+        pathType: Prefix
+        backend:
+          service:
+            name: core
+            port:
+              name: core
+      - path: /api/sensors
+        pathType: Prefix
+        backend:
+          service:
+            name: core
+            port:
+              name: core
+      - path: /api/sensor-groups
+        pathType: Prefix
+        backend:
+          service:
+            name: core
+            port:
+              name: core
+      - path: /api/measurements
+        pathType: Prefix
+        backend:
+          service:
+            name: core
+            port:
+              name: core
+      - path: /api/datastreams
+        pathType: Prefix
+        backend:
+          service:
+            name: core
+            port:
+              name: core
+      - path: /api/pipelines
+        pathType: Prefix
+        backend:
+          service:
+            name: core
+            port:
+              name: core

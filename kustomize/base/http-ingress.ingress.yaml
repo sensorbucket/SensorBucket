@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: http-ingress
+  namespace: default
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: strip-api-prefix@default
+spec:
+  rules:
+  - host: sensorbucket.nl
+    http:
+      paths:
+      - path: /api/uplinks
+        pathType: Prefix
+        backend:
+          service:
+            name: core
+            port:
+              name: http
