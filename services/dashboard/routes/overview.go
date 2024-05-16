@@ -23,16 +23,14 @@ import (
 )
 
 type OverviewRoute struct {
-	router             chi.Router
-	measurementsClient *api.APIClient
-	coreClient         *api.APIClient
+	router     chi.Router
+	coreClient *api.APIClient
 }
 
-func CreateOverviewPageHandler(measurements, core *api.APIClient) *OverviewRoute {
+func CreateOverviewPageHandler(core *api.APIClient) *OverviewRoute {
 	t := &OverviewRoute{
-		measurementsClient: measurements,
-		coreClient:         core,
-		router:             chi.NewRouter(),
+		coreClient: core,
+		router:     chi.NewRouter(),
 	}
 	t.SetupRoutes(t.router)
 	return t
@@ -217,7 +215,7 @@ func (t *OverviewRoute) sensorDetailPage() http.HandlerFunc {
 		device, _ := getDevice(r.Context())
 		sensor, _ := getSensor(r.Context())
 
-		res, _, err := t.measurementsClient.MeasurementsApi.ListDatastreams(r.Context()).Sensor([]int64{sensor.Id}).Execute()
+		res, _, err := t.coreClient.MeasurementsApi.ListDatastreams(r.Context()).Sensor([]int64{sensor.Id}).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -330,7 +328,7 @@ func (t *OverviewRoute) overviewDatastream() http.HandlerFunc {
 			end = time.Now()
 		}
 
-		res, _, err := t.measurementsClient.MeasurementsApi.GetDatastream(r.Context(), chi.URLParam(r, "id")).Execute()
+		res, _, err := t.coreClient.MeasurementsApi.GetDatastream(r.Context(), chi.URLParam(r, "id")).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -383,7 +381,7 @@ func (t *OverviewRoute) overviewDatastreamStream() http.HandlerFunc {
 			defer ws.Close()
 			for {
 				// Start fetching pages of measurements and stream them to the client
-				res, _, err := t.measurementsClient.MeasurementsApi.QueryMeasurements(ctx).
+				res, _, err := t.coreClient.MeasurementsApi.QueryMeasurements(ctx).
 					Cursor(nextCursor).
 					Datastream(datastreamID).
 					Start(start).

@@ -5,7 +5,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -29,13 +28,12 @@ func main() {
 }
 
 var (
-	HTTP_ADDR       = env.Could("HTTP_ADDR", ":3000")
-	HTTP_BASE       = env.Could("HTTP_BASE", "")
-	AUTH_JWKS_URL   = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
-	EP_CORE         = env.Must("EP_CORE")
-	EP_WORKERS      = env.Must("EP_WORKERS")
-	EP_TRACING      = env.Must("EP_TRACING")
-	EP_MEASUREMENTS = env.Must("EP_MEASUREMENTS")
+	HTTP_ADDR     = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE     = env.Could("HTTP_BASE", "")
+	AUTH_JWKS_URL = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
+	EP_CORE       = env.Must("EP_CORE")
+	EP_WORKERS    = env.Must("EP_WORKERS")
+	EP_TRACING    = env.Must("EP_TRACING")
 )
 
 //go:embed static/*
@@ -74,7 +72,6 @@ func Run() error {
 	})
 	router.Mount("/overview", routes.CreateOverviewPageHandler(
 		createAPIClient(EP_CORE),
-		createAPIClient(EP_MEASUREMENTS),
 	))
 	router.Mount("/ingress", routes.CreateIngressPageHandler(
 		createAPIClient(EP_CORE),
@@ -121,12 +118,11 @@ func Run() error {
 }
 
 func createAPIClient(baseurl string) *api.APIClient {
-	sbURL, err := url.Parse(baseurl)
-	if err != nil {
-		log.Fatalf("could not parse APIClient url: %s\n", err)
-	}
 	cfg := api.NewConfiguration()
-	cfg.Scheme = sbURL.Scheme
-	cfg.Host = sbURL.Host
+	cfg.Servers = api.ServerConfigurations{
+		{
+			URL: baseurl,
+		},
+	}
 	return api.NewAPIClient(cfg)
 }
