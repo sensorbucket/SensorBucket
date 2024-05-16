@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"strings"
 )
 
 // MustHaveTenantPermissions is the only validating exported authentication and authorization method
@@ -30,4 +31,15 @@ func mustBeTenant(ctx context.Context, tenantID int64) error {
 		return ErrUnauthorized
 	}
 	return nil
+}
+
+var bearerLen = len("Bearer ") // Includes the space!
+func StripBearer(str string) (string, bool) {
+	if len(str) < bearerLen {
+		return str, false
+	}
+	if !strings.EqualFold(str[:bearerLen], "bearer ") {
+		return str, false
+	}
+	return str[bearerLen:], true
 }

@@ -94,7 +94,7 @@ func Run() error {
 	// Setup HTTP Transport
 	r := chi.NewRouter()
 	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
-	r.Use(middleware.Logger, auth.Authenticate(jwks), auth.Protect())
+	r.Use(middleware.Logger, auth.Authenticate(jwks)) // TODO ADD: , auth.Protect()
 	deviceshttp.SetupRoutes(r)
 	measurementhttp.SetupRoutes(r)
 	processinghttp.SetupRoutes(r)

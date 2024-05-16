@@ -18,6 +18,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"sensorbucket.nl/sensorbucket/pkg/api"
 )
 
 // test jwks is unreachable
@@ -350,6 +352,25 @@ func TestAuthenticate(t *testing.T) {
 			assert.Len(t, next.ServeHTTPCalls(), cfg.expectedNextCalls)
 		})
 	}
+}
+
+func TestForwardRequestAuthentication(t *testing.T) {
+	req, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer ExpectedStringHere")
+	rr := httptest.NewRecorder()
+	handler := &HandlerMock{
+		ServeHTTPFunc: func(w http.ResponseWriter, r *http.Request) {
+		},
+	}
+
+	ForwardRequestAuthentication()(handler).ServeHTTP(rr, req)
+
+	require.Len(t, handler.calls.ServeHTTP, 1)
+	reqContext := handler.calls.ServeHTTP[0].Request.Context()
+	assert.Equal(t, "ExpectedStringHere", reqContext.Value(api.ContextAccessToken))
 }
 
 func jsonPrivateKey() any {
