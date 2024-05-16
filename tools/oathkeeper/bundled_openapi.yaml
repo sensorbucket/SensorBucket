@@ -1774,8 +1774,8 @@ components:
       type: http
       scheme: Bearer
     Noop:
-      description: |
-        Bypasses all authentication
+      type: http
+      scheme: Bearer
   schemas:
     paginatedResponse:
       type: object

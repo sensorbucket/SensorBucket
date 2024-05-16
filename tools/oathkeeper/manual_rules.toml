@@ -27,10 +27,10 @@ Path = "/tenants/switch"
 Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
 
 [Rules.TenantsAPIKeys]
-Description = "APIKeys ui"
+Description = "APIKeys UI"
 Authenticators = ["CookieSession", "Noop"]
 Mutators = ["Hydrate", "IDToken"]
-Path = "/tenants/api-keys"
+Path = "/tenants/api-keys<(/.*)?>"
 Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
 
 [Rules.TenantsAuthCheck]
