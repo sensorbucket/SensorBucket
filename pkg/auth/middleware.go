@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-jose/go-jose/v3"
@@ -88,10 +87,12 @@ func Protect() func(http.Handler) http.Handler {
 func ForwardRequestAuthentication() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token := strings.TrimPrefix(strings.TrimPrefix(r.Header.Get("Authorization"), "bearer "), "Bearer ")
-			r = r.WithContext(context.WithValue(
-				r.Context(), api.ContextAccessToken, token,
-			))
+			token, ok := StripBearer(r.Header.Get("Authorization"))
+			if ok {
+				r = r.WithContext(context.WithValue(
+					r.Context(), api.ContextAccessToken, token,
+				))
+			}
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -104,15 +105,15 @@ func ForwardRequestAuthentication() func(http.Handler) http.Handler {
 func Authenticate(keyClient jwksClient) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			auth := r.Header.Get("Authorization")
-			if auth == "" {
+			authStr := r.Header.Get("Authorization")
+			if authStr == "" {
 				// Allow anonymous requests
 				next.ServeHTTP(w, r)
 				return
 			}
 
 			// Cheating, removes Bearer and bearer case independently
-			tokenStr, ok := strings.CutPrefix(auth[1:], "earer ")
+			tokenStr, ok := StripBearer(authStr)
 			if !ok {
 				log.Printf("[Error] authentication failed err because the Authorization header is malformed\n")
 				web.HTTPError(w, ErrAuthHeaderInvalidFormat)

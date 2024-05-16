@@ -33,7 +33,6 @@ var (
 	HTTP_WEBUI_BASE  = env.Could("HTTP_WEBUI_BASE", "http://localhost:3000/auth")
 	KRATOS_ADMIN_API = env.Could("KRATOS_ADMIN_API", "http://kratos:4434/")
 	AUTH_JWKS_URL    = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
-	SB_API           = env.Must("SB_API")
 	DB_DSN           = env.Must("DB_DSN")
 )
 
