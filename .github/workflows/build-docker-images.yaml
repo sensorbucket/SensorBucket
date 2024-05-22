@@ -10,6 +10,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  BUILDCACHE_TAG: ${{ env.REGISTRY }}/gacache:${{ github.sha }}
 
 jobs:
   test:
@@ -28,11 +29,46 @@ jobs:
       - name: Run Go Tests
         run: go test ./...
 
-  docker:
-    name: Build images
+  docker-cache:
+    name: Build cache image
     needs: test
     runs-on: ubuntu-latest
-    environment: ${{ github.ref == 'refs/heads/main' && 'staging' || (github.ref == 'refs/tags/*' && 'production' || '') }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: services/core/Dockerfile
+          target: builder
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.BUILDCACHE_TAG }}
+          cache-from: type=registry,ref=${{ env.BUILDCACHE_TAG }}
+          cache-to: type=registry,ref=${{ env.BUILDCACHE_TAG }},mode=max
+
+  docker:
+    name: Build images
+    needs: docker-cache
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
@@ -110,3 +146,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.BUILDCACHE_TAG }}
