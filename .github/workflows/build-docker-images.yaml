@@ -10,7 +10,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  BUILDCACHE_TAG: ghcr.io/${{ github.repository }}/gacache:${{ github.sha }}
+  BUILDCACHE_TAG: ghcr.io/sensorbucket/gacache:${{ github.sha }}
 
 jobs:
   test:
