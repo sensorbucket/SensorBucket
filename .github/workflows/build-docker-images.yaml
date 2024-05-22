@@ -32,7 +32,7 @@ jobs:
   docker-cache:
     name: Build cache image
     needs: test
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     environment: ${{ github.ref == 'refs/heads/main' && 'staging' || (github.ref == 'refs/tags/*' && 'production' || '') }}-latest
     permissions:
       contents: read
