@@ -2,14 +2,14 @@
 Description = "Dashboard (sub)paths"
 Authenticators = ["CookieSession", "Noop"]
 Mutators = ["Hydrate", "IDToken"]
-Path = "/dashboard<(/.+)?>"
+Path = "/dashboard<(/.*)?>"
 Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
 
 [Rules.TenantsAuthLogin]
 Description = "Login flow"
 Authenticators = ["Noop"]
 Mutators = ["Noop"]
-Path = "/tenants/auth/login"
+Path = "/tenants/auth/<login|logout>"
 Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
 
 [Rules.TenantsAuthSettings]
@@ -44,5 +44,5 @@ Methods = ["GET"]
 Description = "Static UI Files"
 Authenticators = ["Noop"]
 Mutators = ["Noop"]
-Path = "/tenants/static/<.+>"
+Path = "/tenants/static/<.*>"
 Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
