@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -418,15 +417,4 @@ func toViewTenants(tenants []tenants.CreateTenantDTO) []views.TenantInfo {
 		})
 	}
 	return viewTenants
-}
-
-func getCursor(next string) string {
-	if next == "" {
-		return ""
-	}
-	u, err := url.Parse(next)
-	if err != nil {
-		return ""
-	}
-	return u.Query().Get("cursor")
 }
