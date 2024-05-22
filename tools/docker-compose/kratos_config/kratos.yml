@@ -11,9 +11,10 @@ serve:
     base_url: http://kratos:4434/
 
 selfservice:
-  default_browser_return_url: http://127.0.0.1:3000/tenants/auth
+  default_browser_return_url: http://127.0.0.1:3000/tenants/auth/settings
   allowed_return_urls:
-    - http://127.0.0.1:3000/tenants/auth
+    - http://127.0.0.1:3000/tenants/auth/settings
+    - http://127.0.0.1:3000/dashboard
 
   methods:
     password:

@@ -9,6 +9,7 @@
             Worker Details
         </header>
         <form class="p-4 flex flex-col gap-4">
+            {%= p.renderCSRFToken() %}
             <fieldset>
                 <label for="worker-name" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Worker name</small></label>
                 <input

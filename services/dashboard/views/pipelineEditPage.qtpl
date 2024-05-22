@@ -18,6 +18,7 @@
                 {% endif %}
                 hx-vals="js:{steps: getSteps()}"
                 hx-target="#sortableForm">
+            {%= p.renderCSRFToken() %}
             <fieldset>
                 <label for="pipeline-id" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Pipeline ID</small></label>
                 <input

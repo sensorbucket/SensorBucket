@@ -17,6 +17,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/samber/lo"
 
+	"sensorbucket.nl/sensorbucket/internal/flash_messages"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
@@ -41,7 +42,10 @@ func (t OverviewRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *OverviewRoute) SetupRoutes(r chi.Router) {
-	r.Use(middleware.GetHead)
+	r.Use(
+		middleware.GetHead,
+		flash_messages.ExtractFlashMessage,
+	)
 	r.Get("/", t.deviceListPage())
 	r.Get("/devices/stream-map", t.devicesStreamMap())
 	r.Get("/devices/table", t.getDevicesTable())
@@ -155,7 +159,10 @@ func (t *OverviewRoute) searchSensorGroups() http.HandlerFunc {
 func (t *OverviewRoute) deviceListPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
-		page := &views.DeviceListPage{}
+		page := &views.DeviceListPage{
+			BasePage: createBasePage(r),
+		}
+
 		sensorGroupIDStr := r.URL.Query().Get("sensor_group")
 		if sensorGroupIDStr != "" {
 			sensorGroupID, err := strconv.ParseInt(sensorGroupIDStr, 10, 64)
@@ -200,7 +207,8 @@ func (t *OverviewRoute) deviceDetailPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		device, _ := getDevice(r.Context())
 		page := &views.DeviceDetailPage{
-			Device: *device,
+			BasePage: createBasePage(r),
+			Device:   *device,
 		}
 		if isHX(r) {
 			page.WriteBody(w)
@@ -221,6 +229,7 @@ func (t *OverviewRoute) sensorDetailPage() http.HandlerFunc {
 			return
 		}
 		page := &views.SensorDetailPage{
+			BasePage:    createBasePage(r),
 			Device:      *device,
 			Sensor:      *sensor,
 			Datastreams: res.Data,
@@ -335,6 +344,7 @@ func (t *OverviewRoute) overviewDatastream() http.HandlerFunc {
 		}
 
 		page := &views.DatastreamPage{
+			BasePage:   createBasePage(r),
 			Datastream: *res.Data.Datastream,
 			Device:     *res.Data.Device,
 			Sensor:     *res.Data.Sensor,

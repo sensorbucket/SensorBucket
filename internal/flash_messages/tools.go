@@ -111,8 +111,10 @@ func IsAPIError(err error) (api.ApiError, bool) {
 }
 
 type snackbarDetails struct {
+	Title   string       `json:"title"`
 	Message string       `json:"message"`
 	Type    SnackbarType `json:"type"`
+	UID     string       `json:"uid"`
 }
 
 func withSnackbarMessage(w http.ResponseWriter, details snackbarDetails) http.ResponseWriter {

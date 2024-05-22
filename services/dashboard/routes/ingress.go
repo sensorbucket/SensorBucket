@@ -160,7 +160,10 @@ func (h *IngressPageHandler) ingressListPage() http.HandlerFunc {
 			web.HTTPError(w, err)
 			return
 		}
-		page := &views.IngressPage{Ingresses: ingresses}
+		page := &views.IngressPage{
+			BasePage:  createBasePage(r),
+			Ingresses: ingresses,
+		}
 		if isHX(r) {
 			page.WriteBody(w)
 			return

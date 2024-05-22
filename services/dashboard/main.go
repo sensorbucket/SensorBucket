@@ -13,10 +13,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/ory/nosurf"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/layout"
 	"sensorbucket.nl/sensorbucket/services/dashboard/routes"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
 )
@@ -85,11 +87,18 @@ func Run() error {
 		createAPIClient(EP_WORKERS),
 		createAPIClient(EP_CORE),
 	))
+	csrfWrappedHandler := nosurf.New(router)
+	csrfWrappedHandler.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("nosurf.Reason(r): %v\n", nosurf.Reason(r))
+		layout.WithSnackbarError(w, "CSRF Token was invalid, try reloading the page")
+		//nolint
+		w.Write([]byte("A CSRF error occured. Reload the previous page and try again"))
+	}))
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
-		Handler:      router,
+		Handler:      csrfWrappedHandler,
 	}
 
 	go func() {

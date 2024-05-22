@@ -41,7 +41,9 @@ func (h *WorkerPageHandler) SetupRoutes(r chi.Router) {
 
 func (h *WorkerPageHandler) listWorkers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		page := &views.WorkerListPage{}
+		page := &views.WorkerListPage{
+			BasePage: createBasePage(r),
+		}
 		res, _, err := h.workersClient.WorkersApi.ListWorkers(r.Context()).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
@@ -89,7 +91,9 @@ func (h *WorkerPageHandler) workersTable() http.HandlerFunc {
 
 func (h *WorkerPageHandler) workerDetails() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		page := &views.WorkerEditorPage{}
+		page := &views.WorkerEditorPage{
+			BasePage: createBasePage(r),
+		}
 		workerID := chi.URLParam(r, "id")
 		res, _, err := h.workersClient.WorkersApi.GetWorker(r.Context(), workerID).Execute()
 		if err != nil {
@@ -156,6 +160,7 @@ def process(payload, msg):
 	ucb64 := base64.StdEncoding.EncodeToString([]byte(defaultUserCode))
 	return func(w http.ResponseWriter, r *http.Request) {
 		page := &views.WorkerEditorPage{
+			BasePage: createBasePage(r),
 			UserCode: ucb64,
 		}
 		if isHX(r) {

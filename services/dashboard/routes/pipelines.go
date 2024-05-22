@@ -73,6 +73,7 @@ func (h *PipelinePageHandler) pipelineListPage() http.HandlerFunc {
 		}
 
 		page := &views.PipelinePage{
+			BasePage:  createBasePage(r),
 			Pipelines: pipelines.Data,
 		}
 		if pipelines.Links.GetNext() != "" {
@@ -132,6 +133,7 @@ func pipelineCreatePage() http.HandlerFunc {
 			return
 		}
 		page := &views.PipelineEditPage{
+			BasePage:          createBasePage(r),
 			Pipeline:          nil,
 			Workers:           workers,
 			WorkersInPipeline: nil,
@@ -170,6 +172,7 @@ func pipelineDetailPage() http.HandlerFunc {
 		}
 
 		page := &views.PipelineEditPage{
+			BasePage:          createBasePage(r),
 			Pipeline:          pipeline,
 			Workers:           workers,
 			WorkersInPipeline: &workersInPipeline,

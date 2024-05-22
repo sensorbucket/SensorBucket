@@ -75,6 +75,11 @@
         <hr class="px-6 my-1">
         <ul class="flex flex-col">
             <li>
+                <a  hx-boost="false"
+                    class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
+                    href="{%s "/dashboard" %}">Dashboard</a>
+            </li>
+            <li>
                 <a
                     class="block text-sm py-3 px-6 transition-colors duration-150 hover:bg-gray-50"
                     href="{%s U("/auth/logout") %}">Logout</a>

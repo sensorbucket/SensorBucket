@@ -1,3 +1,4 @@
+{% import "sensorbucket.nl/sensorbucket/internal/flash_messages" %}
 {% code
 type NavItem struct {
     Label string
@@ -5,11 +6,15 @@ type NavItem struct {
     Icon string
 }
 
-var navItems = []NavItem{
+var topNavItems = []NavItem{
     {Label: "Overview", URL: "/", Icon: "material-symbols:home-outline-rounded" },
     {Label: "Ingress", URL: "/ingress", Icon: "mdi:latest" },
     {Label: "Workers", URL: "/workers", Icon: "uil:box" },
     {Label: "Pipelines", URL: "/pipelines", Icon:"mdi:pipe"},
+}
+var bottomNavItems = []NavItem{
+    {Label: "Switch Organisation", URL: "/tenants/switch?success_url=/dashboard", Icon: "mdi:building" },
+    {Label: "Settings", URL: "/tenants/auth/settings", Icon: "bi:person-fill-gear" },
 }
 %}
 
@@ -19,17 +24,23 @@ interface Page {
     Header()
     Body()
     Footer()
+    RenderFlashMessages()
 }
 %}
 
 {% code
 type BasePage struct {
+    CSRFToken string
+    flash_messages.FlashMessagesContainer
 }
 %}
 {% func (p *BasePage) Title() %}This is a base title{% endfunc %}
 {% func (p *BasePage) Header() %}{% endfunc %}
 {% func (p *BasePage) Body() %}Page has no body{% endfunc %}
 {% func (p *BasePage) Footer() %}{% endfunc %}
+{% func (p *BasePage) RenderFlashMessages() %}
+    {%= p.FlashMessagesContainer.Render() %}
+{% endfunc %}
 
 {% func Index(page Page) %}
 <!DOCTYPE html>
@@ -57,78 +68,92 @@ type BasePage struct {
     <script type="text/javascript">
         window.addEventListener("DOMContentLoaded", function(){
             document.body.addEventListener("showSnackbar", function(evt) {
-                showSnackbar(evt.detail.message, evt.detail.type);
+                showSnackbar(evt.detail.title, evt.detail.message, evt.detail.type, evt.detail.uid);
             });
         });
      
         const snackbarSuccess = 1;
-        const snackbarError = 2;
+        const snackbarWarning = 2;
+        const snackbarError = 3;
+
+        const snackbarColors = [
+            [
+                ["text-primary-900","bg-primary-200","border-primary-400"],
+                ["text-primary-600"],
+                ["bg-primary-100"],
+            ],
+            [
+                ["text-green-900","bg-green-200","border-green-400"],
+                ["text-green-600"],
+                ["bg-green-100"],
+            ],
+            [
+                ["text-orange-900","bg-orange-200","border-orange-400"],
+                ["text-orange-600"],
+                ["bg-orange-100"],
+            ],
+            [
+                ["text-red-900","bg-red-200","border-red-400"],
+                ["text-red-600"],
+                ["bg-red-100"],
+            ],
+        ];
         
         let currentHideSnackbarTimer = null;
-        function showSnackbar(message, type) {
-            // If called again before disapearing, immediately hide
-            hideSnackbar();
+        let snackbarNextID = 1;
+        function showSnackbar(title, message, type, uid) {
+            const snackbarTemplate = document.getElementById('snackbar-template');
+            let snackbar = snackbarTemplate.content.cloneNode(true);
 
-            const snackbar = document.getElementById('snackbar');
-            const snackbarMessage = document.getElementById('snackbarMessage');
-
-            snackbarMessage.innerText = message;
-
-            snackbar.classList.add('translate-y-0');
-            snackbar.classList.add('opacity-100');
-            snackbar.classList.remove('pointer-events-none');
-
-            const successIcon = document.getElementById('successIcon');
-            const errorIcon = document.getElementById('errorIcon');
-
-            if (!successIcon.classList.contains('hidden')) {
-                successIcon.classList.add('hidden');
+            if (!uid) {
+                uid = snackbarNextID++;
             }
-
-            if (!errorIcon.classList.contains('hidden')) {
-                errorIcon.classList.add('hidden');
+            let elID = "snackbar-notification-" + uid
+            existing = document.getElementById(elID)
+            if (existing) {
+                existing.remove()
             }
+            snackbar.children[0].id = elID;
 
-            if (type == snackbarSuccess) {
-                const successIcon = document.getElementById('successIcon');
-                successIcon.classList.remove('hidden');
-            } else if (type == snackbarError) {
-                const errorIcon = document.getElementById('errorIcon');
-                errorIcon.classList.remove('hidden');
+            if (typeof(type) == "undefined") {
+                type = 0;
             }
+            snackbar.querySelector(".sb-title").innerText = title ?? '';
+            snackbar.querySelector(".sb-message").innerText = message;
+            snackbar.querySelector(".sb-innercontainer").classList.add(...snackbarColors[type][0]);
+            snackbar.querySelector(".sb-icon").classList.add(...snackbarColors[type][1]);
 
-            currentHideSnackbarTimer = setTimeout(() => {
-              hideSnackbar();
-            }, 3000);
-        }
-
-        function hideSnackbar() {
-            if (currentHideSnackbarTimer != null) {
-                clearTimeout(currentHideSnackbarTimer);
-                currentHideSnackbarTimer = null;
-            }
-            const snackbar = document.getElementById('snackbar');
-            snackbar.classList.remove('translate-y-0');
-            snackbar.classList.remove('opacity-100');
-            snackbar.classList.add('pointer-events-none');
+            snackbar = document.getElementById('snackbar-notifications').appendChild(snackbar.children[0], true);
+            _hyperscript.processNode(snackbar)
         }
     </script>
     {%= page.Header() %}
 </head>
 
 <body class="min-h-full" hx-boost="true">
-    <div id="snackbar" class="fixed bottom-3 right-3 w-96 h-24 select-none transition ease-in duration-100 drop-shadow-2xl -translate-y-5 opacity-0 pointer-events-none"> 
-        <div class="flex justify-between w-full h-full p-4 mb-4 text-gray-500 bg-secondary-600" role="alert">
-            <div class="flex items-center justify-start w-full">
-                <div class="w-1/6 h-full border-solid border border-white">
-                    <iconify-icon id="successIcon" icon="ph:check-bold" width="100%" height="100%" class="text-green-500 hidden"></iconify-icon>
-                    <iconify-icon id="errorIcon" icon="tdesign:error" width="100%" height="100%" class="text-rose-800 hidden"></iconify-icon>
+    <div id="snackbar" class="fixed right-0 bottom-0 w-96 z-10"> 
+        <template id="snackbar-template">
+            <div class="w-full flash-message" _="init wait 5s transition my *opacity to 0 then remove me">
+                <div class="sb-innercontainer border-l-4 p-4" role="alert">
+                    <div class="flex w-full">
+                        <div class="py-2">
+                            <iconify-icon class="sb-icon" icon="" width="24" class="px-4 float-right"></iconify-icon>
+                        </div>
+                        <div class="w-full">
+                            <p class="sb-title text-sm font-bold"></p>
+                            <br />
+                            <div class="flex justify-start">
+                                <p class="sb-message text-sm w-full truncate"></p>
+                            </div>
+                        </div>
+                        <iconify-icon _="on click hide closest .flash-message" class="cursor-pointer" icon="material-symbols-light:close" width="18"></iconify-icon>
+                    </div>
                 </div>
-                <span id="snackbarMessage" class="ml-3 text-lg font-normal text-white">hello there</span>
             </div>
-            <div class="cursor-pointer" onclick="hideSnackbar()">
-                <iconify-icon icon="ooui:close" class="text-white"></iconify-icon>
-            </div>
+        </template>
+
+        <div id="snackbar-notifications" class="w-full h-full flex flex-col-reverse items-end gap-y-1">
+        {%= page.RenderFlashMessages() %}
         </div>
     </div>
     <sidebar class="w-screen lg:w-sidebar fixed lg:h-screen top-0 left-0 flex flex-col bg-secondary-600 z-[5000]">
@@ -143,12 +168,29 @@ type BasePage struct {
                 <iconify-icon id="toggle-sidebar-icon" icon="ic:round-keyboard-arrow-down" width="24" class="text-white transition duration-150"></iconify-icon>
             </button>
         </header>
-        <nav class="mt-4 px-8 pb-4 hidden lg:block">
+        <nav class="mt-4 px-8 pb-4 hidden lg:flex lg:flex-1 flex-col justify-between">
+            <!-- TOP Nav items -->
             <ul hx-target="main">
                 <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
-                {% for _, item := range navItems %}
+                {% for _, item := range topNavItems %}
                 <li>
                     <a href="{%s U(item.URL) %}"
+                        class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">
+                        <iconify-icon icon="{%s item.Icon %}" width="24" class="pr-4 w-8"></iconify-icon>
+                        <span>
+                            {%s item.Label %}
+                        </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <!-- BOTTOM Nav items -->
+            <ul hx-boost="false">
+                <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Other</li>
+                {% for _, item := range bottomNavItems %}
+                <li>
+                    <a href="{%s item.URL %}"
                         class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">
                         <iconify-icon icon="{%s item.Icon %}" width="24" class="pr-4 w-8"></iconify-icon>
                         <span>
@@ -162,7 +204,6 @@ type BasePage struct {
     </sidebar>
     <section class="flex-1 mt-12 lg:mt-0 lg:ml-sidebar" id="main-wrapper">
         <header class="h-8 bg-white border-b" id="mustache">
-            
         </header>
         <main class="p-4 pt-0 mt-4" id="main">
             {%= page.Body() %}
@@ -183,4 +224,12 @@ type BasePage struct {
 <script type="text/javascript" src="https://unpkg.com/hyperscript.org@0.9.11"></script>
 <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
 <!--<script type="text/javascript" src="https://livejs.com/live.js"></script>-->
+{% endfunc %}
+
+{% func (b *BasePage) renderCSRFToken() %}
+    {%= renderCSRFToken(b.CSRFToken) %}
+{% endfunc %}
+
+{% func renderCSRFToken(token string) %}
+    <input type="hidden" name="csrf_token" value="{%s token %}">
 {% endfunc %}
