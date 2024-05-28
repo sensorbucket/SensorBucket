@@ -1,4 +1,4 @@
-package devicetransport_test
+package coretransport_test
 
 import (
 	"bytes"
@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -25,8 +24,8 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
 	seed "sensorbucket.nl/sensorbucket/services/core/devices/infra/test_seed"
-	devicetransport "sensorbucket.nl/sensorbucket/services/core/devices/transport"
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
+	coretransport "sensorbucket.nl/sensorbucket/services/core/transport"
 )
 
 func createPostgresServer(t *testing.T) *sqlx.DB {
@@ -73,7 +72,7 @@ func createPostgresServer(t *testing.T) *sqlx.DB {
 type IntegrationTestSuite struct {
 	suite.Suite
 	svc       *devices.Service
-	transport *devicetransport.HTTPTransport
+	transport *coretransport.CoreTransport
 	sg1       *devices.SensorGroup
 	sg2       *devices.SensorGroup
 	sg3       *devices.SensorGroup
@@ -93,7 +92,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	deviceStore := deviceinfra.NewPSQLStore(db)
 	sensorGroupStore := deviceinfra.NewPSQLSensorGroupStore(db)
 	s.svc = devices.New(deviceStore, sensorGroupStore)
-	s.transport = devicetransport.NewHTTPTransport(s.svc, baseURL)
+	s.transport = coretransport.New(s.svc, baseURL)
 
 	// Create three groups
 	ctx := context.Background()

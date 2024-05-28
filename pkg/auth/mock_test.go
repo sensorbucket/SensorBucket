@@ -11,7 +11,7 @@ import (
 
 // Ensure, that jwksClientMock does implement jwksClient.
 // If this is not the case, regenerate this file with moq.
-var _ jwksClient = &jwksClientMock{}
+var _ JWKSClient = &jwksClientMock{}
 
 // jwksClientMock is a mock implementation of jwksClient.
 //

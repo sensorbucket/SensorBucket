@@ -150,14 +150,14 @@ func (t *APIKeysHTTPTransport) httpAuthenticateApiKey() http.HandlerFunc {
 		MatchContext any            `json:"match_context,omitempty"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		token, ok := auth.StripBearer(r.Header.Get("Authorization"))
+		if !ok {
 			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
 				Message: "Authorization header must be set",
 			})
 			return
 		}
-		idAndKeyCombination := strings.TrimPrefix(authHeader, "Bearer ")
+		idAndKeyCombination := strings.TrimPrefix(token, "Bearer ")
 		keyInfo, err := t.apiKeySvc.AuthenticateApiKey(r.Context(), idAndKeyCombination)
 		if err == nil {
 			session := AuthenticationSession{

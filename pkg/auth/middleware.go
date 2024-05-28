@@ -32,7 +32,7 @@ func (c *claims) Valid() error {
 	return fmt.Errorf("claims not valid")
 }
 
-type jwksClient interface {
+type JWKSClient interface {
 	Get() (jose.JSONWebKeySet, error)
 }
 
@@ -64,17 +64,17 @@ func Protect() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if _, err := GetTenant(r.Context()); err != nil {
-				log.Printf("[Auth] %v\n", err)
+				log.Printf("[Auth] getting tenant: %v\n", err)
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
 			if _, err := GetUser(r.Context()); err != nil && !errors.Is(err, ErrContextMissing) {
-				log.Printf("[Auth] %v\n", err)
+				log.Printf("[Auth] getting user: %v\n", err)
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
 			if _, err := GetPermissions(r.Context()); err != nil {
-				log.Printf("[Auth] %v\n", err)
+				log.Printf("[Auth] getting permissions: %v\n", err)
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
@@ -102,7 +102,7 @@ func ForwardRequestAuthentication() func(http.Handler) http.Handler {
 // Checks if the JWT is signed using the given secret
 // Serves the next HTTP handler if there is no JWT or if the JWT is OK
 // Anonymous requests are allowed by this handler
-func Authenticate(keyClient jwksClient) func(http.Handler) http.Handler {
+func Authenticate(keyClient JWKSClient) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authStr := r.Header.Get("Authorization")
@@ -143,7 +143,7 @@ func Authenticate(keyClient jwksClient) func(http.Handler) http.Handler {
 	}
 }
 
-func validateJWTFunc(jwksClient jwksClient) func(token *jwt.Token) (any, error) {
+func validateJWTFunc(jwksClient JWKSClient) func(token *jwt.Token) (any, error) {
 	return func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

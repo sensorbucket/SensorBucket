@@ -7,16 +7,12 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
+	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 )
-
-func Create(r chi.Router, measurementService *measurements.Service, deviceService *devices.Service) http.Handler {
-	r.Get("/datastreams/{id}", getDatastreams(measurementService, deviceService))
-	return r
-}
 
 type GetDatastreamResponse struct {
 	Datastream                 *measurements.Datastream `json:"datastream"`
@@ -26,7 +22,7 @@ type GetDatastreamResponse struct {
 	LatestMeasurementTimestamp time.Time                `json:"latest_measurement_timestamp"`
 }
 
-func getDatastreams(measurementService *measurements.Service, deviceService *devices.Service) http.HandlerFunc {
+func (t *CoreTransport) httpGetDatastream() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idQ := chi.URLParam(r, "id")
 		id, err := uuid.Parse(idQ)
@@ -35,19 +31,19 @@ func getDatastreams(measurementService *measurements.Service, deviceService *dev
 			return
 		}
 
-		ds, err := measurementService.GetDatastream(r.Context(), id)
+		ds, err := t.measurementService.GetDatastream(r.Context(), id)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
 
-		sensor, err := deviceService.GetSensor(r.Context(), ds.SensorID)
+		sensor, err := t.deviceService.GetSensor(r.Context(), ds.SensorID)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
 
-		device, err := deviceService.GetDevice(r.Context(), sensor.DeviceID)
+		device, err := t.deviceService.GetDevice(r.Context(), sensor.DeviceID)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -58,7 +54,7 @@ func getDatastreams(measurementService *measurements.Service, deviceService *dev
 			Sensor:     sensor,
 		}
 
-		m, err := measurementService.QueryMeasurements(measurements.Filter{
+		m, err := t.measurementService.QueryMeasurements(measurements.Filter{
 			Datastream: []string{ds.ID.String()},
 		}, pagination.Request{Limit: 1})
 		if err != nil {
@@ -74,5 +70,26 @@ func getDatastreams(measurementService *measurements.Service, deviceService *dev
 			Message: "Fetched detailed datastream",
 			Data:    res,
 		})
+	}
+}
+
+func (t *CoreTransport) httpListDatastream() http.HandlerFunc {
+	type params struct {
+		measurements.DatastreamFilter
+		pagination.Request
+	}
+	return func(rw http.ResponseWriter, r *http.Request) {
+		params, err := httpfilter.Parse[params](r)
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+
+		page, err := t.measurementService.ListDatastreams(r.Context(), params.DatastreamFilter, params.Request)
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
 	}
 }

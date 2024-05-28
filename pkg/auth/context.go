@@ -52,7 +52,7 @@ func GetTenant(ctx context.Context) (int64, error) {
 func GetUser(ctx context.Context) (string, error) {
 	value := ctx.Value(ctxUserID)
 	if value == nil {
-		return "", fmt.Errorf("%w: %w", ErrInvalidContext, ErrNoUserID)
+		return "", fmt.Errorf("%w: %w", ErrContextMissing, ErrNoUserID)
 	}
 
 	typedValue, ok := value.(string)
@@ -61,7 +61,7 @@ func GetUser(ctx context.Context) (string, error) {
 	}
 
 	if typedValue == "" {
-		return "", fmt.Errorf("%w: %w", ErrInvalidContext, ErrNoUserID)
+		return "", fmt.Errorf("%w: %w", ErrContextMissing, ErrNoUserID)
 	}
 
 	return typedValue, nil
