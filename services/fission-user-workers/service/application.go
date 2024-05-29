@@ -9,6 +9,7 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 )
 
 var (
@@ -41,10 +42,18 @@ type CreateWorkerOpts struct {
 }
 
 func (app *Application) GetWorker(ctx context.Context, id uuid.UUID) (*UserWorker, error) {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_USER_WORKERS}); err != nil {
+		return nil, err
+	}
+
 	return app.store.GetWorkerByID(id)
 }
 
 func (app *Application) CreateWorker(ctx context.Context, opts CreateWorkerOpts) (*UserWorker, error) {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_USER_WORKERS}); err != nil {
+		return nil, err
+	}
+
 	worker, err := CreateWorker(opts.Name, opts.Description, opts.UserCode)
 	if err != nil {
 		return nil, err
@@ -66,6 +75,10 @@ type UpdateWorkerOpts struct {
 }
 
 func (app *Application) UpdateWorker(ctx context.Context, worker *UserWorker, opts UpdateWorkerOpts) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_USER_WORKERS}); err != nil {
+		return err
+	}
+
 	if opts.Name != nil {
 		if err := worker.SetName(*opts.Name); err != nil {
 			return err
@@ -104,5 +117,9 @@ type ListWorkerFilters struct {
 }
 
 func (app *Application) ListWorkers(ctx context.Context, filters ListWorkerFilters, req pagination.Request) (*pagination.Page[UserWorker], error) {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_USER_WORKERS}); err != nil {
+		return nil, err
+	}
+
 	return app.store.ListUserWorkers(filters, req)
 }

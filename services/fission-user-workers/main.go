@@ -14,6 +14,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/fission-user-workers/migrations"
 	userworkers "sensorbucket.nl/sensorbucket/services/fission-user-workers/service"
 )
@@ -24,7 +25,8 @@ var (
 	CTRL_TYPE = env.Could("CTRL_TYPE", "k8s")
 	DB_DSN    = env.Must("DB_DSN")
 	// The exchange to which workers will bind to
-	AMQP_XCHG = env.Could("AMQP_XCHG", "pipeline.messages")
+	AMQP_XCHG     = env.Could("AMQP_XCHG", "pipeline.messages")
+	AUTH_JWKS_URL = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
 )
 
 func main() {
@@ -56,7 +58,8 @@ func Run() error {
 	}
 
 	app := userworkers.NewApplication(store)
-	srv := userworkers.NewHTTPTransport(app, HTTP_BASE, HTTP_ADDR)
+	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
+	srv := userworkers.NewHTTPTransport(app, HTTP_BASE, HTTP_ADDR, jwks)
 	go func() {
 		if err := srv.Start(); !errors.Is(err, http.ErrServerClosed) && err != nil {
 			log.Printf("Error starting HTTP Server: %v\n", err)
