@@ -10,15 +10,16 @@ import (
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
 
 // iService is an interface for the service's exported interface, it can be used as a developer reference
 type iService interface {
-	StoreMeasurement(Measurement) error
+	StoreMeasurement(context.Context, Measurement) error
 	StorePipelineMessage(context.Context, pipeline.Message) error
-	QueryMeasurements(Filter, pagination.Request) (*pagination.Page[Measurement], error)
+	QueryMeasurements(context.Context, Filter, pagination.Request) (*pagination.Page[Measurement], error)
 	ListDatastreams(ctx context.Context, filter DatastreamFilter, r pagination.Request) (*pagination.Page[Datastream], error)
 	GetDatastream(ctx context.Context, id uuid.UUID) (*Datastream, error)
 }
@@ -49,7 +50,11 @@ func New(store Store, systemArchiveTime int) *Service {
 	}
 }
 
-func (s *Service) StoreMeasurement(m Measurement) error {
+func (s *Service) StoreMeasurement(ctx context.Context, m Measurement) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_MEASUREMENTS}); err != nil {
+		return err
+	}
+
 	if err := m.Validate(); err != nil {
 		return fmt.Errorf("validation failed for measurement: %w", err)
 	}
@@ -58,6 +63,10 @@ func (s *Service) StoreMeasurement(m Measurement) error {
 }
 
 func (s *Service) StorePipelineMessage(ctx context.Context, msg pipeline.Message) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_MEASUREMENTS}); err != nil {
+		return err
+	}
+
 	// TODO: get organisation from context
 
 	// Validate incoming message for completeness
@@ -70,7 +79,7 @@ func (s *Service) StorePipelineMessage(ctx context.Context, msg pipeline.Message
 	}
 
 	for _, measurement := range msg.Measurements {
-		err := s.storePipelineMeasurement(msg, measurement)
+		err := s.storePipelineMeasurement(ctx, msg, measurement)
 		if err != nil {
 			return err
 		}
@@ -79,7 +88,7 @@ func (s *Service) StorePipelineMessage(ctx context.Context, msg pipeline.Message
 	return nil
 }
 
-func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Measurement) error {
+func (s *Service) storePipelineMeasurement(ctx context.Context, msg pipeline.Message, m pipeline.Measurement) error {
 	dev := (*devices.Device)(msg.Device)
 	sensor, err := dev.GetSensorByExternalIDOrFallback(m.SensorExternalID)
 	if err != nil {
@@ -145,7 +154,7 @@ func (s *Service) storePipelineMeasurement(msg pipeline.Message, m pipeline.Meas
 		measurement.MeasurementAltitude = m.Altitude
 	}
 
-	return s.StoreMeasurement(measurement)
+	return s.StoreMeasurement(ctx, measurement)
 }
 
 // Filter contains query information for a list of measurements
@@ -157,7 +166,11 @@ type Filter struct {
 	Datastream  []string
 }
 
-func (s *Service) QueryMeasurements(f Filter, r pagination.Request) (*pagination.Page[Measurement], error) {
+func (s *Service) QueryMeasurements(ctx context.Context, f Filter, r pagination.Request) (*pagination.Page[Measurement], error) {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
+		return nil, err
+	}
+
 	page, err := s.store.Query(f, r)
 	if err != nil {
 		return nil, err
@@ -171,9 +184,17 @@ type DatastreamFilter struct {
 }
 
 func (s *Service) ListDatastreams(ctx context.Context, filter DatastreamFilter, r pagination.Request) (*pagination.Page[Datastream], error) {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
+		return nil, err
+	}
+
 	return s.store.ListDatastreams(filter, r)
 }
 
 func (s *Service) GetDatastream(ctx context.Context, id uuid.UUID) (*Datastream, error) {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
+		return nil, err
+	}
+
 	return s.store.GetDatastream(id)
 }

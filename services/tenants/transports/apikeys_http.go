@@ -43,7 +43,7 @@ func (t *APIKeysHTTPTransport) setupRoutes(r chi.Router) {
 	r.Get("/api-keys/{api_key_id}", t.httpGetApiKey())
 	r.Delete("/api-keys/{api_key_id}", t.httpRevokeApiKey())
 	r.Post("/api-keys", t.httpCreateApiKey())
-	r.Get("/api-keys/authenticate", t.httpAuthenticateApiKey())
+	r.Handle("/api-keys/authenticate", t.httpAuthenticateApiKey())
 }
 
 func (t *APIKeysHTTPTransport) httpRevokeApiKey() http.HandlerFunc {

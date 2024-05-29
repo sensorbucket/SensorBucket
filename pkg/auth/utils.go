@@ -6,6 +6,17 @@ import (
 	"strings"
 )
 
+func MustHavePermissions(ctx context.Context, required Permissions) error {
+	permissions, err := GetPermissions(ctx)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrUnauthorized, err)
+	}
+	if err := permissions.Fulfills(required); err != nil {
+		return fmt.Errorf("%w: %w", ErrUnauthorized, err)
+	}
+	return nil
+}
+
 // MustHaveTenantPermissions is the only validating exported authentication and authorization method
 // it requires the developer to supply both the tenant for whom this request must be and accompanying permissions
 func MustHaveTenantPermissions(ctx context.Context, tenantID int64, required Permissions) error {

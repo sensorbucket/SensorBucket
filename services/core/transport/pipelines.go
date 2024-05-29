@@ -92,7 +92,7 @@ func (t *CoreTransport) httpListPipelines() http.HandlerFunc {
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, page))
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
 	}
 }
 

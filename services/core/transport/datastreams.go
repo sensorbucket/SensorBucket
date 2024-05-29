@@ -54,7 +54,7 @@ func (t *CoreTransport) httpGetDatastream() http.HandlerFunc {
 			Sensor:     sensor,
 		}
 
-		m, err := t.measurementService.QueryMeasurements(measurements.Filter{
+		m, err := t.measurementService.QueryMeasurements(r.Context(), measurements.Filter{
 			Datastream: []string{ds.ID.String()},
 		}, pagination.Request{Limit: 1})
 		if err != nil {

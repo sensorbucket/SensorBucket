@@ -234,19 +234,19 @@ deleted_delta_loop:
 	}
 
 	if err := createSensors(tx, createdSensors); err != nil {
-		if rb := tx.Rollback(); err != nil {
+		if rb := tx.Rollback(); rb != nil {
 			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
 		}
 		return err
 	}
 	if err := updateSensors(tx, updatedSensors); err != nil {
-		if rb := tx.Rollback(); err != nil {
+		if rb := tx.Rollback(); rb != nil {
 			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
 		}
 		return err
 	}
 	if err := deleteSensors(tx, deletedSensors); err != nil {
-		if rb := tx.Rollback(); err != nil {
+		if rb := tx.Rollback(); rb != nil {
 			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
 		}
 		return err
@@ -254,7 +254,7 @@ deleted_delta_loop:
 
 	// Commit changes
 	if err := tx.Commit(); err != nil {
-		if rb := tx.Rollback(); err != nil {
+		if rb := tx.Rollback(); rb != nil {
 			err = fmt.Errorf("rollback failed with %w while handling error: %w", rb, err)
 		}
 		return err

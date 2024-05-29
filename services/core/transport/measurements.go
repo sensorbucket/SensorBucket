@@ -26,7 +26,7 @@ func (t *CoreTransport) httpGetMeasurements() http.HandlerFunc {
 			return
 		}
 
-		page, err := t.measurementService.QueryMeasurements(params.Filter, params.Request)
+		page, err := t.measurementService.QueryMeasurements(r.Context(), params.Filter, params.Request)
 		if err != nil {
 			http.Error(rw, err.Error(), http.StatusInternalServerError)
 			return
