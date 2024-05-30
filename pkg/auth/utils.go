@@ -54,3 +54,10 @@ func StripBearer(str string) (string, bool) {
 	}
 	return str[bearerLen:], true
 }
+
+func CreateAuthenticatedContextForTESTING(ctx context.Context, sub string, tenantID int64, permissions Permissions) context.Context {
+	ctx = setUserID(ctx, sub)
+	ctx = setTenantID(ctx, tenantID)
+	ctx = setPermissions(ctx, permissions)
+	return ctx
+}
