@@ -12,14 +12,14 @@ import (
 )
 
 type DeviceStore interface {
-	List(DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
-	ListInBoundingBox(DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
-	ListInRange(DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
-	ListSensors(pagination.Request) (*pagination.Page[Sensor], error)
-	Find(id int64) (*Device, error)
-	Save(dev *Device) error
-	Delete(dev *Device) error
-	GetSensor(id int64) (*Sensor, error)
+	List(context.Context, DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
+	ListInBoundingBox(context.Context, DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
+	ListInRange(context.Context, DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
+	ListSensors(context.Context, pagination.Request) (*pagination.Page[Sensor], error)
+	Find(ctx context.Context, id int64) (*Device, error)
+	Save(ctx context.Context, dev *Device) error
+	Delete(ctx context.Context, dev *Device) error
+	GetSensor(ctx context.Context, id int64) (*Sensor, error)
 }
 
 type SensorGroupStore interface {
@@ -75,24 +75,28 @@ func (s *Service) ListDevices(ctx context.Context, filter DeviceFilter, p pagina
 	}
 
 	if filter.HasBoundingBox() {
-		return s.store.ListInBoundingBox(filter, p)
+		return s.store.ListInBoundingBox(ctx, filter, p)
 	}
 	if filter.HasRange() {
-		return s.store.ListInRange(filter, p)
+		return s.store.ListInRange(ctx, filter, p)
 	}
-	return s.store.List(filter, p)
+	return s.store.List(ctx, filter, p)
 }
 
 func (s *Service) CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
 		return nil, err
 	}
-
-	dev, err := NewDevice(dto)
+	tenantID, err := auth.GetTenant(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.store.Save(dev); err != nil {
+
+	dev, err := NewDevice(tenantID, dto)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.store.Save(ctx, dev); err != nil {
 		return nil, err
 	}
 	return dev, nil
@@ -103,7 +107,7 @@ func (s *Service) GetDevice(ctx context.Context, id int64) (*Device, error) {
 		return nil, err
 	}
 
-	dev, err := s.store.Find(id)
+	dev, err := s.store.Find(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +143,7 @@ func (s *Service) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) 
 	if err := dev.AddSensor(opts); err != nil {
 		return err
 	}
-	if err := s.store.Save(dev); err != nil {
+	if err := s.store.Save(ctx, dev); err != nil {
 		return err
 	}
 	return nil
@@ -153,7 +157,7 @@ func (s *Service) DeleteSensor(ctx context.Context, dev *Device, sensor *Sensor)
 	if err := dev.DeleteSensorByID(sensor.ID); err != nil {
 		return err
 	}
-	if err := s.store.Save(dev); err != nil {
+	if err := s.store.Save(ctx, dev); err != nil {
 		return err
 	}
 	return nil
@@ -195,7 +199,7 @@ func (s *Service) UpdateDevice(ctx context.Context, dev *Device, opt UpdateDevic
 	if opt.State != nil {
 		dev.State = *opt.State
 	}
-	if err := s.store.Save(dev); err != nil {
+	if err := s.store.Save(ctx, dev); err != nil {
 		return err
 	}
 
@@ -207,7 +211,7 @@ func (s *Service) DeleteDevice(ctx context.Context, dev *Device) error {
 		return err
 	}
 
-	if err := s.store.Delete(dev); err != nil {
+	if err := s.store.Delete(ctx, dev); err != nil {
 		return err
 	}
 	return nil
@@ -218,7 +222,7 @@ func (s *Service) ListSensors(ctx context.Context, p pagination.Request) (*pagin
 		return nil, err
 	}
 
-	return s.store.ListSensors(p)
+	return s.store.ListSensors(ctx, p)
 }
 
 func (s *Service) GetSensor(ctx context.Context, id int64) (*Sensor, error) {
@@ -226,7 +230,7 @@ func (s *Service) GetSensor(ctx context.Context, id int64) (*Sensor, error) {
 		return nil, err
 	}
 
-	return s.store.GetSensor(id)
+	return s.store.GetSensor(ctx, id)
 }
 
 func (s *Service) CreateSensorGroup(ctx context.Context, name, description string) (*SensorGroup, error) {

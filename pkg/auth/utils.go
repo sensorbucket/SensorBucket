@@ -3,7 +3,10 @@ package auth
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
+
+	"github.com/Masterminds/squirrel"
 )
 
 func MustHavePermissions(ctx context.Context, required Permissions) error {
@@ -60,4 +63,21 @@ func CreateAuthenticatedContextForTESTING(ctx context.Context, sub string, tenan
 	ctx = setTenantID(ctx, tenantID)
 	ctx = setPermissions(ctx, permissions)
 	return ctx
+}
+
+type queryBuilders interface {
+	squirrel.SelectBuilder | squirrel.DeleteBuilder | squirrel.UpdateBuilder | squirrel.StatementBuilderType
+}
+
+type pqts[T queryBuilders] interface {
+	Where(pred any, args ...any) T
+}
+
+func ProtectedQuery[T queryBuilders](ctx context.Context, query pqts[T]) T {
+	tenantID, err := GetTenant(ctx)
+	if err != nil {
+		log.Println("WARN: in pkg/auth/utils.go. Called ProtectedQuery without a tenant being set in the context")
+		return query.Where("false")
+	}
+	return query.Where(squirrel.Eq{"tenant_id": tenantID})
 }

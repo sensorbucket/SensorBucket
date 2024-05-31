@@ -11,10 +11,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 )
+
+var godContext = auth.CreateAuthenticatedContextForTESTING(context.Background(), "ADMIN", 10, auth.AllPermissions())
 
 func ptr[T any](v T) *T {
 	return &v
@@ -22,7 +25,7 @@ func ptr[T any](v T) *T {
 
 func newPipelineMessage(plID string, steps []string) *pipeline.Message {
 	return &pipeline.Message{
-		TracingID:            uuid.NewString(),
+		TracingID:     uuid.NewString(),
 		ReceivedAt:    time.Now().UnixMilli(),
 		Timestamp:     time.Now().UnixMilli(),
 		Payload:       nil,
@@ -140,7 +143,7 @@ func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 			svc := measurements.New(store, 0)
 
 			// Act
-			err = svc.StorePipelineMessage(context.Background(), *msg)
+			err = svc.StorePipelineMessage(godContext, *msg)
 			if tC.err != nil {
 				assert.Error(t, tC.err, err)
 			} else {
@@ -197,7 +200,7 @@ func TestShouldCopyOverDefaultFields(t *testing.T) {
 	svc := measurements.New(store, 0)
 
 	// Act
-	err = svc.StorePipelineMessage(context.Background(), *msg)
+	err = svc.StorePipelineMessage(godContext, *msg)
 	require.NoError(t, err)
 
 	// Assert
@@ -334,7 +337,7 @@ func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
 
 			// Act
 			require.NoError(t,
-				svc.StorePipelineMessage(context.Background(), *msg),
+				svc.StorePipelineMessage(godContext, *msg),
 			)
 
 			// Assert
@@ -413,7 +416,7 @@ func TestShouldSetExpirationDate(t *testing.T) {
 		svc := measurements.New(store, sysArchiveTime)
 
 		// Act
-		err = svc.StorePipelineMessage(context.Background(), *msg)
+		err = svc.StorePipelineMessage(godContext, *msg)
 		require.NoError(t, err)
 
 		// Assert

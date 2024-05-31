@@ -11,11 +11,12 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimw "github.com/go-chi/chi/v5/middleware"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
 	"sensorbucket.nl/sensorbucket/services/tracing/migrations"
@@ -35,6 +36,7 @@ var (
 	AMQP_QUEUE_INGRESS               = env.Could("AMQP_QUEUE_INGRESS", "archive-ingress")
 	AMQP_XCHG_INGRESS                = env.Could("AMQP_XCHG_INGRESS", "ingress")
 	AMQP_XCHG_INGRESS_TOPIC          = env.Could("AMQP_XCHG_INGRESS_TOPIC", "ingress.*")
+	AUTH_JWKS_URL                    = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
 )
 
 func main() {
@@ -51,7 +53,11 @@ func main() {
 	go mqConn.Start()
 
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(
+		chimw.Logger,
+		auth.Authenticate(auth.NewJWKSHttpClient(AUTH_JWKS_URL)),
+		auth.Protect(),
+	)
 
 	// Setup the ingress-archiver service
 	{
@@ -65,7 +71,7 @@ func main() {
 	}
 
 	// Setup the tracing service
-	go func() {
+	{
 		tracingStepStore := tracinginfra.NewStorePSQL(db)
 		tracingService := tracing.New(tracingStepStore)
 		go tracingtransport.StartMQ(
@@ -77,7 +83,7 @@ func main() {
 		)
 		tracinghttp := tracingtransport.NewHTTP(tracingService, HTTP_BASE)
 		tracinghttp.SetupRoutes(r)
-	}()
+	}
 
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
@@ -96,10 +102,13 @@ func main() {
 	log.Println("Shutting down... send another interrupt to force shutdown")
 
 	// Create timeout for graceful shutdown
-	_, cancelTO := context.WithTimeout(context.Background(), 15*time.Second)
+	ctxTO, cancelTO := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancelTO()
 
 	// Shutdown transports
+	if err := srv.Shutdown(ctxTO); err != nil {
+		log.Printf("error shutting down httpserver: %s\n", err)
+	}
 	mqConn.Shutdown()
 
 	log.Println("Shutdown complete")

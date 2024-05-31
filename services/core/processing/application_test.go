@@ -9,9 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
+
+var godContext = auth.CreateAuthenticatedContextForTESTING(context.Background(), "ADMIN", 10, auth.AllPermissions())
 
 func TestShouldProcessIngressDTO(t *testing.T) {
 	// Arrange
@@ -36,7 +39,7 @@ func TestShouldProcessIngressDTO(t *testing.T) {
 	}
 
 	// Act
-	err := svc.ProcessIngressDTO(context.Background(), dto)
+	err := svc.ProcessIngressDTO(godContext, dto)
 
 	// Assert
 	assert.NoError(t, err)

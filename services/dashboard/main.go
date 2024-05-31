@@ -52,7 +52,7 @@ func Run() error {
 		middleware.Logger,
 		auth.ForwardRequestAuthentication(),
 		auth.Authenticate(jwks),
-		// auth.Protect(),
+		auth.Protect(),
 	)
 
 	var baseURL *url.URL

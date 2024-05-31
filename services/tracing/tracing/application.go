@@ -1,6 +1,7 @@
 package tracing
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
 
@@ -29,7 +31,11 @@ type Service struct {
 	stepStore StepStore
 }
 
-func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message, time time.Time) error {
+func (s *Service) HandlePipelineMessage(ctx context.Context, pipelineMessage pipeline.Message, time time.Time) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
+		return err
+	}
+
 	if len(pipelineMessage.PipelineSteps)-(int(pipelineMessage.StepIndex+1)) < 0 {
 		return fmt.Errorf("%w: steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d) for id %s",
 			ErrInvalidStepsRemaining,
@@ -58,7 +64,11 @@ func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message, time t
 	return s.stepStore.UpsertStep(step, false)
 }
 
-func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError, time time.Time) error {
+func (s *Service) HandlePipelineError(ctx context.Context, errorMessage pipeline.PipelineError, time time.Time) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
+		return err
+	}
+
 	if len(errorMessage.ReceivedByWorker.PipelineSteps)-(int(errorMessage.ReceivedByWorker.StepIndex+1)) < 0 {
 		return fmt.Errorf("%w: steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d) for id: %s",
 			ErrInvalidStepsRemaining,
@@ -87,7 +97,11 @@ func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError, time 
 	return s.stepStore.UpsertStep(step, true)
 }
 
-func (s *Service) QueryTraces(f Filter, r pagination.Request) (*pagination.Page[TraceDTO], error) {
+func (s *Service) QueryTraces(ctx context.Context, f Filter, r pagination.Request) (*pagination.Page[TraceDTO], error) {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
+		return nil, err
+	}
+
 	// Retrieve all the traces according to it's pagination first
 	filteredTraces, err := s.stepStore.QueryTraces(f, r)
 	if err != nil {

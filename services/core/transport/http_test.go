@@ -15,7 +15,7 @@ func TestShouldCheckAuthentication(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	// Services can be nil since it shouldn't even reach them!
-	transport := coretransport.New(nil, nil)
+	transport := coretransport.New("", nil, nil, nil, nil)
 
 	transport.ServeHTTP(res, req)
 

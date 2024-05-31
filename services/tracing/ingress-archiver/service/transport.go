@@ -40,7 +40,7 @@ func StartIngressDTOConsumer(conn *mq.AMQPConnection, svc *Application, queue, x
 			tracingID = uuid.UUID{}
 		}
 		rawMessage := delivery.Body
-		if err := svc.ArchiveIngressDTO(tracingID, rawMessage); err != nil {
+		if err := svc.ArchiveIngressDTO(ctx, tracingID, rawMessage); err != nil {
 			fmt.Printf("Error processing ingress DTO: %v\n", err)
 			if err := delivery.Nack(false, false); err != nil {
 				fmt.Printf("Error Nacking message: %s\n", err.Error())

@@ -51,7 +51,7 @@ func (t *CoreTransport) routes() {
 		chimw.Logger,
 		auth.Authenticate(t.keySource),
 		auth.Protect(),
-	) // TODO ADD: , auth.Protect()
+	)
 
 	r.Get("/devices", t.httpListDevices())
 	r.Post("/devices", t.httpCreateDevice())

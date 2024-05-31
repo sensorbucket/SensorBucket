@@ -21,6 +21,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
 	seed "sensorbucket.nl/sensorbucket/services/core/devices/infra/test_seed"
@@ -28,8 +29,10 @@ import (
 	coretransport "sensorbucket.nl/sensorbucket/services/core/transport"
 )
 
+var godContext = auth.CreateAuthenticatedContextForTESTING(context.Background(), "ADMIN", 10, auth.AllPermissions())
+
 func createPostgresServer(t *testing.T) *sqlx.DB {
-	ctx := context.Background()
+	ctx := godContext
 	req := testcontainers.ContainerRequest{
 		Image: "docker.io/timescale/timescaledb-postgis:latest-pg12",
 		Cmd:   []string{"postgres", "-c", "fsync=off"},
@@ -95,7 +98,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.transport = coretransport.New(s.svc, baseURL)
 
 	// Create three groups
-	ctx := context.Background()
+	ctx := godContext
 	s.sg1, err = s.svc.CreateSensorGroup(ctx, "SG1", "")
 	require.NoError(s.T(), err, "creating sensorgroup")
 	s.sg2, err = s.svc.CreateSensorGroup(ctx, "SG2", "")
