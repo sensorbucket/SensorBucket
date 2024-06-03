@@ -31,11 +31,7 @@ type Service struct {
 	stepStore StepStore
 }
 
-func (s *Service) HandlePipelineMessage(ctx context.Context, pipelineMessage pipeline.Message, time time.Time) error {
-	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
-		return err
-	}
-
+func (s *Service) HandlePipelineMessage(pipelineMessage pipeline.Message, time time.Time) error {
 	if len(pipelineMessage.PipelineSteps)-(int(pipelineMessage.StepIndex+1)) < 0 {
 		return fmt.Errorf("%w: steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d) for id %s",
 			ErrInvalidStepsRemaining,
@@ -64,11 +60,7 @@ func (s *Service) HandlePipelineMessage(ctx context.Context, pipelineMessage pip
 	return s.stepStore.UpsertStep(step, false)
 }
 
-func (s *Service) HandlePipelineError(ctx context.Context, errorMessage pipeline.PipelineError, time time.Time) error {
-	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
-		return err
-	}
-
+func (s *Service) HandlePipelineError(errorMessage pipeline.PipelineError, time time.Time) error {
 	if len(errorMessage.ReceivedByWorker.PipelineSteps)-(int(errorMessage.ReceivedByWorker.StepIndex+1)) < 0 {
 		return fmt.Errorf("%w: steps remaining cannot be smaller than 0 (pipelinesteps len: %d, stepindex: %d) for id: %s",
 			ErrInvalidStepsRemaining,

@@ -32,7 +32,7 @@ func (s *StorePSQL) Save(dto ArchivedIngressDTO) error {
 	var dtoCreatedAt *time.Time
 
 	if dto.IngressDTO != nil {
-		dtoOwnerID = &dto.IngressDTO.OwnerID
+		dtoOwnerID = &dto.IngressDTO.TenantID
 		dtoPipeline = &dto.IngressDTO.PipelineID
 		dtoPayload = dto.IngressDTO.Payload
 		dtoCreatedAt = &dto.IngressDTO.CreatedAt
@@ -104,7 +104,7 @@ func (s *StorePSQL) List(filters ArchiveFilters, pageRequest pagination.Request)
 		if dtoOwnerID != nil && dtoPipelineID != nil && dtoPayload != nil && dtoCreatedAt != nil {
 			ingress.IngressDTO = &processing.IngressDTO{
 				TracingID:  ingress.TracingID,
-				OwnerID:    *dtoOwnerID,
+				TenantID:   *dtoOwnerID,
 				PipelineID: *dtoPipelineID,
 				Payload:    dtoPayload,
 				CreatedAt:  *dtoCreatedAt,

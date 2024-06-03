@@ -25,11 +25,7 @@ func New(store Store) *Application {
 	return &Application{store}
 }
 
-func (a *Application) ArchiveIngressDTO(ctx context.Context, tracingID uuid.UUID, rawMessage []byte) error {
-	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_MEASUREMENTS}); err != nil {
-		return err
-	}
-
+func (a *Application) ArchiveIngressDTO(tracingID uuid.UUID, rawMessage []byte) error {
 	archivedDTO := ArchiveIngressDTO(tracingID, rawMessage)
 	if err := a.store.Save(archivedDTO); err != nil {
 		return fmt.Errorf("error archiving Ingress DTO, store error: %w", err)

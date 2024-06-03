@@ -56,7 +56,7 @@ func (t *HTTPTransport) httpGetTraces() http.HandlerFunc {
 			return
 		}
 
-		page, err := t.svc.QueryTraces(params.Filter, params.Request)
+		page, err := t.svc.QueryTraces(r.Context(), params.Filter, params.Request)
 		if err != nil {
 			log.Printf("[Error] %v\n", err)
 			web.HTTPError(rw, fmt.Errorf("internal server error"))

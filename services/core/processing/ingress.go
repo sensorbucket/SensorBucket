@@ -11,7 +11,7 @@ import (
 type IngressDTO struct {
 	TracingID  uuid.UUID `json:"tracing_id"`
 	PipelineID uuid.UUID `json:"pipeline_id"`
-	OwnerID    int64     `json:"owner_id"`
+	TenantID   int64     `json:"tenant_id"`
 	Payload    []byte    `json:"payload,omitempty"`
 	CreatedAt  time.Time `json:"created_at"`
 }
@@ -21,15 +21,15 @@ func CreateIngressDTO(pipeline uuid.UUID, ownerID int64, payload []byte) Ingress
 		TracingID:  uuid.New(),
 		CreatedAt:  time.Now(),
 		PipelineID: pipeline,
-		OwnerID:    ownerID,
+		TenantID:   ownerID,
 		Payload:    payload,
 	}
 }
 
 func TransformIngressDTOToPipelineMessage(dto IngressDTO, pl *Pipeline) (*pipeline.Message, error) {
 	pipelineMessage := pipeline.Message{
-		TracingID:            dto.TracingID.String(),
-		OwnerID:       dto.OwnerID,
+		TracingID:     dto.TracingID.String(),
+		OwnerID:       dto.TenantID,
 		ReceivedAt:    dto.CreatedAt.UnixMilli(),
 		Timestamp:     dto.CreatedAt.UnixMilli(),
 		Payload:       dto.Payload,
