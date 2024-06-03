@@ -35,10 +35,16 @@ func main() {
 	}
 }
 
+type (
+	StubController struct{}
+	Shutdowner     interface {
+		Shutdown(context.Context) error
+	}
+)
+
 type Controller interface {
 	Reconcile(context.Context) error
 }
-type StubController struct{}
 
 func (c *StubController) Reconcile(context.Context) error {
 	log.Println("WARNING, reconciling with stub controller, nothing will happen")
@@ -111,8 +117,13 @@ func Run() error {
 	ctxTO, cancelTO := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelTO()
 
-	if err := srv.Stop(ctxTO); err != nil {
-		log.Printf("Error while stopping HTTP Server: %v\n", err)
+	if ctrlStopper, ok := ctrl.(Shutdowner); ok {
+		err = errors.Join(err, ctrlStopper.Shutdown(ctxTO))
+	}
+
+	err = errors.Join(err, srv.Stop(ctxTO))
+	if err != nil {
+		log.Printf("One or more errors occured shutting down: %s\n", err)
 	}
 
 	return nil

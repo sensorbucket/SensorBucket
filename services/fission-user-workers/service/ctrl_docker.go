@@ -2,8 +2,11 @@ package userworkers
 
 import (
 	"context"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -12,16 +15,20 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
 type DockerController struct {
 	docker client.APIClient
 	store  Store
+
+	server *http.Server
 
 	workersEndpoint string
 	workerImage     string
@@ -55,14 +62,44 @@ func CreateDockerController(store Store) (*DockerController, error) {
 		docker: docker,
 		store:  store,
 
-		workersEndpoint: env.Could("CTLR_DOCKER_WORKERS_EP", "http://caddy/api/workers"),
+		workersEndpoint: env.Could("CTLR_DOCKER_WORKERS_EP", "http://userworkers:3001"),
 		workerImage:     env.Could("CTLR_DOCKER_WORKER_IMAGE", "sensorbucket/docker-worker:latest"),
 		workerNetID:     netID,
 		amqpHost:        env.Could("CTRL_DOCKER_AMQP_HOST", "amqp://guest:guest@mq:5672"),
 		amqpExchange:    env.Could("CTRL_DOCKER_AMQP_XCHG", "pipeline.messages"),
 		endpointDevices: env.Could("CTRL_DOCKER_ENDPOINT_DEVICES", "http://caddy/api/devices"),
 	}
+
+	// Setup an unprotected route for the dockerworkers
+	router := chi.NewRouter()
+	router.Get("/{workerID}/source", func(w http.ResponseWriter, r *http.Request) {
+		workerID := chi.URLParam(r, "workerID")
+		worker, err := store.GetWorkerByID(uuid.MustParse(workerID))
+		if err != nil {
+			log.Printf("In docker controller worker http route: failed to get worker by ID: %s\n", err)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		src := base64.StdEncoding.EncodeToString(worker.ZipSource)
+		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+			Data: src,
+		})
+	})
+	ctrl.server = &http.Server{
+		Addr:    "0.0.0.0:3001",
+		Handler: router,
+	}
+	go func() {
+		if err := ctrl.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("Docker Controller server errored: %s\n", err)
+		}
+	}()
+
 	return ctrl, nil
+}
+
+func (ctrl *DockerController) Shutdown(ctx context.Context) error {
+	return ctrl.server.Shutdown(ctx)
 }
 
 func (ctrl *DockerController) Reconcile(ctx context.Context) error {
