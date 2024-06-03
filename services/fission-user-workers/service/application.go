@@ -85,7 +85,7 @@ func (app *Application) UpdateWorker(ctx context.Context, worker *UserWorker, op
 		}
 	}
 	if opts.Description != nil {
-		worker.Description = *opts.Description
+		worker.Description = strings.Trim(*opts.Description, "\r\n\t ")
 	}
 	if opts.State != nil {
 		switch *opts.State {

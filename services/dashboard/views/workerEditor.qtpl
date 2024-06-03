@@ -35,8 +35,7 @@
                     class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600
                         text-slate-500
                         "
-                >{% if p.Worker != nil %}{%s p.Worker.Description %}{% endif %}
-                </textarea>
+                >{% if p.Worker != nil %}{%s p.Worker.Description %}{% endif %}</textarea>
             </fieldset>
             <div class="col-span-full flex justify-between">
                 <section>
