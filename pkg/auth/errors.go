@@ -9,6 +9,7 @@ import (
 var (
 	// Authorization errors
 	ErrUnauthorized          = web.NewError(http.StatusUnauthorized, "Unauthorized", "UNAUTHORIZED")
+	ErrForbidden             = web.NewError(http.StatusUnauthorized, "Forbidden", "FORBIDDEN")
 	ErrNoTenantIDFound       = web.NewError(http.StatusForbidden, "Forbidden", "FORBIDDEN")
 	ErrNoPermissions         = web.NewError(http.StatusForbidden, "Forbidden", "FORBIDDEN")
 	ErrPermissionsNotGranted = web.NewError(http.StatusForbidden, "Forbidden", "FORBIDDEN")

@@ -74,7 +74,7 @@ func CreateDockerController(store Store) (*DockerController, error) {
 	router := chi.NewRouter()
 	router.Get("/{workerID}/source", func(w http.ResponseWriter, r *http.Request) {
 		workerID := chi.URLParam(r, "workerID")
-		worker, err := store.GetWorkerByID(uuid.MustParse(workerID))
+		worker, err := store.GetWorkerByID(uuid.MustParse(workerID), WorkerFilters{})
 		if err != nil {
 			log.Printf("In docker controller worker http route: failed to get worker by ID: %s\n", err)
 			w.WriteHeader(http.StatusNotFound)
@@ -128,7 +128,7 @@ func (ctrl *DockerController) Reconcile(ctx context.Context) error {
 		containerWorkerIDMap[workerID] = c
 		containerWorkerIDs = append(containerWorkerIDs, workerID)
 	}
-	existingIDs, err := ctrl.store.WorkersExists(containerWorkerIDs, ListWorkerFilters{State: StateEnabled})
+	existingIDs, err := ctrl.store.WorkersExists(containerWorkerIDs, WorkerFilters{State: StateEnabled})
 	if err != nil {
 		return fmt.Errorf("error fetching which workers exist from store: %w", err)
 	}
@@ -146,7 +146,7 @@ func (ctrl *DockerController) Reconcile(ctx context.Context) error {
 	// Iterate over workers in Database
 	var cursor string
 	for {
-		pages, err := ctrl.store.ListUserWorkers(ListWorkerFilters{State: StateEnabled}, pagination.Request{Limit: 10, Cursor: cursor})
+		pages, err := ctrl.store.ListUserWorkers(WorkerFilters{State: StateEnabled}, pagination.Request{Limit: 10, Cursor: cursor})
 		if err != nil {
 			return fmt.Errorf("error listing user workers from database: %w", err)
 		}

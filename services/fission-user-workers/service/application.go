@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -19,10 +20,10 @@ var (
 )
 
 type Store interface {
-	WorkersExists([]uuid.UUID, ListWorkerFilters) ([]uuid.UUID, error)
-	ListUserWorkers(ListWorkerFilters, pagination.Request) (*pagination.Page[UserWorker], error)
+	WorkersExists([]uuid.UUID, WorkerFilters) ([]uuid.UUID, error)
+	ListUserWorkers(WorkerFilters, pagination.Request) (*pagination.Page[UserWorker], error)
 	CreateWorker(*UserWorker) error
-	GetWorkerByID(uuid.UUID) (*UserWorker, error)
+	GetWorkerByID(uuid.UUID, WorkerFilters) (*UserWorker, error)
 	UpdateWorker(*UserWorker) error
 }
 
@@ -45,16 +46,24 @@ func (app *Application) GetWorker(ctx context.Context, id uuid.UUID) (*UserWorke
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_USER_WORKERS}); err != nil {
 		return nil, err
 	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	return app.store.GetWorkerByID(id)
+	return app.store.GetWorkerByID(id, WorkerFilters{TenantID: []int64{tenantID}})
 }
 
 func (app *Application) CreateWorker(ctx context.Context, opts CreateWorkerOpts) (*UserWorker, error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_USER_WORKERS}); err != nil {
 		return nil, err
 	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	worker, err := CreateWorker(opts.Name, opts.Description, opts.UserCode)
+	worker, err := CreateWorker(tenantID, opts.Name, opts.Description, opts.UserCode)
 	if err != nil {
 		return nil, err
 	}
@@ -77,6 +86,13 @@ type UpdateWorkerOpts struct {
 func (app *Application) UpdateWorker(ctx context.Context, worker *UserWorker, opts UpdateWorkerOpts) error {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_USER_WORKERS}); err != nil {
 		return err
+	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return err
+	}
+	if worker.TenantID != tenantID {
+		return auth.ErrUnauthorized
 	}
 
 	if opts.Name != nil {
@@ -111,15 +127,21 @@ func (app *Application) UpdateWorker(ctx context.Context, worker *UserWorker, op
 	return nil
 }
 
-type ListWorkerFilters struct {
-	ID    []string
-	State WorkerState
+type WorkerFilters struct {
+	ID       []string
+	State    WorkerState
+	TenantID []int64
 }
 
-func (app *Application) ListWorkers(ctx context.Context, filters ListWorkerFilters, req pagination.Request) (*pagination.Page[UserWorker], error) {
+func (app *Application) ListWorkers(ctx context.Context, filters WorkerFilters, req pagination.Request) (*pagination.Page[UserWorker], error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_USER_WORKERS}); err != nil {
 		return nil, err
 	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
+	filters.TenantID = []int64{tenantID}
 
 	return app.store.ListUserWorkers(filters, req)
 }

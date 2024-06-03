@@ -46,30 +46,30 @@ type UserWorker struct {
 	// if this is true, then the revision should increase on save
 	dirty bool
 
-	ID           uuid.UUID    `json:"id"`
-	Name         string       `json:"name"`
-	Description  string       `json:"description"`
-	State        WorkerState  `json:"state"`
-	Language     Language     `json:"language"`
-	Organisation int64        `json:"organisation"`
-	Revision     uint         `json:"revision"`
-	Status       WorkerStatus `json:"status"`
-	StatusInfo   string       `json:"status_info" db:"status_info"`
-	ZipSource    []byte       `json:"-" db:"source"`
-	Entrypoint   string       `json:"entrypoint"`
+	ID          uuid.UUID    `json:"id"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	State       WorkerState  `json:"state"`
+	Language    Language     `json:"language"`
+	TenantID    int64        `json:"tenant_id"`
+	Revision    uint         `json:"revision"`
+	Status      WorkerStatus `json:"status"`
+	StatusInfo  string       `json:"status_info" db:"status_info"`
+	ZipSource   []byte       `json:"-" db:"source"`
+	Entrypoint  string       `json:"entrypoint"`
 }
 
-func CreateWorker(name, description string, userCode []byte) (*UserWorker, error) {
+func CreateWorker(tenantID int64, name, description string, userCode []byte) (*UserWorker, error) {
 	worker := &UserWorker{
-		ID:           uuid.New(),
-		Name:         name,
-		Description:  description,
-		State:        StateDisabled,
-		Language:     LanguagePython,
-		Organisation: 0,
-		Revision:     1,
-		Status:       StatusUnknown,
-		Entrypoint:   "main.main",
+		ID:          uuid.New(),
+		Name:        name,
+		Description: description,
+		State:       StateDisabled,
+		Language:    LanguagePython,
+		TenantID:    tenantID,
+		Revision:    1,
+		Status:      StatusUnknown,
+		Entrypoint:  "main.main",
 	}
 	if err := worker.SetUserCode(userCode); err != nil {
 		return nil, err

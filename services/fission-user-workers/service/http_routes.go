@@ -52,7 +52,7 @@ func (t *HTTPTransport) Stop(ctx context.Context) error {
 
 type WorkersHTTPFilters struct {
 	pagination.Request
-	ListWorkerFilters
+	WorkerFilters
 }
 
 func createRoutes(app *Application, baseURL string, r chi.Router) {
@@ -62,7 +62,7 @@ func createRoutes(app *Application, baseURL string, r chi.Router) {
 			web.HTTPError(w, err)
 			return
 		}
-		page, err := app.ListWorkers(r.Context(), params.ListWorkerFilters, params.Request)
+		page, err := app.ListWorkers(r.Context(), params.WorkerFilters, params.Request)
 		if err != nil {
 			web.HTTPError(w, err)
 			return

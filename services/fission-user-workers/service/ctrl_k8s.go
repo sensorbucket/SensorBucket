@@ -111,7 +111,7 @@ func (ctrl *KubernetesController) Reconcile(ctx context.Context) error {
 		return fmt.Errorf("error deleting wandering resources: %w", err)
 	}
 
-	pages, err := ctrl.store.ListUserWorkers(ListWorkerFilters{State: StateEnabled}, pagination.Request{Limit: WORKERS_PER_PAGE})
+	pages, err := ctrl.store.ListUserWorkers(WorkerFilters{State: StateEnabled}, pagination.Request{Limit: WORKERS_PER_PAGE})
 	if err != nil {
 		return fmt.Errorf("error listing user workers from database: %w", err)
 	}
@@ -140,7 +140,7 @@ func (ctrl *KubernetesController) Reconcile(ctx context.Context) error {
 		if pages.Cursor == "" {
 			break
 		}
-		pages, err = ctrl.store.ListUserWorkers(ListWorkerFilters{State: StateEnabled}, pagination.Request{Cursor: pages.Cursor})
+		pages, err = ctrl.store.ListUserWorkers(WorkerFilters{State: StateEnabled}, pagination.Request{Cursor: pages.Cursor})
 		if err != nil {
 			return fmt.Errorf("error listing user workers from database: %w", err)
 		}
