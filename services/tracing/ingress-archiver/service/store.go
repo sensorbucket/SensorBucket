@@ -26,13 +26,13 @@ func NewStorePSQL(db *sqlx.DB) *StorePSQL {
 }
 
 func (s *StorePSQL) Save(dto ArchivedIngressDTO) error {
-	var dtoOwnerID *int64
+	var dtoTenantID *int64
 	var dtoPipeline *uuid.UUID
 	var dtoPayload []byte
 	var dtoCreatedAt *time.Time
 
 	if dto.IngressDTO != nil {
-		dtoOwnerID = &dto.IngressDTO.TenantID
+		dtoTenantID = &dto.IngressDTO.TenantID
 		dtoPipeline = &dto.IngressDTO.PipelineID
 		dtoPayload = dto.IngressDTO.Payload
 		dtoCreatedAt = &dto.IngressDTO.CreatedAt
@@ -41,7 +41,7 @@ func (s *StorePSQL) Save(dto ArchivedIngressDTO) error {
 	_, err := s.db.Exec(`
         INSERT INTO archived_ingress_dtos (
             tracing_id, raw_message,
-            dto_owner_id, dto_pipeline_id, dto_payload, dto_created_at,
+            dto_tenant_id, dto_pipeline_id, dto_payload, dto_created_at,
             archived_at, expires_at
         )
         VALUES (
@@ -51,7 +51,7 @@ func (s *StorePSQL) Save(dto ArchivedIngressDTO) error {
         );
         `,
 		dto.TracingID, dto.RawMessage,
-		dtoOwnerID, dtoPipeline, dtoPayload, dtoCreatedAt,
+		dtoTenantID, dtoPipeline, dtoPayload, dtoCreatedAt,
 		dto.ArchivedAt, dto.ExpiresAt)
 	return err
 }
@@ -65,9 +65,12 @@ func (s *StorePSQL) List(filters ArchiveFilters, pageRequest pagination.Request)
 	var err error
 	q := pq.Select(
 		"tracing_id", "raw_message",
-		"dto_owner_id", "dto_pipeline_id", "dto_payload", "dto_created_at",
+		"dto_tenant_id", "dto_pipeline_id", "dto_payload", "dto_created_at",
 		"archived_at", "expires_at",
 	).From("archived_ingress_dtos")
+	if filters.TenantID != 0 {
+		q = q.Where(sq.Eq{"dto_tenant_id": filters.TenantID})
+	}
 
 	// Apply pagination
 	cursor, err := pagination.GetCursor[ArchivedIngressPaginationQuery](pageRequest)
@@ -88,23 +91,23 @@ func (s *StorePSQL) List(filters ArchiveFilters, pageRequest pagination.Request)
 	archives := []ArchivedIngressDTO{}
 	for rows.Next() {
 		var ingress ArchivedIngressDTO
-		var dtoOwnerID *int64
+		var dtoTenantID *int64
 		var dtoPipelineID *uuid.UUID
 		var dtoPayload []byte
 		var dtoCreatedAt *time.Time
 		err := rows.Scan(
 			&ingress.TracingID, &ingress.RawMessage,
-			&dtoOwnerID, &dtoPipelineID, &dtoPayload, &dtoCreatedAt,
+			&dtoTenantID, &dtoPipelineID, &dtoPayload, &dtoCreatedAt,
 			&ingress.ArchivedAt, &ingress.ExpiresAt,
 			&cursor.Columns.ArchivedAt, &cursor.Columns.TracingID,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("list archives, could not scan archive: %w", err)
 		}
-		if dtoOwnerID != nil && dtoPipelineID != nil && dtoPayload != nil && dtoCreatedAt != nil {
+		if dtoTenantID != nil && dtoPipelineID != nil && dtoPayload != nil && dtoCreatedAt != nil {
 			ingress.IngressDTO = &processing.IngressDTO{
 				TracingID:  ingress.TracingID,
-				TenantID:   *dtoOwnerID,
+				TenantID:   *dtoTenantID,
 				PipelineID: *dtoPipelineID,
 				Payload:    dtoPayload,
 				CreatedAt:  *dtoCreatedAt,

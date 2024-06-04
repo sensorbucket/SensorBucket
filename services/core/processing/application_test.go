@@ -48,5 +48,5 @@ func TestShouldProcessIngressDTO(t *testing.T) {
 	assert.Equal(t, dto.TracingID.String(), result.TracingID)
 	assert.Equal(t, pl.Steps, result.PipelineSteps)
 	assert.Equal(t, dto.Payload, result.Payload)
-	assert.Equal(t, dto.TenantID, result.OwnerID)
+	assert.Equal(t, dto.TenantID, result.TenantID)
 }

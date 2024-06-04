@@ -143,6 +143,7 @@ func AuthenticateContext(ctx context.Context, tokenStr string, keyClient JWKSCli
 	}
 	// JWT itself is validated, pass it to the actual endpoint for further authorization
 	// First fill the context with user information
+	ctx = setAccessToken(ctx, tokenStr)
 	ctx = setTenantID(ctx, c.TenantID)
 	ctx = setUserID(ctx, c.Subject)
 	ctx = setPermissions(ctx, c.Permissions)

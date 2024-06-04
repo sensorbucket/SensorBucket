@@ -25,7 +25,8 @@ type (
 
 type Message struct {
 	TracingID     string         `json:"tracing_id"`
-	OwnerID       int64          `json:"owner_id"`
+	AccessToken   string         `json:"access_token"`
+	TenantID      int64          `json:"tenant_id"`
 	ReceivedAt    int64          `json:"received_at"`
 	PipelineID    string         `json:"pipeline_id"`
 	StepIndex     uint64         `json:"step_index"`

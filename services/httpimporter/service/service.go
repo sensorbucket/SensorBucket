@@ -62,6 +62,11 @@ func (h *HTTPImporter) httpPostUplink() http.HandlerFunc {
 			web.HTTPError(rw, err)
 			return
 		}
+		accessToken, err := auth.GetAccessToken(r.Context())
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
 
 		payload, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -69,7 +74,7 @@ func (h *HTTPImporter) httpPostUplink() http.HandlerFunc {
 			return
 		}
 
-		dto := processing.CreateIngressDTO(pipelineID, tenantID, payload)
+		dto := processing.CreateIngressDTO(accessToken, pipelineID, tenantID, payload)
 		h.publisher <- dto
 
 		web.HTTPResponse(rw, http.StatusAccepted, &web.APIResponseAny{
