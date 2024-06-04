@@ -17,7 +17,7 @@ type Store interface {
 	CreatePipeline(*Pipeline) error
 	UpdatePipeline(*Pipeline) error
 	ListPipelines(PipelinesFilter, pagination.Request) (pagination.Page[Pipeline], error)
-	GetPipeline(string) (*Pipeline, error)
+	GetPipeline(string, PipelinesFilter) (*Pipeline, error)
 }
 
 type Service struct {
@@ -42,8 +42,12 @@ func (s *Service) CreatePipeline(ctx context.Context, dto CreatePipelineDTO) (*P
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_PIPELINES}); err != nil {
 		return nil, err
 	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	p, err := NewPipeline(dto.Description, dto.Steps)
+	p, err := NewPipeline(tenantID, dto.Description, dto.Steps)
 	if err != nil {
 		return nil, err
 	}
@@ -54,9 +58,10 @@ func (s *Service) CreatePipeline(ctx context.Context, dto CreatePipelineDTO) (*P
 }
 
 type PipelinesFilter struct {
-	ID     []uuid.UUID
-	Status []PipelineStatus
-	Step   []string
+	ID       []uuid.UUID
+	TenantID []int64
+	Status   []PipelineStatus
+	Step     []string
 }
 
 func NewPipelinesFilter() PipelinesFilter {
@@ -67,6 +72,11 @@ func (s *Service) ListPipelines(ctx context.Context, filter PipelinesFilter, p p
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_PIPELINES}); err != nil {
 		return nil, err
 	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
+	filter.TenantID = []int64{tenantID}
 
 	pipelines, err := s.store.ListPipelines(filter, p)
 	return &pipelines, err
@@ -77,8 +87,9 @@ func (s *Service) GetPipeline(ctx context.Context, id string, allowInactive bool
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_PIPELINES}); err != nil {
 		return nil, err
 	}
+	tenantID, err := auth.GetTenant(ctx)
 
-	p, err := s.store.GetPipeline(id)
+	p, err := s.store.GetPipeline(id, PipelinesFilter{TenantID: []int64{tenantID}})
 	if err != nil {
 		return nil, err
 	}

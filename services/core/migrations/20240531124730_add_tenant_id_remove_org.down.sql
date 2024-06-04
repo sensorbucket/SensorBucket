@@ -24,4 +24,8 @@ ALTER COLUMN organisation SET NOT NULL;
 -- Drop tenant_id on sensors
 ALTER TABLE sensors DROP COLUMN IF EXISTS tenant_id;
 
+
+-- Drop tenantID from pipelines
+ALTER TABLE pipelines DROP COLUMN IF EXISTS tenant_id;
+
 COMMIT;

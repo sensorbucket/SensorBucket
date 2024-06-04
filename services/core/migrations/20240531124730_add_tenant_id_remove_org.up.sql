@@ -36,5 +36,9 @@ BEGIN;
 
     -- Create an index on tenant_id
     CREATE INDEX sensors_idx_tenant_id ON sensors (tenant_id);
+
+
+    -- Add tenantID to pipelines
+    ALTER TABLE pipelines ADD COLUMN tenant_id BIGINT NOT NULL DEFAULT 0;
 COMMIT;
 
