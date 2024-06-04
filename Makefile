@@ -81,4 +81,4 @@ admin:
 oathkeeper:
 	-@mkdir -p $(CURDIR)/tools/oathkeeper
 	@docker run --rm --init -v $(CURDIR):/project redocly/cli bundle /project/tools/openapi/api.yaml > $(CURDIR)/tools/oathkeeper/bundled_openapi.yaml
-	@openkeeper generate --config $(CURDIR)/tools/oathkeeper/openkeeper.toml > $(CURDIR)/tools/oathkeeper/generated_rules.json
+	openkeeper generate --config $(CURDIR)/tools/oathkeeper/openkeeper.toml

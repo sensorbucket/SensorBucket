@@ -35,9 +35,6 @@
             },
             {
                 "handler": "bearer_token"
-            },
-            {
-                "handler": "noop"
             }
         ],
         "authorizer": {
@@ -49,9 +46,11 @@
             },
             {
                 "handler": "id_token"
-            },
+            }
+        ],
+        "errors": [
             {
-                "handler": "noop"
+                "handler": "redirect"
             }
         ]
     },

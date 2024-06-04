@@ -11,15 +11,24 @@ access_rules:
 errors:
   fallback:
     - json
+
   handlers:
+    redirect:
+      enabled: true
+      config:
+        to: http://127.0.0.1:3000/tenants/auth/login
+        when:
+          - error:
+              - unauthorized
+              - forbidden
+            request:
+              header:
+                accept:
+                  - text/html
     json:
       enabled: true
       config:
         verbose: true
-    redirect:
-      enabled: true
-      config:
-        to: https://www.ory.sh/docs
 
 mutators:
   noop:
