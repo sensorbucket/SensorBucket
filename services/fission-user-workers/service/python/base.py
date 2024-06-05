@@ -26,6 +26,7 @@ class MissingRequiredEnvironmentVariable(Exception):
 class PropertiesMatchedNotExactlyOneDevice(Exception):
     pass
 
+
 class ErrUserCodeFailure(Exception):
     pass
 
@@ -73,7 +74,8 @@ class Measurement:
 class Message:
     def __init__(self,
                  tracing_id: str,
-                 owner_id: int,
+                 tenant_id: int,
+                 access_token: str,
                  received_at: int,
                  pipeline_id: str,
                  step_index: int,
@@ -84,7 +86,8 @@ class Message:
                  payload: Optional[bytes] = None,
                  metadata: Optional[Dict[str, Any]] = None):
         self.tracing_id = tracing_id
-        self.owner_id = owner_id
+        self.tenant_id = tenant_id
+        self.access_token = access_token
         self.received_at = received_at
         self.pipeline_id = pipeline_id
         self.step_index = step_index
@@ -98,6 +101,8 @@ class Message:
     def match_device(self, properties: Dict[str, Any]):
         res = r.get(DEVICES_EP, params={
             "properties": json.dumps(properties),
+        }, headers={
+            "authorization": "bearer " + self.access_token
         })
         res.raise_for_status()
         data = res.json()
@@ -130,7 +135,7 @@ class Message:
     @classmethod
     def from_json(cls, json_str: str):
         data = json.loads(json_str)
-        required_fields = ['tracing_id', 'owner_id', 'received_at',
+        required_fields = ['tracing_id', 'tenant_id', 'access_token', 'received_at',
                            'pipeline_id', 'step_index', 'pipeline_steps', 'timestamp']
         if not all(field in data for field in required_fields):
             missing = [field for field in required_fields if field not in data]
