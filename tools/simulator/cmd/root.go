@@ -30,4 +30,5 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringP("host", "H", "http://127.0.0.1:3000", "The location where SensorBucket is hosted")
+	rootCmd.PersistentFlags().StringP("apikey", "k", "", "The APIKey to authenticate with")
 }
