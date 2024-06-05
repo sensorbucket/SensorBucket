@@ -1,7 +1,6 @@
 package measurements_test
 
 import (
-	"context"
 	"encoding/json"
 	"math"
 	"testing"
@@ -11,13 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/authtest"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 )
-
-var godContext = auth.CreateAuthenticatedContextForTESTING(context.Background(), "ADMIN", 10, auth.AllPermissions())
 
 func ptr[T any](v T) *T {
 	return &v
@@ -43,7 +40,7 @@ func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 			ID:                  1,
 			Code:                "",
 			Description:         "",
-			Organisation:        "",
+			TenantID:            10,
 			Sensors:             []devices.Sensor{},
 			Latitude:            ptr(float64(10)),
 			Longitude:           ptr(float64(20)),
@@ -130,6 +127,7 @@ func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 			}
 
 			err := msg.NewMeasurement().SetValue(5, tC.observationProperty, "1").SetSensor(tC.sensorExternalID).Add()
+			msg.AccessToken = authtest.CreateToken()
 			require.NoError(t, err)
 			store := &StoreMock{
 				FindDatastreamFunc: func(sensorID int64, obs string) (*measurements.Datastream, error) {
@@ -140,10 +138,10 @@ func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 					return nil
 				},
 			}
-			svc := measurements.New(store, 0)
+			svc := measurements.New(store, 0, authtest.JWKS())
 
 			// Act
-			err = svc.StorePipelineMessage(godContext, *msg)
+			err = svc.StorePipelineMessage(*msg)
 			if tC.err != nil {
 				assert.Error(t, tC.err, err)
 			} else {
@@ -158,10 +156,10 @@ func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 func TestShouldCopyOverDefaultFields(t *testing.T) {
 	msg := newPipelineMessage(uuid.NewString(), []string{})
 	msg.Device = &pipeline.Device{
-		ID:           1,
-		Code:         "",
-		Description:  "",
-		Organisation: "",
+		ID:          1,
+		Code:        "",
+		Description: "",
+		TenantID:    10,
 		Sensors: []devices.Sensor{
 			{
 				ID:          1,
@@ -181,6 +179,7 @@ func TestShouldCopyOverDefaultFields(t *testing.T) {
 		Properties:          json.RawMessage([]byte(`{"hello":"world"}`)),
 	}
 	err := msg.NewMeasurement().SetValue(5, "test_obs", "1").SetSensor("").Add()
+	msg.AccessToken = authtest.CreateToken()
 	require.NoError(t, err)
 	ds := measurements.Datastream{
 		ID:                uuid.New(),
@@ -197,10 +196,10 @@ func TestShouldCopyOverDefaultFields(t *testing.T) {
 			return nil
 		},
 	}
-	svc := measurements.New(store, 0)
+	svc := measurements.New(store, 0, authtest.JWKS())
 
 	// Act
-	err = svc.StorePipelineMessage(godContext, *msg)
+	err = svc.StorePipelineMessage(*msg)
 	require.NoError(t, err)
 
 	// Assert
@@ -287,10 +286,10 @@ func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			msg := newPipelineMessage(uuid.NewString(), []string{})
 			msg.Device = &pipeline.Device{
-				ID:           1,
-				Code:         "",
-				Description:  "",
-				Organisation: "",
+				ID:          1,
+				Code:        "",
+				Description: "",
+				TenantID:    10,
 				Sensors: []devices.Sensor{
 					{
 						ID:          1,
@@ -310,6 +309,7 @@ func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
 				Properties:          json.RawMessage([]byte(`{"hello":"world"}`)),
 			}
 			builder := msg.NewMeasurement().SetValue(5, "test_obs", "1").SetSensor("")
+			msg.AccessToken = authtest.CreateToken()
 			if tC.MeasurementLatitude != nil && tC.MeasurementLongitude != nil && tC.MeasurementAltitude != nil {
 				builder = builder.SetLocation(
 					*tC.MeasurementLatitude,
@@ -333,11 +333,11 @@ func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
 					return nil
 				},
 			}
-			svc := measurements.New(store, 0)
+			svc := measurements.New(store, 0, authtest.JWKS())
 
 			// Act
 			require.NoError(t,
-				svc.StorePipelineMessage(godContext, *msg),
+				svc.StorePipelineMessage(*msg),
 			)
 
 			// Assert
@@ -370,10 +370,10 @@ func TestShouldSetExpirationDate(t *testing.T) {
 		msg := newPipelineMessage(uuid.NewString(), []string{})
 		msg.ReceivedAt = now.UnixMilli()
 		msg.Device = &pipeline.Device{
-			ID:           1,
-			Code:         "",
-			Description:  "",
-			Organisation: "",
+			ID:          1,
+			Code:        "",
+			Description: "",
+			TenantID:    10,
 			// TODO: We kind of need organisationArchiveTime here, but how do we get it?
 			// Perhaps split the device endpoint in two:
 			//  - one ep for just the device info
@@ -397,6 +397,7 @@ func TestShouldSetExpirationDate(t *testing.T) {
 			Properties:          json.RawMessage([]byte(`{"hello":"world"}`)),
 		}
 		err := msg.NewMeasurement().SetValue(5, "test_obs", "1").SetSensor("").Add()
+		msg.AccessToken = authtest.CreateToken()
 		require.NoError(t, err)
 		ds := measurements.Datastream{
 			ID:                uuid.New(),
@@ -413,10 +414,10 @@ func TestShouldSetExpirationDate(t *testing.T) {
 				return nil
 			},
 		}
-		svc := measurements.New(store, sysArchiveTime)
+		svc := measurements.New(store, sysArchiveTime, authtest.JWKS())
 
 		// Act
-		err = svc.StorePipelineMessage(godContext, *msg)
+		err = svc.StorePipelineMessage(*msg)
 		require.NoError(t, err)
 
 		// Assert

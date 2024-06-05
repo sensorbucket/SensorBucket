@@ -16,6 +16,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/authtest"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
 	seed "sensorbucket.nl/sensorbucket/services/core/devices/infra/test_seed"
@@ -68,6 +69,8 @@ func createPostgresServer(t *testing.T) *sqlx.DB {
 }
 
 func TestShouldCreateAndFetchDevice(t *testing.T) {
+	ctx := authtest.GodContext()
+
 	var err error
 	db := createPostgresServer(t)
 	store := deviceinfra.NewPSQLStore(db)
@@ -79,7 +82,7 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 		Altitude:            ptr(float64(30)),
 		State:               1,
 		Description:         "description",
-		Organisation:        "organisation",
+		TenantID:            authtest.DefaultTenantID,
 		Properties:          json.RawMessage([]byte("null")),
 		LocationDescription: "location_description",
 		CreatedAt:           time.Now(),
@@ -87,10 +90,10 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 
 	// Act
 	t.Run("creating a device and fetching it", func(t *testing.T) {
-		err = store.Save(dev)
+		err = store.Save(ctx, dev)
 		assert.NoError(t, err)
 
-		readDev, err := store.Find(dev.ID)
+		readDev, err := store.Find(ctx, dev.ID)
 		assert.NoError(t, err)
 		assert.Equal(t, dev.ID, readDev.ID, "store.Save(insert) and store.Find result in changes")
 		assert.Equal(t, dev.Latitude, readDev.Latitude, "store.Save(insert) and store.Find result in changes")
@@ -99,12 +102,12 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 		assert.Equal(t, dev.LocationDescription, readDev.LocationDescription, "store.Save(insert) and store.Find result in changes")
 		assert.Equal(t, dev.State, readDev.State, "store.Save(insert) and store.Find result in changes")
 		assert.Equal(t, dev.Description, readDev.Description, "store.Save(insert) and store.Find result in changes")
-		assert.Equal(t, dev.Organisation, readDev.Organisation, "store.Save(insert) and store.Find result in changes")
+		assert.Equal(t, dev.TenantID, readDev.TenantID, "store.Save(insert) and store.Find result in changes")
 		assert.Equal(t, dev.Properties, readDev.Properties, "store.Save(insert) and store.Find result in changes")
 	})
 
 	t.Run("listing created device", func(t *testing.T) {
-		page, err := store.List(devices.DeviceFilter{}, pagination.Request{})
+		page, err := store.List(ctx, devices.DeviceFilter{}, pagination.Request{})
 		devs := page.Data
 		assert.NoError(t, err)
 		assert.Len(t, devs, 1)
@@ -115,7 +118,7 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 		assert.Equal(t, dev.LocationDescription, devs[0].LocationDescription, "store.List results in changes")
 		assert.Equal(t, dev.State, devs[0].State, "store.List results in changes")
 		assert.Equal(t, dev.Description, devs[0].Description, "store.List results in changes")
-		assert.Equal(t, dev.Organisation, devs[0].Organisation, "store.List results in changes")
+		assert.Equal(t, dev.TenantID, devs[0].TenantID, "store.List results in changes")
 		assert.Equal(t, dev.Properties, devs[0].Properties, "store.List results in changes")
 	})
 
@@ -127,10 +130,10 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 		dev.Description = "newdescription"
 		dev.LocationDescription = "newlocationdescription"
 		dev.Properties = json.RawMessage([]byte(`{"hello":"world"}`))
-		err = store.Save(dev)
+		err = store.Save(ctx, dev)
 		assert.NoError(t, err)
 
-		readDev, err := store.Find(dev.ID)
+		readDev, err := store.Find(ctx, dev.ID)
 		assert.NoError(t, err)
 		assert.Equal(t, dev.ID, readDev.ID, "store.Save(update) and store.Find result in changes")
 		assert.Equal(t, dev.Latitude, readDev.Latitude, "store.Save(update) and store.Find result in changes")
@@ -139,12 +142,13 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 		assert.Equal(t, dev.LocationDescription, readDev.LocationDescription, "store.Save(update) and store.Find result in changes")
 		assert.Equal(t, dev.State, readDev.State, "store.Save(update) and store.Find result in changes")
 		assert.Equal(t, dev.Description, readDev.Description, "store.Save(update) and store.Find result in changes")
-		assert.Equal(t, dev.Organisation, readDev.Organisation, "store.Save(update) and store.Find result in changes")
+		assert.Equal(t, dev.TenantID, readDev.TenantID, "store.Save(update) and store.Find result in changes")
 		assert.Equal(t, dev.Properties, readDev.Properties, "store.Save(update) and store.Find result in changes")
 	})
 }
 
 func TestShouldAddSensor(t *testing.T) {
+	ctx := authtest.GodContext()
 	var err error
 	s1 := devices.NewSensorOpts{
 		Code:        "s1",
@@ -160,7 +164,7 @@ func TestShouldAddSensor(t *testing.T) {
 		Latitude:            ptr(float64(10)),
 		Longitude:           ptr(float64(20)),
 		Description:         "description",
-		Organisation:        "organisation",
+		TenantID:            authtest.DefaultTenantID,
 		Properties:          json.RawMessage([]byte("{}")),
 		LocationDescription: "location_description",
 		CreatedAt:           time.Now(),
@@ -169,7 +173,7 @@ func TestShouldAddSensor(t *testing.T) {
 	store := deviceinfra.NewPSQLStore(db)
 
 	// Save initial device state
-	err = store.Save(dev)
+	err = store.Save(ctx, dev)
 	require.NoError(t, err)
 
 	t.Run("should add sensor", func(t *testing.T) {
@@ -177,11 +181,11 @@ func TestShouldAddSensor(t *testing.T) {
 		err = dev.AddSensor(s1)
 		require.NoError(t, err)
 		require.Len(t, dev.Sensors, 1)
-		err = store.Save(dev)
+		err = store.Save(ctx, dev)
 		require.NoError(t, err)
 
 		// Verify addition
-		dbDev, err := store.Find(dev.ID)
+		dbDev, err := store.Find(ctx, dev.ID)
 		require.NoError(t, err)
 
 		require.Len(t, dbDev.Sensors, 1)
@@ -200,10 +204,10 @@ func TestShouldAddSensor(t *testing.T) {
 		err = dev.DeleteSensorByID(dev.Sensors[0].ID)
 		require.NoError(t, err)
 		require.Len(t, dev.Sensors, 0)
-		err = store.Save(dev)
+		err = store.Save(ctx, dev)
 		require.NoError(t, err)
 
-		dbDev, err := store.Find(dev.ID)
+		dbDev, err := store.Find(ctx, dev.ID)
 		require.NoError(t, err)
 
 		assert.Len(t, dbDev.Sensors, 0)
@@ -211,6 +215,7 @@ func TestShouldAddSensor(t *testing.T) {
 }
 
 func TestDeviceStoreShouldFilterOnSensorIDs(t *testing.T) {
+	ctx := authtest.GodContext()
 	db := createPostgresServer(t)
 	devs := seed.Devices(t, db)
 	require.Greater(t, len(devs), 2, "test must have atleast 3 seeded devices in db")
@@ -220,7 +225,7 @@ func TestDeviceStoreShouldFilterOnSensorIDs(t *testing.T) {
 	}
 
 	// Act
-	page, err := store.List(filter, pagination.Request{})
+	page, err := store.List(ctx, filter, pagination.Request{})
 	require.NoError(t, err)
 	responseDeviceIDS := lo.Map(page.Data, func(d devices.Device, ix int) int64 { return d.ID })
 	assert.ElementsMatch(t, []int64{devs[0].ID, devs[1].ID}, responseDeviceIDS)

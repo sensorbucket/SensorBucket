@@ -2,7 +2,6 @@ package coretransport_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -21,18 +20,20 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
-	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/authtest"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
 	seed "sensorbucket.nl/sensorbucket/services/core/devices/infra/test_seed"
+	"sensorbucket.nl/sensorbucket/services/core/measurements"
+	measurementsinfra "sensorbucket.nl/sensorbucket/services/core/measurements/infra"
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
+	"sensorbucket.nl/sensorbucket/services/core/processing"
+	processinginfra "sensorbucket.nl/sensorbucket/services/core/processing/infra"
 	coretransport "sensorbucket.nl/sensorbucket/services/core/transport"
 )
 
-var godContext = auth.CreateAuthenticatedContextForTESTING(context.Background(), "ADMIN", 10, auth.AllPermissions())
-
 func createPostgresServer(t *testing.T) *sqlx.DB {
-	ctx := godContext
+	ctx := authtest.GodContext()
 	req := testcontainers.ContainerRequest{
 		Image: "docker.io/timescale/timescaledb-postgis:latest-pg12",
 		Cmd:   []string{"postgres", "-c", "fsync=off"},
@@ -74,14 +75,22 @@ func createPostgresServer(t *testing.T) *sqlx.DB {
 
 type IntegrationTestSuite struct {
 	suite.Suite
-	svc       *devices.Service
-	transport *coretransport.CoreTransport
-	sg1       *devices.SensorGroup
-	sg2       *devices.SensorGroup
-	sg3       *devices.SensorGroup
-	d1        *devices.Device
-	d2        *devices.Device
-	d3        *devices.Device
+	devices      *devices.Service
+	processing   *processing.Service
+	measurements *measurements.Service
+	transport    *coretransport.CoreTransport
+	sg1          *devices.SensorGroup
+	sg2          *devices.SensorGroup
+	sg3          *devices.SensorGroup
+	d1           *devices.Device
+	d2           *devices.Device
+	d3           *devices.Device
+}
+
+func (s *IntegrationTestSuite) NewRequest(method, target string, body io.Reader) *http.Request {
+	req := httptest.NewRequest(method, target, body)
+	req.Header.Set("authorization", "bearer "+authtest.CreateToken())
+	return req
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
@@ -92,18 +101,30 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.d1 = &seedDevices[0]
 	s.d2 = &seedDevices[1]
 	s.d3 = &seedDevices[2]
+
+	// Create devices services
 	deviceStore := deviceinfra.NewPSQLStore(db)
 	sensorGroupStore := deviceinfra.NewPSQLSensorGroupStore(db)
-	s.svc = devices.New(deviceStore, sensorGroupStore)
-	s.transport = coretransport.New(s.svc, baseURL)
+	s.devices = devices.New(deviceStore, sensorGroupStore)
+
+	// Create measurements service
+	measurementStore := measurementsinfra.NewPSQL(db)
+	s.measurements = measurements.New(measurementStore, 10, authtest.JWKS())
+
+	// Create processing service
+	processingStore := processinginfra.NewPSQLStore(db)
+	s.processing = processing.New(processingStore, nil, nil)
+
+	// Create transport
+	s.transport = coretransport.New(baseURL, authtest.JWKS(), s.devices, s.measurements, s.processing)
 
 	// Create three groups
-	ctx := godContext
-	s.sg1, err = s.svc.CreateSensorGroup(ctx, "SG1", "")
+	ctx := authtest.GodContext()
+	s.sg1, err = s.devices.CreateSensorGroup(ctx, "SG1", "")
 	require.NoError(s.T(), err, "creating sensorgroup")
-	s.sg2, err = s.svc.CreateSensorGroup(ctx, "SG2", "")
+	s.sg2, err = s.devices.CreateSensorGroup(ctx, "SG2", "")
 	require.NoError(s.T(), err, "creating sensorgroup")
-	s.sg3, err = s.svc.CreateSensorGroup(ctx, "SG3", "")
+	s.sg3, err = s.devices.CreateSensorGroup(ctx, "SG3", "")
 	require.NoError(s.T(), err, "creating sensorgroup")
 }
 
@@ -116,7 +137,7 @@ func (s *IntegrationTestSuite) TestCreateSensorGroup() {
             "description": "%s"
         }
     `, groupName, groupDesc))
-	request := httptest.NewRequest("POST", "/sensor-groups", body)
+	request := s.NewRequest("POST", "/sensor-groups", body)
 	request.Header.Set("content-type", "application/json")
 	recorder := httptest.NewRecorder()
 
@@ -134,7 +155,7 @@ func (s *IntegrationTestSuite) TestShouldListAndReadSensorGroups() {
 	// Arrange
 
 	// Act
-	request := httptest.NewRequest("GET", "/sensor-groups", nil)
+	request := s.NewRequest("GET", "/sensor-groups", nil)
 	recorder := httptest.NewRecorder()
 	s.transport.ServeHTTP(recorder, request)
 
@@ -148,7 +169,7 @@ func (s *IntegrationTestSuite) TestShouldListAndReadSensorGroups() {
 
 func (s *IntegrationTestSuite) TestShouldGetSingleSensorGroup() {
 	// Act
-	request := httptest.NewRequest("GET", "/sensor-groups/"+strconv.Itoa(int(s.sg2.ID)), nil)
+	request := s.NewRequest("GET", "/sensor-groups/"+strconv.Itoa(int(s.sg2.ID)), nil)
 	recorder := httptest.NewRecorder()
 	s.transport.ServeHTTP(recorder, request)
 
@@ -161,7 +182,7 @@ func (s *IntegrationTestSuite) TestShouldGetSingleSensorGroup() {
 
 func (s *IntegrationTestSuite) TestShouldAddRemoveSensorsFromSensorGroup() {
 	get := func() devices.SensorGroup {
-		getReq := httptest.NewRequest(
+		getReq := s.NewRequest(
 			"GET",
 			fmt.Sprintf("/sensor-groups/%d", s.sg3.ID),
 			nil,
@@ -175,7 +196,7 @@ func (s *IntegrationTestSuite) TestShouldAddRemoveSensorsFromSensorGroup() {
 	}
 
 	sensorID := s.d1.Sensors[0].ID
-	addReq := httptest.NewRequest(
+	addReq := s.NewRequest(
 		"POST",
 		fmt.Sprintf("/sensor-groups/%d/sensors", s.sg3.ID),
 		bytes.NewBufferString(fmt.Sprintf(`{"sensor_id": %d}`, sensorID)),
@@ -192,7 +213,7 @@ func (s *IntegrationTestSuite) TestShouldAddRemoveSensorsFromSensorGroup() {
 	s.Equal([]int64{sensorID}, group.Sensors)
 
 	// Remove sensor
-	delReq := httptest.NewRequest(
+	delReq := s.NewRequest(
 		"DELETE",
 		fmt.Sprintf("/sensor-groups/%d/sensors/%d", s.sg3.ID, sensorID),
 		nil,
@@ -215,7 +236,7 @@ func (s *IntegrationTestSuite) TestSensorGroupShouldDelete() {
             "description": "%s"
         }
     `, groupName, groupDesc))
-	request := httptest.NewRequest("POST", "/sensor-groups", body)
+	request := s.NewRequest("POST", "/sensor-groups", body)
 	request.Header.Set("content-type", "application/json")
 	recorder := httptest.NewRecorder()
 	s.transport.ServeHTTP(recorder, request)
@@ -225,7 +246,7 @@ func (s *IntegrationTestSuite) TestSensorGroupShouldDelete() {
 	group := responseBody.Data
 
 	// Delete sensor group
-	delReq := httptest.NewRequest(
+	delReq := s.NewRequest(
 		"DELETE",
 		fmt.Sprintf("/sensor-groups/%d", group.ID),
 		nil,
@@ -235,7 +256,7 @@ func (s *IntegrationTestSuite) TestSensorGroupShouldDelete() {
 	s.Require().Equal(http.StatusOK, delRec.Result().StatusCode)
 
 	// Validate that the sensor group was removed
-	getReq := httptest.NewRequest("GET", fmt.Sprintf("/sensor-groups/%d", group.ID), nil)
+	getReq := s.NewRequest("GET", fmt.Sprintf("/sensor-groups/%d", group.ID), nil)
 	getRec := httptest.NewRecorder()
 	s.transport.ServeHTTP(getRec, getReq)
 	s.Equal(http.StatusNotFound, getRec.Result().StatusCode)
@@ -252,7 +273,7 @@ func (s *IntegrationTestSuite) TestSensorGroupUpdate() {
             "description": "%s"
         }
     `, groupName, groupDesc))
-	request := httptest.NewRequest("POST", "/sensor-groups", body)
+	request := s.NewRequest("POST", "/sensor-groups", body)
 	request.Header.Set("content-type", "application/json")
 	recorder := httptest.NewRecorder()
 	s.transport.ServeHTTP(recorder, request)
@@ -264,7 +285,7 @@ func (s *IntegrationTestSuite) TestSensorGroupUpdate() {
 	// Update sensor group
 	updatedName := "newname"
 	updatedDesc := "newdesc"
-	updReq := httptest.NewRequest(
+	updReq := s.NewRequest(
 		"PATCH",
 		fmt.Sprintf("/sensor-groups/%d", group.ID),
 		bytes.NewBufferString(fmt.Sprintf(
@@ -280,7 +301,7 @@ func (s *IntegrationTestSuite) TestSensorGroupUpdate() {
 	s.Require().Equal(http.StatusOK, updRec.Result().StatusCode)
 
 	// Validate that the sensor group was removed
-	getReq := httptest.NewRequest("GET", fmt.Sprintf("/sensor-groups/%d", group.ID), nil)
+	getReq := s.NewRequest("GET", fmt.Sprintf("/sensor-groups/%d", group.ID), nil)
 	getRec := httptest.NewRecorder()
 	s.transport.ServeHTTP(getRec, getReq)
 	s.Equal(http.StatusOK, getRec.Result().StatusCode)
@@ -296,12 +317,12 @@ func (s *IntegrationTestSuite) TestShouldFilterDevicesBySensors() {
 	// so we filter on sensor 1 and 3, and expect device 1 and 2 to return
 
 	// Act
-	request := httptest.NewRequest("GET", "/devices?sensor=1&sensor=3", nil)
+	request := s.NewRequest("GET", "/devices?sensor=1&sensor=3", nil)
 	recorder := httptest.NewRecorder()
 	s.transport.ServeHTTP(recorder, request)
 
 	// Assert
-	assert.Equal(s.T(), http.StatusOK, recorder.Result().StatusCode)
+	require.Equal(s.T(), http.StatusOK, recorder.Result().StatusCode)
 	var response web.APIResponse[[]devices.Device]
 	require.NoError(s.T(), json.NewDecoder(recorder.Result().Body).Decode(&response))
 	responseDeviceIDs := lo.Map(response.Data, func(item devices.Device, ix int) int64 { return item.ID })

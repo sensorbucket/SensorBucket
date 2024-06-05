@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/authtest"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	"sensorbucket.nl/sensorbucket/services/httpimporter/service"
 )
@@ -21,10 +22,10 @@ import (
 
 func TestReportInvalidUUID(t *testing.T) {
 	ch := make(chan processing.IngressDTO, 1)
-	svc := service.New(ch)
+	svc := service.New(ch, authtest.JWKS())
 
 	req := httptest.NewRequest("POST", "/THIS_IS_INVALID_UUID", nil)
-	req.Header.Set("authorization", "bearer random")
+	req.Header.Set("authorization", "bearer "+authtest.CreateToken())
 	rw := httptest.NewRecorder()
 	svc.ServeHTTP(rw, req)
 
@@ -39,11 +40,12 @@ func TestReportInvalidUUID(t *testing.T) {
 func TestShouldPublishIngressDTO(t *testing.T) {
 	requestData := []byte(`{"hello":"world"}`)
 	publ := make(chan processing.IngressDTO, 1)
-	svc := service.New(publ)
+	svc := service.New(publ, authtest.JWKS())
 	plID := uuid.New()
 
 	// Act
 	req := httptest.NewRequest("POST", "/"+plID.String(), bytes.NewBuffer(requestData))
+	req.Header.Set("authorization", "bearer "+authtest.CreateToken())
 	rw := httptest.NewRecorder()
 	svc.ServeHTTP(rw, req)
 

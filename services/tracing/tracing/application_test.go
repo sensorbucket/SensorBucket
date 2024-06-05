@@ -1,29 +1,23 @@
 package tracing
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
-	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
-
-var godContext = auth.CreateAuthenticatedContextForTESTING(context.Background(), "ADMIN", 10, auth.AllPermissions())
 
 func TestPipelineMessageWithInvalidAmountOfPipelineSteps(t *testing.T) {
 	svc := Service{}
 	assert.ErrorIs(t, svc.HandlePipelineMessage(
-		godContext,
 		pipeline.Message{
 			PipelineSteps: []string{"1", "2", "3"},
 			StepIndex:     3,
 		},
 		time.Now()), ErrInvalidStepsRemaining)
 	assert.ErrorIs(t, svc.HandlePipelineError(
-		godContext,
 		pipeline.PipelineError{
 			ReceivedByWorker: pipeline.Message{
 				PipelineSteps: []string{"1", "2", "3", "4", "5"},
@@ -110,7 +104,7 @@ func TestPipelineErrorAppears(t *testing.T) {
 			}
 
 			// Act and Assert
-			assert.NoError(t, tracingService.HandlePipelineError(godContext, cfg.input, publishTime))
+			assert.NoError(t, tracingService.HandlePipelineError(cfg.input, publishTime))
 			assert.Equal(t, []struct {
 				Step      Step
 				WithError bool
@@ -188,7 +182,7 @@ func TestPipelineMessageAppears(t *testing.T) {
 			}
 
 			// Act and Assert
-			assert.NoError(t, tracingService.HandlePipelineMessage(godContext, cfg.input, publishTime))
+			assert.NoError(t, tracingService.HandlePipelineMessage(cfg.input, publishTime))
 			assert.Equal(t, []struct {
 				Step      Step
 				WithError bool

@@ -8,11 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/authtest"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
-
-var godContext = auth.CreateAuthenticatedContextForTESTING(context.Background(), "ADMIN", 10, auth.AllPermissions())
 
 func ptr[T any](a T) *T {
 	return &a
@@ -31,7 +29,7 @@ func TestServiceDeviceUpdates(t *testing.T) {
 	originalDevice := devices.Device{
 		Code:                "1234",
 		Description:         "description_a",
-		Organisation:        "organisation_a",
+		TenantID:            authtest.DefaultTenantID,
 		Sensors:             []devices.Sensor{},
 		Properties:          []byte("{}"),
 		Latitude:            ptr(float64(10)),
@@ -41,14 +39,14 @@ func TestServiceDeviceUpdates(t *testing.T) {
 		LocationDescription: "location_description_a",
 	}
 	var newDevice devices.Device
-	store := &DeviceStoreMock{SaveFunc: func(dev *devices.Device) error {
+	store := &DeviceStoreMock{SaveFunc: func(ctx context.Context, dev *devices.Device) error {
 		newDevice = *dev
 		return nil
 	}}
 
 	svc := devices.New(store, nil)
 
-	err := svc.UpdateDevice(godContext, &originalDevice, updateDTO)
+	err := svc.UpdateDevice(authtest.GodContext(), &originalDevice, updateDTO)
 	assert.NoError(t, err)
 	assert.EqualValues(t, newDevice.Description, *updateDTO.Description)
 	assert.EqualValues(t, newDevice.Latitude, updateDTO.Latitude)
@@ -63,7 +61,6 @@ func TestServiceCreateDevice(t *testing.T) {
 	newDTO := devices.NewDeviceOpts{
 		Code:                "1234",
 		Description:         "description_a",
-		Organisation:        "organisation_a",
 		Properties:          []byte("{}"),
 		Latitude:            ptr(float64(10)),
 		Longitude:           ptr(float64(20)),
@@ -72,16 +69,16 @@ func TestServiceCreateDevice(t *testing.T) {
 		LocationDescription: "location_description_a",
 	}
 	var storedDev *devices.Device
-	store := &DeviceStoreMock{SaveFunc: func(dev *devices.Device) error {
+	store := &DeviceStoreMock{SaveFunc: func(ctx context.Context, dev *devices.Device) error {
 		storedDev = dev
 		return nil
 	}}
 	svc := devices.New(store, nil)
 
-	_, err := svc.CreateDevice(godContext, newDTO)
+	_, err := svc.CreateDevice(authtest.GodContext(), newDTO)
 	assert.NoError(t, err)
 	assert.EqualValues(t, newDTO.Code, storedDev.Code)
-	assert.EqualValues(t, newDTO.Organisation, storedDev.Organisation)
+	assert.EqualValues(t, authtest.DefaultTenantID, storedDev.TenantID)
 	assert.EqualValues(t, newDTO.Description, storedDev.Description)
 	assert.EqualValues(t, newDTO.Latitude, storedDev.Latitude)
 	assert.EqualValues(t, newDTO.Longitude, storedDev.Longitude)
@@ -93,11 +90,10 @@ func TestServiceCreateDevice(t *testing.T) {
 }
 
 func TestServiceShouldAddSensor(t *testing.T) {
-	ctx := godContext
 	dev := devices.Device{
 		Code:                "1234",
 		Description:         "description_a",
-		Organisation:        "organisation_a",
+		TenantID:            authtest.DefaultTenantID,
 		Sensors:             []devices.Sensor{},
 		Properties:          []byte("{}"),
 		Latitude:            ptr(float64(10)),
@@ -113,14 +109,14 @@ func TestServiceShouldAddSensor(t *testing.T) {
 		ArchiveTime: ptr(1000),
 	}
 	store := &DeviceStoreMock{
-		SaveFunc: func(dev *devices.Device) error {
+		SaveFunc: func(ctx context.Context, dev *devices.Device) error {
 			return nil
 		},
 	}
 	svc := devices.New(store, nil)
 
 	// Act
-	err := svc.AddSensor(ctx, &dev, sensorDTO)
+	err := svc.AddSensor(authtest.GodContext(), &dev, sensorDTO)
 	require.NoError(t, err)
 
 	// Assert
@@ -137,11 +133,10 @@ func TestServiceShouldAddSensor(t *testing.T) {
 }
 
 func TestServiceShouldAddSensorToSensorGroup(t *testing.T) {
-	ctx := godContext
 	var sensorGroupID int64 = 5
 	var sensorID int64 = 10
 	deviceStore := &DeviceStoreMock{
-		GetSensorFunc: func(id int64) (*devices.Sensor, error) {
+		GetSensorFunc: func(ctx context.Context, id int64) (*devices.Sensor, error) {
 			if id != sensorID {
 				return nil, devices.ErrSensorNotFound
 			}
@@ -169,7 +164,7 @@ func TestServiceShouldAddSensorToSensorGroup(t *testing.T) {
 	svc := devices.New(deviceStore, sensorGroupStore)
 
 	// Act
-	err := svc.AddSensorToSensorGroup(ctx, sensorGroupID, sensorID)
+	err := svc.AddSensorToSensorGroup(authtest.GodContext(), sensorGroupID, sensorID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -179,11 +174,10 @@ func TestServiceShouldAddSensorToSensorGroup(t *testing.T) {
 }
 
 func TestServiceShouldDeleteSensorFromSensorGroup(t *testing.T) {
-	ctx := godContext
 	var sensorGroupID int64 = 5
 	var sensorID int64 = 10
 	deviceStore := &DeviceStoreMock{
-		GetSensorFunc: func(id int64) (*devices.Sensor, error) {
+		GetSensorFunc: func(ctx context.Context, id int64) (*devices.Sensor, error) {
 			if id != sensorID {
 				return nil, devices.ErrSensorNotFound
 			}
@@ -211,7 +205,7 @@ func TestServiceShouldDeleteSensorFromSensorGroup(t *testing.T) {
 	svc := devices.New(deviceStore, sensorGroupStore)
 
 	// Act
-	err := svc.DeleteSensorFromSensorGroup(ctx, sensorGroupID, sensorID)
+	err := svc.DeleteSensorFromSensorGroup(authtest.GodContext(), sensorGroupID, sensorID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -221,7 +215,6 @@ func TestServiceShouldDeleteSensorFromSensorGroup(t *testing.T) {
 }
 
 func TestServiceShouldDeleteSensorGroup(t *testing.T) {
-	ctx := godContext
 	sensorGroup := &devices.SensorGroup{
 		ID: 5,
 	}
@@ -246,7 +239,7 @@ func TestServiceShouldDeleteSensorGroup(t *testing.T) {
 	svc := devices.New(deviceStore, sensorGroupStore)
 
 	// Act
-	err := svc.DeleteSensorGroup(ctx, sensorGroup)
+	err := svc.DeleteSensorGroup(authtest.GodContext(), sensorGroup)
 
 	// Assert
 	assert.NoError(t, err)
@@ -256,7 +249,6 @@ func TestServiceShouldDeleteSensorGroup(t *testing.T) {
 }
 
 func TestServiceShouldUpdateSensorGroup(t *testing.T) {
-	ctx := godContext
 	updatedName := "updated_sensorgroup"
 	sensorGroup := &devices.SensorGroup{
 		ID:   5,
@@ -284,8 +276,8 @@ func TestServiceShouldUpdateSensorGroup(t *testing.T) {
 	}
 
 	// Act
-	err := svc.UpdateSensorGroup(ctx, sensorGroup, dto)
-	assert.Error(t, svc.UpdateSensorGroup(ctx, sensorGroup, dtoInvalid))
+	err := svc.UpdateSensorGroup(authtest.GodContext(), sensorGroup, dto)
+	assert.Error(t, svc.UpdateSensorGroup(authtest.GodContext(), sensorGroup, dtoInvalid))
 
 	// Assert
 	assert.NoError(t, err)

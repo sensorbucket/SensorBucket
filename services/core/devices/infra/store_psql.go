@@ -159,15 +159,14 @@ func (s *PSQLStore) createDevice(_ context.Context, dev *devices.Device) error {
 		`
 			INSERT INTO "devices" (
 				"code", "description", "tenant_id", "properties", "location",
-				"altitude", "location_description", "state", "created_at",
-                "tenant_id"
+				"altitude", "location_description", "state", "created_at"
 			)
 			VALUES ($1, $2, $3, $4, ST_POINT($5, $6), $7, $8, $9, $10)
 			RETURNING id
 		`,
 		dev.Code, dev.Description, dev.TenantID, dev.Properties,
 		dev.Longitude, dev.Latitude, dev.Altitude, dev.LocationDescription,
-		dev.State, dev.CreatedAt, dev.TenantID,
+		dev.State, dev.CreatedAt,
 	); err != nil {
 		return err
 	}

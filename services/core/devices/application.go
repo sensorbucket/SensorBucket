@@ -237,8 +237,12 @@ func (s *Service) CreateSensorGroup(ctx context.Context, name, description strin
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
 		return nil, err
 	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	group, err := NewSensorGroup(name, description)
+	group, err := NewSensorGroup(tenantID, name, description)
 	if err != nil {
 		return nil, fmt.Errorf("create sensor group failed: %w", err)
 	}

@@ -1,7 +1,6 @@
 package processing_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -9,12 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/authtest"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
-
-var godContext = auth.CreateAuthenticatedContextForTESTING(context.Background(), "ADMIN", 10, auth.AllPermissions())
 
 func TestShouldProcessIngressDTO(t *testing.T) {
 	// Arrange
@@ -24,22 +21,23 @@ func TestShouldProcessIngressDTO(t *testing.T) {
 		Steps: []string{"a", "b", "c"},
 	}
 	store := &StoreMock{
-		GetPipelineFunc: func(s string) (*processing.Pipeline, error) {
+		GetPipelineFunc: func(s string, filter processing.PipelinesFilter) (*processing.Pipeline, error) {
 			return &pl, nil
 		},
 	}
 	publ := make(chan *pipeline.Message, 10)
-	svc := processing.New(store, publ)
+	svc := processing.New(store, publ, authtest.JWKS())
 	dto := processing.IngressDTO{
-		TracingID:  uuid.New(),
-		PipelineID: plID,
-		CreatedAt:  time.Now(),
+		TracingID:   uuid.New(),
+		AccessToken: authtest.CreateToken(),
+		PipelineID:  plID,
+		CreatedAt:   time.Now(),
 		TenantID:    123,
-		Payload:    []byte("Hello world"),
+		Payload:     []byte("Hello world"),
 	}
 
 	// Act
-	err := svc.ProcessIngressDTO(godContext, dto)
+	err := svc.ProcessIngressDTO(dto)
 
 	// Assert
 	assert.NoError(t, err)
