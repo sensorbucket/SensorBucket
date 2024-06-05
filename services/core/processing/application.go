@@ -23,12 +23,14 @@ type Store interface {
 type Service struct {
 	store                    Store
 	pipelineMessagePublisher PipelineMessagePublisher
+	keyClient                auth.JWKSClient
 }
 
-func New(store Store, publisher PipelineMessagePublisher) *Service {
+func New(store Store, publisher PipelineMessagePublisher, keyClient auth.JWKSClient) *Service {
 	s := &Service{
 		store:                    store,
 		pipelineMessagePublisher: publisher,
+		keyClient:                keyClient,
 	}
 	return s
 }
@@ -175,7 +177,11 @@ func (s *Service) EnablePipeline(ctx context.Context, id string) error {
 
 type PipelineMessagePublisher chan<- *pipeline.Message
 
-func (s *Service) ProcessIngressDTO(ctx context.Context, dto IngressDTO) error {
+func (s *Service) ProcessIngressDTO(dto IngressDTO) error {
+	ctx, err := auth.AuthenticateContext(context.Background(), dto.AccessToken, s.keyClient)
+	if err != nil {
+		return err
+	}
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_MEASUREMENTS}); err != nil {
 		return err
 	}

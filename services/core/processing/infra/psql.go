@@ -224,6 +224,7 @@ func (s *PSQLStore) GetPipeline(id string, filter processing.PipelinesFilter) (*
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var image string
 		err := rows.Scan(&image)
@@ -236,10 +237,12 @@ func (s *PSQLStore) GetPipeline(id string, filter processing.PipelinesFilter) (*
 }
 
 func createPipeline(db DB, p *processing.Pipeline) error {
-	if _, err := db.Exec(`INSERT INTO "pipelines" ("id", "description", "status", "last_status_change", "created_at") VALUES ($1, $2, $3, $4, $5)`, p.ID, p.Description, p.Status, p.LastStatusChange, p.CreatedAt); err != nil {
+	if _, err := db.Exec(`
+        INSERT INTO "pipelines" ("id", "tenant_id", "description", "status", "last_status_change", "created_at")
+        VALUES ($1, $2, $3, $4, $5, $6)
+    `, p.ID, p.TenantID, p.Description, p.Status, p.LastStatusChange, p.CreatedAt); err != nil {
 		return err
 	}
-
 	return nil
 }
 
