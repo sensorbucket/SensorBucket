@@ -18,7 +18,7 @@ import (
 // iService is an interface for the service's exported interface, it can be used as a developer reference
 type iService interface {
 	StoreMeasurement(context.Context, Measurement) error
-	StorePipelineMessage(context.Context, pipeline.Message) error
+	StorePipelineMessage(pipeline.Message) error
 	QueryMeasurements(context.Context, Filter, pagination.Request) (*pagination.Page[Measurement], error)
 	ListDatastreams(ctx context.Context, filter DatastreamFilter, r pagination.Request) (*pagination.Page[Datastream], error)
 	GetDatastream(ctx context.Context, id uuid.UUID) (*Datastream, error)
@@ -34,19 +34,21 @@ type Store interface {
 	Insert(Measurement) error
 	Query(Filter, pagination.Request) (*pagination.Page[Measurement], error)
 	ListDatastreams(DatastreamFilter, pagination.Request) (*pagination.Page[Datastream], error)
-	GetDatastream(id uuid.UUID) (*Datastream, error)
+	GetDatastream(id uuid.UUID, filter DatastreamFilter) (*Datastream, error)
 }
 
 // Service is the measurement service which stores measurement data.
 type Service struct {
 	store             Store
 	systemArchiveTime int
+	keyClient         auth.JWKSClient
 }
 
-func New(store Store, systemArchiveTime int) *Service {
+func New(store Store, systemArchiveTime int, keyClient auth.JWKSClient) *Service {
 	return &Service{
 		store:             store,
 		systemArchiveTime: systemArchiveTime,
+		keyClient:         keyClient,
 	}
 }
 
@@ -62,7 +64,11 @@ func (s *Service) StoreMeasurement(ctx context.Context, m Measurement) error {
 	return s.store.Insert(m)
 }
 
-func (s *Service) StorePipelineMessage(ctx context.Context, msg pipeline.Message) error {
+func (s *Service) StorePipelineMessage(msg pipeline.Message) error {
+	ctx, err := auth.AuthenticateContext(context.Background(), msg.AccessToken, s.keyClient)
+	if err != nil {
+		return err
+	}
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_MEASUREMENTS}); err != nil {
 		return err
 	}
@@ -164,12 +170,18 @@ type Filter struct {
 	DeviceIDs   []string
 	SensorCodes []string
 	Datastream  []string
+	TenantID    []int64
 }
 
 func (s *Service) QueryMeasurements(ctx context.Context, f Filter, r pagination.Request) (*pagination.Page[Measurement], error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
 		return nil, err
 	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
+	f.TenantID = []int64{tenantID}
 
 	page, err := s.store.Query(f, r)
 	if err != nil {
@@ -181,12 +193,18 @@ func (s *Service) QueryMeasurements(ctx context.Context, f Filter, r pagination.
 type DatastreamFilter struct {
 	Sensor           []int
 	ObservedProperty []string
+	TenantID         []int64
 }
 
 func (s *Service) ListDatastreams(ctx context.Context, filter DatastreamFilter, r pagination.Request) (*pagination.Page[Datastream], error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
 		return nil, err
 	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
+	filter.TenantID = []int64{tenantID}
 
 	return s.store.ListDatastreams(filter, r)
 }
@@ -195,6 +213,10 @@ func (s *Service) GetDatastream(ctx context.Context, id uuid.UUID) (*Datastream,
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
 		return nil, err
 	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	return s.store.GetDatastream(id)
+	return s.store.GetDatastream(id, DatastreamFilter{TenantID: []int64{tenantID}})
 }

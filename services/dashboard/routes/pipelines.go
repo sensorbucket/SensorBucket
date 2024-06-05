@@ -9,11 +9,13 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ory/nosurf"
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
+	"sensorbucket.nl/sensorbucket/pkg/layout"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
 )
 
@@ -96,7 +98,8 @@ func (h *PipelinePageHandler) createPipeline() http.HandlerFunc {
 
 		allWorkers := getPipelineWorkers(r.Context())
 		if allWorkers == nil {
-			WithSnackbarError(w, "Couldn't find workers", http.StatusBadRequest)
+			layout.WithSnackbarError(w, "Couldn't find workers")
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
@@ -111,7 +114,7 @@ func (h *PipelinePageHandler) createPipeline() http.HandlerFunc {
 		}
 
 		if resp.StatusCode != http.StatusCreated {
-			SnackbarSomethingWentWrong(w)
+			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
 
@@ -195,28 +198,33 @@ func (h *PipelinePageHandler) updatePipeline(next http.Handler) http.Handler {
 		}
 		pipelineId := chi.URLParam(r, "pipeline_id")
 		if pipelineId == "" {
-			WithSnackbarError(w, "Pipeline must be given", http.StatusBadRequest)
+			layout.WithSnackbarError(w, "Pipeline must be given")
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		pipelineDescr, ok := r.Form["pipeline-descr"]
 		if !ok {
-			WithSnackbarError(w, "Pipeline description cannot be empty", http.StatusBadRequest)
+			layout.WithSnackbarError(w, "Pipeline description cannot be empty")
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		if len(pipelineDescr) != 1 {
-			WithSnackbarError(w, "Invalid request", http.StatusBadRequest)
+			layout.WithSnackbarError(w, "Invalid request")
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		if pipelineDescr[0] == "" {
-			WithSnackbarError(w, "Pipeline description cannot be emptry", http.StatusBadRequest)
+			layout.WithSnackbarError(w, "Pipeline description cannot be emptry")
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		allWorkers := getPipelineWorkers(r.Context())
 		if allWorkers == nil {
-			WithSnackbarError(w, "Couldn't find workers", http.StatusBadRequest)
+			layout.WithSnackbarError(w, "Couldn't find workers")
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
@@ -226,25 +234,26 @@ func (h *PipelinePageHandler) updatePipeline(next http.Handler) http.Handler {
 
 		_, resp, err := h.coreClient.PipelinesApi.UpdatePipeline(r.Context(), pipelineId).UpdatePipelineRequest(updateDto).Execute()
 		if err != nil {
-			SnackbarSomethingWentWrong(w)
+			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
 
 		// TODO: API returns status created instead of found for some reason
 		if resp.StatusCode != http.StatusCreated {
 			if resp.StatusCode == http.StatusInternalServerError {
-				SnackbarSomethingWentWrong(w)
+				layout.SnackbarSomethingWentWrong(w)
 			} else {
 				var apierror *web.APIError
 				if errors.As(err, &apierror) {
-					WithSnackbarError(w, apierror.Message, apierror.HTTPStatus)
+					layout.WithSnackbarError(w, apierror.Message)
+					w.WriteHeader(apierror.HTTPStatus)
 					return
 				}
 			}
 			return
 		}
 
-		SnackbarSaveSuccessful(w)
+		layout.SnackbarSaveSuccessful(w)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -258,7 +267,7 @@ func (h *PipelinePageHandler) pipelineStepsView() http.HandlerFunc {
 		}
 
 		if isHX(r) {
-			views.WriteRenderPipelineStepsSortable(w, allWorkers)
+			views.WriteRenderPipelineStepsSortable(w, nosurf.Token(r), allWorkers)
 		}
 	}
 }
@@ -272,41 +281,46 @@ func (h *PipelinePageHandler) validatePipelineSteps(next http.Handler) http.Hand
 		}
 		steps, ok := r.Form["steps"]
 		if !ok {
-			WithSnackbarError(w, "No steps provided", http.StatusBadRequest)
+			layout.WithSnackbarError(w, "No steps provided")
 			return
 		}
 
 		if len(steps) != 1 {
-			SnackbarSomethingWentWrong(w)
+			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
 
 		stepMap := map[string][]string{}
 		err = json.Unmarshal([]byte(steps[0]), &stepMap)
 		if err != nil {
-			WithSnackbarError(w, "Invalid steps", http.StatusBadRequest)
+			layout.WithSnackbarError(w, "Invalid steps")
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		if len(stepMap) == 0 {
-			WithSnackbarError(w, "No steps provided", http.StatusBadRequest)
+			layout.WithSnackbarError(w, "No steps provided")
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		newOrder := make([]string, len(stepMap))
 		for key, val := range stepMap {
 			if len(val) != 1 {
-				WithSnackbarError(w, "Duplicate workers are not allowed", http.StatusBadRequest)
+				layout.WithSnackbarError(w, "Duplicate workers are not allowed")
+				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 
 			ix, err := strconv.Atoi(val[0])
 			if err != nil {
-				WithSnackbarError(w, "Invalid input", http.StatusBadRequest)
+				layout.WithSnackbarError(w, fmt.Sprintf("Invalid input: %s is not a number", val[0]))
+				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 			if ix >= len(newOrder) || ix < 0 {
-				WithSnackbarError(w, "Invalid input", http.StatusBadRequest)
+				layout.WithSnackbarError(w, fmt.Sprintf("Invalid input: %d is out of bounds", ix))
+				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 			newOrder[ix] = key
@@ -316,7 +330,7 @@ func (h *PipelinePageHandler) validatePipelineSteps(next http.Handler) http.Hand
 
 		allWorkers, err := h.getWorkersForSteps(r, newOrder)
 		if err != nil {
-			SnackbarSomethingWentWrong(w)
+			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
 

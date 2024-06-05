@@ -27,5 +27,7 @@ ALTER TABLE sensors DROP COLUMN IF EXISTS tenant_id;
 
 -- Drop tenantID from pipelines
 ALTER TABLE pipelines DROP COLUMN IF EXISTS tenant_id;
+-- Drop tenantID from datastreams
+ALTER TABLE datastreams DROP COLUMN IF EXISTS tenant_id;
 
 COMMIT;

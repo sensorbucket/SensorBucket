@@ -40,5 +40,9 @@ BEGIN;
 
     -- Add tenantID to pipelines
     ALTER TABLE pipelines ADD COLUMN tenant_id BIGINT NOT NULL DEFAULT 0;
+
+    -- Add tenantID to datastreams
+    ALTER TABLE datastreams ADD COLUMN tenant_id BIGINT NOT NULL DEFAULT 0;
+
 COMMIT;
 

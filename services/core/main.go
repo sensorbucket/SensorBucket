@@ -68,6 +68,8 @@ func Run() error {
 		return fmt.Errorf("could not create database connection: %w", err)
 	}
 
+	keyClient := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
+
 	amqpConn := mq.NewConnection(AMQP_HOST)
 
 	devicestore := deviceinfra.NewPSQLStore(db)
@@ -79,16 +81,16 @@ func Run() error {
 		return fmt.Errorf("could not convert SYS_ARCHIVE_TIME to integer: %w", err)
 	}
 	measurementstore := measurementsinfra.NewPSQL(db)
-	measurementservice := measurements.New(measurementstore, sysArchiveTime)
+	measurementservice := measurements.New(measurementstore, sysArchiveTime, keyClient)
 
 	processingstore := processinginfra.NewPSQLStore(db)
 	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
-	processingservice := processing.New(processingstore, processingPipelinePublisher)
+	processingservice := processing.New(processingstore, processingPipelinePublisher, keyClient)
 
 	// Setup HTTP Transport
 	httpsrv := createHTTPServer(coretransport.New(
 		HTTP_BASE,
-		auth.NewJWKSHttpClient(AUTH_JWKS_URL),
+		keyClient,
 		deviceservice,
 		measurementservice,
 		processingservice,

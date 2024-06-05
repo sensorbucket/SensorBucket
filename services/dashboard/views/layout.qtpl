@@ -127,6 +127,11 @@ type BasePage struct {
             _hyperscript.processNode(snackbar)
         }
     </script>
+    <script type="text/javascript">
+        htmx.on('htmx:responseError', (ev) => {
+            showSnackbar("Error", "The requested page could not be loaded\n" + ev.detail.error, snackbarError)
+        });
+    </script>
     {%= page.Header() %}
 </head>
 
@@ -203,7 +208,7 @@ type BasePage struct {
         </nav>
     </sidebar>
     <section class="flex-1 mt-12 lg:mt-0 lg:ml-sidebar" id="main-wrapper">
-        <header class="h-8 bg-white border-b" id="mustache">
+        <header class="h-12 bg-white border-b" id="mustache">
         </header>
         <main class="p-4 pt-0 mt-4" id="main">
             {%= page.Body() %}
@@ -223,7 +228,6 @@ type BasePage struct {
 <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4/dist/ext/ws.js"></script>
 <script type="text/javascript" src="https://unpkg.com/hyperscript.org@0.9.11"></script>
 <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
-<!--<script type="text/javascript" src="https://livejs.com/live.js"></script>-->
 {% endfunc %}
 
 {% func (b *BasePage) renderCSRFToken() %}
