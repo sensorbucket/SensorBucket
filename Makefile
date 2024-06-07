@@ -55,7 +55,7 @@ else
 		openapitools/openapi-generator-cli:latest generate -i /sensorbucket/tools/openapi/api.yaml \
 		-g python -t /sensorbucket/tools/openapi-templates/python -o /target \
 		--git-user-id=sensorbucket.nl --git-repo-id=PythonClient \
-		--additional-properties=packageName=sensorbucket,packageUrl='https://sensorbucket.nl'
+		--additional-properties=packageName=sensorbucket,packageUrl='https://sensorbucket.nl,packageVersion=1.2.0-rc1'
 endif
 
 golib-clean:
@@ -74,9 +74,19 @@ golib: golib-clean
 		--enable-post-process-file \
 		--additional-properties=packageName=api,packageUrl='https://sensorbucket.nl'
 
-admin: 
-	echo '{"schema_id":"default", "traits": {"email":"a@pollex.nl"}}' | http post 127.0.0.1:4434/admin/identities | jq .id | \
-	 xargs -I uid echo '{"identity_id":"uid"}' | http post 127.0.0.1:4434/admin/recovery/code
+USER_EMAIL ?= a@pollex.nl
+USER_SCHEMA ?= default
+usercreate: 
+	echo '{"schema_id":"$(USER_SCHEMA)", "traits": {"email":"$(USER_EMAIL)"}}' | http post 127.0.0.1:4434/admin/identities | jq -r .id
+
+userfind: 
+	http get 127.0.0.1:4434/admin/identities\?credentials_identifier=$(USER_EMAIL) | jq -r .[0].id
+
+USER_ID = 
+EXPIRES_IN ?= 5m
+userrecover:
+	echo '{"identity_id":"$(USER_ID)","expires_in":"$(EXPIRES_IN)"}' | http post 127.0.0.1:4434/admin/recovery/code
+
 
 oathkeeper:
 	-@mkdir -p $(CURDIR)/tools/oathkeeper

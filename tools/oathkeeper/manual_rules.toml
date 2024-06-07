@@ -11,14 +11,7 @@ Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
 Description = "Login flow"
 Authenticators = ["Noop"]
 Mutators = ["Noop"]
-Path = "/tenants/auth/<login|logout>"
-Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
-
-[Rules.TenantsAuthSettings]
-Description = "Settings flow"
-Authenticators = ["Noop"]
-Mutators = ["Noop"]
-Path = "/tenants/auth/settings"
+Path = "/tenants/auth/<login|logout|recovery|settings|error>"
 Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
 
 [Rules.TenantsSwitch]

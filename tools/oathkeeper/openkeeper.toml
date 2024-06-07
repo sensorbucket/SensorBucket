@@ -17,8 +17,8 @@ Handler = "redirect"
 
 [OpenAPI3.OASAPI]
 File = "bundled_openapi.yaml"
-Domains = ["https://acc.sensorbucket.nl/api"]
+Domains = ["https://sensorbucket.nl/api"]
 
 [TOML.Manual]
 File = "manual_rules.toml"
-Domains = ["https://acc.sensorbucket.nl"]
+Domains = ["https://sensorbucket.nl"]
