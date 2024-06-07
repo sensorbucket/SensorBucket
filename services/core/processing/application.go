@@ -90,6 +90,9 @@ func (s *Service) GetPipeline(ctx context.Context, id string, allowInactive bool
 		return nil, err
 	}
 	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	p, err := s.store.GetPipeline(id, PipelinesFilter{TenantID: []int64{tenantID}})
 	if err != nil {
