@@ -27,9 +27,9 @@ func NewPSQLSensorGroupStore(db *sqlx.DB) *PSQLSensorGroupStore {
 
 func createSensorGroup(db DB, group *devices.SensorGroup) error {
 	err := db.Get(&group.ID, `
-        INSERT INTO sensor_groups (name, description)
-        VALUES ($1, $2) RETURNING id;
-        `, group.Name, group.Description)
+        INSERT INTO sensor_groups (name, description, tenant_id)
+        VALUES ($1, $2, $3) RETURNING id;
+        `, group.Name, group.Description, group.TenantID)
 	if err != nil {
 		return err
 	}
@@ -109,14 +109,15 @@ func (s *PSQLSensorGroupStore) Save(group *devices.SensorGroup) error {
 	return tx.Commit()
 }
 
-func (s *PSQLSensorGroupStore) List(p pagination.Request) (*pagination.Page[devices.SensorGroup], error) {
+func (s *PSQLSensorGroupStore) List(tenantID int64, p pagination.Request) (*pagination.Page[devices.SensorGroup], error) {
 	type SensorGroupPaginationQuery struct {
 		CreatedAt time.Time `pagination:"sg.created_at,ASC"`
 		ID        int64     `pagination:"sg.id,ASC"`
 	}
 	var err error
-	q := pq.Select("sg.id", "sg.name", "sg.description", "sgs.sensor_id").From("sensor_groups sg").
-		LeftJoin("sensor_groups_sensors sgs on sgs.sensor_group_id = sg.id")
+	q := pq.Select("sg.id", "sg.name", "sg.tenant_id", "sg.description", "sgs.sensor_id").From("sensor_groups sg").
+		LeftJoin("sensor_groups_sensors sgs on sgs.sensor_group_id = sg.id").
+		Where(sq.Eq{"sg.tenant_id": tenantID})
 
 	cursor, err := pagination.GetCursor[SensorGroupPaginationQuery](p)
 	if err != nil {
@@ -140,9 +141,10 @@ func (s *PSQLSensorGroupStore) List(p pagination.Request) (*pagination.Page[devi
 			sensorID         *int64
 			groupName        string
 			groupDescription string
+			groupTenantID    int64
 		)
 		if err := rows.Scan(
-			&groupID, &groupName, &groupDescription, &sensorID,
+			&groupID, &groupName, &groupTenantID, &groupDescription, &sensorID,
 			&cursor.Columns.CreatedAt, &cursor.Columns.ID,
 		); err != nil {
 			return nil, fmt.Errorf("scanning sensor group: %w", err)
@@ -153,6 +155,7 @@ func (s *PSQLSensorGroupStore) List(p pagination.Request) (*pagination.Page[devi
 		if !ok {
 			group = devices.SensorGroup{
 				ID:          groupID,
+				TenantID:    groupTenantID,
 				Name:        groupName,
 				Description: groupDescription,
 				Sensors:     make([]int64, 0),
@@ -170,9 +173,10 @@ func (s *PSQLSensorGroupStore) List(p pagination.Request) (*pagination.Page[devi
 	return &page, nil
 }
 
-func (s *PSQLSensorGroupStore) Get(id int64) (*devices.SensorGroup, error) {
-	q := pq.Select("sg.id", "sg.name", "sg.description", "sgs.sensor_id").From("sensor_groups sg").
-		LeftJoin("sensor_groups_sensors sgs on sgs.sensor_group_id = sg.id").Where(sq.Eq{"sg.id": id})
+func (s *PSQLSensorGroupStore) Get(id int64, tenantID int64) (*devices.SensorGroup, error) {
+	q := pq.Select("sg.id", "sg.name", "sg.description", "sgs.sensor_id", "sg.tenant_id").From("sensor_groups sg").
+		LeftJoin("sensor_groups_sensors sgs on sgs.sensor_group_id = sg.id").
+		Where(sq.Eq{"sg.id": id, "sg.tenant_id": tenantID})
 
 	rows, err := q.RunWith(s.db).Query()
 	// As this is an exec query with a DB Cursor, sql.ErrNoRows will not be thrown
@@ -190,9 +194,10 @@ func (s *PSQLSensorGroupStore) Get(id int64) (*devices.SensorGroup, error) {
 			sensorID         *int64
 			groupName        string
 			groupDescription string
+			groupTenantID    int64
 		)
 		if err := rows.Scan(
-			&groupID, &groupName, &groupDescription, &sensorID,
+			&groupID, &groupName, &groupDescription, &sensorID, &groupTenantID,
 		); err != nil {
 			return nil, fmt.Errorf("scanning sensor group: %w", err)
 		}
@@ -201,6 +206,7 @@ func (s *PSQLSensorGroupStore) Get(id int64) (*devices.SensorGroup, error) {
 		if group == nil {
 			group = &devices.SensorGroup{
 				ID:          groupID,
+				TenantID:    groupTenantID,
 				Name:        groupName,
 				Description: groupDescription,
 				Sensors:     make([]int64, 0),

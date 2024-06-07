@@ -463,10 +463,10 @@ var _ devices.SensorGroupStore = &SensorGroupStoreMock{}
 //			DeleteFunc: func(id int64) error {
 //				panic("mock out the Delete method")
 //			},
-//			GetFunc: func(id int64) (*devices.SensorGroup, error) {
+//			GetFunc: func(id int64, tenantID int64) (*devices.SensorGroup, error) {
 //				panic("mock out the Get method")
 //			},
-//			ListFunc: func(p pagination.Request) (*pagination.Page[devices.SensorGroup], error) {
+//			ListFunc: func(tenantID int64, p pagination.Request) (*pagination.Page[devices.SensorGroup], error) {
 //				panic("mock out the List method")
 //			},
 //			SaveFunc: func(group *devices.SensorGroup) error {
@@ -483,10 +483,10 @@ type SensorGroupStoreMock struct {
 	DeleteFunc func(id int64) error
 
 	// GetFunc mocks the Get method.
-	GetFunc func(id int64) (*devices.SensorGroup, error)
+	GetFunc func(id int64, tenantID int64) (*devices.SensorGroup, error)
 
 	// ListFunc mocks the List method.
-	ListFunc func(p pagination.Request) (*pagination.Page[devices.SensorGroup], error)
+	ListFunc func(tenantID int64, p pagination.Request) (*pagination.Page[devices.SensorGroup], error)
 
 	// SaveFunc mocks the Save method.
 	SaveFunc func(group *devices.SensorGroup) error
@@ -502,9 +502,13 @@ type SensorGroupStoreMock struct {
 		Get []struct {
 			// ID is the id argument value.
 			ID int64
+			// TenantID is the tenantID argument value.
+			TenantID int64
 		}
 		// List holds details about calls to the List method.
 		List []struct {
+			// TenantID is the tenantID argument value.
+			TenantID int64
 			// P is the p argument value.
 			P pagination.Request
 		}
@@ -553,19 +557,21 @@ func (mock *SensorGroupStoreMock) DeleteCalls() []struct {
 }
 
 // Get calls GetFunc.
-func (mock *SensorGroupStoreMock) Get(id int64) (*devices.SensorGroup, error) {
+func (mock *SensorGroupStoreMock) Get(id int64, tenantID int64) (*devices.SensorGroup, error) {
 	if mock.GetFunc == nil {
 		panic("SensorGroupStoreMock.GetFunc: method is nil but SensorGroupStore.Get was just called")
 	}
 	callInfo := struct {
-		ID int64
+		ID       int64
+		TenantID int64
 	}{
-		ID: id,
+		ID:       id,
+		TenantID: tenantID,
 	}
 	mock.lockGet.Lock()
 	mock.calls.Get = append(mock.calls.Get, callInfo)
 	mock.lockGet.Unlock()
-	return mock.GetFunc(id)
+	return mock.GetFunc(id, tenantID)
 }
 
 // GetCalls gets all the calls that were made to Get.
@@ -573,10 +579,12 @@ func (mock *SensorGroupStoreMock) Get(id int64) (*devices.SensorGroup, error) {
 //
 //	len(mockedSensorGroupStore.GetCalls())
 func (mock *SensorGroupStoreMock) GetCalls() []struct {
-	ID int64
+	ID       int64
+	TenantID int64
 } {
 	var calls []struct {
-		ID int64
+		ID       int64
+		TenantID int64
 	}
 	mock.lockGet.RLock()
 	calls = mock.calls.Get
@@ -585,19 +593,21 @@ func (mock *SensorGroupStoreMock) GetCalls() []struct {
 }
 
 // List calls ListFunc.
-func (mock *SensorGroupStoreMock) List(p pagination.Request) (*pagination.Page[devices.SensorGroup], error) {
+func (mock *SensorGroupStoreMock) List(tenantID int64, p pagination.Request) (*pagination.Page[devices.SensorGroup], error) {
 	if mock.ListFunc == nil {
 		panic("SensorGroupStoreMock.ListFunc: method is nil but SensorGroupStore.List was just called")
 	}
 	callInfo := struct {
-		P pagination.Request
+		TenantID int64
+		P        pagination.Request
 	}{
-		P: p,
+		TenantID: tenantID,
+		P:        p,
 	}
 	mock.lockList.Lock()
 	mock.calls.List = append(mock.calls.List, callInfo)
 	mock.lockList.Unlock()
-	return mock.ListFunc(p)
+	return mock.ListFunc(tenantID, p)
 }
 
 // ListCalls gets all the calls that were made to List.
@@ -605,10 +615,12 @@ func (mock *SensorGroupStoreMock) List(p pagination.Request) (*pagination.Page[d
 //
 //	len(mockedSensorGroupStore.ListCalls())
 func (mock *SensorGroupStoreMock) ListCalls() []struct {
-	P pagination.Request
+	TenantID int64
+	P        pagination.Request
 } {
 	var calls []struct {
-		P pagination.Request
+		TenantID int64
+		P        pagination.Request
 	}
 	mock.lockList.RLock()
 	calls = mock.calls.List

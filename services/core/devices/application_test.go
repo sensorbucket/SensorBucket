@@ -147,7 +147,7 @@ func TestServiceShouldAddSensorToSensorGroup(t *testing.T) {
 		},
 	}
 	sensorGroupStore := &SensorGroupStoreMock{
-		GetFunc: func(id int64) (*devices.SensorGroup, error) {
+		GetFunc: func(id int64, tenantID int64) (*devices.SensorGroup, error) {
 			if id != sensorGroupID {
 				return nil, devices.ErrSensorGroupNotFound
 			}
@@ -188,7 +188,7 @@ func TestServiceShouldDeleteSensorFromSensorGroup(t *testing.T) {
 		},
 	}
 	sensorGroupStore := &SensorGroupStoreMock{
-		GetFunc: func(id int64) (*devices.SensorGroup, error) {
+		GetFunc: func(id int64, tenantID int64) (*devices.SensorGroup, error) {
 			if id != sensorGroupID {
 				return nil, devices.ErrSensorGroupNotFound
 			}
@@ -226,7 +226,7 @@ func TestServiceShouldDeleteSensorGroup(t *testing.T) {
 			}
 			return nil
 		},
-		GetFunc: func(id int64) (*devices.SensorGroup, error) {
+		GetFunc: func(id int64, tenantID int64) (*devices.SensorGroup, error) {
 			if id != sensorGroup.ID {
 				return nil, devices.ErrSensorGroupNotFound
 			}
@@ -256,7 +256,7 @@ func TestServiceShouldUpdateSensorGroup(t *testing.T) {
 	}
 	deviceStore := &DeviceStoreMock{}
 	sensorGroupStore := &SensorGroupStoreMock{
-		GetFunc: func(id int64) (*devices.SensorGroup, error) {
+		GetFunc: func(id int64, tenantID int64) (*devices.SensorGroup, error) {
 			if id != sensorGroup.ID {
 				return nil, devices.ErrSensorGroupNotFound
 			}

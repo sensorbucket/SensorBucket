@@ -25,8 +25,8 @@ type DeviceStore interface {
 type SensorGroupStore interface {
 	Save(group *SensorGroup) error
 	Delete(id int64) error
-	List(p pagination.Request) (*pagination.Page[SensorGroup], error)
-	Get(id int64) (*SensorGroup, error)
+	List(tenantID int64, p pagination.Request) (*pagination.Page[SensorGroup], error)
+	Get(id int64, tenantID int64) (*SensorGroup, error)
 }
 
 type Service struct {
@@ -256,16 +256,24 @@ func (s *Service) ListSensorGroups(ctx context.Context, p pagination.Request) (*
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
 		return nil, err
 	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	return s.sensorGroupStore.List(p)
+	return s.sensorGroupStore.List(tenantID, p)
 }
 
 func (s *Service) GetSensorGroup(ctx context.Context, id int64) (*SensorGroup, error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
 		return nil, err
 	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	return s.sensorGroupStore.Get(id)
+	return s.sensorGroupStore.Get(id, tenantID)
 }
 
 func (s *Service) AddSensorToSensorGroup(ctx context.Context, groupID, sensorID int64) error {

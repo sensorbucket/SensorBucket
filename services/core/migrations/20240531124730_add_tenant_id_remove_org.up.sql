@@ -44,5 +44,8 @@ BEGIN;
     -- Add tenantID to datastreams
     ALTER TABLE datastreams ADD COLUMN tenant_id BIGINT NOT NULL DEFAULT 0;
 
+    -- Add tenantID to sensorGroups
+    ALTER TABLE sensor_groups ADD COLUMN tenant_id BIGINT NOT NULL DEFAULT 0;
+
 COMMIT;
 
