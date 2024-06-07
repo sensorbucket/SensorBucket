@@ -94,22 +94,21 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
 //line views/workerEditor.qtpl:38
 	}
 //line views/workerEditor.qtpl:38
-	qw422016.N().S(`
-                </textarea>
+	qw422016.N().S(`</textarea>
             </fieldset>
             <div class="col-span-full flex justify-between">
                 <section>
                     `)
-//line views/workerEditor.qtpl:43
+//line views/workerEditor.qtpl:42
 	if p.Worker == nil {
-//line views/workerEditor.qtpl:43
+//line views/workerEditor.qtpl:42
 		qw422016.N().S(`
                         <button 
                             class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
                             hx-post="`)
-//line views/workerEditor.qtpl:46
+//line views/workerEditor.qtpl:45
 		qw422016.E().S(U("/workers/create"))
-//line views/workerEditor.qtpl:46
+//line views/workerEditor.qtpl:45
 		qw422016.N().S(`"
                             hx-vals='js:{userCode: currentUserCode()}'
                             hx-swap="none"
@@ -117,16 +116,16 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
                         Create
                         </button>
                     `)
-//line views/workerEditor.qtpl:52
+//line views/workerEditor.qtpl:51
 	} else {
-//line views/workerEditor.qtpl:52
+//line views/workerEditor.qtpl:51
 		qw422016.N().S(`
                         <button 
                             class="text-sm bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1"
                             hx-patch="`)
-//line views/workerEditor.qtpl:55
+//line views/workerEditor.qtpl:54
 		qw422016.E().S(U("/workers/%s", p.Worker.Id))
-//line views/workerEditor.qtpl:55
+//line views/workerEditor.qtpl:54
 		qw422016.N().S(`"
                             hx-vals='js:{userCode: currentUserCode()}'
                             hx-swap="none"
@@ -134,22 +133,22 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
                         Save
                         </button>
                     `)
-//line views/workerEditor.qtpl:61
+//line views/workerEditor.qtpl:60
 	}
-//line views/workerEditor.qtpl:61
+//line views/workerEditor.qtpl:60
 	qw422016.N().S(`
                 </section>
                 <fieldset class="flex gap-2 items-center">
                     <label for="worker-state" class="block"><small class="text-xs text-slate-500">Worker Enabled</small></label>
                     <input
                         type="checkbox" name="state" id="worker-state" `)
-//line views/workerEditor.qtpl:66
+//line views/workerEditor.qtpl:65
 	if p.Worker != nil && p.Worker.State == "enabled" {
-//line views/workerEditor.qtpl:66
+//line views/workerEditor.qtpl:65
 		qw422016.N().S(` checked `)
-//line views/workerEditor.qtpl:66
+//line views/workerEditor.qtpl:65
 	}
-//line views/workerEditor.qtpl:66
+//line views/workerEditor.qtpl:65
 	qw422016.N().S(` class="m-2 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                     />
                 </fieldset>
@@ -166,14 +165,14 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
         </div>
         <script type="module">
             import {createEditor} from '`)
-//line views/workerEditor.qtpl:81
+//line views/workerEditor.qtpl:80
 	qw422016.E().S(U("/static/codemirror.js"))
-//line views/workerEditor.qtpl:81
+//line views/workerEditor.qtpl:80
 	qw422016.N().S(`';
             const usercode = atob('`)
-//line views/workerEditor.qtpl:82
+//line views/workerEditor.qtpl:81
 	qw422016.E().S(p.UserCode)
-//line views/workerEditor.qtpl:82
+//line views/workerEditor.qtpl:81
 	qw422016.N().S(`');
             const editor = createEditor(document.getElementById("editor-container"), usercode);
             window.editor = editor;
@@ -186,36 +185,36 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
     </div>
 </div>
 `)
-//line views/workerEditor.qtpl:93
+//line views/workerEditor.qtpl:92
 }
 
-//line views/workerEditor.qtpl:93
+//line views/workerEditor.qtpl:92
 func (p *WorkerEditorPage) WriteBody(qq422016 qtio422016.Writer) {
-//line views/workerEditor.qtpl:93
+//line views/workerEditor.qtpl:92
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/workerEditor.qtpl:93
+//line views/workerEditor.qtpl:92
 	p.StreamBody(qw422016)
-//line views/workerEditor.qtpl:93
+//line views/workerEditor.qtpl:92
 	qt422016.ReleaseWriter(qw422016)
-//line views/workerEditor.qtpl:93
+//line views/workerEditor.qtpl:92
 }
 
-//line views/workerEditor.qtpl:93
+//line views/workerEditor.qtpl:92
 func (p *WorkerEditorPage) Body() string {
-//line views/workerEditor.qtpl:93
+//line views/workerEditor.qtpl:92
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/workerEditor.qtpl:93
+//line views/workerEditor.qtpl:92
 	p.WriteBody(qb422016)
-//line views/workerEditor.qtpl:93
+//line views/workerEditor.qtpl:92
 	qs422016 := string(qb422016.B)
-//line views/workerEditor.qtpl:93
+//line views/workerEditor.qtpl:92
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/workerEditor.qtpl:93
+//line views/workerEditor.qtpl:92
 	return qs422016
-//line views/workerEditor.qtpl:93
+//line views/workerEditor.qtpl:92
 }
 
-//line views/workerEditor.qtpl:96
+//line views/workerEditor.qtpl:95
 type WorkerEditorPage struct {
 	BasePage
 	Worker   *api.UserWorker

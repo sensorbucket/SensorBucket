@@ -350,10 +350,15 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
             _hyperscript.processNode(snackbar)
         }
     </script>
+    <script type="text/javascript">
+        htmx.on('htmx:responseError', (ev) => {
+            showSnackbar("Error", "The requested page could not be loaded\n" + ev.detail.error, snackbarError)
+        });
+    </script>
     `)
-//line views/layout.qtpl:130
+//line views/layout.qtpl:135
 	page.StreamHeader(qw422016)
-//line views/layout.qtpl:130
+//line views/layout.qtpl:135
 	qw422016.N().S(`
 </head>
 
@@ -381,22 +386,22 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
 
         <div id="snackbar-notifications" class="w-full h-full flex flex-col-reverse items-end gap-y-1">
         `)
-//line views/layout.qtpl:156
+//line views/layout.qtpl:161
 	page.StreamRenderFlashMessages(qw422016)
-//line views/layout.qtpl:156
+//line views/layout.qtpl:161
 	qw422016.N().S(`
         </div>
     </div>
     <sidebar class="w-screen lg:w-sidebar fixed lg:h-screen top-0 left-0 flex flex-col bg-secondary-600 z-[5000]">
         <header class="h-12 lg:h-header flex justify-between lg:flex-col lg:justify-end">
             <a hx-target="main" class="h-full block p-3 lg:p-0 lg:pl-8 lg:pr-12 lg:h-auto" href="`)
-//line views/layout.qtpl:161
+//line views/layout.qtpl:166
 	qw422016.E().S(U("/overview"))
-//line views/layout.qtpl:161
+//line views/layout.qtpl:166
 	qw422016.N().S(`"><img src="`)
-//line views/layout.qtpl:161
+//line views/layout.qtpl:166
 	qw422016.E().S(U("static/logo-white.png"))
-//line views/layout.qtpl:161
+//line views/layout.qtpl:166
 	qw422016.N().S(`" alt="SensorBucket" class="h-full" /></a>
             <button 
                 class="h-8 w-8 self-center lg:hidden"
@@ -412,35 +417,35 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
             <ul hx-target="main">
                 <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Navigation</li>
                 `)
-//line views/layout.qtpl:175
+//line views/layout.qtpl:180
 	for _, item := range topNavItems {
-//line views/layout.qtpl:175
+//line views/layout.qtpl:180
 		qw422016.N().S(`
                 <li>
                     <a href="`)
-//line views/layout.qtpl:177
+//line views/layout.qtpl:182
 		qw422016.E().S(U(item.URL))
-//line views/layout.qtpl:177
+//line views/layout.qtpl:182
 		qw422016.N().S(`"
                         class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">
                         <iconify-icon icon="`)
-//line views/layout.qtpl:179
+//line views/layout.qtpl:184
 		qw422016.E().S(item.Icon)
-//line views/layout.qtpl:179
+//line views/layout.qtpl:184
 		qw422016.N().S(`" width="24" class="pr-4 w-8"></iconify-icon>
                         <span>
                             `)
-//line views/layout.qtpl:181
+//line views/layout.qtpl:186
 		qw422016.E().S(item.Label)
-//line views/layout.qtpl:181
+//line views/layout.qtpl:186
 		qw422016.N().S(`
                         </span>
                     </a>
                 </li>
                 `)
-//line views/layout.qtpl:185
+//line views/layout.qtpl:190
 	}
-//line views/layout.qtpl:185
+//line views/layout.qtpl:190
 	qw422016.N().S(`
             </ul>
 
@@ -448,204 +453,203 @@ func StreamIndex(qw422016 *qt422016.Writer, page Page) {
             <ul hx-boost="false">
                 <li class="pb-2 text-xs font-bold text-secondary-300 uppercase">Other</li>
                 `)
-//line views/layout.qtpl:191
+//line views/layout.qtpl:196
 	for _, item := range bottomNavItems {
-//line views/layout.qtpl:191
+//line views/layout.qtpl:196
 		qw422016.N().S(`
                 <li>
                     <a href="`)
-//line views/layout.qtpl:193
+//line views/layout.qtpl:198
 		qw422016.E().S(item.URL)
-//line views/layout.qtpl:193
+//line views/layout.qtpl:198
 		qw422016.N().S(`"
                         class="flex items-center py-1.5 text-sm text-secondary-300 hover:text-white transition-colors duration-150">
                         <iconify-icon icon="`)
-//line views/layout.qtpl:195
+//line views/layout.qtpl:200
 		qw422016.E().S(item.Icon)
-//line views/layout.qtpl:195
+//line views/layout.qtpl:200
 		qw422016.N().S(`" width="24" class="pr-4 w-8"></iconify-icon>
                         <span>
                             `)
-//line views/layout.qtpl:197
+//line views/layout.qtpl:202
 		qw422016.E().S(item.Label)
-//line views/layout.qtpl:197
+//line views/layout.qtpl:202
 		qw422016.N().S(`
                         </span>
                     </a>
                 </li>
                 `)
-//line views/layout.qtpl:201
+//line views/layout.qtpl:206
 	}
-//line views/layout.qtpl:201
+//line views/layout.qtpl:206
 	qw422016.N().S(`
             </ul>
         </nav>
     </sidebar>
     <section class="flex-1 mt-12 lg:mt-0 lg:ml-sidebar" id="main-wrapper">
-        <header class="h-8 bg-white border-b" id="mustache">
+        <header class="h-12 bg-white border-b" id="mustache">
         </header>
         <main class="p-4 pt-0 mt-4" id="main">
             `)
-//line views/layout.qtpl:209
+//line views/layout.qtpl:214
 	page.StreamBody(qw422016)
-//line views/layout.qtpl:209
+//line views/layout.qtpl:214
 	qw422016.N().S(`
         </main>
     </section>
 
     `)
-//line views/layout.qtpl:213
+//line views/layout.qtpl:218
 	page.StreamFooter(qw422016)
-//line views/layout.qtpl:213
+//line views/layout.qtpl:218
 	qw422016.N().S(`
 </body>
 
 </html>
 `)
-//line views/layout.qtpl:217
+//line views/layout.qtpl:222
 }
 
-//line views/layout.qtpl:217
+//line views/layout.qtpl:222
 func WriteIndex(qq422016 qtio422016.Writer, page Page) {
-//line views/layout.qtpl:217
+//line views/layout.qtpl:222
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/layout.qtpl:217
+//line views/layout.qtpl:222
 	StreamIndex(qw422016, page)
-//line views/layout.qtpl:217
+//line views/layout.qtpl:222
 	qt422016.ReleaseWriter(qw422016)
-//line views/layout.qtpl:217
+//line views/layout.qtpl:222
 }
 
-//line views/layout.qtpl:217
+//line views/layout.qtpl:222
 func Index(page Page) string {
-//line views/layout.qtpl:217
+//line views/layout.qtpl:222
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/layout.qtpl:217
+//line views/layout.qtpl:222
 	WriteIndex(qb422016, page)
-//line views/layout.qtpl:217
+//line views/layout.qtpl:222
 	qs422016 := string(qb422016.B)
-//line views/layout.qtpl:217
+//line views/layout.qtpl:222
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/layout.qtpl:217
+//line views/layout.qtpl:222
 	return qs422016
-//line views/layout.qtpl:217
+//line views/layout.qtpl:222
 }
 
 // These are for debugging only. In production the tailwind and icons should be bundled with the dashboard
 
-//line views/layout.qtpl:221
+//line views/layout.qtpl:226
 func streamdebugHeaders(qw422016 *qt422016.Writer) {
-//line views/layout.qtpl:221
+//line views/layout.qtpl:226
 	qw422016.N().S(`
 <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4"></script>
 <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4/dist/ext/ws.js"></script>
 <script type="text/javascript" src="https://unpkg.com/hyperscript.org@0.9.11"></script>
 <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
-<!--<script type="text/javascript" src="https://livejs.com/live.js"></script>-->
 `)
-//line views/layout.qtpl:227
+//line views/layout.qtpl:231
 }
 
-//line views/layout.qtpl:227
+//line views/layout.qtpl:231
 func writedebugHeaders(qq422016 qtio422016.Writer) {
-//line views/layout.qtpl:227
+//line views/layout.qtpl:231
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/layout.qtpl:227
+//line views/layout.qtpl:231
 	streamdebugHeaders(qw422016)
-//line views/layout.qtpl:227
+//line views/layout.qtpl:231
 	qt422016.ReleaseWriter(qw422016)
-//line views/layout.qtpl:227
+//line views/layout.qtpl:231
 }
 
-//line views/layout.qtpl:227
+//line views/layout.qtpl:231
 func debugHeaders() string {
-//line views/layout.qtpl:227
+//line views/layout.qtpl:231
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/layout.qtpl:227
+//line views/layout.qtpl:231
 	writedebugHeaders(qb422016)
-//line views/layout.qtpl:227
+//line views/layout.qtpl:231
 	qs422016 := string(qb422016.B)
-//line views/layout.qtpl:227
+//line views/layout.qtpl:231
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/layout.qtpl:227
+//line views/layout.qtpl:231
 	return qs422016
-//line views/layout.qtpl:227
+//line views/layout.qtpl:231
 }
 
-//line views/layout.qtpl:229
+//line views/layout.qtpl:233
 func (b *BasePage) streamrenderCSRFToken(qw422016 *qt422016.Writer) {
-//line views/layout.qtpl:229
+//line views/layout.qtpl:233
 	qw422016.N().S(`
     `)
-//line views/layout.qtpl:230
+//line views/layout.qtpl:234
 	streamrenderCSRFToken(qw422016, b.CSRFToken)
-//line views/layout.qtpl:230
+//line views/layout.qtpl:234
 	qw422016.N().S(`
 `)
-//line views/layout.qtpl:231
+//line views/layout.qtpl:235
 }
 
-//line views/layout.qtpl:231
+//line views/layout.qtpl:235
 func (b *BasePage) writerenderCSRFToken(qq422016 qtio422016.Writer) {
-//line views/layout.qtpl:231
+//line views/layout.qtpl:235
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/layout.qtpl:231
+//line views/layout.qtpl:235
 	b.streamrenderCSRFToken(qw422016)
-//line views/layout.qtpl:231
+//line views/layout.qtpl:235
 	qt422016.ReleaseWriter(qw422016)
-//line views/layout.qtpl:231
+//line views/layout.qtpl:235
 }
 
-//line views/layout.qtpl:231
+//line views/layout.qtpl:235
 func (b *BasePage) renderCSRFToken() string {
-//line views/layout.qtpl:231
+//line views/layout.qtpl:235
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/layout.qtpl:231
+//line views/layout.qtpl:235
 	b.writerenderCSRFToken(qb422016)
-//line views/layout.qtpl:231
+//line views/layout.qtpl:235
 	qs422016 := string(qb422016.B)
-//line views/layout.qtpl:231
+//line views/layout.qtpl:235
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/layout.qtpl:231
+//line views/layout.qtpl:235
 	return qs422016
-//line views/layout.qtpl:231
+//line views/layout.qtpl:235
 }
 
-//line views/layout.qtpl:233
+//line views/layout.qtpl:237
 func streamrenderCSRFToken(qw422016 *qt422016.Writer, token string) {
-//line views/layout.qtpl:233
+//line views/layout.qtpl:237
 	qw422016.N().S(`
     <input type="hidden" name="csrf_token" value="`)
-//line views/layout.qtpl:234
+//line views/layout.qtpl:238
 	qw422016.E().S(token)
-//line views/layout.qtpl:234
+//line views/layout.qtpl:238
 	qw422016.N().S(`">
 `)
-//line views/layout.qtpl:235
+//line views/layout.qtpl:239
 }
 
-//line views/layout.qtpl:235
+//line views/layout.qtpl:239
 func writerenderCSRFToken(qq422016 qtio422016.Writer, token string) {
-//line views/layout.qtpl:235
+//line views/layout.qtpl:239
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/layout.qtpl:235
+//line views/layout.qtpl:239
 	streamrenderCSRFToken(qw422016, token)
-//line views/layout.qtpl:235
+//line views/layout.qtpl:239
 	qt422016.ReleaseWriter(qw422016)
-//line views/layout.qtpl:235
+//line views/layout.qtpl:239
 }
 
-//line views/layout.qtpl:235
+//line views/layout.qtpl:239
 func renderCSRFToken(token string) string {
-//line views/layout.qtpl:235
+//line views/layout.qtpl:239
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/layout.qtpl:235
+//line views/layout.qtpl:239
 	writerenderCSRFToken(qb422016, token)
-//line views/layout.qtpl:235
+//line views/layout.qtpl:239
 	qs422016 := string(qb422016.B)
-//line views/layout.qtpl:235
+//line views/layout.qtpl:239
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/layout.qtpl:235
+//line views/layout.qtpl:239
 	return qs422016
-//line views/layout.qtpl:235
+//line views/layout.qtpl:239
 }

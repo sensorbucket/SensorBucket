@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/cors"
@@ -22,7 +20,6 @@ import (
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
-	devicetransport "sensorbucket.nl/sensorbucket/services/core/devices/transport"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	measurementsinfra "sensorbucket.nl/sensorbucket/services/core/measurements/infra"
 	measurementtransport "sensorbucket.nl/sensorbucket/services/core/measurements/transport"
@@ -71,35 +68,33 @@ func Run() error {
 		return fmt.Errorf("could not create database connection: %w", err)
 	}
 
+	keyClient := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
+
 	amqpConn := mq.NewConnection(AMQP_HOST)
 
 	devicestore := deviceinfra.NewPSQLStore(db)
 	sensorGroupStore := deviceinfra.NewPSQLSensorGroupStore(db)
 	deviceservice := devices.New(devicestore, sensorGroupStore)
-	deviceshttp := devicetransport.NewHTTPTransport(deviceservice, HTTP_BASE)
 
 	sysArchiveTime, err := strconv.Atoi(SYS_ARCHIVE_TIME)
 	if err != nil {
 		return fmt.Errorf("could not convert SYS_ARCHIVE_TIME to integer: %w", err)
 	}
 	measurementstore := measurementsinfra.NewPSQL(db)
-	measurementservice := measurements.New(measurementstore, sysArchiveTime)
-	measurementhttp := measurementtransport.NewHTTP(measurementservice, HTTP_BASE)
+	measurementservice := measurements.New(measurementstore, sysArchiveTime, keyClient)
 
 	processingstore := processinginfra.NewPSQLStore(db)
 	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
-	processingservice := processing.New(processingstore, processingPipelinePublisher)
-	processinghttp := processingtransport.NewTransport(processingservice, HTTP_BASE)
+	processingservice := processing.New(processingstore, processingPipelinePublisher, keyClient)
 
 	// Setup HTTP Transport
-	r := chi.NewRouter()
-	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
-	r.Use(middleware.Logger, auth.Authenticate(jwks)) // TODO ADD: , auth.Protect()
-	deviceshttp.SetupRoutes(r)
-	measurementhttp.SetupRoutes(r)
-	processinghttp.SetupRoutes(r)
-	coretransport.Create(r, measurementservice, deviceservice)
-	httpsrv := createHTTPServer(r)
+	httpsrv := createHTTPServer(coretransport.New(
+		HTTP_BASE,
+		keyClient,
+		deviceservice,
+		measurementservice,
+		processingservice,
+	))
 	go func() {
 		if err := httpsrv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) && err != nil {
 			fmt.Printf("HTTP Server error: %v\n", err)

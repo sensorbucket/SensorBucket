@@ -3,7 +3,6 @@ package routes
 import (
 	"context"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -387,14 +386,22 @@ func (t *OverviewRoute) overviewDatastreamStream() http.HandlerFunc {
 		go func(ctx context.Context) {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
+
 			var nextCursor string
 			defer ws.Close()
 			for {
+				// Stop if the context is canceled
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
 				// Start fetching pages of measurements and stream them to the client
 				res, _, err := t.coreClient.MeasurementsApi.QueryMeasurements(ctx).
 					Cursor(nextCursor).
 					Datastream(datastreamID).
 					Start(start).
+					Limit(1000). // Currently maximum allowed limit
 					End(end).Execute()
 				if err != nil {
 					log.Printf("Failed to fetch devices for client: %v\n", err)
@@ -406,7 +413,6 @@ func (t *OverviewRoute) overviewDatastreamStream() http.HandlerFunc {
 					log.Printf("cannot open writer for ws: %v\n", err)
 					return
 				}
-				defer writer.Close()
 				for _, point := range res.Data {
 					// Write to client
 					if err := binary.Write(writer, binary.BigEndian, point.MeasurementTimestamp.UnixMilli()); err != nil {
@@ -416,6 +422,10 @@ func (t *OverviewRoute) overviewDatastreamStream() http.HandlerFunc {
 						log.Printf("Error writing measurement value to WebSocket: %v\n", err)
 					}
 				}
+				if err := writer.Close(); err != nil {
+					cancel()
+				}
+
 				nextCursor = getCursor(res.Links.GetNext())
 				if nextCursor == "" {
 					return
@@ -497,67 +507,4 @@ func (t *OverviewRoute) resolveSensor(next http.Handler) http.Handler {
 		)
 		next.ServeHTTP(w, r)
 	})
-}
-
-type SnackbarType int
-
-const (
-	Unknown SnackbarType = iota
-	Success
-	Error
-)
-
-func SnackbarSaveSuccessful(w http.ResponseWriter) http.ResponseWriter {
-	return WithSnackbarSuccess(w, "Save successful")
-}
-
-func SnackbarSomethingWentWrong(w http.ResponseWriter) http.ResponseWriter {
-	return WithSnackbarError(w, "Something went wrong", http.StatusInternalServerError)
-}
-
-func WithSnackbarError(w http.ResponseWriter, message string, statusCode int) http.ResponseWriter {
-	return withSnackbarMessage(w, snackbarDetails{
-		Message: message,
-		Type:    Error,
-	}, statusCode)
-}
-
-func WithSnackbarSuccess(w http.ResponseWriter, message string) http.ResponseWriter {
-	return withSnackbarMessage(w, snackbarDetails{
-		Message: message,
-		Type:    Success,
-	}, http.StatusOK)
-}
-
-type snackbarEvent struct {
-	Details snackbarDetails `json:"showSnackbar"`
-}
-
-type snackbarDetails struct {
-	Message string       `json:"message"`
-	Type    SnackbarType `json:"type"`
-}
-
-func withSnackbarMessage(w http.ResponseWriter, details snackbarDetails, statusCode int) http.ResponseWriter {
-	b, err := json.Marshal(snackbarEvent{
-		Details: details,
-	})
-	if err != nil {
-		log.Printf("[Warning] couldn't process snackbar message")
-		b = snackbarGenericError()
-	}
-	w.Header().Set("hx-trigger", string(b))
-	w.WriteHeader(statusCode)
-	return w
-}
-
-func snackbarGenericError() []byte {
-	ev := snackbarEvent{
-		Details: snackbarDetails{
-			Message: "Something went wrong",
-			Type:    Error,
-		},
-	}
-	b, _ := json.Marshal(ev)
-	return b
 }

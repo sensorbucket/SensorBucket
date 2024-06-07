@@ -1,3 +1,5 @@
+DefaultError = ["Redirect"]
+
 [Rules.Dashboard]
 Description = "Dashboard (sub)paths"
 Authenticators = ["CookieSession", "Noop"]

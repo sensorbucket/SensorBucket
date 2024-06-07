@@ -18,13 +18,15 @@ var (
 
 type SensorGroup struct {
 	ID          int64   `json:"id"`
+	TenantID    int64   `json:"tenant_id"`
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
 	Sensors     []int64 `json:"sensors"`
 }
 
-func NewSensorGroup(name, description string) (*SensorGroup, error) {
+func NewSensorGroup(tenantID int64, name, description string) (*SensorGroup, error) {
 	return &SensorGroup{
+		TenantID:    tenantID,
 		Name:        name,
 		Description: description,
 		Sensors:     make([]int64, 0),

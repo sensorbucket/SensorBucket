@@ -154,8 +154,8 @@ func (h *WorkerPageHandler) updateWorker() http.HandlerFunc {
 
 func (h *WorkerPageHandler) createWorkerPage() http.HandlerFunc {
 	const defaultUserCode = `
-def process(payload, msg):
-    return payload
+def process(msg):
+    return msg
     `
 	ucb64 := base64.StdEncoding.EncodeToString([]byte(defaultUserCode))
 	return func(w http.ResponseWriter, r *http.Request) {

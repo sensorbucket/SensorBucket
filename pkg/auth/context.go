@@ -12,6 +12,7 @@ const (
 	ctxUserID ctxKey = iota
 	ctxTenantID
 	ctxPermissions
+	ctxAccessToken
 )
 
 var (
@@ -29,6 +30,10 @@ func setTenantID(ctx context.Context, tenantID int64) context.Context {
 
 func setPermissions(ctx context.Context, permissions Permissions) context.Context {
 	return context.WithValue(ctx, ctxPermissions, permissions)
+}
+
+func setAccessToken(ctx context.Context, accessToken string) context.Context {
+	return context.WithValue(ctx, ctxAccessToken, accessToken)
 }
 
 func GetTenant(ctx context.Context) (int64, error) {
@@ -52,7 +57,7 @@ func GetTenant(ctx context.Context) (int64, error) {
 func GetUser(ctx context.Context) (string, error) {
 	value := ctx.Value(ctxUserID)
 	if value == nil {
-		return "", fmt.Errorf("%w: %w", ErrInvalidContext, ErrNoUserID)
+		return "", fmt.Errorf("%w: %w", ErrContextMissing, ErrNoUserID)
 	}
 
 	typedValue, ok := value.(string)
@@ -61,7 +66,7 @@ func GetUser(ctx context.Context) (string, error) {
 	}
 
 	if typedValue == "" {
-		return "", fmt.Errorf("%w: %w", ErrInvalidContext, ErrNoUserID)
+		return "", fmt.Errorf("%w: %w", ErrContextMissing, ErrNoUserID)
 	}
 
 	return typedValue, nil
@@ -76,6 +81,24 @@ func GetPermissions(ctx context.Context) (Permissions, error) {
 	typedValue, ok := value.(Permissions)
 	if !ok {
 		return Permissions{}, fmt.Errorf("%w: TenantID value is wrong type %T", ErrInvalidContext, value)
+	}
+
+	return typedValue, nil
+}
+
+func GetAccessToken(ctx context.Context) (string, error) {
+	value := ctx.Value(ctxAccessToken)
+	if value == nil {
+		return "", fmt.Errorf("%w: %w", ErrContextMissing, ErrNoAccessToken)
+	}
+
+	typedValue, ok := value.(string)
+	if !ok {
+		return "", fmt.Errorf("%w: AccessToken value is wrong type %T", ErrInvalidContext, value)
+	}
+
+	if typedValue == "" {
+		return "", fmt.Errorf("%w: %w", ErrContextMissing, ErrNoAccessToken)
 	}
 
 	return typedValue, nil

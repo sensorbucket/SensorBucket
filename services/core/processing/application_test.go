@@ -1,7 +1,6 @@
 package processing_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"sensorbucket.nl/sensorbucket/pkg/authtest"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
@@ -21,22 +21,23 @@ func TestShouldProcessIngressDTO(t *testing.T) {
 		Steps: []string{"a", "b", "c"},
 	}
 	store := &StoreMock{
-		GetPipelineFunc: func(s string) (*processing.Pipeline, error) {
+		GetPipelineFunc: func(s string, filter processing.PipelinesFilter) (*processing.Pipeline, error) {
 			return &pl, nil
 		},
 	}
 	publ := make(chan *pipeline.Message, 10)
-	svc := processing.New(store, publ)
+	svc := processing.New(store, publ, authtest.JWKS())
 	dto := processing.IngressDTO{
-		TracingID:  uuid.New(),
-		PipelineID: plID,
-		CreatedAt:  time.Now(),
-		OwnerID:    123,
-		Payload:    []byte("Hello world"),
+		TracingID:   uuid.New(),
+		AccessToken: authtest.CreateToken(),
+		PipelineID:  plID,
+		CreatedAt:   time.Now(),
+		TenantID:    123,
+		Payload:     []byte("Hello world"),
 	}
 
 	// Act
-	err := svc.ProcessIngressDTO(context.Background(), dto)
+	err := svc.ProcessIngressDTO(dto)
 
 	// Assert
 	assert.NoError(t, err)
@@ -45,5 +46,5 @@ func TestShouldProcessIngressDTO(t *testing.T) {
 	assert.Equal(t, dto.TracingID.String(), result.TracingID)
 	assert.Equal(t, pl.Steps, result.PipelineSteps)
 	assert.Equal(t, dto.Payload, result.Payload)
-	assert.Equal(t, dto.OwnerID, result.OwnerID)
+	assert.Equal(t, dto.TenantID, result.TenantID)
 }

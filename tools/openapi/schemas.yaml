@@ -643,7 +643,7 @@ userWorker:
     language:
       type: string
       enum: ["python"]
-    organisation:
+    tenant_id:
       type: integer
       format: int64
     revision:

@@ -14,6 +14,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/fission-user-workers/migrations"
 	userworkers "sensorbucket.nl/sensorbucket/services/fission-user-workers/service"
 )
@@ -24,7 +25,8 @@ var (
 	CTRL_TYPE = env.Could("CTRL_TYPE", "k8s")
 	DB_DSN    = env.Must("DB_DSN")
 	// The exchange to which workers will bind to
-	AMQP_XCHG = env.Could("AMQP_XCHG", "pipeline.messages")
+	AMQP_XCHG     = env.Could("AMQP_XCHG", "pipeline.messages")
+	AUTH_JWKS_URL = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
 )
 
 func main() {
@@ -33,10 +35,16 @@ func main() {
 	}
 }
 
+type (
+	StubController struct{}
+	Shutdowner     interface {
+		Shutdown(context.Context) error
+	}
+)
+
 type Controller interface {
 	Reconcile(context.Context) error
 }
-type StubController struct{}
 
 func (c *StubController) Reconcile(context.Context) error {
 	log.Println("WARNING, reconciling with stub controller, nothing will happen")
@@ -56,7 +64,8 @@ func Run() error {
 	}
 
 	app := userworkers.NewApplication(store)
-	srv := userworkers.NewHTTPTransport(app, HTTP_BASE, HTTP_ADDR)
+	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
+	srv := userworkers.NewHTTPTransport(app, HTTP_BASE, HTTP_ADDR, jwks)
 	go func() {
 		if err := srv.Start(); !errors.Is(err, http.ErrServerClosed) && err != nil {
 			log.Printf("Error starting HTTP Server: %v\n", err)
@@ -108,8 +117,13 @@ func Run() error {
 	ctxTO, cancelTO := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelTO()
 
-	if err := srv.Stop(ctxTO); err != nil {
-		log.Printf("Error while stopping HTTP Server: %v\n", err)
+	if ctrlStopper, ok := ctrl.(Shutdowner); ok {
+		err = errors.Join(err, ctrlStopper.Shutdown(ctxTO))
+	}
+
+	err = errors.Join(err, srv.Stop(ctxTO))
+	if err != nil {
+		log.Printf("One or more errors occured shutting down: %s\n", err)
 	}
 
 	return nil

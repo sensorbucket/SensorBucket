@@ -6,11 +6,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"sensorbucket.nl/sensorbucket/pkg/authtest"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
 
 func TestSensorGroupAddingRemovingSensors(t *testing.T) {
-	group, err := devices.NewSensorGroup("sg1", "")
+	group, err := devices.NewSensorGroup(authtest.DefaultTenantID, "sg1", "")
 	require.NoError(t, err, "Creating new sensor group")
 	s1, err := devices.NewSensor(devices.NewSensorOpts{
 		Code: "S1",

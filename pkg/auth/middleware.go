@@ -32,7 +32,7 @@ func (c *claims) Valid() error {
 	return fmt.Errorf("claims not valid")
 }
 
-type jwksClient interface {
+type JWKSClient interface {
 	Get() (jose.JSONWebKeySet, error)
 }
 
@@ -64,17 +64,17 @@ func Protect() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if _, err := GetTenant(r.Context()); err != nil {
-				log.Printf("[Auth] %v\n", err)
+				log.Printf("[Auth] getting tenant: %v\n", err)
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
 			if _, err := GetUser(r.Context()); err != nil && !errors.Is(err, ErrContextMissing) {
-				log.Printf("[Auth] %v\n", err)
+				log.Printf("[Auth] getting user: %v\n", err)
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
 			if _, err := GetPermissions(r.Context()); err != nil {
-				log.Printf("[Auth] %v\n", err)
+				log.Printf("[Auth] getting permissions: %v\n", err)
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
@@ -102,7 +102,7 @@ func ForwardRequestAuthentication() func(http.Handler) http.Handler {
 // Checks if the JWT is signed using the given secret
 // Serves the next HTTP handler if there is no JWT or if the JWT is OK
 // Anonymous requests are allowed by this handler
-func Authenticate(keyClient jwksClient) func(http.Handler) http.Handler {
+func Authenticate(keyClient JWKSClient) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authStr := r.Header.Get("Authorization")
@@ -112,7 +112,6 @@ func Authenticate(keyClient jwksClient) func(http.Handler) http.Handler {
 				return
 			}
 
-			// Cheating, removes Bearer and bearer case independently
 			tokenStr, ok := StripBearer(authStr)
 			if !ok {
 				log.Printf("[Error] authentication failed err because the Authorization header is malformed\n")
@@ -120,30 +119,38 @@ func Authenticate(keyClient jwksClient) func(http.Handler) http.Handler {
 				return
 			}
 
-			// Retrieve the JWT and ensure it was signed by us
-			c := claims{}
-			token, err := jwt.ParseWithClaims(tokenStr, &c, validateJWTFunc(keyClient))
+			ctx, err := AuthenticateContext(r.Context(), tokenStr, keyClient)
 			if err != nil {
 				log.Printf("[Error] authentication failed err: %s\n", err)
 				web.HTTPError(w, ErrUnauthorized)
 				return
 			}
-			if !token.Valid {
-				log.Printf("[Error] authentication failed err: %s\n", err)
-				web.HTTPError(w, ErrUnauthorized)
-				return
-			}
-			// JWT itself is validated, pass it to the actual endpoint for further authorization
-			// First fill the context with user information
-			ctx := setTenantID(r.Context(), c.TenantID)
-			ctx = setUserID(ctx, c.Subject)
-			ctx = setPermissions(ctx, c.Permissions)
+
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-func validateJWTFunc(jwksClient jwksClient) func(token *jwt.Token) (any, error) {
+func AuthenticateContext(ctx context.Context, tokenStr string, keyClient JWKSClient) (context.Context, error) {
+	// Retrieve the JWT and ensure it was signed by us
+	c := claims{}
+	token, err := jwt.ParseWithClaims(tokenStr, &c, validateJWTFunc(keyClient))
+	if err != nil {
+		return ctx, err
+	}
+	if !token.Valid {
+		return ctx, ErrUnauthorized
+	}
+	// JWT itself is validated, pass it to the actual endpoint for further authorization
+	// First fill the context with user information
+	ctx = setAccessToken(ctx, tokenStr)
+	ctx = setTenantID(ctx, c.TenantID)
+	ctx = setUserID(ctx, c.Subject)
+	ctx = setPermissions(ctx, c.Permissions)
+	return ctx, nil
+}
+
+func validateJWTFunc(jwksClient JWKSClient) func(token *jwt.Token) (any, error) {
 	return func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

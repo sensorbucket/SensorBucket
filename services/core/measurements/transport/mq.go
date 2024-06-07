@@ -1,7 +1,6 @@
 package measurementtransport
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -61,7 +60,7 @@ func StartMQ(
 					continue
 				}
 
-				if err := svc.StorePipelineMessage(context.Background(), pmsg); err != nil {
+				if err := svc.StorePipelineMessage(pmsg); err != nil {
 					if nerr := msg.Nack(false, false); nerr != nil {
 						err = fmt.Errorf("error nacking message: %w, while handling another error: %w", nerr, err)
 					}

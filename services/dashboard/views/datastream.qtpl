@@ -138,6 +138,7 @@
             return newUri;
         }
         let plot;
+        let ws;
         function updateDatastream() {
             let x = [];
             let y = [];
@@ -146,7 +147,12 @@
             let min = start.getTime()/1000
             let max = end.getTime()/1000
             plot.setScale('x', {min, max})
-            const ws = new WebSocket(getWebSocketURL(`{%s= U("/overview/datastreams/%s/stream?start=${start.toISOString()}&end=${end.toISOString()}", ds.Id) %}`))
+
+            if (ws) {
+                ws.close()
+            }
+
+            ws = new WebSocket(getWebSocketURL(`{%s= U("/overview/datastreams/%s/stream?start=${start.toISOString()}&end=${end.toISOString()}", ds.Id) %}`))
             ws.onmessage = (event) => {
                 const reader = new FileReader();
                 reader.onload = function() {

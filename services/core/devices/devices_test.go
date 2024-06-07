@@ -7,17 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"sensorbucket.nl/sensorbucket/pkg/authtest"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
 
 func TestAddSensorToDevice(t *testing.T) {
 	setupDevice := func() *devices.Device {
-		device, err := devices.NewDevice(devices.NewDeviceOpts{
-			Code:         "testdevice",
-			Description:  "",
-			Organisation: "",
-			Properties:   json.RawMessage("{}"),
-			State:        devices.DeviceEnabled,
+		device, err := devices.NewDevice(authtest.DefaultTenantID, devices.NewDeviceOpts{
+			Code:        "testdevice",
+			Description: "",
+			Properties:  json.RawMessage("{}"),
+			State:       devices.DeviceEnabled,
 		})
 		require.NoError(t, err)
 		err = device.AddSensor(devices.NewSensorOpts{
@@ -100,7 +100,7 @@ func TestAddSensorToDevice(t *testing.T) {
 }
 
 func TestDeviceShouldProvideSensorByEIDOrFallback(t *testing.T) {
-	dev, err := devices.NewDevice(devices.NewDeviceOpts{
+	dev, err := devices.NewDevice(authtest.DefaultTenantID, devices.NewDeviceOpts{
 		Code: "test_device",
 	})
 	require.NoError(t, err)

@@ -37,7 +37,7 @@ func TestArchiverShouldArchiveIngressDTOIfRawMessageIsValid(t *testing.T) {
 	dto := processing.IngressDTO{
 		TracingID:  uuid.New(),
 		PipelineID: uuid.New(),
-		OwnerID:    15,
+		TenantID:    15,
 		Payload:    []byte("Hello world"),
 		CreatedAt:  time.Now(),
 	}

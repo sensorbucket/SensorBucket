@@ -1,4 +1,4 @@
-package processingtransport
+package coretransport
 
 import (
 	"encoding/json"
@@ -8,41 +8,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/samber/lo"
+
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
 
-type Transport struct {
-	router  chi.Router
-	service *processing.Service
-	baseURL string
-}
-
-func NewTransport(svc *processing.Service, baseURL string) *Transport {
-	t := &Transport{
-		router:  chi.NewRouter(),
-		service: svc,
-		baseURL: baseURL,
-	}
-	t.SetupRoutes(t.router)
-	return t
-}
-
-func (t *Transport) SetupRoutes(r chi.Router) {
-	r.Post("/pipelines", t.httpCreatePipeline())
-	r.Get("/pipelines", t.httpListPipelines())
-	r.Get("/pipelines/{id}", t.httpGetPipeline())
-	r.Patch("/pipelines/{id}", t.httpUpdatePipeline())
-	r.Delete("/pipelines/{id}", t.httpDeletePipeline())
-}
-
-func (t Transport) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	t.router.ServeHTTP(rw, r)
-}
-
-func (t *Transport) httpCreatePipeline() http.HandlerFunc {
+func (t *CoreTransport) httpCreatePipeline() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		var dto processing.CreatePipelineDTO
 		if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
@@ -51,7 +24,7 @@ func (t *Transport) httpCreatePipeline() http.HandlerFunc {
 			return
 		}
 
-		p, err := t.service.CreatePipeline(r.Context(), dto)
+		p, err := t.processingService.CreatePipeline(r.Context(), dto)
 		if err != nil {
 			log.Printf("Failed to CreatePipeline: %v\n", err)
 			web.HTTPError(rw, err)
@@ -62,7 +35,7 @@ func (t *Transport) httpCreatePipeline() http.HandlerFunc {
 	}
 }
 
-func (t *Transport) httpUpdatePipeline() http.HandlerFunc {
+func (t *CoreTransport) httpUpdatePipeline() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		var dto processing.UpdatePipelineDTO
 		id := chi.URLParam(r, "id")
@@ -90,7 +63,7 @@ func (t *Transport) httpUpdatePipeline() http.HandlerFunc {
 			return
 		}
 
-		if err := t.service.UpdatePipeline(r.Context(), id, dto); err != nil {
+		if err := t.processingService.UpdatePipeline(r.Context(), id, dto); err != nil {
 			log.Printf("Failed to UpdatePipeline: %v\n", err)
 			web.HTTPError(rw, err)
 			return
@@ -100,7 +73,7 @@ func (t *Transport) httpUpdatePipeline() http.HandlerFunc {
 	}
 }
 
-func (t *Transport) httpListPipelines() http.HandlerFunc {
+func (t *CoreTransport) httpListPipelines() http.HandlerFunc {
 	type filter struct {
 		processing.PipelinesFilter
 		pagination.Request
@@ -112,18 +85,18 @@ func (t *Transport) httpListPipelines() http.HandlerFunc {
 			return
 		}
 
-		page, err := t.service.ListPipelines(r.Context(), filter.PipelinesFilter, filter.Request)
+		page, err := t.processingService.ListPipelines(r.Context(), filter.PipelinesFilter, filter.Request)
 		if err != nil {
 			log.Printf("Failed to ListPipelines: %v\n", err)
 			web.HTTPError(rw, err)
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, page))
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
 	}
 }
 
-func (t *Transport) httpGetPipeline() http.HandlerFunc {
+func (t *CoreTransport) httpGetPipeline() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
 		if _, err := uuid.Parse(id); err != nil {
@@ -146,7 +119,7 @@ func (t *Transport) httpGetPipeline() http.HandlerFunc {
 			}
 		}
 
-		p, err := t.service.GetPipeline(r.Context(), id, showInactive)
+		p, err := t.processingService.GetPipeline(r.Context(), id, showInactive)
 		if err != nil {
 			log.Printf("Failed to GetPipeline: %v\n", err)
 			web.HTTPError(rw, err)
@@ -157,7 +130,7 @@ func (t *Transport) httpGetPipeline() http.HandlerFunc {
 	}
 }
 
-func (t *Transport) httpDeletePipeline() http.HandlerFunc {
+func (t *CoreTransport) httpDeletePipeline() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
 		if _, err := uuid.Parse(id); err != nil {
@@ -165,7 +138,7 @@ func (t *Transport) httpDeletePipeline() http.HandlerFunc {
 			return
 		}
 
-		if err := t.service.DisablePipeline(r.Context(), id); err != nil {
+		if err := t.processingService.DisablePipeline(r.Context(), id); err != nil {
 			log.Printf("Failed to GetPipeline: %v\n", err)
 			web.HTTPError(rw, err)
 			return

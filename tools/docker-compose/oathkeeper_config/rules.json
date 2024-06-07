@@ -47,6 +47,11 @@
             {
                 "handler": "id_token"
             }
+        ],
+        "errors": [
+            {
+                "handler": "redirect"
+            }
         ]
     },
     {
