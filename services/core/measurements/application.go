@@ -117,7 +117,9 @@ func (s *Service) storePipelineMeasurement(ctx context.Context, msg pipeline.Mes
 
 	measurement := Measurement{
 		UplinkMessageID: msg.TracingID,
-		// TODO: Organisation...
+
+		OrganisationID: int(msg.TenantID),
+
 		DeviceID:                  msg.Device.ID,
 		DeviceCode:                msg.Device.Code,
 		DeviceDescription:         msg.Device.Description,
