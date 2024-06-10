@@ -4,9 +4,6 @@ BEGIN;
     UPDATE pipelines SET tenant_id = 1 WHERE tenant_id = 0;
     UPDATE datastreams SET tenant_id = 1 WHERE tenant_id = 0;
 
-    ALTER TABLE sensor_groups ADD COLUMN tenant_id BIGINT NOT NULL DEFAULT 1;
-    ALTER TABLE sensor_groups ALTER COLUMN tenant_id DROP DEFAULT;
-
     ALTER TABLE pipelines ALTER COLUMN tenant_id DROP DEFAULT;
     CREATE INDEX pipelines_idx_tenant_id ON pipelines (tenant_id);
 

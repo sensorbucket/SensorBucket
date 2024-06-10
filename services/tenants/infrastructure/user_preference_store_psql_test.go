@@ -59,6 +59,9 @@ func createPostgresServer(t *testing.T, seed bool) *sqlx.DB {
 	err = migrations.MigratePostgres(db.DB)
 	require.NoError(t, err, "failed to migrate database")
 
+	// Remove default tenants
+	db.MustExec("DELETE FROM tenants")
+
 	// Seed data
 	if seed {
 		seedSQL, err := seedFS.ReadFile("seed_test.sql")
