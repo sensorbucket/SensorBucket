@@ -25,7 +25,6 @@ servers:
 security:
   - CookieSession: []
   - APIKey: []
-  - Noop: []
 tags:
   - name: Devices
   - name: Pipelines
@@ -1771,9 +1770,6 @@ components:
     APIKey:
       description: |
         An API Key given through the Authorization header will authenticate an organisation
-      type: http
-      scheme: Bearer
-    Noop:
       type: http
       scheme: Bearer
   schemas:

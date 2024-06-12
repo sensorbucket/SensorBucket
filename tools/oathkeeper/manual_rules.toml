@@ -1,8 +1,6 @@
-DefaultError = ["Redirect"]
-
 [Rules.Dashboard]
 Description = "Dashboard (sub)paths"
-Authenticators = ["CookieSession", "Noop"]
+Authenticators = ["CookieSession"]
 Mutators = ["Hydrate", "IDToken"]
 Path = "/dashboard<(/.*)?>"
 Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
@@ -16,21 +14,21 @@ Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
 
 [Rules.TenantsSwitch]
 Description = "Switch tenants flow"
-Authenticators = ["CookieSession", "Noop"]
+Authenticators = ["CookieSession"]
 Mutators = ["Hydrate", "IDToken"]
 Path = "/tenants/switch"
 Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
 
 [Rules.TenantsAPIKeys]
 Description = "APIKeys UI"
-Authenticators = ["CookieSession", "Noop"]
+Authenticators = ["CookieSession"]
 Mutators = ["Hydrate", "IDToken"]
 Path = "/tenants/api-keys<(/.*)?>"
 Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
 
 [Rules.TenantsAuthCheck]
 Description = "Check auth token"
-Authenticators = ["APIKey", "CookieSession", "Noop"]
+Authenticators = ["APIKey", "CookieSession"]
 Mutators = ["Hydrate", "IDToken"]
 Path = "/tenants/auth"
 Methods = ["GET"]
