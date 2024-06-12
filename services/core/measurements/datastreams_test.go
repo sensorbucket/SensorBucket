@@ -6,12 +6,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"sensorbucket.nl/sensorbucket/pkg/authtest"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 )
 
 func TestFindOrCreateDatastreamWorks(t *testing.T) {
 	store := &DatastreamFinderCreaterMock{
-		FindDatastreamFunc: func(sensorID int64, observationProperty string) (*measurements.Datastream, error) {
+		FindDatastreamFunc: func(tenantID, sensorID int64, observationProperty string) (*measurements.Datastream, error) {
 			return nil, measurements.ErrDatastreamNotFound
 		},
 		CreateDatastreamFunc: func(datastream *measurements.Datastream) error {
@@ -22,7 +24,7 @@ func TestFindOrCreateDatastreamWorks(t *testing.T) {
 	obs := "test_obs"
 	uom := "1/cm3"
 
-	ds, err := measurements.FindOrCreateDatastream(sensorID, obs, uom, store)
+	ds, err := measurements.FindOrCreateDatastream(authtest.DefaultTenantID, sensorID, obs, uom, store)
 	require.NoError(t, err)
 	assert.NotNil(t, ds, "FindOrCreateDatastream must return datastream if no error")
 
@@ -37,5 +39,4 @@ func TestFindOrCreateDatastreamWorks(t *testing.T) {
 	assert.Equal(t, sensorID, cds.SensorID)
 	assert.Equal(t, obs, cds.ObservedProperty)
 	assert.Equal(t, uom, cds.UnitOfMeasurement)
-
 }

@@ -105,8 +105,13 @@ func (s *Service) storePipelineMeasurement(ctx context.Context, msg pipeline.Mes
 		m.ObservedProperty = m.SensorExternalID + "_" + m.ObservedProperty
 	}
 
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Find or create datastream
-	ds, err := FindOrCreateDatastream(sensor.ID, m.ObservedProperty, m.UnitOfMeasurement, s.store)
+	ds, err := FindOrCreateDatastream(tenantID, sensor.ID, m.ObservedProperty, m.UnitOfMeasurement, s.store)
 	if err != nil {
 		return err
 	}

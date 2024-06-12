@@ -231,21 +231,21 @@ func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Req
 	return &page, nil
 }
 
-func (s *MeasurementStorePSQL) FindDatastream(sensorID int64, obs string) (*measurements.Datastream, error) {
+func (s *MeasurementStorePSQL) FindDatastream(tenantID, sensorID int64, obs string) (*measurements.Datastream, error) {
 	var ds measurements.Datastream
-	query := `
-		SELECT
-			"id", "description", "sensor_id", "observed_property", "unit_of_measurement",
-			"created_at"
-		FROM 
-			"datastreams"
-		WHERE
-			"sensor_id"=$1 AND "observed_property"=$2
-	`
-	if err := s.db.Get(&ds, query, sensorID, obs); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, measurements.ErrDatastreamNotFound
-		}
+	err := pq.Select("id", "description", "sensor_id", "observed_property", "unit_of_measurement",
+		"created_at", "tenant_id").From("datastreams").Where(sq.Eq{
+		"sensor_id":         sensorID,
+		"observed_property": obs,
+		"tenant_id":         tenantID,
+	}).RunWith(s.db).Scan(
+		&ds.ID, &ds.Description, &ds.SensorID, &ds.ObservedProperty, &ds.UnitOfMeasurement, &ds.CreatedAt,
+		&ds.TenantID,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, measurements.ErrDatastreamNotFound
+	}
+	if err != nil {
 		return nil, fmt.Errorf("database error querying datastream: %w", err)
 	}
 	return &ds, nil
@@ -262,11 +262,11 @@ func (s *MeasurementStorePSQL) CreateDatastream(ds *measurements.Datastream) err
 	INSERT INTO
 		"datastreams" (
 			id, "description", "sensor_id", "observed_property", "unit_of_measurement",
-			"created_at"
+			"created_at", "tenant_id"
 		)
 	VALUES 
-		($1, $2, $3, $4, $5, $6)
-	`, uuidB, ds.Description, ds.SensorID, ds.ObservedProperty, ds.UnitOfMeasurement, ds.CreatedAt)
+		($1, $2, $3, $4, $5, $6, $7)
+	`, uuidB, ds.Description, ds.SensorID, ds.ObservedProperty, ds.UnitOfMeasurement, ds.CreatedAt, ds.TenantID)
 	if err != nil {
 		return fmt.Errorf("database error inserting datastream: %w", err)
 	}

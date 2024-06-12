@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/samber/lo"
@@ -16,6 +17,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/authtest"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	measurementsinfra "sensorbucket.nl/sensorbucket/services/core/measurements/infra"
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
@@ -105,4 +107,30 @@ func TestShouldQueryCorrectly(t *testing.T) {
 			assert.ElementsMatch(t, tC.exp, ids, "expected ids not found")
 		})
 	}
+}
+
+func TestDatastreamCreated(t *testing.T) {
+	db := createPostgresServer(t)
+	store := measurementsinfra.NewPSQL(db)
+
+	ds := &measurements.Datastream{
+		ID:                uuid.New(),
+		UnitOfMeasurement: "#",
+		Description:       "",
+		SensorID:          1,
+		ObservedProperty:  "none",
+		CreatedAt:         time.Now(),
+		TenantID:          authtest.DefaultTenantID,
+	}
+	err := store.CreateDatastream(ds)
+	require.NoError(t, err)
+	ds2, err := store.FindDatastream(ds.TenantID, ds.SensorID, ds.ObservedProperty)
+	require.NoError(t, err)
+	assert.Equal(t, ds.ID, ds2.ID)
+	assert.Equal(t, ds.UnitOfMeasurement, ds2.UnitOfMeasurement)
+	assert.Equal(t, ds.Description, ds2.Description)
+	assert.Equal(t, ds.SensorID, ds2.SensorID)
+	assert.Equal(t, ds.ObservedProperty, ds2.ObservedProperty)
+	assert.WithinDuration(t, ds.CreatedAt, ds2.CreatedAt, time.Second)
+	assert.Equal(t, ds.TenantID, ds2.TenantID)
 }

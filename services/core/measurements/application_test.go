@@ -130,7 +130,7 @@ func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 			msg.AccessToken = authtest.CreateToken()
 			require.NoError(t, err)
 			store := &StoreMock{
-				FindDatastreamFunc: func(sensorID int64, obs string) (*measurements.Datastream, error) {
+				FindDatastreamFunc: func(tenantID, sensorID int64, obs string) (*measurements.Datastream, error) {
 					assert.Equal(t, tC.expectedObservationProperty, obs, "expected observation property to match in query")
 					return &measurements.Datastream{}, nil
 				},
@@ -189,7 +189,7 @@ func TestShouldCopyOverDefaultFields(t *testing.T) {
 		UnitOfMeasurement: msg.Measurements[0].UnitOfMeasurement,
 	}
 	store := &StoreMock{
-		FindDatastreamFunc: func(sensorID int64, obs string) (*measurements.Datastream, error) {
+		FindDatastreamFunc: func(tenantID, sensorID int64, obs string) (*measurements.Datastream, error) {
 			return &ds, nil
 		},
 		InsertFunc: func(measurement measurements.Measurement) error {
@@ -326,7 +326,7 @@ func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
 				UnitOfMeasurement: msg.Measurements[0].UnitOfMeasurement,
 			}
 			store := &StoreMock{
-				FindDatastreamFunc: func(sensorID int64, obs string) (*measurements.Datastream, error) {
+				FindDatastreamFunc: func(tenantID, sensorID int64, obs string) (*measurements.Datastream, error) {
 					return &ds, nil
 				},
 				InsertFunc: func(measurement measurements.Measurement) error {
@@ -407,7 +407,7 @@ func TestShouldSetExpirationDate(t *testing.T) {
 			UnitOfMeasurement: msg.Measurements[0].UnitOfMeasurement,
 		}
 		store := &StoreMock{
-			FindDatastreamFunc: func(sensorID int64, obs string) (*measurements.Datastream, error) {
+			FindDatastreamFunc: func(tenantID, sensorID int64, obs string) (*measurements.Datastream, error) {
 				return &ds, nil
 			},
 			InsertFunc: func(measurement measurements.Measurement) error {
