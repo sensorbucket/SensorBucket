@@ -43,7 +43,7 @@ func main() {
 }
 
 var (
-	AMQP_HOST     = env.Must("HOST")
+	AMQP_HOST     = env.Must("AMQP_HOST")
 	AMQP_QUEUE    = env.Must("QUEUE_NAME")
 	AMQP_TOPIC    = env.Must("TOPIC")
 	AMQP_PREFETCH = env.Could("AMQP_PREFETCH", "5")
