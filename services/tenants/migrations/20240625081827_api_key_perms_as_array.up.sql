@@ -9,6 +9,8 @@ SET permissions = (
     WHERE akp.api_key_id = ak.id
 );
 
+alter table api_keys alter column permissions drop default;
+
 drop table api_key_permissions;
 
 COMMIT;
