@@ -218,7 +218,7 @@ func (ts *PSQLTenantStore) Update(tenant *tenants.Tenant) error {
 		}
 	}
 
-	if rb := tx.Commit(); err != nil {
+	if rb := tx.Commit(); rb != nil {
 		return fmt.Errorf("commit error: %w", rb)
 	}
 	return nil

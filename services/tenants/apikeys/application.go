@@ -57,7 +57,7 @@ func (s *Service) GenerateNewApiKey(ctx context.Context, name string, tenantId i
 	}
 	existing, err := s.apiKeyStore.GetHashedAPIKeyByNameAndTenantID(name, tenantId)
 	if err != nil && err != ErrKeyNotFound {
-		return "", err
+		return "", fmt.Errorf("in GenerateNewApiKey, could not check for existing key due to err: %w", err)
 	}
 	if existing.ID > 0 {
 		return "", ErrKeyNameTenantIDCombinationNotUnique
