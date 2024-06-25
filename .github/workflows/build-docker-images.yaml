@@ -10,7 +10,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  BUILDCACHE_TAG: ghcr.io/sensorbucket/gacache:${{ github.sha }}
 
 jobs:
   test:
@@ -48,26 +47,22 @@ jobs:
       matrix:
         include:
           - image: sensorbucket/httpimporter
-            dockerfile: services/httpimporter/Dockerfile
-            context: .
+            service: httpimporter
           - image: sensorbucket/core
-            dockerfile: services/core/Dockerfile
-            context: .
+            service: core
           - image: sensorbucket/tracing
-            dockerfile: services/tracing/Dockerfile
-            context: .
+            service: tracing
           - image: sensorbucket/dashboard
-            dockerfile: services/dashboard/Dockerfile
-            context: .
+            service: dashboard
           - image: sensorbucket/tenants
-            dockerfile: services/tenants/Dockerfile
-            context: .
+            service: tenants
           - image: sensorbucket/fission-user-workers
-            dockerfile: services/fission-user-workers/Dockerfile
-            context: .
+            service: fission-user-workers
           - image: sensorbucket/fission-rmq-connector
-            dockerfile: services/fission-rmq-connector/Dockerfile
-            context: .
+            service: fission-rmq-connector
+        platform:
+          - linux/amd64
+          - linux/arm64
 
     steps:
       - name: Checkout Repository
@@ -102,13 +97,17 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
+          context: .
+          file: Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platform }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: |
-            type=registry,ref=${{ env.REGISTRY }}/${{ matrix.image }}:buildcache
+            type=registry,ref=${{ env.REGISTRY }}/${{ matrix.image }}:buildcache-${{ matrix.platform }}
           cache-to: |
-            type=registry,ref=${{ env.REGISTRY }}/${{ matrix.image }}:buildcache,mode=max
+            type=registry,ref=${{ env.REGISTRY }}/${{ matrix.image }}:buildcache-${{ matrix.platform }},mode=max
+          build-args: |
+            SERVICE_NAME=${{ matrix.service }}
+            TARGETOS=linux
+            TARGETARCH=${{ endsWith(matrix.platform, 'arm64') && 'arm64' || 'amd64' }}
