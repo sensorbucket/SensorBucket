@@ -93,7 +93,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ matrix.image }}
           tags: |
             type=edge
-            type=edge,suffix={{date 'YYMMDDhhmm'}}
+            type=edge,suffix=-{{date 'YYMMDDhhmm'}}
             type=sha
             type=semver,pattern={{major}}
             type=semver,pattern={{major}}.{{minor}}
