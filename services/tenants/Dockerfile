@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.21-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -24,8 +24,7 @@ COPY . .
 RUN make -C services/tenants build
 
 # Build the application
-ARG TARGETOS=linux
-ARG TARGETARCH=amd64
+ARG TARGETOS TARGETARCH
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     -ldflags='-w -s -extldflags "-static"' \
     -tags timetzdata \
@@ -42,10 +41,10 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 # Copy CA certificates
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 # Copy the binary from the builder stage
-COPY --from=builder /tenants /tenants
+COPY --from=builder /tenants /app
 # Set timezone environment variable
 ENV TZ=Etc/UTC
 
 # Run the binary
-ENTRYPOINT ["/tenants"]
+ENTRYPOINT ["/app"]
 
