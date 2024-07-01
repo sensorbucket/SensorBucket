@@ -48,20 +48,25 @@ jobs:
         include:
           - appname: httpimporter
             image: sensorbucket/httpimporter
+            dockerfile: tools/Dockerfile.shared
           - appname: core
             image: sensorbucket/core
+            dockerfile: tools/Dockerfile.shared
           - appname: tracing
             image: sensorbucket/tracing
+            dockerfile: tools/Dockerfile.shared
+          - appname: fission-user-workers
+            image: sensorbucket/fission-user-workers
+            dockerfile: tools/Dockerfile.shared
+          - appname: fission-rmq-connector
+            image: sensorbucket/fission-rmq-connector
+            dockerfile: tools/Dockerfile.shared
           - appname: dashboard
             image: sensorbucket/dashboard
             dockerfile: services/dashboard/Dockerfile
           - appname: tenants
             image: sensorbucket/tenants
             dockerfile: services/tenants/Dockerfile
-          - appname: fission-user-workers
-            image: sensorbucket/fission-user-workers
-          - appname: fission-rmq-connector
-            image: sensorbucket/fission-rmq-connector
 
     steps:
       - name: Checkout Repository
