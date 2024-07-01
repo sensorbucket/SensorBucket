@@ -56,6 +56,10 @@
         reverse_proxy mail-server:8025
     }
 
+    handle_path /pprof/tenants/* {
+        reverse_proxy tenants:3100
+    }
+
     redir / /dashboard/
     redir /dashboard /dashboard/
     handle_path /dashboard/* {

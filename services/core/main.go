@@ -16,6 +16,7 @@ import (
 	"github.com/rs/cors"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
@@ -61,6 +62,11 @@ func Run() error {
 	prefetch, err := strconv.Atoi(AMQP_PREFETCH)
 	if err != nil {
 		return err
+	}
+
+	stopProfiler, err := web.RunProfiler()
+	if err != nil {
+		fmt.Printf("could not setup profiler server: %s\n", err)
 	}
 
 	db, err := createDB()
@@ -136,6 +142,7 @@ func Run() error {
 		log.Printf("Error shutting down HTTP Server: %v\n", err)
 	}
 	amqpConn.Shutdown()
+	stopProfiler(ctxTO)
 
 	log.Println("Shutdown complete")
 	return nil

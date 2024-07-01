@@ -17,6 +17,7 @@ import (
 	"github.com/ory/nosurf"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	tenantsinfra "sensorbucket.nl/sensorbucket/services/tenants/infrastructure"
 	"sensorbucket.nl/sensorbucket/services/tenants/migrations"
@@ -53,6 +54,10 @@ func Run() error {
 		panic(err)
 	}
 
+	stopProfiler, err := web.RunProfiler()
+	if err != nil {
+		fmt.Printf("could not setup profiler server: %s\n", err)
+	}
 	stopAPI, err := runAPI(errC, db)
 	if err != nil {
 		return fmt.Errorf("could not setup API server: %w", err)
@@ -72,6 +77,7 @@ func Run() error {
 
 	stopAPI(ctxTO)
 	stopWebUI(ctxTO)
+	stopProfiler(ctxTO)
 
 	return err
 }

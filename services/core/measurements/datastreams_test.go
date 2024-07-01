@@ -39,4 +39,5 @@ func TestFindOrCreateDatastreamWorks(t *testing.T) {
 	assert.Equal(t, sensorID, cds.SensorID)
 	assert.Equal(t, obs, cds.ObservedProperty)
 	assert.Equal(t, uom, cds.UnitOfMeasurement)
+	assert.Equal(t, authtest.DefaultTenantID, cds.TenantID)
 }

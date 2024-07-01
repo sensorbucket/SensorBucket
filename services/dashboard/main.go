@@ -16,6 +16,7 @@ import (
 	"github.com/ory/nosurf"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/layout"
@@ -45,6 +46,11 @@ func Run() error {
 	errC := make(chan error, 1)
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
+
+	stopProfiler, err := web.RunProfiler()
+	if err != nil {
+		fmt.Printf("could not setup profiler server: %s\n", err)
+	}
 
 	router := chi.NewRouter()
 	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
@@ -109,7 +115,6 @@ func Run() error {
 	fmt.Printf("HTTP Server listening on: %s\n", srv.Addr)
 
 	// Wait for fatal error or interrupt signal
-	var err error
 	select {
 	case <-ctx.Done():
 	case err = <-errC:
@@ -122,6 +127,7 @@ func Run() error {
 	if err := srv.Shutdown(ctxTO); err != nil {
 		fmt.Printf("could not gracefully shutdown http server: %s\n", err)
 	}
+	stopProfiler(ctxTO)
 
 	return err
 }

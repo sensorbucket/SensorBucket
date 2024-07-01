@@ -22,6 +22,7 @@ services:
     - EP_CORE=http://caddy/api
     - EP_TRACING=http://caddy/api
     - EP_WORKERS=http://caddy/api
+    - PROFILER_ADDR=:3100
 
   core:
     build:
@@ -36,6 +37,7 @@ services:
     - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/sensorbucket?sslmode=disable
     - HTTP_ADDR=:3000
     - AMQP_HOST=amqp://guest:guest@mq:5672/
+    - PROFILER_ADDR=:3100
 
   tracing:
     build:
@@ -54,6 +56,7 @@ services:
     - AMQP_QUEUE_INGRESS=archive-ingress
     - AMQP_XCHG_INGRESS=ingress
     - AMQP_XCHG_INGRESS_TOPIC=ingress.#
+    - PROFILER_ADDR=:3100
 
   tenants:
     build:
@@ -68,6 +71,7 @@ services:
       - HTTP_WEBUI_BASE=/tenants
       - KRATOS_ADMIN_API=http://kratos:4434
       - KRATOS_SERVER_API=http://127.0.0.1:3000/.ory
+      - PROFILER_ADDR=:3100
 
   userworkers:
     build: 
@@ -82,6 +86,7 @@ services:
       - APP_TYPE=service
       - HTTP_ADDR=:3000
       - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/userworkers?sslmode=disable
+      - PROFILER_ADDR=:3100
       - WORKER_NAMESPACE=default
       - AMQP_XCHG=pipeline.messages
       - CTRL_TYPE=docker
@@ -119,6 +124,7 @@ services:
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - AMQP_XCHG=ingress
     - AMQP_XCHG_TOPIC=ingress.httpimporter
+    - PROFILER_ADDR=:3100
 
   oathkeeper:
     image: oryd/oathkeeper:v0.40.6

@@ -45,6 +45,11 @@ func Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
+	stopProfiler, err := web.RunProfiler()
+	if err != nil {
+		fmt.Printf("could not setup profiler server: %s\n", err)
+	}
+
 	// Create AMQP Message Queue
 	mqConn := mq.NewConnection(AMQP_HOST)
 	go mqConn.Start()
@@ -85,7 +90,6 @@ func Run() error {
 		}
 	}()
 
-	var err error
 	select {
 	case <-ctx.Done():
 	case err = <-errC:
@@ -100,6 +104,7 @@ func Run() error {
 	if err := shutdownHealthEndpoint(ctxTO); err != nil {
 		log.Printf("Error shutting down Health Server: %v\n", err)
 	}
+	stopProfiler(ctxTO)
 
 	return err
 }

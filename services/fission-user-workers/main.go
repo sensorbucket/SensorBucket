@@ -14,6 +14,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/fission-user-workers/migrations"
 	userworkers "sensorbucket.nl/sensorbucket/services/fission-user-workers/service"
@@ -56,6 +57,11 @@ func Run() error {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
+
+	stopProfiler, err := web.RunProfiler()
+	if err != nil {
+		fmt.Printf("could not setup profiler server: %s\n", err)
+	}
 
 	db := sqlx.MustOpen("pgx", DB_DSN)
 	store := userworkers.NewPSQLStore(db)
@@ -120,6 +126,8 @@ func Run() error {
 	if ctrlStopper, ok := ctrl.(Shutdowner); ok {
 		err = errors.Join(err, ctrlStopper.Shutdown(ctxTO))
 	}
+
+	stopProfiler(ctxTO)
 
 	err = errors.Join(err, srv.Stop(ctxTO))
 	if err != nil {

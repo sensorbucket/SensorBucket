@@ -16,6 +16,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
@@ -43,6 +44,11 @@ func main() {
 	// Create shutdown context
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
+
+	stopProfiler, err := web.RunProfiler()
+	if err != nil {
+		fmt.Printf("could not setup profiler server: %s\n", err)
+	}
 
 	db, err := createDB()
 	if err != nil {
@@ -110,6 +116,7 @@ func main() {
 		log.Printf("error shutting down httpserver: %s\n", err)
 	}
 	mqConn.Shutdown()
+	stopProfiler(ctxTO)
 
 	log.Println("Shutdown complete")
 }

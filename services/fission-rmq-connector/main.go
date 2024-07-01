@@ -18,6 +18,7 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 )
 
@@ -61,6 +62,11 @@ func Run() error {
 	maxRetries, err := strconv.Atoi(MAX_RETRIES)
 	if err != nil {
 		return err
+	}
+
+	stopProfiler, err := web.RunProfiler()
+	if err != nil {
+		fmt.Printf("could not setup profiler server: %s\n", err)
 	}
 
 	log.Printf("Consuming from queue: %s and producing to exchange: %s\n", AMQP_QUEUE, AMQP_XCHG)
@@ -129,7 +135,11 @@ func Run() error {
 	<-ctx.Done()
 	log.Printf("RabbitMQ-Fission interrupted, shutting down gracefully...\n")
 
+	ctxTO, cancelTO := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelTO()
+
 	conn.Shutdown()
+	stopProfiler(ctxTO)
 
 	return nil
 }

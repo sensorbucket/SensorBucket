@@ -3,10 +3,8 @@ package tenantstransports
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -157,8 +155,7 @@ func (t *APIKeysHTTPTransport) httpAuthenticateApiKey() http.HandlerFunc {
 			})
 			return
 		}
-		idAndKeyCombination := strings.TrimPrefix(token, "Bearer ")
-		keyInfo, err := t.apiKeySvc.AuthenticateApiKey(r.Context(), idAndKeyCombination)
+		keyInfo, err := t.apiKeySvc.AuthenticateApiKey(r.Context(), token)
 		if err == nil {
 			session := AuthenticationSession{
 				Subject: "",
@@ -190,7 +187,6 @@ func (t *APIKeysHTTPTransport) httpAuthenticateApiKey() http.HandlerFunc {
 func (t *APIKeysHTTPTransport) httpGetApiKey() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		keyIDStr := chi.URLParam(r, "api_key_id")
-		fmt.Printf("keyIDStr: %v\n", keyIDStr)
 		keyID, err := strconv.ParseInt(keyIDStr, 10, 64)
 		if err != nil {
 			web.HTTPError(rw, err)
