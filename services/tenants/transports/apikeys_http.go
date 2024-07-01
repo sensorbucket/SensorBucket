@@ -3,6 +3,7 @@ package tenantstransports
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -170,14 +171,17 @@ func (t *APIKeysHTTPTransport) httpAuthenticateApiKey() http.HandlerFunc {
 			web.HTTPResponse(w, http.StatusOK, session)
 			return
 		} else if errors.Is(err, apikeys.ErrInvalidEncoding) {
+			fmt.Printf("API authenticate denied: %s\n", err)
 			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
 				Message: "Invalid input",
 			})
 			return
 		} else if errors.Is(err, apikeys.ErrKeyNotFound) {
+			fmt.Printf("API authenticate denied: %s\n", err)
 			web.HTTPResponse(w, http.StatusUnauthorized, web.APIResponseAny{})
 			return
 		} else {
+			fmt.Printf("API authenticate denied: %s\n", err)
 			web.HTTPError(w, err)
 			return
 		}

@@ -153,7 +153,10 @@ func (as *ApiKeyStore) DeleteApiKey(id int64) error {
 // Only returns the API key if the given tenant confirms to any state passed in the stateFilter
 func (as *ApiKeyStore) GetHashedApiKeyById(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
 	return as.getAPIKey(func(q sq.SelectBuilder) sq.SelectBuilder {
-		return q.Where(sq.Eq{"tenants.state": stateFilter})
+		return q.Where(sq.Eq{
+			"keys.id":       id,
+			"tenants.state": stateFilter,
+		})
 	})
 }
 
