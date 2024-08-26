@@ -80,7 +80,7 @@ device:
     - code
     - state
     - description
-    - organisation
+    - tenant_id
     - properties
     - sensors
     - created_at
@@ -97,9 +97,10 @@ device:
     description:
       type: string
       example: Grasfield pipe 24
-    organisation:
-      type: string
-      example: provincie_zeeland
+    tenant_id:
+      type: integer
+      format: int64
+      example: 1
     properties:
       type: object
       example:
