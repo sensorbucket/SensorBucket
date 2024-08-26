@@ -45,17 +45,28 @@ lint:
 	docker run --rm -v $(CURDIR):/app -w /app golangci/golangci-lint:v1.55.2 \
 		golangci-lint run --out-format github-actions
 
-python:
-ifeq ($(strip $(outdir)),)
-	@echo "Error: please specify out location by providing the 'outdir' variable"
+python-clean:
+ifeq ($(strip $(OUTDIR)),)
+	@echo "Error: please specify out location by providing the 'OUTDIR' variable"
 else
-	@echo "Generating python client from spec"
-	@mkdir -p $(outdir)
-	@docker run --rm -v $(CURDIR):/sensorbucket -v $(outdir):/target --user `id -u` \
+ifneq ($(wildcard $(OUTDIR)/.openapi-generator/FILES),)
+	cat $(OUTDIR)/.openapi-generator/FILES | xargs -I_ rm $(OUTDIR)/_
+	rm $(OUTDIR)/.openapi-generator/FILES
+endif
+endif
+
+SRC_VERSION ?= $(shell git describe --tags --dirty)
+python: python-clean
+ifeq ($(strip $(OUTDIR)),)
+	@echo "Error: please specify out location by providing the 'OUTDIR' variable"
+else
+	@echo "Generating python client from spec with version: $(SRC_VERSION)"
+	@mkdir -p $(OUTDIR)
+	@docker run --rm -v $(CURDIR):/sensorbucket -v $(OUTDIR):/target --user `id -u` \
 		openapitools/openapi-generator-cli:latest generate -i /sensorbucket/tools/openapi/api.yaml \
 		-g python -t /sensorbucket/tools/openapi-templates/python -o /target \
 		--git-user-id=sensorbucket.nl --git-repo-id=PythonClient \
-		--additional-properties=packageName=sensorbucket,packageUrl='https://sensorbucket.nl,packageVersion=1.2.0-rc1'
+		--additional-properties=packageName=sensorbucket,packageUrl='https://sensorbucket.nl,packageVersion=$(SRC_VERSION)'
 endif
 
 golib-clean:
