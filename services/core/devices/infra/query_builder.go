@@ -101,6 +101,9 @@ func (b deviceQueryBuilder) Query(ctx context.Context, db *sqlx.DB) (*pagination
 	if len(b.filters.ID) > 0 {
 		q = q.Where(sq.Eq{"devices.id": b.filters.ID})
 	}
+	if len(b.filters.Code) > 0 {
+		q = q.Where(sq.Eq{"devices.code": b.filters.Code})
+	}
 
 	// Authorize
 	q = auth.ProtectedQuery(ctx, q)

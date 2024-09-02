@@ -45,6 +45,7 @@ type DeviceFilter struct {
 	BoundingBoxFilter
 	RangeFilter
 	ID         []int64
+	Code       []string
 	Sensor     []int64
 	Properties json.RawMessage `json:"properties"`
 	OwnerID    int64
