@@ -12,7 +12,9 @@ Handler = "hydrator"
 Handler = "id_token"
 [Oathkeeper.Mutators.Noop]
 Handler = "noop"
-
+[Oathkeeper.Errors.Redirect]
+Handler = "redirect"
+ 
 [OpenAPI3.OASAPI]
 File = "bundled_openapi.yaml"
 Domains = ["https://acc.sensorbucket.nl/api"]

@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Sensorbucket API
-  version: 1.2.0-rc1
+  version: 1.2.2
   license:
     name: EUPLv1.2
     url: https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
@@ -267,6 +267,38 @@ paths:
           $ref: '#/components/responses/403'
         '404':
           $ref: '#/components/responses/404'
+    delete:
+      operationId: DeleteDevice
+      summary: Delete device
+      description: |
+        Delete the device with the given identifier.
+      tags:
+        - Devices
+      parameters:
+        - name: id
+          description: The numeric ID of the device
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Device deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Device deleted successfully
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
   /devices/{device_id}/sensors:
     get:
       x-is-paginated: true
@@ -353,7 +385,7 @@ paths:
           $ref: '#/components/responses/403'
         '404':
           $ref: '#/components/responses/404'
-  /device/{device_id}/sensors/{sensor_code}:
+  /devices/{device_id}/sensors/{sensor_code}:
     delete:
       operationId: DeleteDeviceSensor
       summary: Delete sensor
@@ -1845,7 +1877,7 @@ components:
         - code
         - state
         - description
-        - organisation
+        - tenant_id
         - properties
         - sensors
         - created_at
@@ -1862,9 +1894,10 @@ components:
         description:
           type: string
           example: Grasfield pipe 24
-        organisation:
-          type: string
-          example: provincie_zeeland
+        tenant_id:
+          type: integer
+          format: int64
+          example: 1
         properties:
           type: object
           example:
