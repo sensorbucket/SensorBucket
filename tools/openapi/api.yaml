@@ -29,7 +29,7 @@ paths:
     $ref: 'path-devices-by-id.yaml'
   /devices/{device_id}/sensors:
     $ref: 'path-devices-by-sensors.yaml'
-  /device/{device_id}/sensors/{sensor_code}:
+  /devices/{device_id}/sensors/{sensor_code}:
     $ref: 'path-devices-by-sensors-id.yaml'
   /sensors:
     $ref: 'path-sensors.yaml'

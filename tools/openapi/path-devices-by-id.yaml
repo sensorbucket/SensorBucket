@@ -70,4 +70,35 @@ patch:
     '403':
       $ref: './responses.yaml#/403'
     '404':
+       $ref: './responses.yaml#/404'
+delete:
+  operationId: DeleteDevice
+  summary: Delete device
+  description: |
+    Delete the device with the given identifier.
+  tags: ["Devices"]
+  parameters: 
+    - name: id
+      description: The numeric ID of the device
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+  responses:
+    '200':
+      description: Device deleted successfully
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Device deleted successfully
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+    '404':
       $ref: './responses.yaml#/404'
