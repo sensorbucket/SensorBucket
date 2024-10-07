@@ -1,23 +1,34 @@
 package coretransport
 
+//go:generate moq -pkg coretransport_test -out mock_test.go . MeasurementService
+
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
+	"github.com/google/uuid"
 
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
 
+type MeasurementService interface {
+	QueryMeasurements(context.Context, measurements.Filter, pagination.Request) (*pagination.Page[measurements.Measurement], error)
+	GetDatastream(context.Context, uuid.UUID) (*measurements.Datastream, error)
+	ListDatastreams(context.Context, measurements.DatastreamFilter, pagination.Request) (*pagination.Page[measurements.Datastream], error)
+}
+
 type CoreTransport struct {
 	baseURL            string
 	router             chi.Router
 	keySource          auth.JWKSClient
 	deviceService      *devices.Service
-	measurementService *measurements.Service
+	measurementService MeasurementService
 	processingService  *processing.Service
 }
 
@@ -25,7 +36,7 @@ func New(
 	baseURL string,
 	keySource auth.JWKSClient,
 	deviceService *devices.Service,
-	measurementService *measurements.Service,
+	measurementService MeasurementService,
 	processingService *processing.Service,
 ) *CoreTransport {
 	t := &CoreTransport{
