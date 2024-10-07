@@ -53,7 +53,7 @@ func (h *WorkerPageHandler) listWorkers() http.HandlerFunc {
 		page.WorkersNextPage = res.Links.GetNext()
 
 		if res.Links.GetNext() != "" {
-			page.WorkersNextPage = views.U("/workers/table?cursor=" + getCursor(res.Links.GetNext()))
+			page.WorkersNextPage = views.U("/workers/table?cursor=%s", getCursor(res.Links.GetNext()))
 		}
 
 		fmt.Println("Cursor", res.Links.GetNext())
@@ -80,7 +80,7 @@ func (h *WorkerPageHandler) workersTable() http.HandlerFunc {
 
 		nextCursor := ""
 		if res.Links.GetNext() != "" {
-			nextCursor = views.U("/workers/table?cursor=" + getCursor(res.Links.GetNext()))
+			nextCursor = views.U("/workers/table?cursor=%s", getCursor(res.Links.GetNext()))
 		}
 
 		if isHX(r) {
