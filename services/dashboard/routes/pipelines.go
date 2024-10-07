@@ -79,7 +79,7 @@ func (h *PipelinePageHandler) pipelineListPage() http.HandlerFunc {
 			Pipelines: pipelines.Data,
 		}
 		if pipelines.Links.GetNext() != "" {
-			page.PipelinesNextPage = views.U("/pipelines/table?cursor=" + getCursor(pipelines.Links.GetNext()))
+			page.PipelinesNextPage = views.U("/pipelines/table?cursor=%s", getCursor(pipelines.Links.GetNext()))
 		}
 		if isHX(r) {
 			page.WriteBody(w)
@@ -395,7 +395,7 @@ func (h *PipelinePageHandler) getPipelinesTable() func(w http.ResponseWriter, r 
 
 		nextCursor := ""
 		if res.Links.GetNext() != "" {
-			nextCursor = views.U("/pipelines/table?cursor=" + getCursor(res.Links.GetNext()))
+			nextCursor = views.U("/pipelines/table?cursor=%s", getCursor(res.Links.GetNext()))
 		}
 		views.WriteRenderPipelineTableRows(w, res.Data, nextCursor)
 	}
@@ -472,7 +472,7 @@ func (h *PipelinePageHandler) resolveWorkers(next http.Handler) http.Handler {
 
 		nextCursor := ""
 		if workers.Links.GetNext() != "" {
-			nextCursor = views.U("/pipelines/workers/table?cursor=" + getCursor(workers.Links.GetNext()))
+			nextCursor = views.U("/pipelines/workers/table?cursor=%s", getCursor(workers.Links.GetNext()))
 		}
 
 		ctx = context.WithValue(

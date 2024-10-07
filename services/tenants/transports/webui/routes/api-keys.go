@@ -85,7 +85,7 @@ func (h *APIKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 
 		nextPage := ""
 		if apiKeyPage.Cursor != "" {
-			nextPage = views.U("/api-keys/table?cursor=" + apiKeyPage.Cursor)
+			nextPage = views.U("/api-keys/table?cursor=%s", apiKeyPage.Cursor)
 		}
 
 		viewKeys := []views.APIKey{}

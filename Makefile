@@ -42,8 +42,9 @@ docs:
 
 lint:
 	@echo "Running linters..."
-	docker run --rm -v $(CURDIR):/app -w /app golangci/golangci-lint:v1.55.2 \
-		golangci-lint run --out-format github-actions
+	docker pull golangci/golangci-lint:latest
+	docker run --rm -v $(CURDIR):/app -w /app golangci/golangci-lint:latest \
+		golangci-lint run --out-format colored-line-number
 
 python-clean:
 ifeq ($(strip $(OUTDIR)),)
