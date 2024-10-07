@@ -14,7 +14,9 @@ import (
 
 type middleware = func(http.Handler) http.Handler
 
-var ctxDeviceKey = struct{}{}
+type ctxKey string
+
+var ctxDeviceKey ctxKey = "device"
 
 func (t *CoreTransport) useDeviceResolver() middleware {
 	return func(next http.Handler) http.Handler {

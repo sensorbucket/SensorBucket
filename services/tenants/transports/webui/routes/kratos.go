@@ -73,7 +73,9 @@ func (k KratosRoutes) httpDefaultPage() http.HandlerFunc {
 	}
 }
 
-var ctxFlow = struct{}{}
+type ctxKey string
+
+var ctxFlow ctxKey = "flow"
 
 func (k KratosRoutes) redirectStartFlow(w http.ResponseWriter, r *http.Request, flow KratosFlow) {
 	http.Redirect(w, r, fmt.Sprintf("%s/self-service/%s/browser", k.kratosPublicURI, flow), http.StatusSeeOther)
