@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"io"
+	"net/http"
 	"strings"
 	"time"
 
@@ -37,6 +38,10 @@ func CreateToken() string {
 		panic(err)
 	}
 	return tokenString
+}
+
+func AuthenticateRequest(req *http.Request) {
+	req.Header.Add("Authorization", "Bearer "+CreateToken())
 }
 
 type StaticJWKSProvider jose.JSONWebKeySet
