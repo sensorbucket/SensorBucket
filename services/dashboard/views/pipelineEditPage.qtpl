@@ -88,7 +88,8 @@
 {% endfunc %}
 
 {% func (p *PipelineEditPage) RenderPipelineSteps(pipeline *api.Pipeline, workers *[]api.UserWorker) %}
-    <script>
+    <script type="module">
+        import '{%s U("/static/sortable.js") %}';
         htmx.onLoad(function(content) {
             // Make the steps list sortable
             let sortables = content.querySelectorAll(".sortable");
@@ -138,9 +139,6 @@
             const titleElement = newItem.querySelector(".sortable-title");
             titleElement.textContent = workerName;
 
-            const trashCanElement = newItem.querySelector(".trash-can");
-            trashCanElement.addEventListener("click", () => removeFromSortable(workerId));
-
             const sortableForm = document.getElementById("sortableForm");
             const inputElement = newItem.querySelector("input[type='hidden'][data-worker]");
             inputElement.value = sortableForm.querySelectorAll("input[data-worker]").length;
@@ -150,6 +148,7 @@
 
             notify();
         }
+        window.addSortable = addSortable
 
         function removeFromSortable(name) {
             const el = document.getElementById("sortable-item-" + name);
@@ -159,6 +158,7 @@
             
             notify();
         }
+        window.removeFromSortable = removeFromSortable
 
         function getSteps() {
             const form = document.getElementById('sortableForm');
@@ -176,6 +176,7 @@
 
             return data;
         }
+        window.getSteps = getSteps
 
         function notify() {
             const sortableForm = document.getElementById('sortableForm');
