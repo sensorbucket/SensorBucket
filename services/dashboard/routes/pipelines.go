@@ -492,6 +492,9 @@ func (h *PipelinePageHandler) resolveWorkers(next http.Handler) http.Handler {
 // This method and it's references can simply be deleted once the workers have been rewritten to userworkers.
 
 func (h *PipelinePageHandler) getWorkersForSteps(r *http.Request, steps []string) ([]api.UserWorker, error) {
+	if len(steps) == 0 {
+		return []api.UserWorker{}, nil
+	}
 	// Try and fetch all workers from user-workers service.
 	// For any worker not found create a "placeholder" worker
 	res, _, err := h.workersClient.WorkersApi.ListWorkers(r.Context()).Id(steps).Execute()
@@ -503,6 +506,8 @@ func (h *PipelinePageHandler) getWorkersForSteps(r *http.Request, steps []string
 	workers := res.GetData()
 	workers = append(workers, createPlaceholderWorkers(missingWorkers)...)
 
+	fmt.Printf("workers: %v\n", workers)
+	fmt.Printf("steps: %v\n", steps)
 	if len(workers) != len(steps) {
 		return nil, fmt.Errorf("some pipeline workers not found")
 	}
