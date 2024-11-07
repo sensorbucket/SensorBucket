@@ -157,6 +157,9 @@ func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Req
 	if len(query.Datastream) > 0 {
 		q = q.Where(sq.Eq{"datastream_id": query.Datastream})
 	}
+	if len(query.TenantID) > 0 {
+		q = q.Where(sq.Eq{"organisation_id": query.TenantID})
+	}
 
 	// pagination
 	cursor, err := pagination.GetCursor[MeasurementQueryPage](r)
@@ -228,21 +231,21 @@ func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Req
 	return &page, nil
 }
 
-func (s *MeasurementStorePSQL) FindDatastream(sensorID int64, obs string) (*measurements.Datastream, error) {
+func (s *MeasurementStorePSQL) FindDatastream(tenantID, sensorID int64, obs string) (*measurements.Datastream, error) {
 	var ds measurements.Datastream
-	query := `
-		SELECT
-			"id", "description", "sensor_id", "observed_property", "unit_of_measurement",
-			"created_at"
-		FROM 
-			"datastreams"
-		WHERE
-			"sensor_id"=$1 AND "observed_property"=$2
-	`
-	if err := s.db.Get(&ds, query, sensorID, obs); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, measurements.ErrDatastreamNotFound
-		}
+	err := pq.Select("id", "description", "sensor_id", "observed_property", "unit_of_measurement",
+		"created_at", "tenant_id").From("datastreams").Where(sq.Eq{
+		"sensor_id":         sensorID,
+		"observed_property": obs,
+		"tenant_id":         tenantID,
+	}).RunWith(s.db).Scan(
+		&ds.ID, &ds.Description, &ds.SensorID, &ds.ObservedProperty, &ds.UnitOfMeasurement, &ds.CreatedAt,
+		&ds.TenantID,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, measurements.ErrDatastreamNotFound
+	}
+	if err != nil {
 		return nil, fmt.Errorf("database error querying datastream: %w", err)
 	}
 	return &ds, nil
@@ -259,15 +262,28 @@ func (s *MeasurementStorePSQL) CreateDatastream(ds *measurements.Datastream) err
 	INSERT INTO
 		"datastreams" (
 			id, "description", "sensor_id", "observed_property", "unit_of_measurement",
-			"created_at"
+			"created_at", "tenant_id"
 		)
 	VALUES 
-		($1, $2, $3, $4, $5, $6)
-	`, uuidB, ds.Description, ds.SensorID, ds.ObservedProperty, ds.UnitOfMeasurement, ds.CreatedAt)
+		($1, $2, $3, $4, $5, $6, $7)
+	`, uuidB, ds.Description, ds.SensorID, ds.ObservedProperty, ds.UnitOfMeasurement, ds.CreatedAt, ds.TenantID)
 	if err != nil {
 		return fmt.Errorf("database error inserting datastream: %w", err)
 	}
 	return nil
+}
+
+func applyDatastreamFilter(q sq.SelectBuilder, filter measurements.DatastreamFilter) sq.SelectBuilder {
+	if len(filter.Sensor) > 0 {
+		q = q.Where(sq.Eq{"sensor_id": filter.Sensor})
+	}
+	if len(filter.ObservedProperty) > 0 {
+		q = q.Where(sq.Eq{"observed_property": filter.ObservedProperty})
+	}
+	if len(filter.TenantID) > 0 {
+		q = q.Where(sq.Eq{"tenant_id": filter.TenantID})
+	}
+	return q
 }
 
 type datastreamPageQuery struct {
@@ -281,13 +297,7 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter measurements.DatastreamFil
 	q := pq.Select(
 		"id", "description", "sensor_id", "observed_property", "unit_of_measurement", "created_at",
 	).From("datastreams")
-
-	if len(filter.Sensor) > 0 {
-		q = q.Where(sq.Eq{"sensor_id": filter.Sensor})
-	}
-	if len(filter.ObservedProperty) > 0 {
-		q = q.Where(sq.Eq{"observed_property": filter.ObservedProperty})
-	}
+	q = applyDatastreamFilter(q, filter)
 
 	cursor, err := pagination.GetCursor[datastreamPageQuery](r)
 	if err != nil {
@@ -326,18 +336,17 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter measurements.DatastreamFil
 	return &page, nil
 }
 
-func (s *MeasurementStorePSQL) GetDatastream(id uuid.UUID) (*measurements.Datastream, error) {
+func (s *MeasurementStorePSQL) GetDatastream(id uuid.UUID, filter measurements.DatastreamFilter) (*measurements.Datastream, error) {
 	var ds measurements.Datastream
 	idB, _ := id.MarshalBinary()
-	err := s.db.Get(&ds, `
-		SELECT 
-        id, description, sensor_id, observed_property, unit_of_measurement, created_at
-        FROM datastreams
-        WHERE id=$1 
-    `, idB)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, measurements.ErrDatastreamNotFound
-	}
+	q := pq.Select(
+		"id", "description", "sensor_id", "observed_property", "unit_of_measurement", "created_at",
+	).From("datastreams").Where(sq.Eq{"id": idB})
+	q = applyDatastreamFilter(q, filter)
+
+	err := q.RunWith(s.db).Scan(
+		&ds.ID, &ds.Description, &ds.SensorID, &ds.ObservedProperty, &ds.UnitOfMeasurement, &ds.CreatedAt,
+	)
 	if err != nil {
 		return nil, err
 	}

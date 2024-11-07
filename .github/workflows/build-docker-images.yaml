@@ -15,15 +15,22 @@ jobs:
   test:
     name: Run Go Tests
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version-file: ./go.mod
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Run Go Tests
         run: go test ./...
@@ -32,7 +39,6 @@ jobs:
     name: Build images
     needs: test
     runs-on: ubuntu-latest
-    environment: ${{ github.ref == 'refs/heads/main' && 'staging' || (github.ref == 'refs/tags/*' && 'production' || '') }}
     permissions:
       contents: read
       packages: write
@@ -40,34 +46,37 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: sensorbucket/httpimporter
-            dockerfile: services/httpimporter/Dockerfile
-            context: .
-          - image: sensorbucket/core
-            dockerfile: services/core/Dockerfile
-            context: .
-          - image: sensorbucket/tracing
-            dockerfile: services/tracing/Dockerfile
-            context: .
-          - image: sensorbucket/dashboard
+          - appname: httpimporter
+            image: sensorbucket/httpimporter
+            dockerfile: tools/Dockerfile.shared
+          - appname: core
+            image: sensorbucket/core
+            dockerfile: tools/Dockerfile.shared
+          - appname: tracing
+            image: sensorbucket/tracing
+            dockerfile: tools/Dockerfile.shared
+          - appname: fission-user-workers
+            image: sensorbucket/fission-user-workers
+            dockerfile: tools/Dockerfile.shared
+          - appname: fission-rmq-connector
+            image: sensorbucket/fission-rmq-connector
+            dockerfile: tools/Dockerfile.shared
+          - appname: dashboard
+            image: sensorbucket/dashboard
             dockerfile: services/dashboard/Dockerfile
-            context: .
-          - image: sensorbucket/fission-user-workers
-            dockerfile: services/fission-user-workers/Dockerfile
-            context: .
-          - image: sensorbucket/fission-rmq-connector
-            dockerfile: services/fission-rmq-connector/Dockerfile
-            context: .
+          - appname: tenants
+            image: sensorbucket/tenants
+            dockerfile: services/tenants/Dockerfile
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        #- name: Set up QEMU
+        #  uses: docker/setup-qemu-action@v3
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -76,34 +85,32 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Log in to Azure
-        uses: docker/login-action@v3
-        with:
-          # Picks staging env or prod env depending on push or tag respectively
-          registry: ${{ secrets.AZURE_REGISTRY }}
-          username: ${{ secrets.AZURE_USER }}
-          password: ${{ secrets.AZURE_PASSWORD }}
-
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: |
             ${{ env.REGISTRY }}/${{ matrix.image }}
-            ${{ secrets.AZURE_REGISTRY }}/${{ matrix.image }}
           tags: |
             type=edge
+            type=edge,suffix=-{{date 'YYMMDDhhmm'}}
             type=sha
             type=semver,pattern={{major}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{version}}
 
       - name: Build and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
-          context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
+          context: .
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ matrix.image }}:buildcache
+          cache-to: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ matrix.image }}:buildcache,mode=max
+          build-args: |
+            APPNAME=${{ matrix.appname }}

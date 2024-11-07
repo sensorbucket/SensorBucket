@@ -11,17 +11,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/cors"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
-	devicetransport "sensorbucket.nl/sensorbucket/services/core/devices/transport"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	measurementsinfra "sensorbucket.nl/sensorbucket/services/core/measurements/infra"
 	measurementtransport "sensorbucket.nl/sensorbucket/services/core/measurements/transport"
@@ -45,6 +44,7 @@ var (
 	AMQP_PREFETCH                = env.Could("AMQP_PREFETCH", "5")
 	HTTP_ADDR                    = env.Could("HTTP_ADDR", ":3000")
 	HTTP_BASE                    = env.Could("HTTP_BASE", "http://localhost:3000/api")
+	AUTH_JWKS_URL                = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
 	SYS_ARCHIVE_TIME             = env.Could("SYS_ARCHIVE_TIME", "30")
 )
 
@@ -64,39 +64,43 @@ func Run() error {
 		return err
 	}
 
+	stopProfiler, err := web.RunProfiler()
+	if err != nil {
+		fmt.Printf("could not setup profiler server: %s\n", err)
+	}
+
 	db, err := createDB()
 	if err != nil {
 		return fmt.Errorf("could not create database connection: %w", err)
 	}
+
+	keyClient := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
 
 	amqpConn := mq.NewConnection(AMQP_HOST)
 
 	devicestore := deviceinfra.NewPSQLStore(db)
 	sensorGroupStore := deviceinfra.NewPSQLSensorGroupStore(db)
 	deviceservice := devices.New(devicestore, sensorGroupStore)
-	deviceshttp := devicetransport.NewHTTPTransport(deviceservice, HTTP_BASE)
 
 	sysArchiveTime, err := strconv.Atoi(SYS_ARCHIVE_TIME)
 	if err != nil {
 		return fmt.Errorf("could not convert SYS_ARCHIVE_TIME to integer: %w", err)
 	}
 	measurementstore := measurementsinfra.NewPSQL(db)
-	measurementservice := measurements.New(measurementstore, sysArchiveTime)
-	measurementhttp := measurementtransport.NewHTTP(measurementservice, HTTP_BASE)
+	measurementservice := measurements.New(measurementstore, sysArchiveTime, keyClient)
 
 	processingstore := processinginfra.NewPSQLStore(db)
 	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
-	processingservice := processing.New(processingstore, processingPipelinePublisher)
-	processinghttp := processingtransport.NewTransport(processingservice, HTTP_BASE)
+	processingservice := processing.New(processingstore, processingPipelinePublisher, keyClient)
 
 	// Setup HTTP Transport
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	deviceshttp.SetupRoutes(r)
-	measurementhttp.SetupRoutes(r)
-	processinghttp.SetupRoutes(r)
-	coretransport.Create(r, measurementservice, deviceservice)
-	httpsrv := createHTTPServer(r)
+	httpsrv := createHTTPServer(coretransport.New(
+		HTTP_BASE,
+		keyClient,
+		deviceservice,
+		measurementservice,
+		processingservice,
+	))
 	go func() {
 		if err := httpsrv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) && err != nil {
 			fmt.Printf("HTTP Server error: %v\n", err)
@@ -138,6 +142,7 @@ func Run() error {
 		log.Printf("Error shutting down HTTP Server: %v\n", err)
 	}
 	amqpConn.Shutdown()
+	stopProfiler(ctxTO)
 
 	log.Println("Shutdown complete")
 	return nil

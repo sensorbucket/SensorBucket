@@ -32,7 +32,7 @@ func TestMustBeTenant(t *testing.T) {
 			desc:             "Incorrect tenant in context",
 			contextTenantID:  lo.ToPtr[int64](13),
 			requiredTenantID: 10,
-			expectedError:    ErrUnauthorized,
+			expectedError:    ErrForbidden,
 		},
 		{
 			desc:             "Required is tenant 0, context is nil",
@@ -44,7 +44,7 @@ func TestMustBeTenant(t *testing.T) {
 			desc:             "Required is tenant 0, context is set",
 			contextTenantID:  lo.ToPtr[int64](13),
 			requiredTenantID: 0,
-			expectedError:    ErrUnauthorized,
+			expectedError:    ErrForbidden,
 		},
 		{
 			desc:             "Context is 0, required is set",
@@ -66,7 +66,7 @@ func TestMustBeTenant(t *testing.T) {
 				ctx = setTenantID(ctx, *tC.contextTenantID)
 			}
 
-			err := mustBeTenant(ctx, tC.requiredTenantID)
+			err := MustBeTenant(ctx, tC.requiredTenantID)
 			if tC.expectedError != nil {
 				require.Error(t, err)
 			}
@@ -96,7 +96,7 @@ func TestMustHaveTenantPermissions(t *testing.T) {
 			contextTenantID:     lo.ToPtr[int64](10),
 			requiredTenantID:    15,
 			requiredPermissions: Permissions{READ_DEVICES, WRITE_DEVICES},
-			expectedError:       ErrUnauthorized,
+			expectedError:       ErrForbidden,
 		},
 		{
 			desc:                "Wrong tenant with correct perms should error",
@@ -104,7 +104,7 @@ func TestMustHaveTenantPermissions(t *testing.T) {
 			contextPermissions:  Permissions{READ_DEVICES, WRITE_DEVICES},
 			requiredTenantID:    15,
 			requiredPermissions: Permissions{READ_DEVICES, WRITE_DEVICES},
-			expectedError:       ErrUnauthorized,
+			expectedError:       ErrForbidden,
 		},
 		{
 			desc:                "Correct tenant without perms should error",
@@ -112,7 +112,7 @@ func TestMustHaveTenantPermissions(t *testing.T) {
 			contextPermissions:  Permissions{},
 			requiredTenantID:    15,
 			requiredPermissions: Permissions{READ_DEVICES, WRITE_DEVICES},
-			expectedError:       ErrUnauthorized,
+			expectedError:       ErrForbidden,
 		},
 		{
 			desc:                "Correct tenant with partial correct perms should error",
@@ -120,7 +120,7 @@ func TestMustHaveTenantPermissions(t *testing.T) {
 			contextPermissions:  Permissions{READ_DEVICES},
 			requiredTenantID:    15,
 			requiredPermissions: Permissions{READ_DEVICES, WRITE_DEVICES},
-			expectedError:       ErrUnauthorized,
+			expectedError:       ErrForbidden,
 		},
 		{
 			desc:                "Correct tenant with correct perms should not error",
@@ -186,7 +186,7 @@ func TestGetTenant(t *testing.T) {
 
 			// Assert
 			assert.Equal(t, cfg.expectedRes, result)
-			assert.Equal(t, cfg.expectedErr, err)
+			assert.ErrorIs(t, err, cfg.expectedErr)
 		})
 	}
 }

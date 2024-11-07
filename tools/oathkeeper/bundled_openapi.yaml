@@ -1,0 +1,2556 @@
+openapi: 3.0.0
+info:
+  title: Sensorbucket API
+  version: 1.2.2
+  license:
+    name: EUPLv1.2
+    url: https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
+  description: |
+    SensorBucket processes data from different sources and devices into a single standardized format. 
+    An applications connected to SensorBucket, can use all devices SensorBucket supports.
+
+    Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker
+    that receives data from an AMQP source, process said data and output in the expected worker output format.
+
+    Find out more at: https://developer.sensorbucket.nl/
+
+    Developed and designed by Provincie Zeeland and Pollex'
+  contact:
+    name: Tim van Osch
+    email: info@pollex.nl
+    url: https://sensorbucket.nl
+servers:
+  - description: Production
+    url: https://sensorbucket.nl/api
+security:
+  - CookieSession: []
+  - APIKey: []
+tags:
+  - name: Devices
+  - name: Pipelines
+  - name: Measurements
+  - name: Uplink
+  - name: Tracing
+  - name: Tenants
+  - name: Workers
+  - name: APIKeys
+paths:
+  /devices:
+    get:
+      x-is-paginated: true
+      operationId: ListDevices
+      summary: List devices
+      description: |
+        Fetch a list of devices.
+
+        Devices can be filtered on three items: properties, distance from a location or a bounding box.
+         - Filtering on properties filters devices on whether their property attribute is a superset of the given JSON object value
+         - Distance from location filtering requires a latitude, longitude and distance (in meters). All devices within that range will be returned
+         - Bounding box requires a North,East,South and West point. All devices within that box will be returned.
+
+        The filters distance from location and bounding box are mutually exclusive. The location distance filter will take precedence.
+      tags:
+        - Devices
+      parameters:
+        - in: query
+          name: properties
+          description: Used to filter devices by its properties. This filters devices on whether their property contains the provided value. The value must be a JSON string and depending on your client should be URL Escaped
+          schema:
+            type: string
+            example: '{ "eui": "1122334455667788" }'
+        - in: query
+          name: north
+          description: Used to filter devices within a bounding box
+          schema:
+            type: number
+            format: double
+            example: 3.6175560329103202
+        - in: query
+          name: west
+          description: Used to filter devices within a bounding box
+          schema:
+            type: number
+            format: double
+            example: 51.518796779610035
+        - in: query
+          name: east
+          description: Used to filter devices within a bounding box
+          schema:
+            type: number
+            format: double
+            example: 51.47912508218688
+        - in: query
+          name: south
+          description: Used to filter devices within a bounding box
+          schema:
+            type: number
+            format: double
+            example: 3.655955445579366
+        - in: query
+          name: latitude
+          description: Used to filter devices within a distance from a point
+          schema:
+            type: number
+            format: double
+            example: 51.496227862014685
+        - in: query
+          name: longitude
+          description: Used to filter devices within a distance from a point
+          schema:
+            type: number
+            format: double
+            example: 3.615071953647924
+        - in: query
+          name: distance
+          description: |
+            Used to filter devices within a distance from a point. 
+            The distance is given in meters.
+          schema:
+            type: integer
+            example: 1000
+        - in: query
+          name: cursor
+          description: The cursor for the current page
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: |
+            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          schema:
+            type: integer
+        - name: id
+          description: |
+            Filter by Device IDs
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+        - name: sensor_group
+          description: |
+            Filter by device group
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/paginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/device'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+    post:
+      operationId: CreateDevice
+      summary: Create device
+      description: |
+        Create a new device.
+
+        Depending on the type of device and the network it is registered on. The device might need specific properties to be set.  
+        **For example:** A LoRaWAN device often requires a `dev_eui` property to be set. The system will match incoming traffic against that property.
+      tags:
+        - Devices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createDeviceRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: created device
+                  data:
+                    $ref: '#/components/schemas/device'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+  /devices/{id}:
+    get:
+      operationId: GetDevice
+      summary: Get device
+      description: |
+        Get the device with the given identifier.
+
+        The returned device will also include the full model of the sensors attached to that device.
+      tags:
+        - Devices
+      parameters:
+        - name: id
+          description: The numeric ID of the device
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Fetched device
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched device
+                  data:
+                    $ref: '#/components/schemas/device'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    patch:
+      operationId: UpdateDevice
+      summary: Update device properties
+      description: |
+        Update a some properties of the device with the given identifier.
+
+        The request body should contain one or more modifiable properties of the Device.
+      tags:
+        - Devices
+      parameters:
+        - name: id
+          description: The numeric ID of the device
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateDeviceRequest'
+      responses:
+        '200':
+          description: Updated device properties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Updated device properties
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    delete:
+      operationId: DeleteDevice
+      summary: Delete device
+      description: |
+        Delete the device with the given identifier.
+      tags:
+        - Devices
+      parameters:
+        - name: id
+          description: The numeric ID of the device
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Device deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Device deleted successfully
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+  /devices/{device_id}/sensors:
+    get:
+      x-is-paginated: true
+      operationId: ListDeviceSensors
+      summary: List sensors device
+      description: |
+        List all sensors related to the device with the provided identifier
+      tags:
+        - Devices
+      parameters:
+        - name: device_id
+          description: The identifier of the device
+          in: path
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: cursor
+          description: The cursor for the current page
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: |
+            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Listed device sensors
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/paginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/sensor'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    post:
+      operationId: CreateDeviceSensor
+      summary: Create sensor for device
+      description: |
+        Create a new sensor for the device with the given identifier.
+
+        A device can not have sensors with either a duplicate `code` or duplicate `external_id` field.
+        As this would result in conflicts while matching incoming messages to devices and sensors.
+      tags:
+        - Devices
+      parameters:
+        - name: device_id
+          description: The identifier of the device
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createSensorRequest'
+      responses:
+        '201':
+          description: Created new sensor for device
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Created new sensor for device
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+  /devices/{device_id}/sensors/{sensor_code}:
+    delete:
+      operationId: DeleteDeviceSensor
+      summary: Delete sensor
+      description: |
+        Delete a sensor from the system. 
+
+        Since a sensor can only be related to one and only one device at a time, the sensor will be deleted from the system completely
+      tags:
+        - Devices
+      parameters:
+        - name: device_id
+          description: The identifier of the device
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sensor_code
+          description: The code of the sensor
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted sensor from device
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Deleted sensor from device
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+  /sensors:
+    get:
+      x-is-paginated: true
+      operationId: ListSensors
+      summary: List sensors
+      description: |
+        List all sensors.
+      tags:
+        - Devices
+      parameters:
+        - in: query
+          name: cursor
+          description: The cursor for the current page
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: |
+            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Fetched sensors
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/paginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/sensor'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+  /sensor-groups:
+    get:
+      x-is-paginated: true
+      operationId: ListSensorGroups
+      summary: List sensor groups
+      description: |
+        Fetch a list of sensor groups.
+      tags:
+        - Devices
+      parameters:
+        - in: query
+          name: cursor
+          description: The cursor for the current page
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: |
+            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/paginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/sensorGroup'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+    post:
+      operationId: CreateSensorGroup
+      summary: Create sensor group
+      description: |
+        Create a new sensor group.
+      tags:
+        - Devices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createSensorGroupRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: created sensor group
+                  data:
+                    $ref: '#/components/schemas/sensorGroup'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+  /sensor-groups/{id}:
+    get:
+      operationId: GetSensorGroup
+      summary: Get sensor group
+      description: |
+        Get the sensor group with the given identifier.
+      tags:
+        - Devices
+      parameters:
+        - name: id
+          description: The numeric ID of the sensor group
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Fetched sensor group
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched sensor group
+                  data:
+                    $ref: '#/components/schemas/sensorGroup'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    patch:
+      operationId: UpdateSensorGroup
+      summary: Update sensor group
+      description: |
+        Update a some properties of the sensor group with the given identifier.
+
+        The request body should contain one or more modifiable properties of the sensor group.
+      tags:
+        - Devices
+      parameters:
+        - name: id
+          description: The numeric ID of the sensor group
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateSensorGroupRequest'
+      responses:
+        '200':
+          description: Updated Sensor Group properties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Updated Sensor Group properties
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    delete:
+      operationId: DeleteSensorGroup
+      summary: Delete sensor group
+      description: |
+        Delete a sensor group
+      tags:
+        - Devices
+      parameters:
+        - name: id
+          description: The id of the sensor group
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sensor group deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: sensor group deleted
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+  /sensor-groups/{id}/sensors:
+    post:
+      operationId: AddSensorToSensorGroup
+      summary: Add sensor to a sensor group
+      description: |
+        Add a sensor by its ID to a sensor group by its ID
+      tags:
+        - Devices
+      parameters:
+        - name: id
+          description: The identifier of the Sensor Group
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sensor_id:
+                  type: integer
+                  example: 5
+                  description: id of the sensor to add
+      responses:
+        '201':
+          description: Added sensor to sensor group
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Added sensor to sensor group
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+  /sensor-groups/{id}/sensors/{sensor_id}:
+    delete:
+      operationId: DeleteSensorFromSensorGroup
+      summary: Delete sensor from sensor group
+      description: |
+        Delete a sensor from a sensor group
+      tags:
+        - Devices
+      parameters:
+        - name: id
+          description: The identifier of the sensor group
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sensor_id
+          description: The id of the sensor
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deleted sensor from sensor group
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Deleted sensor from sensor group
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+  /measurements:
+    get:
+      x-is-paginated: true
+      operationId: QueryMeasurements
+      summary: Query measurements
+      description: |
+        Query a list of measurements.
+
+        This endpoint is used to get all measurements that correspond with the given filters.
+
+        It is commonly required to get a single stream of measurements from a single sensor. This can be accomplished by 
+        finding the corresponding datastream ID and using that in the `datastream` filter. 
+
+        Most query parameters can be repeated to get an OR combination of filters. For example, providing the `datastream` 
+        parameter twice will return measurements for either datastreams.
+      tags:
+        - Measurements
+      parameters:
+        - in: query
+          name: start
+          required: true
+          schema:
+            type: string
+            format: date-time
+            example: '2022-01-01T00:00:00Z'
+        - in: query
+          name: end
+          required: true
+          schema:
+            type: string
+            format: date-time
+            example: '2022-12-31T23:59:59Z'
+        - in: query
+          name: device_id
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: datastream
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: sensor_code
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: cursor
+          description: The cursor for the current page
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: |
+            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Fetched measurements
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/paginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/measurement'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+  /datastreams:
+    get:
+      x-is-paginated: true
+      operationId: ListDatastreams
+      summary: List all datastreams
+      description: |
+        List all datastreams.
+
+        A sensor can produce one or more timeseries of measurements. Such a unique timeserie is called a datastream.  
+
+        **For example:** A Particulate Matter sensor might return count the number of particles smaller than 2.5 μg/cm2, 5 μg/cm2 and 10 μg/cm2.
+        this is one sensor producing three datastreams.
+
+        Another example would be a worker which processes raw incoming values into meaningful data.
+        An underwater pressure sensor might supply its measurement in milli Amperes, but the worker converts it to watercolumn in meters.
+        The sensor now has two datastreams. Presusre in millivolt and watercolumn in meters.
+      tags:
+        - Measurements
+      parameters:
+        - name: sensor
+          description: only return datastreams that are produced by the given sensor identifier
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+        - in: query
+          name: cursor
+          description: The cursor for the current page
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: |
+            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Fetched datastreams
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/paginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/datastream'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+  /datastreams/{id}:
+    get:
+      operationId: GetDatastream
+      summary: Get datastream
+      description: |
+        Get the datastream with the given identifier.
+
+        The returned datastream will also include the full model of the sensors attached to that datastream.
+      tags:
+        - Measurements
+      parameters:
+        - name: id
+          description: The UUID of the datastream
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Fetched datastream
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched datastream
+                  data:
+                    type: object
+                    properties:
+                      datastream:
+                        $ref: '#/components/schemas/datastream'
+                      device:
+                        $ref: '#/components/schemas/device'
+                      sensor:
+                        $ref: '#/components/schemas/sensor'
+                      latest_measurement_value:
+                        type: number
+                        format: double
+                      latest_measurement_timestamp:
+                        type: string
+                        format: date-time
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+  /pipelines:
+    get:
+      x-is-paginated: true
+      operationId: ListPipelines
+      summary: List pipelines
+      description: |
+        List pipelines. By default only `state=active` pipelines are returned.
+        By providing the query parameter `inactive` only the inactive pipelines will be returned.
+
+        Pipelines can be filtered by providing one or more `step`s. This query parameter can be repeated to include more steps.
+        When multiple steps are given, pipelines containing one of the given steps will be returned.
+      tags:
+        - Pipelines
+      parameters:
+        - name: inactive
+          description: Only show inactive pipelines
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: step
+          description: Only show pipelines that include at least one of these steps
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+          example:
+            - thethingsnetwork
+            - multiflexmeter
+        - in: query
+          name: cursor
+          description: The cursor for the current page
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: |
+            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Fetched pipelines
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/paginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/pipeline'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+    post:
+      operationId: CreatePipeline
+      summary: Create pipeline
+      description: |
+        Create a new pipeline. 
+
+        A pipeline determines which workers, in which order the incoming data will be processed by.
+
+        A pipeline step is used as routing key in the Message Queue. This might be changed in future releases.
+
+        **Note:** currently there are no validations in place on whether a worker for the provided step actually exists.
+      tags:
+        - Pipelines
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createPipelineRequest'
+      responses:
+        '200':
+          description: Created pipeline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Created pipeline
+                  data:
+                    $ref: '#/components/schemas/pipeline'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+  /pipelines/{id}:
+    get:
+      operationId: GetPipeline
+      summary: Get pipeline
+      description: |
+        Get the pipeline with the given identifier.
+
+        This endpoint by default returns a 404 Not Found for inactive pipelines.
+        To get an inactive pipeline, provide the `status=inactive` query parameter.
+      tags:
+        - Pipelines
+      parameters:
+        - name: id
+          description: The UUID of the pipeline
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          description: |
+            The status of the pipeline. Use `inactive` to view inactive pipelines instead of getting a 404 error
+          in: query
+          example:
+            - active
+            - inactive
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Fetched pipeline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched pipeline
+                  data:
+                    $ref: '#/components/schemas/pipeline'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          description: |
+            The request failed because the requested resource could not be found or because the resource is disabled
+    patch:
+      operationId: UpdatePipeline
+      summary: Update pipeline
+      description: |
+        Update some properties of the pipeline with the given identifier. 
+
+        Setting an invalid state or making an invalid state transition will result in an error.
+      tags:
+        - Pipelines
+      parameters:
+        - name: id
+          description: The UUID of the pipeline
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updatePipelineRequest'
+      responses:
+        '200':
+          description: Updated pipeline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Updated pipeline
+                  data:
+                    $ref: '#/components/schemas/pipeline'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          description: |
+            The request failed because the requested resource could not be found or because the resource is disabled
+        '405':
+          description: |
+            The request failed because the request is invalid.
+    delete:
+      operationId: DisablePipeline
+      summary: Disable pipeline
+      description: |
+        Disables a pipeline by setting its status to inactive.
+
+        Inactive pipelines will - by default - not appear in the `ListPipelines` and `GetPipeline` endpoints,
+        unless the `status=inactive` query parameter is given on that endpoint.
+      tags:
+        - Pipelines
+      parameters:
+        - name: id
+          description: The UUID of the pipeline
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: pipeline disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Disabled pipeline
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          description: |
+            The request failed because the requested resource could not be found or because the resource is disabled
+        '405':
+          description: |
+            The request failed because the request is invalid.
+  /uplinks/{pipeline_id}:
+    post:
+      tags:
+        - Uplink
+      operationId: processUplinkData
+      summary: Process uplink message
+      description: |
+        Push an uplink message to the HTTP Importer for processing.
+
+        The request body and content-type can be anything the workers (defined by the pipeline steps) in the pipeline expect.
+
+        As this process is asynchronuous, any processing error will not be returned in the response.
+        Only if the HTTP Importer is unable to push the message to the Message Queue, will an error be returned. 
+      parameters:
+        - name: pipeline_id
+          description: The UUID of the pipeline
+          in: path
+          required: true
+          example: c4d4fabd-9109-40cd-88b0-be40ca1745f7
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Accepted uplink
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          description: The request failed because the requested resource could not be found or is disabled.
+  /tracing:
+    get:
+      x-is-paginated: true
+      operationId: ListTraces
+      summary: List traces
+      description: |
+        Lists traces that match the provided filter.
+      tags:
+        - Tracing
+      parameters:
+        - in: query
+          name: cursor
+          description: The cursor for the current page
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: |
+            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          schema:
+            type: integer
+        - in: query
+          name: tracing_id
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+              example: a59d28c8-2a0f-4e89-9f49-6942f1c04342
+        - in: query
+          name: device_id
+          schema:
+            type: integer
+            format: int64
+            example: 5
+        - in: query
+          name: status
+          schema:
+            type: integer
+            example: 2
+        - in: query
+          name: duration_greater_than
+          schema:
+            type: integer
+            example: 5
+        - in: query
+          name: duration_smaller_than
+          schema:
+            type: integer
+            example: 10
+      responses:
+        '200':
+          description: Fetched traces
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/paginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/trace'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+  /ingresses:
+    get:
+      x-is-paginated: true
+      operationId: ListIngresses
+      summary: List ingresses
+      description: |
+        Lists ingresses that match the provided filter.
+      tags:
+        - Tracing
+      parameters:
+        - in: query
+          name: cursor
+          description: The cursor for the current page
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: |
+            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Fetched ingresses
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/paginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/archivedIngress'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+  /workers:
+    get:
+      x-is-paginated: true
+      operationId: ListWorkers
+      summary: List workers
+      description: |
+        Lists traces that match the provided filter.
+      tags:
+        - Workers
+      parameters:
+        - in: query
+          name: cursor
+          description: The cursor for the current page
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: |
+            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          schema:
+            type: integer
+        - name: id
+          description: |
+            Filter by Pipeline IDs
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Fetched workers
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/paginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/userWorker'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+    post:
+      operationId: CreateWorker
+      summary: Create Worker
+      description: |
+        Create a new worker
+      tags:
+        - Workers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createUserWorkerRequest'
+      responses:
+        '201':
+          description: Created worker
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: created user worker
+                  data:
+                    $ref: '#/components/schemas/userWorker'
+  /workers/{id}:
+    get:
+      operationId: GetWorker
+      summary: Get worker
+      description: |
+        Get the worker with the given identifier.
+      tags:
+        - Workers
+      parameters:
+        - name: id
+          description: The UUID of the worker
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Fetched worker
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched worker
+                  data:
+                    $ref: '#/components/schemas/userWorker'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    patch:
+      operationId: UpdateWorker
+      summary: Update worker properties
+      description: |
+        Update a some properties of the worker with the given identifier.
+
+        The request body should contain one or more modifiable properties of the Worker.
+      tags:
+        - Workers
+      parameters:
+        - name: id
+          description: The UUID of the worker
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateWorkerRequest'
+      responses:
+        '200':
+          description: Updated worker properties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Updated worker properties
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+  /workers/{id}/usercode:
+    get:
+      operationId: GetWorkerUserCode
+      summary: Get the User Code for a Worker
+      description: |
+        Get the worker with the given identifier.
+      tags:
+        - Workers
+      parameters:
+        - name: id
+          description: The UUID of the worker
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Fetched worker user code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched worker
+                  data:
+                    type: string
+                    format: base64
+                    description: The usercode base64 encoded
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+  /tenants:
+    get:
+      x-is-paginated: true
+      operationId: ListTenants
+      summary: Retrieves tenants
+      description: |
+        Lists Tenants
+      tags:
+        - Tenants
+      parameters:
+        - in: query
+          name: name
+          description: Filter on specific name of a tenant
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: state
+          description: Filter on soecific state of a tenant
+          schema:
+            type: integer
+            format: int64
+            example: 1
+        - in: query
+          name: is_member
+          description: Only show tenants that this user is a member of
+          schema:
+            type: boolean
+        - in: query
+          name: cursor
+          description: The cursor for the current page
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: |
+            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Fetched Tenants
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/paginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/tenant'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+  /tenants/{tenant_id}/members:
+    post:
+      operationId: AddTenantMember
+      summary: Add a User to a Tenant as member
+      description: |
+        Adds a user with the specific ID to the given Tenant as a member with the given permissions
+      tags:
+        - Tenants
+      parameters:
+        - name: tenant_id
+          description: The identifier of the tenant
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/addTenantMemberRequest'
+      responses:
+        '201':
+          description: User added to Tenant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User added to Tenant
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+  /tenants/{tenant_id}/members/{user_id}:
+    delete:
+      tags:
+        - Tenants
+      operationId: RemoveTenantMember
+      summary: Removes a member from a tenant
+      description: |
+        Removes a member by the given user id from a tenant
+      parameters:
+        - name: tenant_id
+          description: The identifier of the tenant
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: user_id
+          description: The identifier of the user
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Member removed from tenant
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '500':
+          $ref: '#/components/responses/500'
+    patch:
+      tags:
+        - Tenants
+      operationId: UpdateTenantMember
+      summary: Update a tenant member's permissions
+      description: |
+        Update a tenant member's permissions
+      parameters:
+        - name: tenant_id
+          description: The identifier of the tenant
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: user_id
+          description: The identifier of the user
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateTenantMemberRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Member removed from tenant
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '500':
+          $ref: '#/components/responses/500'
+  /api-keys:
+    get:
+      x-is-paginated: true
+      operationId: ListApiKeys
+      summary: List API Keys
+      description: |
+        Lists API Keys
+      tags:
+        - APIKeys
+      parameters:
+        - in: query
+          name: tenant_id
+          description: The id of the tenant from which to retrieve API keys
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: cursor
+          description: The cursor for the current page
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: |
+            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Fetched API keys
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/paginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/apiKey'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '500':
+          $ref: '#/components/responses/500'
+    post:
+      tags:
+        - APIKeys
+      operationId: CreateApiKey
+      summary: Creates a new API key for the given Tenant
+      description: |
+        Create an API key for a tenant with an expiration date. Permissions for the API key within that organisation must be set
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createApiKeyRequest'
+      responses:
+        '201':
+          description: Created API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiKeyCreated'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '500':
+          $ref: '#/components/responses/500'
+  /api-keys/{api_key_id}:
+    get:
+      operationId: GetAPIKey
+      summary: Get an API Key by ID
+      description: |
+        Get an API Key by ID
+      parameters:
+        - name: api_key_id
+          description: The identifier of the API key
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      tags:
+        - APIKeys
+      responses:
+        '200':
+          description: Fetched API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiKey'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '500':
+          $ref: '#/components/responses/500'
+    delete:
+      tags:
+        - APIKeys
+      operationId: RevokeApiKey
+      summary: Revokes an API key
+      description: |
+        Revokes an API key so that it can't be used anymore
+      parameters:
+        - name: api_key_id
+          description: The identifier of the API key
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: The request failed because of an unexpected server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: API key has been revoked
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '500':
+          $ref: '#/components/responses/500'
+components:
+  securitySchemes:
+    CookieSession:
+      description: |
+        When a user is logged in a session cookie will be set which authenticates the user.
+      type: apiKey
+      in: cookie
+      name: SID
+    APIKey:
+      description: |
+        An API Key given through the Authorization header will authenticate an organisation
+      type: http
+      scheme: Bearer
+  schemas:
+    paginatedResponse:
+      type: object
+      required:
+        - links
+        - page_size
+        - total_count
+        - data
+      properties:
+        links:
+          type: object
+          properties:
+            previous:
+              type: string
+            next:
+              type: string
+        page_size:
+          type: integer
+        total_count:
+          type: integer
+        data:
+          type: array
+          items: {}
+    sensor:
+      type: object
+      required:
+        - id
+        - code
+        - description
+        - external_id
+        - brand
+        - properties
+        - created_at
+        - device_id
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        device_id:
+          type: integer
+          format: int64
+          example: 1
+        code:
+          type: string
+          example: S123
+        description:
+          type: string
+          example: Pressure sensor at 5 meters depth
+        external_id:
+          type: string
+          example: '5'
+        brand:
+          type: string
+          example: SensorCompany LTD. SCL115
+        archive_time:
+          type: integer
+          example: 7
+        properties:
+          type: object
+          example:
+            mount_height: 15cm
+        created_at:
+          type: string
+          format: date-time
+          example: '2023-05-17T15:00:00Z'
+    device:
+      type: object
+      required:
+        - id
+        - code
+        - state
+        - description
+        - tenant_id
+        - properties
+        - sensors
+        - created_at
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        code:
+          type: string
+          example: mfm1000
+        state:
+          type: integer
+        description:
+          type: string
+          example: Grasfield pipe 24
+        tenant_id:
+          type: integer
+          format: int64
+          example: 1
+        properties:
+          type: object
+          example:
+            eui: 060708090A0B0C0D
+        altitude:
+          type: number
+          format: double
+          example: 1.2345
+        latitude:
+          type: number
+          format: double
+          example: 1.2345
+        longitude:
+          type: number
+          format: double
+          example: 1.2345
+        location_description:
+          type: string
+          example: Description of location
+        sensors:
+          type: array
+          items:
+            $ref: '#/components/schemas/sensor'
+        created_at:
+          type: string
+          format: date-time
+    createDeviceRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          example: mfm1000
+        description:
+          type: string
+          example: Grasfield pipe 24
+        latitude:
+          type: number
+          format: double
+          example: 1.2345
+        longitude:
+          type: number
+          format: double
+          example: 1.2345
+        location_description:
+          type: string
+          example: Description of location
+        properties:
+          type: object
+          example:
+            eui: 060708090A0B0C0D
+    updateDeviceRequest:
+      type: object
+      properties:
+        description:
+          type: integer
+          example: 1
+        latitude:
+          type: number
+          format: double
+          example: 1.2345
+        longitude:
+          type: number
+          format: double
+          example: 1.2345
+        location_description:
+          type: string
+          example: Description of location
+        properties:
+          type: object
+          example:
+            eui: 060708090A0B0C0D
+    createSensorRequest:
+      type: object
+      required:
+        - code
+        - external_id
+      properties:
+        code:
+          type: string
+          example: S123
+        description:
+          type: string
+          example: Pressure sensor at 5 meters depth
+        external_id:
+          type: string
+          example: '5'
+        brand:
+          type: string
+          example: sensor brand ABC
+        properties:
+          type: object
+          example:
+            mount_height: 15cm
+        archive_time:
+          type: integer
+          example: 7
+    sensorGroup:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - sensors
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        sensors:
+          type: array
+          items:
+            type: integer
+            format: int64
+    createSensorGroupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    updateSensorGroupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    measurement:
+      type: object
+      required:
+        - uplink_message_id
+        - device_id
+        - device_code
+        - device_state
+        - sensor_id
+        - sensor_code
+        - sensor_external_id
+        - datastream_id
+        - datastream_observed_property
+        - datastream_unit_of_measurement
+        - measurement_timestamp
+        - measurement_value
+        - measurement_expiration
+      properties:
+        uplink_message_id:
+          type: string
+          example: ca29e28e-eeb6-4662-922c-6cf6a36ccb6e
+        device_id:
+          type: integer
+          format: int64
+          example: 5
+        device_code:
+          type: string
+          example: mfm1000
+        device_description:
+          type: string
+          example: Particulate matter device
+        device_latitude:
+          type: number
+          format: double
+          example: 5.131313
+        device_longitude:
+          type: number
+          format: double
+          example: 5.131313
+        device_altitude:
+          type: number
+          format: double
+          example: 5.131313
+        device_location_description:
+          type: string
+          example: Grasfield pipe 24
+        device_properties:
+          type: object
+          example:
+            eui: 060708090A0B0C0D
+        device_state:
+          type: integer
+          example: 0
+        sensor_id:
+          type: integer
+          format: int64
+          example: 3
+        sensor_code:
+          type: string
+          example: S123
+        sensor_description:
+          type: string
+          example: Pressure sensor at 5 meters depth
+        sensor_external_id:
+          type: string
+          example: '5'
+        sensor_properties:
+          type: object
+          example: {}
+        sensor_brand:
+          type: string
+          example: SensorCompany Inc. SC123
+        sensor_archive_time:
+          type: integer
+          example: 7
+        datastream_id:
+          type: string
+          format: uuid
+          example: 153205d7-bdfc-4a0b-9de5-c6fa04c665f6
+        datastream_description:
+          type: string
+          example: Concentration of particles smaller than 2.5 micrometer
+        datastream_observed_property:
+          type: string
+          example: pm2.5
+        datastream_unit_of_measurement:
+          type: string
+          example: ug/cm3
+        measurement_timestamp:
+          type: string
+          format: date-time
+          example: '2022-01-01T00:00:00Z'
+        measurement_value:
+          type: number
+          format: double
+          example: 3.44
+        measurement_latitude:
+          type: number
+          format: double
+          example: 3.44
+        measurement_longitude:
+          type: number
+          format: double
+          example: 3.44
+        measurement_altitude:
+          type: number
+          format: double
+          example: 3.44
+        measurement_properties:
+          type: object
+        measurement_expiration:
+          type: string
+          format: date-time
+          example: '2022-01-01T00:00:00Z'
+        created_at:
+          type: string
+          format: date-time
+          example: '2022-01-01T00:00:00Z'
+    datastream:
+      type: object
+      required:
+        - id
+        - description
+        - sensor_id
+        - observed_property
+        - unit_of_measurement
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        sensor_id:
+          type: integer
+        observed_property:
+          type: string
+        unit_of_measurement:
+          type: string
+          format: ucum
+        created_at:
+          type: string
+          example: '2022-01-01T00:00:00Z'
+    pipeline:
+      type: object
+      required:
+        - id
+        - description
+        - steps
+        - status
+        - last_status_change
+      properties:
+        id:
+          type: string
+          example: 9d4a0944-c11d-42ef-880f-a97c9619c5c0
+        description:
+          type: string
+          example: Pipeline for Multiflexmeter Groundwater devices
+        steps:
+          type: array
+          items:
+            type: string
+          example:
+            - TTN@1.0.0
+            - MFMGroundwater@1.0.0
+        status:
+          type: string
+          description: either active or inactive
+          example: active
+        last_status_change:
+          type: string
+          format: date-time
+          example: '2022-01-01T00:00:00Z'
+        created_at:
+          type: string
+          format: date-time
+          example: '2022-01-01T00:00:00Z'
+    createPipelineRequest:
+      type: object
+      properties:
+        description:
+          type: string
+          example: Pipeline for Multiflexmeter Groundwater devices
+        steps:
+          type: array
+          items:
+            type: string
+          example:
+            - TTN@1.0.0
+            - MFMGroundwater@1.0.0
+    updatePipelineRequest:
+      type: object
+      properties:
+        description:
+          type: string
+          example: Pipeline for Multiflexmeter Groundwater devices
+        steps:
+          type: array
+          items:
+            type: string
+          example:
+            - TTN@1.0.0
+            - MFMGroundwater@1.0.0
+        status:
+          type: string
+          description: |
+            Used to change a pipeline from inactive to active or vice-versa. 
+            Moving from active to inactive can also be achieve by `DELETE`ing the pipeline resource.
+          example: active
+    trace_step:
+      type: object
+      required:
+        - status
+        - status_string
+        - duration
+        - error
+      properties:
+        start_time:
+          type: string
+          format: date-time
+        status:
+          type: integer
+          example: 2
+        status_string:
+          type: string
+          example: succes
+        duration:
+          type: number
+          format: double
+          description: Duration in seconds
+          example: 5.321
+        error:
+          type: string
+    trace:
+      type: object
+      required:
+        - tracing_id
+        - device_id
+        - start_time
+        - steps
+        - status
+        - status_string
+      properties:
+        tracing_id:
+          type: string
+          example: a59d28c8-2a0f-4e89-9f49-6942f1c04342
+        device_id:
+          type: integer
+          format: int64
+          example: 37
+          description: id is 0 if not defined
+        start_time:
+          type: string
+          format: date-time
+        status:
+          type: integer
+          example: 2
+        status_string:
+          type: string
+          example: succes
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/trace_step'
+    apiError:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        http_status:
+          type: integer
+    ingressDTO:
+      type: object
+      required:
+        - tracing_id
+        - pipeline_id
+        - owner_id
+        - payload
+        - created_at
+      properties:
+        tracing_id:
+          type: string
+          format: uuid
+        pipeline_id:
+          type: string
+          format: uuid
+        owner_id:
+          type: integer
+          format: int64
+        payload:
+          type: string
+          format: base64
+        created_at:
+          type: string
+          format: date-time
+    archivedIngress:
+      type: object
+      required:
+        - tracing_id
+        - raw_message
+        - archived_at
+        - expires_at
+      properties:
+        tracing_id:
+          type: string
+          format: uuid
+        raw_message:
+          type: string
+          format: base64
+        archived_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        ingress_dto:
+          $ref: '#/components/schemas/ingressDTO'
+    userWorker:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - state
+        - language
+        - organisation
+        - revision
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        state:
+          type: string
+          enum:
+            - enabled
+            - disabled
+        language:
+          type: string
+          enum:
+            - python
+        tenant_id:
+          type: integer
+          format: int64
+        revision:
+          type: integer
+        status:
+          type: string
+          enum:
+            - unknown
+            - ready
+            - error
+    createUserWorkerRequest:
+      type: object
+      required:
+        - name
+        - user_code
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        user_code:
+          type: string
+          format: base64
+          description: base64 encoded user code
+        state:
+          type: string
+          enum:
+            - enabled
+            - disabled
+    updateWorkerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        state:
+          type: string
+          enum:
+            - enabled
+            - disabled
+        user_code:
+          type: string
+          format: base64
+          description: base64 encoded user code
+    tenant:
+      type: object
+      required:
+        - id
+        - name
+        - address
+        - zip_code
+        - city
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: Provincie Zeeland
+        address:
+          type: string
+          example: Zeeland
+        zip_code:
+          type: string
+          example: 4331 ZE
+        city:
+          type: string
+          example: Vlissingen
+        chamber_of_commerce_id:
+          type: string
+        headquarter_id:
+          type: string
+    addTenantMemberRequest:
+      type: object
+      required:
+        - user_id
+        - permissions
+      properties:
+        user_id:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+    updateTenantMemberRequest:
+      type: object
+      required:
+        - permissions
+      properties:
+        permissions:
+          type: array
+          items:
+            type: string
+    apiKey:
+      type: object
+      required:
+        - id
+        - name
+        - tenant_id
+        - tenant_name
+        - created
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: Provincie Zeeland
+        tenant_id:
+          type: integer
+          format: int64
+          example: 19
+        tenant_name:
+          type: string
+          example: Provincie Zeeland
+        expiration_date:
+          type: string
+          format: date-time
+          example: '2023-05-17T15:00:00Z'
+        created:
+          type: string
+          format: date-time
+          example: '2022-05-17T15:00:00Z'
+    createApiKeyRequest:
+      type: object
+      required:
+        - name
+        - tenant_id
+      properties:
+        name:
+          type: string
+          example: Device Beheerder
+        tenant_id:
+          type: integer
+          format: int64
+          example: 19
+        permissions:
+          type: array
+          items:
+            type: string
+        expiration_date:
+          type: string
+          format: date-time
+          example: '2023-05-17T15:00:00Z'
+    apiKeyCreated:
+      type: object
+      required:
+        - api_key
+      properties:
+        api_key:
+          type: string
+          example: MjU5MzE1NDgwMjE2NTMwMTEyODo2MjY2MDdkMGViY2Q5MGRhMTRkZWE4NGY4MjEzYjRiNw
+  responses:
+    '400':
+      description: The request failed because of a malformed or invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+    '401':
+      description: The request failed because the provided credentials are invalid or missing
+    '403':
+      description: The request failed because the provided credentials do not have the required permissions to perform this action
+    '404':
+      description: The request failed because the requested resource could not be found
+    '500':
+      description: The request failed because of an unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+x-oathkeeper-mutators:
+  - Hydrate
+  - IDToken

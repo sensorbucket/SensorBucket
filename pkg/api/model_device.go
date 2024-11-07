@@ -1,9 +1,9 @@
 /*
 Sensorbucket API
 
-SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex 
+SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex' 
 
-API version: 1.1-rc1
+API version: 1.2.5
 Contact: info@pollex.nl
 */
 
@@ -22,7 +22,7 @@ type Device struct {
 	Code string `json:"code"`
 	State int32 `json:"state"`
 	Description string `json:"description"`
-	Organisation string `json:"organisation"`
+	TenantId int64 `json:"tenant_id"`
 	Properties map[string]interface{} `json:"properties"`
 	Altitude *float64 `json:"altitude,omitempty"`
 	Latitude *float64 `json:"latitude,omitempty"`
@@ -36,13 +36,13 @@ type Device struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewDevice(id int64, code string, state int32, description string, organisation string, properties map[string]interface{}, sensors []Sensor, createdAt time.Time) *Device {
+func NewDevice(id int64, code string, state int32, description string, tenantId int64, properties map[string]interface{}, sensors []Sensor, createdAt time.Time) *Device {
 	this := Device{}
 	this.Id = id
 	this.Code = code
 	this.State = state
 	this.Description = description
-	this.Organisation = organisation
+	this.TenantId = tenantId
 	this.Properties = properties
 	this.Sensors = sensors
 	this.CreatedAt = createdAt
@@ -153,28 +153,28 @@ func (o *Device) SetDescription(v string) {
 	o.Description = v
 }
 
-// GetOrganisation returns the Organisation field value
-func (o *Device) GetOrganisation() string {
+// GetTenantId returns the TenantId field value
+func (o *Device) GetTenantId() int64 {
 	if o == nil {
-		var ret string
+		var ret int64
 		return ret
 	}
 
-	return o.Organisation
+	return o.TenantId
 }
 
-// GetOrganisationOk returns a tuple with the Organisation field value
+// GetTenantIdOk returns a tuple with the TenantId field value
 // and a boolean to check if the value has been set.
-func (o *Device) GetOrganisationOk() (*string, bool) {
+func (o *Device) GetTenantIdOk() (*int64, bool) {
 	if o == nil {
     return nil, false
 	}
-	return &o.Organisation, true
+	return &o.TenantId, true
 }
 
-// SetOrganisation sets field value
-func (o *Device) SetOrganisation(v string) {
-	o.Organisation = v
+// SetTenantId sets field value
+func (o *Device) SetTenantId(v int64) {
+	o.TenantId = v
 }
 
 // GetProperties returns the Properties field value
@@ -392,7 +392,7 @@ func (o Device) MarshalJSON() ([]byte, error) {
 		toSerialize["description"] = o.Description
 	}
 	if true {
-		toSerialize["organisation"] = o.Organisation
+		toSerialize["tenant_id"] = o.TenantId
 	}
 	if true {
 		toSerialize["properties"] = o.Properties

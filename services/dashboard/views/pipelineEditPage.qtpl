@@ -18,6 +18,7 @@
                 {% endif %}
                 hx-vals="js:{steps: getSteps()}"
                 hx-target="#sortableForm">
+            {%= p.renderCSRFToken() %}
             <fieldset>
                 <label for="pipeline-id" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Pipeline ID</small></label>
                 <input
@@ -64,28 +65,31 @@
                 Pipeline steps
             </header>
             <div class="p-4">
-                {%= RenderPipelineSteps(p.Pipeline, p.WorkersInPipeline) %}
+                {%= p.RenderPipelineSteps(p.Pipeline, p.WorkersInPipeline) %}
             </div>
         </div>
     </div>
     <div id="workerTable" class="bg-white border rounded-md lg:col-span-3 xl:col-span-3">
         {%= RenderPipelineEditWorkerTable(p.Workers, p.WorkersNextPage) %}
     </div>
-    <div id="sortable-item-staging-template" class="p-2 w-2/4 mt-1.5 mx-auto text-white bg-orange-400 rounded-lg flex justify-between items-center">
-        <input type="hidden"/>
-        <div>
-            <p class="sortable-title text-lg"></p>
-            <p class="sortable-descr text-sm font-thin"></p>
+    <template id="sortable-item-staging-template">
+        <div class="p-2 w-2/4 mt-1.5 mx-auto text-white bg-orange-400 rounded-lg flex justify-between items-center hidden">
+            <input type="hidden" data-worker />
+            <div>
+                <p class="sortable-title text-lg"></p>
+                <p class="sortable-descr text-sm font-thin"></p>
+            </div>
+            <div class="cursor-pointer w-10 p-2">
+                <iconify-icon icon="basil:trash-solid" width="100%" height="100%" class="text-white"></iconify-icon>
+            </div>
         </div>
-        <div class="trash-can cursor-pointer h-full w-1/12">
-            <iconify-icon icon="basil:trash-solid" width="100%" height="100%" class="text-white"></iconify-icon>
-        </div>
-    </div>
+    </template>
 </div>
 {% endfunc %}
 
-{% func RenderPipelineSteps(pipeline *api.Pipeline, workers *[]api.UserWorker) %}
-    <script>
+{% func (p *PipelineEditPage) RenderPipelineSteps(pipeline *api.Pipeline, workers *[]api.UserWorker) %}
+    <script type="module">
+        import '{%s U("/static/sortable.js") %}';
         htmx.onLoad(function(content) {
             // Make the steps list sortable
             let sortables = content.querySelectorAll(".sortable");
@@ -115,7 +119,7 @@
             for (var i = 0; i < sortables.length; i++) {
                 // Update the index for each input item
                 let values = [];
-                let inputs = sortables[i].querySelectorAll("input");
+                let inputs = sortables[i].querySelectorAll("input[data-worker]");
                 for (let i = 0; i < inputs.length; i++) {
                     inputs[i].value = i;
                     values.push(inputs[i].name);
@@ -128,25 +132,23 @@
         function addSortable(workerName, workerId) {
             // Clone the template element and remove the 'hidden' class
             const template = document.getElementById("sortable-item-staging-template");
-            const newItem = template.cloneNode(true);
-            newItem.classList.remove("hidden");
-            newItem.id = "sortable-item-" + workerId;
+            const newItem = template.content.cloneNode(true);
+            newItem.children[0].classList.remove("hidden");
+            newItem.children[0].id = "sortable-item-" + workerId;
 
             const titleElement = newItem.querySelector(".sortable-title");
             titleElement.textContent = workerName;
 
-            const trashCanElement = newItem.querySelector(".trash-can");
-            trashCanElement.onclick = function(){ removeFromSortable(workerId); };
-
             const sortableForm = document.getElementById("sortableForm");
-            const inputElement = newItem.querySelector("input[type='hidden']");
-            inputElement.value = sortableForm.querySelectorAll("input").length;
+            const inputElement = newItem.querySelector("input[type='hidden'][data-worker]");
+            inputElement.value = sortableForm.querySelectorAll("input[data-worker]").length;
             inputElement.name = workerId;
 
             sortableForm.appendChild(newItem);
 
             notify();
         }
+        window.addSortable = addSortable
 
         function removeFromSortable(name) {
             const el = document.getElementById("sortable-item-" + name);
@@ -156,33 +158,25 @@
             
             notify();
         }
+        window.removeFromSortable = removeFromSortable
 
         function getSteps() {
             const form = document.getElementById('sortableForm');
-            console.log(form);
 
             // Create a FormData object from the form
             const formData = new FormData(form);
-            console.log(form.elements);
-            console.log(formData.entries());
-            for (var [key, value] of formData.entries()) { 
-            console.log(key, value);
-            }
-
             let data = {}
             for (var [key, value] of formData.entries()) { 
+                if (key == "csrf_token") continue;
                 if(!data[key]) {
                     data[key] = [];
                 }
                 data[key].push(value);
-                console.log(key, value, data[key]);
             }
-            console.log(data);
-
-
 
             return data;
         }
+        window.getSteps = getSteps
 
         function notify() {
             const sortableForm = document.getElementById('sortableForm');
@@ -201,12 +195,15 @@
             hx-patch="{%s U("/pipelines/validate") %}" hx-trigger="form-updated"
         {% endif %}>
         {% if workers != nil %}
-            {%= RenderPipelineStepsSortable(*workers) %}
+            {%= RenderPipelineStepsSortable(p.CSRFToken, *workers) %}
+        {% else %}
+            {%= p.renderCSRFToken() %}
         {% endif %}
     </form>
 {% endfunc %}
 
-{% func RenderPipelineStepsSortable(steps []api.UserWorker) %}
+{% func RenderPipelineStepsSortable(csrfToken string, steps []api.UserWorker) %}
+    {%= renderCSRFToken(csrfToken) %}
     {% for ix, step := range steps %}
         <div id="sortable-item-{%s step.Id %}" class="p-2 w-2/4 mt-1.5 mx-auto text-white bg-secondary-600 rounded-lg flex justify-between items-center">
             <input type="hidden" name="{%s step.Id %}" value="{%d ix %}" />
@@ -214,7 +211,7 @@
                 <p class="text-lg">{%s step.Name %} v{%v step.Revision %}</p>
                 <p class="text-sm font-thin">{%s step.Description %}</p>
             </div>
-            <div class="cursor-pointer h-full w-1/12" onclick="removeFromSortable('{%s step.Id %}')">
+            <div class="cursor-pointer w-10 p-2" onclick="removeFromSortable('{%s step.Id %}')">
                 <iconify-icon icon="basil:trash-solid" width="100%" height="100%" class="text-white"></iconify-icon>
             </div>
         </div>

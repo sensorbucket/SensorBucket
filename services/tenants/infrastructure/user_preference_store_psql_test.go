@@ -21,7 +21,7 @@ import (
 //go:embed seed_test.sql
 var seedFS embed.FS
 
-func createPostgresServer(t *testing.T) *sqlx.DB {
+func createPostgresServer(t *testing.T, seed bool) *sqlx.DB {
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
 		Image: "docker.io/timescale/timescaledb-postgis:latest-pg12",
@@ -59,10 +59,15 @@ func createPostgresServer(t *testing.T) *sqlx.DB {
 	err = migrations.MigratePostgres(db.DB)
 	require.NoError(t, err, "failed to migrate database")
 
+	// Remove default tenants
+	db.MustExec("DELETE FROM tenants")
+
 	// Seed data
-	seedSQL, err := seedFS.ReadFile("seed_test.sql")
-	require.NoError(t, err, "failed to read seed_test.sql")
-	db.MustExec(string(seedSQL))
+	if seed {
+		seedSQL, err := seedFS.ReadFile("seed_test.sql")
+		require.NoError(t, err, "failed to read seed_test.sql")
+		db.MustExec(string(seedSQL))
+	}
 
 	return db
 }
@@ -75,11 +80,11 @@ const (
 )
 
 func TestUserPreferedTenantStorePSQL(t *testing.T) {
-	db := createPostgresServer(t)
+	db := createPostgresServer(t, true)
 	store := tenantsinfra.NewTenantsStorePSQL(db)
 
 	t.Run("User should be member of tenant", func(t *testing.T) {
-		isMember, err := store.IsUserTenantMember(userID, tenantID)
+		isMember, err := store.IsMember(tenantID, userID, false)
 		assert.NoError(t, err)
 		assert.Equal(t, true, isMember)
 	})

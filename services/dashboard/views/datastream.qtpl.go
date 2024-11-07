@@ -286,6 +286,7 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start,
             return newUri;
         }
         let plot;
+        let ws;
         function updateDatastream() {
             let x = [];
             let y = [];
@@ -294,16 +295,21 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start,
             let min = start.getTime()/1000
             let max = end.getTime()/1000
             plot.setScale('x', {min, max})
-            const ws = new WebSocket(getWebSocketURL(`)
+
+            if (ws) {
+                ws.close()
+            }
+
+            ws = new WebSocket(getWebSocketURL(`)
 //line views/datastream.qtpl:121
 	qw422016.N().S("`")
-//line views/datastream.qtpl:149
+//line views/datastream.qtpl:155
 	qw422016.N().S(U("/overview/datastreams/%s/stream?start=${start.toISOString()}&end=${end.toISOString()}", ds.Id))
-//line views/datastream.qtpl:149
+//line views/datastream.qtpl:155
 	qw422016.N().S(``)
-//line views/datastream.qtpl:149
+//line views/datastream.qtpl:155
 	qw422016.N().S("`")
-//line views/datastream.qtpl:149
+//line views/datastream.qtpl:155
 	qw422016.N().S(`))
             ws.onmessage = (event) => {
                 const reader = new FileReader();
@@ -369,13 +375,13 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start,
                     {
                         stroke: "red",
                         label: "`)
-//line views/datastream.qtpl:213
+//line views/datastream.qtpl:219
 	qw422016.E().S(ds.ObservedProperty)
-//line views/datastream.qtpl:213
+//line views/datastream.qtpl:219
 	qw422016.N().S(` (`)
-//line views/datastream.qtpl:213
+//line views/datastream.qtpl:219
 	qw422016.E().S(ds.UnitOfMeasurement)
-//line views/datastream.qtpl:213
+//line views/datastream.qtpl:219
 	qw422016.N().S(`)"
                     }
                 ]
@@ -393,36 +399,36 @@ func streamrenderDataStream(qw422016 *qt422016.Writer, ds api.Datastream, start,
     }
     </script>
 `)
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:235
 }
 
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:235
 func writerenderDataStream(qq422016 qtio422016.Writer, ds api.Datastream, start, end time.Time) {
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:235
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:235
 	streamrenderDataStream(qw422016, ds, start, end)
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:235
 	qt422016.ReleaseWriter(qw422016)
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:235
 }
 
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:235
 func renderDataStream(ds api.Datastream, start, end time.Time) string {
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:235
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:235
 	writerenderDataStream(qb422016, ds, start, end)
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:235
 	qs422016 := string(qb422016.B)
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:235
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:235
 	return qs422016
-//line views/datastream.qtpl:229
+//line views/datastream.qtpl:235
 }
 
-//line views/datastream.qtpl:232
+//line views/datastream.qtpl:238
 type DatastreamPage struct {
 	BasePage
 	Device     api.Device

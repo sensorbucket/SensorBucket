@@ -46,13 +46,3 @@ func (store *PSQLTenantStore) SetActiveTenantID(userID string, tenantID int64) e
 	}
 	return nil
 }
-
-func (store *PSQLTenantStore) IsUserTenantMember(userID string, tenantID int64) (bool, error) {
-	var count int64
-	if err := store.db.Get(&count,
-		"SELECT count(user_id) FROM tenant_members WHERE user_id = $1 AND tenant_id = $2;",
-		userID, tenantID); err != nil {
-		return false, fmt.Errorf("in IsUserTenantMember PSQL Store, error executing query: %w", err)
-	}
-	return count > 0, nil
-}

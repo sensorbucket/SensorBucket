@@ -1,0 +1,70 @@
+device code,device description,device latitude,device longitude,device altitude,device properties dev_eui,device properties npn_code,sensor code,sensor brand,sensor description,sensor external_id
+D49c10000000404B,"brug over Havenkanaal, nabij Van der Goeskade 8, Goes",51.529615,3.899409,,D49C10000000404B,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49c100000004053,"brug over Havenkanaal, nabij Brugstraat, Wilhelminadorp",51.509397,3.891077,,D49C100000004053,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C100000004048,"KST747, Stuw Blokkreek, St. Kruis",51.250939,3.526676126,,D49C100000004048,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C100000004051,"KST876, Stuw Biesput, Eede",51.25213839,3.435564631,,D49C100000004051,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C100000004052,"KST1095, Stuw Heilleweg, Heille",51.26004853,3.417634306,,D49C100000004052,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C100000004049,"KST1115 bovenstrooms, Stuw Draaibrugseweg, Aardenburg",51.29471418,3.424055587,,D49C100000004049,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C10000000404F,"KST1115 benedenstrooms, Stuw Draaibrugseweg, Aardenburg",51.29469993,3.424060951,,D49C10000000404F,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C100000004055,"KST887, Stuw Zeeweg, Nieuwvliet, west",51.39257918,3.463463209,,D49C100000004055,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C100000004059,"KST1230, Stuw Slikkenburgseweg, Breskens",51.40036698,3.529269024,,D49C100000004059,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C10000000404A,"KST898, Stuw Baarzande, Groede",51.37367215,3.535272245,,D49C10000000404A,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C10000000404C,"KST912, Stuw Mauritsweg, IJzendijke",51.33938321,3.602522641,,D49C10000000404C,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C100000004050,"KST910, Stuw Milliano Willemsweg, IJzendijke",51.33006654,3.588283846,,D49C100000004050,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C100000004058,"KST975, Stuw Maaidijk, Oostburg",51.3380011,3.502572303,,D49C100000004058,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C10000000409B,"",,,,D49C10000000409B,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C10000000409C,"",,,,D49C10000000409C,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C10000000409D,"",,,,D49C10000000409D,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C10000000409E,"",,,,D49C10000000409E,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C10000000409F,"",,,,D49C10000000409F,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C1000000040A0,"",,,,D49C1000000040A0,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C1000000040A1,"",,,,D49C1000000040A1,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C1000000040A2,"",,,,D49C1000000040A2,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C1000000040A3,"",,,,D49C1000000040A3,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna
+D49C1000000040A4,"",,,,D49C1000000040A4,,JSN-SR04T,JSN,Ultrasonic distance sensor,jsnsr04t
+,,,,,,,DS18B20,Maxim Integrated,Temperature sensor,ds18b20
+,,,,,,,Antenna,Lynx WRT,Antenna,antenna

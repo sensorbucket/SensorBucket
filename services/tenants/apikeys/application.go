@@ -3,6 +3,7 @@ package apikeys
 //go:generate moq -pkg apikeys_test -out mock_test.go . ApiKeyStore TenantStore
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -18,9 +19,9 @@ import (
 )
 
 var (
-	ErrTenantIsNotValid                    = fmt.Errorf("tenant is not valid")
-	ErrKeyNotFound                         = fmt.Errorf("couldnt find key")
-	ErrInvalidEncoding                     = fmt.Errorf("API key was sent using an invalid encoding")
+	ErrTenantIsNotValid                    = web.NewError(http.StatusNotFound, "API Key not found", "ERR_KEY_NOT_FOUND")
+	ErrKeyNotFound                         = web.NewError(http.StatusNotFound, "API Key not found", "ERR_API_KEY_NOT_FOUND")
+	ErrInvalidEncoding                     = web.NewError(http.StatusNotFound, "API Key was sent using invalid encoding", "ERR_API_KEY_MALFORMED")
 	ErrKeyNameTenantIDCombinationNotUnique = web.NewError(http.StatusBadRequest, "API Key with name already exists for this tenant", "API_KEY_NAME_TENANT_COMBO_NOT_UNIQUE")
 )
 
@@ -31,19 +32,19 @@ func NewAPIKeyService(tenantStore TenantStore, apiKeyStore ApiKeyStore) *Service
 	}
 }
 
-func (s *Service) ListAPIKeys(filter Filter, p pagination.Request) (*pagination.Page[ApiKeyDTO], error) {
+func (s *Service) ListAPIKeys(ctx context.Context, filter Filter, p pagination.Request) (*pagination.Page[ApiKeyDTO], error) {
 	return s.apiKeyStore.List(filter, p)
 }
 
 // Revokes an API key, returns ErrKeyNotFound if the given key was not found in the apiKeyStore
-func (s *Service) RevokeApiKey(apiKeyId int64) error {
+func (s *Service) RevokeApiKey(ctx context.Context, apiKeyId int64) error {
 	return s.apiKeyStore.DeleteApiKey(apiKeyId)
 }
 
 // Creates a new API key for the given tenant and with the given expiration date.
 // Returns the api key as: 'apiKeyId:apiKey' encoded to a base64 string.
 // Fails if the tenant is not active
-func (s *Service) GenerateNewApiKey(name string, tenantId int64, permissions auth.Permissions, expirationDate *time.Time) (string, error) {
+func (s *Service) GenerateNewApiKey(ctx context.Context, name string, tenantId int64, permissions auth.Permissions, expirationDate *time.Time) (string, error) {
 	if err := permissions.Validate(); err != nil {
 		return "", fmt.Errorf("%w: %w", ErrPermissionsInvalid, err)
 	}
@@ -56,7 +57,7 @@ func (s *Service) GenerateNewApiKey(name string, tenantId int64, permissions aut
 	}
 	existing, err := s.apiKeyStore.GetHashedAPIKeyByNameAndTenantID(name, tenantId)
 	if err != nil && err != ErrKeyNotFound {
-		return "", err
+		return "", fmt.Errorf("in GenerateNewApiKey, could not check for existing key due to err: %w", err)
 	}
 	if existing.ID > 0 {
 		return "", ErrKeyNameTenantIDCombinationNotUnique
@@ -80,7 +81,7 @@ func (s *Service) GenerateNewApiKey(name string, tenantId int64, permissions aut
 
 // Authenticates a given API key. Input must be 'apiKeyId:apiKey' encoded to a base64 string
 // API key is valid if it is the correct api key id and api key combination and if the attached tenant is active
-func (s *Service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAuthenticationDTO, error) {
+func (s *Service) AuthenticateApiKey(ctx context.Context, base64IdAndKeyCombination string) (ApiKeyAuthenticationDTO, error) {
 	apiKeyId, apiKey, err := apiKeyAndIdFromBase64(base64IdAndKeyCombination)
 	if err != nil {
 		return ApiKeyAuthenticationDTO{}, ErrInvalidEncoding
@@ -91,7 +92,7 @@ func (s *Service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAu
 	}
 	if hashed.IsExpired() {
 		log.Println("[Info] detected expired API key, deleting")
-		if err := s.RevokeApiKey(apiKeyId); err != nil {
+		if err := s.RevokeApiKey(ctx, apiKeyId); err != nil {
 			log.Printf("[Warning] couldn't cleanup expired API key: '%s'\n", err)
 		}
 		return ApiKeyAuthenticationDTO{}, ErrKeyNotFound
@@ -99,7 +100,7 @@ func (s *Service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAu
 	isValid := hashed.compare(apiKey)
 	if isValid {
 		dto := ApiKeyAuthenticationDTO{
-			TenantID:    fmt.Sprintf("%d", hashed.TenantID),
+			TenantID:    hashed.TenantID,
 			Permissions: hashed.Permissions,
 		}
 		if hashed.ExpirationDate != nil {
@@ -111,24 +112,42 @@ func (s *Service) AuthenticateApiKey(base64IdAndKeyCombination string) (ApiKeyAu
 	return ApiKeyAuthenticationDTO{}, ErrKeyNotFound
 }
 
+// GetAPIKey returns an api key by ID and removes the secret hash
+func (s *Service) GetAPIKey(ctx context.Context, id int64) (*HashedApiKey, error) {
+	hashed, err := s.apiKeyStore.GetHashedApiKeyById(id, []tenants.State{tenants.Active})
+	if err != nil {
+		return nil, err
+	}
+	if hashed.IsExpired() {
+		log.Println("[Info] detected expired API key, deleting")
+		if err := s.RevokeApiKey(ctx, id); err != nil {
+			log.Printf("[Warning] couldn't cleanup expired API key: '%s'\n", err)
+		}
+		return nil, ErrKeyNotFound
+	}
+	// Remove hash
+	hashed.SecretHash = ""
+	return &hashed, nil
+}
+
 type Filter struct {
 	TenantID []int64 `schema:"tenant_id"`
 }
 
 type ApiKeyAuthenticationDTO struct {
-	TenantID    string   `json:"sub"` // Sub is how Ory Oathkeeper identifies the important information in the response
-	Expiration  *int64   `json:"expiration_date"`
-	Permissions []string `json:"permissions"`
+	TenantID    int64            `json:"tenant_id"`
+	Expiration  *int64           `json:"expiration_date"`
+	Permissions auth.Permissions `json:"permissions"`
 }
 
 type ApiKeyDTO struct {
-	ID             int64      `json:"id"`
-	Name           string     `json:"name"`
-	TenantID       int64      `json:"tenant_id"`
-	TenantName     string     `json:"tenant_name"`
-	ExpirationDate *time.Time `json:"expiration_date"`
-	Created        time.Time  `json:"created"`
-	Permissions    []string   `json:"permissions"`
+	ID             int64            `json:"id"`
+	Name           string           `json:"name"`
+	TenantID       int64            `json:"tenant_id"`
+	TenantName     string           `json:"tenant_name"`
+	ExpirationDate *time.Time       `json:"expiration_date"`
+	Created        time.Time        `json:"created"`
+	Permissions    auth.Permissions `json:"permissions"`
 }
 
 func apiKeyAndIdFromBase64(base64Src string) (int64, string, error) {

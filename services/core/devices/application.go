@@ -8,24 +8,25 @@ import (
 	"fmt"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 )
 
 type DeviceStore interface {
-	List(DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
-	ListInBoundingBox(DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
-	ListInRange(DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
-	ListSensors(pagination.Request) (*pagination.Page[Sensor], error)
-	Find(id int64) (*Device, error)
-	Save(dev *Device) error
-	Delete(dev *Device) error
-	GetSensor(id int64) (*Sensor, error)
+	List(context.Context, DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
+	ListInBoundingBox(context.Context, DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
+	ListInRange(context.Context, DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
+	ListSensors(context.Context, pagination.Request) (*pagination.Page[Sensor], error)
+	Find(ctx context.Context, id int64) (*Device, error)
+	Save(ctx context.Context, dev *Device) error
+	Delete(ctx context.Context, dev *Device) error
+	GetSensor(ctx context.Context, id int64) (*Sensor, error)
 }
 
 type SensorGroupStore interface {
 	Save(group *SensorGroup) error
 	Delete(id int64) error
-	List(p pagination.Request) (*pagination.Page[SensorGroup], error)
-	Get(id int64) (*SensorGroup, error)
+	List(tenantID int64, p pagination.Request) (*pagination.Page[SensorGroup], error)
+	Get(id int64, tenantID int64) (*SensorGroup, error)
 }
 
 type Service struct {
@@ -47,6 +48,7 @@ type DeviceFilter struct {
 	Code       []string
 	Sensor     []int64
 	Properties json.RawMessage `json:"properties"`
+	OwnerID    int64
 }
 type BoundingBoxFilter struct {
 	North *float64 `json:"north"`
@@ -69,28 +71,44 @@ func (f DeviceFilter) HasRange() bool {
 }
 
 func (s *Service) ListDevices(ctx context.Context, filter DeviceFilter, p pagination.Request) (*pagination.Page[Device], error) {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
+		return nil, err
+	}
+
 	if filter.HasBoundingBox() {
-		return s.store.ListInBoundingBox(filter, p)
+		return s.store.ListInBoundingBox(ctx, filter, p)
 	}
 	if filter.HasRange() {
-		return s.store.ListInRange(filter, p)
+		return s.store.ListInRange(ctx, filter, p)
 	}
-	return s.store.List(filter, p)
+	return s.store.List(ctx, filter, p)
 }
 
 func (s *Service) CreateDevice(ctx context.Context, dto NewDeviceOpts) (*Device, error) {
-	dev, err := NewDevice(dto)
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
+		return nil, err
+	}
+	tenantID, err := auth.GetTenant(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.store.Save(dev); err != nil {
+
+	dev, err := NewDevice(tenantID, dto)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.store.Save(ctx, dev); err != nil {
 		return nil, err
 	}
 	return dev, nil
 }
 
 func (s *Service) GetDevice(ctx context.Context, id int64) (*Device, error) {
-	dev, err := s.store.Find(id)
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
+		return nil, err
+	}
+
+	dev, err := s.store.Find(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +128,10 @@ type NewSensorDTO struct {
 }
 
 func (s *Service) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
+		return err
+	}
+
 	opts := NewSensorOpts{
 		Code:        dto.Code,
 		Brand:       dto.Brand,
@@ -122,17 +144,21 @@ func (s *Service) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) 
 	if err := dev.AddSensor(opts); err != nil {
 		return err
 	}
-	if err := s.store.Save(dev); err != nil {
+	if err := s.store.Save(ctx, dev); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *Service) DeleteSensor(ctx context.Context, dev *Device, sensor *Sensor) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
+		return err
+	}
+
 	if err := dev.DeleteSensorByID(sensor.ID); err != nil {
 		return err
 	}
-	if err := s.store.Save(dev); err != nil {
+	if err := s.store.Save(ctx, dev); err != nil {
 		return err
 	}
 	return nil
@@ -149,6 +175,10 @@ type UpdateDeviceOpts struct {
 }
 
 func (s *Service) UpdateDevice(ctx context.Context, dev *Device, opt UpdateDeviceOpts) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
+		return err
+	}
+
 	if opt.Description != nil {
 		dev.Description = *opt.Description
 	}
@@ -170,7 +200,7 @@ func (s *Service) UpdateDevice(ctx context.Context, dev *Device, opt UpdateDevic
 	if opt.State != nil {
 		dev.State = *opt.State
 	}
-	if err := s.store.Save(dev); err != nil {
+	if err := s.store.Save(ctx, dev); err != nil {
 		return err
 	}
 
@@ -178,22 +208,90 @@ func (s *Service) UpdateDevice(ctx context.Context, dev *Device, opt UpdateDevic
 }
 
 func (s *Service) DeleteDevice(ctx context.Context, dev *Device) error {
-	if err := s.store.Delete(dev); err != nil {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
+		return err
+	}
+
+	if err := s.store.Delete(ctx, dev); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *Service) ListSensors(ctx context.Context, p pagination.Request) (*pagination.Page[Sensor], error) {
-	return s.store.ListSensors(p)
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
+		return nil, err
+	}
+
+	return s.store.ListSensors(ctx, p)
 }
 
 func (s *Service) GetSensor(ctx context.Context, id int64) (*Sensor, error) {
-	return s.store.GetSensor(id)
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
+		return nil, err
+	}
+
+	return s.store.GetSensor(ctx, id)
+}
+
+type UpdateSensorOpts struct {
+	Description *string         `json:"description"`
+	Brand       *string         `json:"brand"`
+	ArchiveTime *int            `json:"archive_time"`
+	ExternalID  *string         `json:"external_id"`
+	IsFallback  *bool           `json:"is_fallback"`
+	Properties  json.RawMessage `json:"properties"`
+}
+
+func (s *Service) UpdateSensor(ctx context.Context, device *Device, sensor *Sensor, opt UpdateSensorOpts) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
+		return err
+	}
+
+	if opt.Description != nil {
+		sensor.Description = *opt.Description
+	}
+	if opt.Brand != nil {
+		sensor.Brand = *opt.Brand
+	}
+	if opt.ArchiveTime != nil {
+		if *opt.ArchiveTime == 0 {
+			sensor.ArchiveTime = nil
+		} else {
+			sensor.ArchiveTime = opt.ArchiveTime
+		}
+	}
+	if opt.ExternalID != nil {
+		sensor.ExternalID = *opt.ExternalID
+	}
+	if opt.IsFallback != nil {
+		sensor.IsFallback = *opt.IsFallback
+	}
+	if opt.Properties != nil {
+		sensor.Properties = opt.Properties
+	}
+
+	if err := device.UpdateSensor(sensor); err != nil {
+		return err
+	}
+
+	if err := s.store.Save(ctx, device); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Service) CreateSensorGroup(ctx context.Context, name, description string) (*SensorGroup, error) {
-	group, err := NewSensorGroup(name, description)
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
+		return nil, err
+	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	group, err := NewSensorGroup(tenantID, name, description)
 	if err != nil {
 		return nil, fmt.Errorf("create sensor group failed: %w", err)
 	}
@@ -204,14 +302,34 @@ func (s *Service) CreateSensorGroup(ctx context.Context, name, description strin
 }
 
 func (s *Service) ListSensorGroups(ctx context.Context, p pagination.Request) (*pagination.Page[SensorGroup], error) {
-	return s.sensorGroupStore.List(p)
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
+		return nil, err
+	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.sensorGroupStore.List(tenantID, p)
 }
 
 func (s *Service) GetSensorGroup(ctx context.Context, id int64) (*SensorGroup, error) {
-	return s.sensorGroupStore.Get(id)
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
+		return nil, err
+	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.sensorGroupStore.Get(id, tenantID)
 }
 
 func (s *Service) AddSensorToSensorGroup(ctx context.Context, groupID, sensorID int64) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
+		return err
+	}
+
 	group, err := s.GetSensorGroup(ctx, groupID)
 	if err != nil {
 		return err
@@ -233,6 +351,10 @@ func (s *Service) AddSensorToSensorGroup(ctx context.Context, groupID, sensorID 
 }
 
 func (s *Service) DeleteSensorFromSensorGroup(ctx context.Context, groupID, sensorID int64) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
+		return err
+	}
+
 	group, err := s.GetSensorGroup(ctx, groupID)
 	if err != nil {
 		return err
@@ -254,6 +376,10 @@ func (s *Service) DeleteSensorFromSensorGroup(ctx context.Context, groupID, sens
 }
 
 func (s *Service) DeleteSensorGroup(ctx context.Context, group *SensorGroup) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
+		return err
+	}
+
 	return s.sensorGroupStore.Delete(group.ID)
 }
 
@@ -263,6 +389,10 @@ type UpdateSensorGroupOpts struct {
 }
 
 func (s *Service) UpdateSensorGroup(ctx context.Context, group *SensorGroup, opts UpdateSensorGroupOpts) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
+		return err
+	}
+
 	if opts.Name != nil {
 		err := group.SetName(*opts.Name)
 		if err != nil {

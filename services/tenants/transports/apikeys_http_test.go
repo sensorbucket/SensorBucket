@@ -1,6 +1,7 @@
 package tenantstransports_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -124,7 +125,7 @@ func TestNewApiKeyExpirationDateNotInTheFuture(t *testing.T) {
 func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(ctx context.Context, _ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
 			assert.Equal(t, auth.Permissions{auth.Permission("WRITE_DEVICES")}, permissions)
 			assert.Nil(t, expiry)
@@ -148,7 +149,7 @@ func TestNewApiKeyTenantIsNotFound(t *testing.T) {
 func TestNewApiKeyErrorOccurs(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(ctx context.Context, _ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
 			assert.Equal(t, auth.Permissions{auth.Permission("WRITE_DEVICES")}, permissions)
 			assert.Nil(t, expiry)
@@ -173,7 +174,7 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 	// Arrange
 	exp := time.Now().UTC().Add(time.Hour * 24 * 5)
 	svc := ApiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(ctx context.Context, _ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
 			assert.Equal(t, auth.Permissions{auth.Permission("WRITE_DEVICES")}, permissions)
 			assert.NotNil(t, expiry)
@@ -198,7 +199,7 @@ func TestNewApiKeyIsCreatedWithExpirationDate(t *testing.T) {
 func TestNewApiKeyIsCreatedWithoutExpirationDate(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(_ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
+		GenerateNewApiKeyFunc: func(ctx context.Context, _ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
 			assert.Equal(t, int64(905), tenantId)
 			assert.Equal(t, auth.Permissions{auth.Permission("WRITE_DEVICES")}, permissions)
 			assert.Nil(t, expiry)
@@ -238,7 +239,7 @@ func TestRevokeApiKeyInvalidApiKeyId(t *testing.T) {
 func TestRevokeApiKeyRevokesApiKey(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		RevokeApiKeyFunc: func(id int64) error {
+		RevokeApiKeyFunc: func(ctx context.Context, id int64) error {
 			assert.Equal(t, int64(123), id)
 			return nil
 		},
@@ -259,7 +260,7 @@ func TestRevokeApiKeyRevokesApiKey(t *testing.T) {
 func TestRevokeApiKeyRevokeFails(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		RevokeApiKeyFunc: func(id int64) error {
+		RevokeApiKeyFunc: func(ctx context.Context, id int64) error {
 			assert.Equal(t, int64(12343), id)
 			return fmt.Errorf("weird error")
 		},
@@ -280,7 +281,7 @@ func TestRevokeApiKeyRevokeFails(t *testing.T) {
 func TestRevokeApiKeyKeyDoesNotExist(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		RevokeApiKeyFunc: func(id int64) error {
+		RevokeApiKeyFunc: func(ctx context.Context, id int64) error {
 			assert.Equal(t, int64(12343), id)
 			return apikeys.ErrKeyNotFound
 		},
@@ -332,7 +333,7 @@ func TestAuthenticateAuthorizationHeaderIncorrectFormat(t *testing.T) {
 func TestAuthenticateErrorOccursWhileValidatingApiKey(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
+		AuthenticateApiKeyFunc: func(ctx context.Context, base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{}, fmt.Errorf("database error!")
 		},
@@ -354,7 +355,7 @@ func TestAuthenticateErrorOccursWhileValidatingApiKey(t *testing.T) {
 func TestAuthenticateApiKeyIsNotFound(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
+		AuthenticateApiKeyFunc: func(ctx context.Context, base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{}, apikeys.ErrKeyNotFound
 		},
@@ -376,7 +377,7 @@ func TestAuthenticateApiKeyIsNotFound(t *testing.T) {
 func TestAuthenticateApiKeyInvalidEncodingErrorOccurs(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
+		AuthenticateApiKeyFunc: func(ctx context.Context, base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "blablabla", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{}, apikeys.ErrInvalidEncoding
 		},
@@ -398,12 +399,12 @@ func TestAuthenticateApiKeyInvalidEncodingErrorOccurs(t *testing.T) {
 func TestAuthenticateApiKeyIsValidNoExpirationDate(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
+		AuthenticateApiKeyFunc: func(ctx context.Context, base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{
-				TenantID:    "431",
+				TenantID:    431,
 				Expiration:  nil,
-				Permissions: nil,
+				Permissions: auth.Permissions{},
 			}, nil
 		},
 	}
@@ -417,19 +418,19 @@ func TestAuthenticateApiKeyIsValidNoExpirationDate(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, `{"sub":"431","expiration_date":null,"permissions":null}`+"\n", rr.Body.String())
+	assert.Equal(t, `{"extra":{"perms":[],"tid":431}}`+"\n", rr.Body.String())
 	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
 }
 
 func TestAuthenticateApiKeyWithPermissions(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
+		AuthenticateApiKeyFunc: func(ctx context.Context, base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{
-				TenantID:    "431",
+				TenantID:    431,
 				Expiration:  nil,
-				Permissions: []string{"READ_DEVICES", "WRITE_DEVICES", "READ_API_KEYS", "WRITE_API_KEYS"},
+				Permissions: auth.Permissions{"READ_DEVICES", "WRITE_DEVICES", "READ_API_KEYS", "WRITE_API_KEYS"},
 			}, nil
 		},
 	}
@@ -443,7 +444,7 @@ func TestAuthenticateApiKeyWithPermissions(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, `{"sub":"431","expiration_date":null,"permissions":["READ_DEVICES","WRITE_DEVICES","READ_API_KEYS","WRITE_API_KEYS"]}`+"\n", rr.Body.String())
+	assert.Equal(t, `{"extra":{"perms":["READ_DEVICES","WRITE_DEVICES","READ_API_KEYS","WRITE_API_KEYS"],"tid":431}}`+"\n", rr.Body.String())
 	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
 }
 
@@ -451,12 +452,12 @@ func TestAuthenticateApiKeyIsValidWithExpirationDate(t *testing.T) {
 	// Arrange
 	exp := time.Now().Add(time.Minute).Unix()
 	svc := ApiKeyServiceMock{
-		AuthenticateApiKeyFunc: func(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
+		AuthenticateApiKeyFunc: func(ctx context.Context, base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error) {
 			assert.Equal(t, "MjMxNDMyNDM6bXl2YWxpZGFwaWtleQ==", base64IdAndKeyCombination)
 			return apikeys.ApiKeyAuthenticationDTO{
-				TenantID:    "431",
+				TenantID:    431,
 				Expiration:  &exp,
-				Permissions: nil,
+				Permissions: auth.Permissions{},
 			}, nil
 		},
 	}
@@ -470,24 +471,24 @@ func TestAuthenticateApiKeyIsValidWithExpirationDate(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, fmt.Sprintf(`{"sub":"431","expiration_date":%d,"permissions":null}`+"\n", exp), rr.Body.String())
+	assert.Equal(t, fmt.Sprintf(`{"extra":{"exp":%d,"perms":[],"tid":431}}`+"\n", exp), rr.Body.String())
 	assert.Len(t, svc.AuthenticateApiKeyCalls(), 1)
 }
 
 func TestListApiKeysReturnsPaginatedList(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		ListAPIKeysFunc: func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
+		ListAPIKeysFunc: func(ctx context.Context, filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
 			return &pagination.Page[apikeys.ApiKeyDTO]{
 				Cursor: "encoded_cursor",
 				Data: []apikeys.ApiKeyDTO{
 					{
 						Name:        "api-key-1",
-						Permissions: []string{"READ_API_KEYS"},
+						Permissions: auth.Permissions{"READ_API_KEYS"},
 					},
 					{
 						Name:        "api-key-2",
-						Permissions: []string{"READ_DEVICES", "WRITE_DEVICES"},
+						Permissions: auth.Permissions{"READ_DEVICES", "WRITE_DEVICES"},
 					},
 				},
 			}, nil
@@ -526,7 +527,7 @@ func TestListApiKeysInvalidParams(t *testing.T) {
 func TestListApiKeysErrorsOccursWhileRetrievingData(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
-		ListAPIKeysFunc: func(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
+		ListAPIKeysFunc: func(ctx context.Context, filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
 			return nil, fmt.Errorf("weird database error!")
 		},
 	}

@@ -8,21 +8,26 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 
 	"sensorbucket.nl/sensorbucket/internal/httpfilter"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 )
 
 type HTTPTransport struct {
 	server *http.Server
 }
 
-func NewHTTPTransport(app *Application, baseURL, addr string) *HTTPTransport {
+func NewHTTPTransport(app *Application, baseURL, addr string, keySource auth.JWKSClient) *HTTPTransport {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(
+		chimw.Logger,
+		auth.Authenticate(keySource),
+		auth.Protect(),
+	)
 	createRoutes(app, baseURL, r)
 	srv := &http.Server{
 		Addr:         addr,
@@ -47,7 +52,7 @@ func (t *HTTPTransport) Stop(ctx context.Context) error {
 
 type WorkersHTTPFilters struct {
 	pagination.Request
-	ListWorkerFilters
+	WorkerFilters
 }
 
 func createRoutes(app *Application, baseURL string, r chi.Router) {
@@ -57,7 +62,7 @@ func createRoutes(app *Application, baseURL string, r chi.Router) {
 			web.HTTPError(w, err)
 			return
 		}
-		page, err := app.ListWorkers(r.Context(), params.ListWorkerFilters, params.Request)
+		page, err := app.ListWorkers(r.Context(), params.WorkerFilters, params.Request)
 		if err != nil {
 			web.HTTPError(w, err)
 			return

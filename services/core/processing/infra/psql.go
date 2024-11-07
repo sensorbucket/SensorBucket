@@ -87,11 +87,7 @@ type pipelinePaginationQuery struct {
 	ID        string    `pagination:"id,ASC"`
 }
 
-func (s *PSQLStore) ListPipelines(filter processing.PipelinesFilter, p pagination.Request) (pagination.Page[processing.Pipeline], error) {
-	var page pagination.Page[processing.Pipeline]
-	var err error
-	// Fetch pipelines
-	q := pq.Select("id", "description", "status", "last_status_change", "created_at").From("pipelines")
+func applyFilters(q sq.SelectBuilder, filter processing.PipelinesFilter) sq.SelectBuilder {
 	if len(filter.Status) > 0 {
 		q = q.Where(sq.Eq{"status": filter.Status})
 	} else {
@@ -104,6 +100,18 @@ func (s *PSQLStore) ListPipelines(filter processing.PipelinesFilter, p paginatio
 	if len(filter.ID) > 0 {
 		q = q.Where(sq.Eq{"id": filter.ID})
 	}
+	if len(filter.TenantID) > 0 {
+		q = q.Where(sq.Eq{"tenant_id": filter.TenantID})
+	}
+	return q
+}
+
+func (s *PSQLStore) ListPipelines(filter processing.PipelinesFilter, p pagination.Request) (pagination.Page[processing.Pipeline], error) {
+	var page pagination.Page[processing.Pipeline]
+	var err error
+	// Fetch pipelines
+	q := pq.Select("id", "description", "status", "last_status_change", "created_at").From("pipelines")
+	q = applyFilters(q, filter)
 
 	// Pagination
 	cursor, err := pagination.GetCursor[pipelinePaginationQuery](p)
@@ -196,14 +204,14 @@ func (s *PSQLStore) ListPipelines(filter processing.PipelinesFilter, p paginatio
 	return page, nil
 }
 
-func (s *PSQLStore) GetPipeline(id string) (*processing.Pipeline, error) {
-	return getPipeline(s.db, id)
-}
-
-// Private methods which have DB interface injected. Allows for transactional queries
-func getPipeline(db DB, id string) (*processing.Pipeline, error) {
+func (s *PSQLStore) GetPipeline(id string, filter processing.PipelinesFilter) (*processing.Pipeline, error) {
 	var p processing.Pipeline
-	if err := db.QueryRowx(`SELECT id, description, status, last_status_change, created_at FROM pipelines WHERE id=$1`, id).Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange, &p.CreatedAt); err != nil {
+	q := pq.Select("id, description, status, last_status_change, created_at").
+		From("pipelines").
+		Where(sq.Eq{"id": id})
+	q = applyFilters(q, filter)
+	err := q.RunWith(s.db).Scan(&p.ID, &p.Description, &p.Status, &p.LastStatusChange, &p.CreatedAt)
+	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, processing.ErrPipelineNotFound
 		}
@@ -211,22 +219,30 @@ func getPipeline(db DB, id string) (*processing.Pipeline, error) {
 	}
 	p.Steps = []string{}
 
-	if err := db.Select(
-		&p.Steps,
-		`SELECT image FROM pipeline_steps WHERE pipeline_id=$1 ORDER BY pipeline_step ASC`,
-		id,
-	); err != nil && !errors.Is(err, sql.ErrNoRows) {
+	q = pq.Select("image").From("pipeline_steps").Where(sq.Eq{"pipeline_id": id}).OrderBy("pipeline_step ASC")
+	rows, err := q.RunWith(s.db).Query()
+	if err != nil {
 		return nil, err
 	}
-
+	defer rows.Close()
+	for rows.Next() {
+		var image string
+		err := rows.Scan(&image)
+		if err != nil {
+			return nil, err
+		}
+		p.Steps = append(p.Steps, image)
+	}
 	return &p, nil
 }
 
 func createPipeline(db DB, p *processing.Pipeline) error {
-	if _, err := db.Exec(`INSERT INTO "pipelines" ("id", "description", "status", "last_status_change", "created_at") VALUES ($1, $2, $3, $4, $5)`, p.ID, p.Description, p.Status, p.LastStatusChange, p.CreatedAt); err != nil {
+	if _, err := db.Exec(`
+        INSERT INTO "pipelines" ("id", "tenant_id", "description", "status", "last_status_change", "created_at")
+        VALUES ($1, $2, $3, $4, $5, $6)
+    `, p.ID, p.TenantID, p.Description, p.Status, p.LastStatusChange, p.CreatedAt); err != nil {
 		return err
 	}
-
 	return nil
 }
 

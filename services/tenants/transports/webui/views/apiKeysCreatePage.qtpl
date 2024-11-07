@@ -13,6 +13,7 @@
         method="POST"
         action="{%s U("/api-keys/create") %}"
     >
+        {%= p.renderCSRFToken() %}
         <fieldset>
             <label for="api-key-tenant" class="ml-1 -mb-1 block"><small
                     class="text-xs text-slate-500">Tenant*</small></label>

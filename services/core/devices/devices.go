@@ -64,7 +64,7 @@ type Device struct {
 	ID                  int64           `json:"id"`
 	Code                string          `json:"code"`
 	Description         string          `json:"description"`
-	Organisation        string          `json:"organisation"`
+	TenantID            int64           `json:"tenant_id"`
 	Sensors             []Sensor        `json:"sensors"`
 	Properties          json.RawMessage `json:"properties"`
 	Longitude           *float64        `json:"longitude"`
@@ -85,13 +85,13 @@ type Sensor struct {
 	ExternalID  string          `json:"external_id" db:"external_id"`
 	IsFallback  bool            `json:"is_fallback" db:"is_fallback"`
 	Properties  json.RawMessage `json:"properties"`
+	TenantID    int64           `json:"tenant_id"`
 	CreatedAt   time.Time       `json:"created_at" db:"created_at"`
 }
 
 type NewDeviceOpts struct {
 	Code                string          `json:"code"`
 	Description         string          `json:"description"`
-	Organisation        string          `json:"organisation"`
 	Properties          json.RawMessage `json:"properties"`
 	Longitude           *float64        `json:"longitude"`
 	Latitude            *float64        `json:"latitude"`
@@ -100,13 +100,13 @@ type NewDeviceOpts struct {
 	State               DeviceState     `json:"state"`
 }
 
-func NewDevice(opts NewDeviceOpts) (*Device, error) {
+func NewDevice(tenantID int64, opts NewDeviceOpts) (*Device, error) {
 	dev := Device{
 		Sensors:             []Sensor{},
 		Properties:          []byte("{}"),
 		LocationDescription: opts.LocationDescription,
 		Description:         opts.Description,
-		Organisation:        opts.Organisation,
+		TenantID:            tenantID,
 		Code:                opts.Code,
 		State:               opts.State,
 		CreatedAt:           time.Now(),
@@ -184,6 +184,7 @@ func (d *Device) AddSensor(opts NewSensorOpts) error {
 	if err != nil {
 		return err
 	}
+	sensor.TenantID = d.TenantID
 	sensor.DeviceID = d.ID
 
 	// Append sensor
@@ -230,7 +231,7 @@ func (d *Device) GetSensorByExternalIDOrFallback(eid string) (*Sensor, error) {
 	if err == nil {
 		return s, nil
 	}
-	if err != nil && !errors.Is(err, ErrSensorNotFound) {
+	if !errors.Is(err, ErrSensorNotFound) {
 		return nil, err
 	}
 
@@ -256,6 +257,19 @@ func (d *Device) DeleteSensorByID(id int64) error {
 	}
 
 	return ErrSensorNotFound
+}
+
+func (d *Device) UpdateSensor(sensor *Sensor) error {
+	if sensor == nil {
+		return nil
+	}
+	for ix := range d.Sensors {
+		if d.Sensors[ix].ID == sensor.ID {
+			d.Sensors[ix] = *sensor
+			return nil
+		}
+	}
+	return fmt.Errorf("cant update sensor: %w", ErrSensorNotFound)
 }
 
 func (d *Device) ClearLocation() {

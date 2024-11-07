@@ -22,7 +22,7 @@ var _ processing.Store = &StoreMock{}
 //			CreatePipelineFunc: func(pipeline *processing.Pipeline) error {
 //				panic("mock out the CreatePipeline method")
 //			},
-//			GetPipelineFunc: func(s string) (*processing.Pipeline, error) {
+//			GetPipelineFunc: func(s string, pipelinesFilter processing.PipelinesFilter) (*processing.Pipeline, error) {
 //				panic("mock out the GetPipeline method")
 //			},
 //			ListPipelinesFunc: func(pipelinesFilter processing.PipelinesFilter, request pagination.Request) (pagination.Page[processing.Pipeline], error) {
@@ -42,7 +42,7 @@ type StoreMock struct {
 	CreatePipelineFunc func(pipeline *processing.Pipeline) error
 
 	// GetPipelineFunc mocks the GetPipeline method.
-	GetPipelineFunc func(s string) (*processing.Pipeline, error)
+	GetPipelineFunc func(s string, pipelinesFilter processing.PipelinesFilter) (*processing.Pipeline, error)
 
 	// ListPipelinesFunc mocks the ListPipelines method.
 	ListPipelinesFunc func(pipelinesFilter processing.PipelinesFilter, request pagination.Request) (pagination.Page[processing.Pipeline], error)
@@ -61,6 +61,8 @@ type StoreMock struct {
 		GetPipeline []struct {
 			// S is the s argument value.
 			S string
+			// PipelinesFilter is the pipelinesFilter argument value.
+			PipelinesFilter processing.PipelinesFilter
 		}
 		// ListPipelines holds details about calls to the ListPipelines method.
 		ListPipelines []struct {
@@ -114,19 +116,21 @@ func (mock *StoreMock) CreatePipelineCalls() []struct {
 }
 
 // GetPipeline calls GetPipelineFunc.
-func (mock *StoreMock) GetPipeline(s string) (*processing.Pipeline, error) {
+func (mock *StoreMock) GetPipeline(s string, pipelinesFilter processing.PipelinesFilter) (*processing.Pipeline, error) {
 	if mock.GetPipelineFunc == nil {
 		panic("StoreMock.GetPipelineFunc: method is nil but Store.GetPipeline was just called")
 	}
 	callInfo := struct {
-		S string
+		S               string
+		PipelinesFilter processing.PipelinesFilter
 	}{
-		S: s,
+		S:               s,
+		PipelinesFilter: pipelinesFilter,
 	}
 	mock.lockGetPipeline.Lock()
 	mock.calls.GetPipeline = append(mock.calls.GetPipeline, callInfo)
 	mock.lockGetPipeline.Unlock()
-	return mock.GetPipelineFunc(s)
+	return mock.GetPipelineFunc(s, pipelinesFilter)
 }
 
 // GetPipelineCalls gets all the calls that were made to GetPipeline.
@@ -134,10 +138,12 @@ func (mock *StoreMock) GetPipeline(s string) (*processing.Pipeline, error) {
 //
 //	len(mockedStore.GetPipelineCalls())
 func (mock *StoreMock) GetPipelineCalls() []struct {
-	S string
+	S               string
+	PipelinesFilter processing.PipelinesFilter
 } {
 	var calls []struct {
-		S string
+		S               string
+		PipelinesFilter processing.PipelinesFilter
 	}
 	mock.lockGetPipeline.RLock()
 	calls = mock.calls.GetPipeline

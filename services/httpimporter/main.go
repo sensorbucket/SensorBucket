@@ -14,6 +14,7 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/health"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/httpimporter/service"
@@ -25,6 +26,7 @@ var (
 	AMQP_HOST       = env.Could("AMQP_HOST", "amqp://guest:guest@localhost/")
 	AMQP_XCHG       = env.Could("AMQP_XCHG", "ingress")
 	AMQP_XCHG_TOPIC = env.Could("AMQP_XCHG_TOPIC", "ingress.httpimporter")
+	AUTH_JWKS_URL   = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
 
 	ErrInvalidUUID = web.NewError(
 		http.StatusBadRequest,
@@ -43,6 +45,11 @@ func Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
+	stopProfiler, err := web.RunProfiler()
+	if err != nil {
+		fmt.Printf("could not setup profiler server: %s\n", err)
+	}
+
 	// Create AMQP Message Queue
 	mqConn := mq.NewConnection(AMQP_HOST)
 	go mqConn.Start()
@@ -51,7 +58,8 @@ func Run() error {
 	log.Printf("AMQP Publisher started...\n")
 
 	// Create http importer service
-	svc := service.New(publisher)
+	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
+	svc := service.New(publisher, jwks)
 
 	// Setup HTTP
 	srv := &http.Server{
@@ -82,7 +90,6 @@ func Run() error {
 		}
 	}()
 
-	var err error
 	select {
 	case <-ctx.Done():
 	case err = <-errC:
@@ -97,6 +104,7 @@ func Run() error {
 	if err := shutdownHealthEndpoint(ctxTO); err != nil {
 		log.Printf("Error shutting down Health Server: %v\n", err)
 	}
+	stopProfiler(ctxTO)
 
 	return err
 }

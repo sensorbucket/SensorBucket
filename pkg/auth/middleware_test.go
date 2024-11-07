@@ -17,6 +17,9 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"sensorbucket.nl/sensorbucket/pkg/api"
 )
 
 // test jwks is unreachable
@@ -42,7 +45,7 @@ func TestAuthenticateWellKnownUnreachable(t *testing.T) {
 			"READ_DEVICES",
 			"READ_API_KEYS",
 		},
-		"uid": "00000000-0000-0000-0000-000000000000",
+		"sub": "00000000-0000-0000-0000-000000000000",
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
 	})
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -82,9 +85,8 @@ func TestProtectAndAuthenticatePassClaimsToNext(t *testing.T) {
 	s.Handle("/", auth(protect(next)))
 
 	req, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	rr := httptest.NewRecorder()
 	token := createToken(jwt.MapClaims{
 		"tid": 11,
@@ -92,7 +94,7 @@ func TestProtectAndAuthenticatePassClaimsToNext(t *testing.T) {
 			"READ_DEVICES",
 			"READ_API_KEYS",
 		},
-		"uid": "00000000-0000-0000-0000-000000000000",
+		"sub": "00000000-0000-0000-0000-000000000000",
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
 	})
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -152,7 +154,7 @@ func TestProtect(t *testing.T) {
 			expectedStatusCode: 401,
 			expectedNextCalls:  0,
 		},
-		"uid is wrong type": {
+		"sub is wrong type": {
 			values: map[ctxKey]any{
 				ctxTenantID:    int64(13),
 				ctxPermissions: Permissions{READ_API_KEYS},
@@ -175,9 +177,8 @@ func TestProtect(t *testing.T) {
 	for scene, cfg := range scenarios {
 		t.Run(scene, func(t *testing.T) {
 			req, err := http.NewRequest("GET", "/", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
+
 			rr := httptest.NewRecorder()
 			ctx := createTestContext(context.Background(), cfg.values)
 
@@ -233,7 +234,7 @@ func TestAuthenticate(t *testing.T) {
 						"READ_DEVICES",
 						"READ_API_KEYS",
 					},
-					"uid": "00000000-0000-0000-0000-000000000000",
+					"sub": "00000000-0000-0000-0000-000000000000",
 					"exp": in24Hours,
 				},
 			)),
@@ -252,7 +253,7 @@ func TestAuthenticate(t *testing.T) {
 						"READ_API_KEYS",
 						"DOES_NOT_EXIST",
 					},
-					"uid": "00000000-0000-0000-0000-000000000000",
+					"sub": "00000000-0000-0000-0000-000000000000",
 					"exp": in24Hours,
 				},
 			)),
@@ -270,7 +271,7 @@ func TestAuthenticate(t *testing.T) {
 			authHeader: fmt.Sprintf("Bearer %s", createToken(
 				jwt.MapClaims{
 					"tid": 11,
-					"uid": "00000000-0000-0000-0000-000000000000",
+					"sub": "00000000-0000-0000-0000-000000000000",
 					"exp": in24Hours,
 				},
 			)),
@@ -287,7 +288,7 @@ func TestAuthenticate(t *testing.T) {
 						"READ_DEVICES",
 						"READ_API_KEYS",
 					},
-					"uid": "00000000-0000-0000-0000-000000000000",
+					"sub": "00000000-0000-0000-0000-000000000000",
 					"exp": time.Now().Add(-time.Hour * 24).Unix(),
 				},
 			)),
@@ -351,6 +352,25 @@ func TestAuthenticate(t *testing.T) {
 			assert.Len(t, next.ServeHTTPCalls(), cfg.expectedNextCalls)
 		})
 	}
+}
+
+func TestForwardRequestAuthentication(t *testing.T) {
+	req, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer ExpectedStringHere")
+	rr := httptest.NewRecorder()
+	handler := &HandlerMock{
+		ServeHTTPFunc: func(w http.ResponseWriter, r *http.Request) {
+		},
+	}
+
+	ForwardRequestAuthentication()(handler).ServeHTTP(rr, req)
+
+	require.Len(t, handler.calls.ServeHTTP, 1)
+	reqContext := handler.calls.ServeHTTP[0].Request.Context()
+	assert.Equal(t, "ExpectedStringHere", reqContext.Value(api.ContextAccessToken))
 }
 
 func jsonPrivateKey() any {

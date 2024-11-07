@@ -1,0 +1,59 @@
+{% code
+type TenantSwitchingPage struct {
+    Base
+    Tenants []TenantView
+    SuccessURL string
+}
+
+type TenantView struct {
+    ID int64
+    Name string
+    ImageURL string
+}
+%}
+
+{% func (p *TenantSwitchingPage) Body() %}
+    {%= p.Base.FlashMessagesContainer.Render() %}
+    <div class="text-center py-2">
+        <h2>Switch to tenant</h2>
+        <span class="text-sm font-bold" id="to-tenant-name">&nbsp;</span>
+    </div>
+    <form action="{%s U("/switch") %}" method="post" class="space-y-6">
+        {%= p.renderCSRFToken() %}
+        <input type="hidden" name="tenantName" id="tenantName" value="">
+        {% if p.SuccessURL != "" %}
+        <input type="hidden" name="successURL" value={%s p.SuccessURL %}>
+        {% endif %}
+        {%= p.renderTenantList() %}
+        <button 
+            class="block w-full text-center p-2 border-2 border-secondary-500 text-secondary-500
+            transition-colors duration-150 hover:bg-secondary-500 hover:text-white"
+            type="submit"
+            >Switch tenant</button>
+    </form>
+{% endfunc %}
+
+{% func (p *TenantSwitchingPage) renderTenantList() %}
+    <ul class="flex flex-col max-h-[50vh] overflow-y-auto border-y">
+        {% for _, tenant := range p.Tenants %}
+            {%= renderTenantListEntry(tenant) %}
+        {% endfor %}
+    </ul>
+{% endfunc %}
+
+{% func renderTenantListEntry(t TenantView) %}
+    <li>
+        <label class="px-2 py-6 flex align-baseline gap-6 cursor-pointer hover:bg-gray-50">
+            <div class="w-1/3">
+            <img src={%s t.ImageURL %}>
+            </div>
+            <div class="w-2/3">
+                <h3 class="">{%s t.Name %}</h3>
+            </div>
+            <input type="radio" name="tenantID" value="{%dl t.ID %}" class="mt-1" 
+            _="on click set #to-tenant-name.innerHTML to '{%s t.Name %}'
+                then set #tenantName.value to '{%s t.Name %}'"
+            >
+        </label>
+    </li>
+{% endfunc %}

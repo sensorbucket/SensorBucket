@@ -1,0 +1,43 @@
+DefaultError = ["Redirect"]
+
+[Rules.Dashboard]
+Description = "Dashboard (sub)paths"
+Authenticators = ["CookieSession"]
+Mutators = ["Hydrate", "IDToken"]
+Path = "/dashboard<(/.*)?>"
+Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
+
+[Rules.TenantsAuthLogin]
+Description = "Login flow"
+Authenticators = ["Noop"]
+Mutators = ["Noop"]
+Path = "/tenants/auth/<login|logout|recovery|settings|error>"
+Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
+
+[Rules.TenantsSwitch]
+Description = "Switch tenants flow"
+Authenticators = ["CookieSession"]
+Mutators = ["Hydrate", "IDToken"]
+Path = "/tenants/switch"
+Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
+
+[Rules.TenantsAPIKeys]
+Description = "APIKeys UI"
+Authenticators = ["CookieSession"]
+Mutators = ["Hydrate", "IDToken"]
+Path = "/tenants/api-keys<(/.*)?>"
+Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
+
+[Rules.TenantsAuthCheck]
+Description = "Check auth token"
+Authenticators = ["APIKey", "CookieSession"]
+Mutators = ["Hydrate", "IDToken"]
+Path = "/tenants/auth"
+Methods = ["GET"]
+
+[Rules.TenantsPublicStatic]
+Description = "Static UI Files"
+Authenticators = ["Noop"]
+Mutators = ["Noop"]
+Path = "/tenants/static/<.*>"
+Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]

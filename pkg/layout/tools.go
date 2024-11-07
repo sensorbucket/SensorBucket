@@ -31,6 +31,7 @@ type SnackbarType int
 const (
 	Unknown SnackbarType = iota
 	Success
+	Warning
 	Error
 )
 

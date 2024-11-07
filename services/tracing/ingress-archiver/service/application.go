@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 )
 
 type Store interface {
@@ -32,8 +33,19 @@ func (a *Application) ArchiveIngressDTO(tracingID uuid.UUID, rawMessage []byte) 
 	return nil
 }
 
-type ArchiveFilters struct{}
+type ArchiveFilters struct {
+	TenantID int64
+}
 
 func (a *Application) ListIngresses(ctx context.Context, filters ArchiveFilters, p pagination.Request) (*pagination.Page[ArchivedIngressDTO], error) {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
+		return nil, err
+	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
+	filters.TenantID = tenantID
+
 	return a.store.List(filters, p)
 }

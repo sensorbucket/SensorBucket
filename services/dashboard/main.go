@@ -13,9 +13,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/ory/nosurf"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/layout"
 	"sensorbucket.nl/sensorbucket/services/dashboard/routes"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
 )
@@ -27,9 +31,12 @@ func main() {
 }
 
 var (
-	HTTP_ADDR = env.Could("HTTP_ADDR", ":3000")
-	HTTP_BASE = env.Could("HTTP_BASE", "")
-	SB_API    = env.Must("SB_API")
+	HTTP_ADDR     = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE     = env.Could("HTTP_BASE", "")
+	AUTH_JWKS_URL = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
+	EP_CORE       = env.Must("EP_CORE")
+	EP_WORKERS    = env.Must("EP_WORKERS")
+	EP_TRACING    = env.Must("EP_TRACING")
 )
 
 //go:embed static/*
@@ -40,8 +47,19 @@ func Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
+	stopProfiler, err := web.RunProfiler()
+	if err != nil {
+		fmt.Printf("could not setup profiler server: %s\n", err)
+	}
+
 	router := chi.NewRouter()
-	router.Use(middleware.Logger)
+	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
+	router.Use(
+		middleware.Logger,
+		auth.ForwardRequestAuthentication(),
+		auth.Authenticate(jwks),
+		auth.Protect(),
+	)
 
 	var baseURL *url.URL
 	if HTTP_BASE != "" {
@@ -49,33 +67,9 @@ func Run() error {
 		views.SetBase(baseURL)
 	}
 
-	// Middleware to pass on basic auth to the client api
-	router.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			user, pass, ok := r.BasicAuth()
-			if ok {
-				r = r.WithContext(context.WithValue(
-					r.Context(), api.ContextBasicAuth, api.BasicAuth{
-						UserName: user,
-						Password: pass,
-					}))
-			}
-			next.ServeHTTP(w, r)
-		})
-	})
-
 	// Serve static files
 	fileServer := http.FileServer(http.FS(staticFS))
 	router.Handle("/static/*", fileServer)
-
-	sbURL, err := url.Parse(SB_API)
-	if err != nil {
-		return fmt.Errorf("could not parse SB_API url: %w", err)
-	}
-	cfg := api.NewConfiguration()
-	cfg.Scheme = sbURL.Scheme
-	cfg.Host = sbURL.Host
-	apiClient := api.NewAPIClient(cfg)
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		u := "/overview"
@@ -84,15 +78,33 @@ func Run() error {
 		}
 		http.Redirect(w, r, u, http.StatusFound)
 	})
-	router.Mount("/overview", routes.CreateOverviewPageHandler(apiClient))
-	router.Mount("/ingress", routes.CreateIngressPageHandler(apiClient))
-	router.Mount("/workers", routes.CreateWorkerPageHandler(apiClient))
-	router.Mount("/pipelines", routes.CreatePipelinePageHandler(apiClient))
+	router.Mount("/overview", routes.CreateOverviewPageHandler(
+		createAPIClient(EP_CORE),
+	))
+	router.Mount("/ingress", routes.CreateIngressPageHandler(
+		createAPIClient(EP_CORE),
+		createAPIClient(EP_TRACING),
+		createAPIClient(EP_WORKERS),
+	))
+	router.Mount("/workers", routes.CreateWorkerPageHandler(
+		createAPIClient(EP_WORKERS),
+	))
+	router.Mount("/pipelines", routes.CreatePipelinePageHandler(
+		createAPIClient(EP_WORKERS),
+		createAPIClient(EP_CORE),
+	))
+	csrfWrappedHandler := nosurf.New(router)
+	csrfWrappedHandler.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("nosurf.Reason(r): %v\n", nosurf.Reason(r))
+		layout.WithSnackbarError(w, "CSRF Token was invalid, try reloading the page")
+		//nolint
+		w.Write([]byte("A CSRF error occured. Reload the previous page and try again"))
+	}))
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
-		Handler:      router,
+		Handler:      csrfWrappedHandler,
 	}
 
 	go func() {
@@ -115,6 +127,17 @@ func Run() error {
 	if err := srv.Shutdown(ctxTO); err != nil {
 		fmt.Printf("could not gracefully shutdown http server: %s\n", err)
 	}
+	stopProfiler(ctxTO)
 
 	return err
+}
+
+func createAPIClient(baseurl string) *api.APIClient {
+	cfg := api.NewConfiguration()
+	cfg.Servers = api.ServerConfigurations{
+		{
+			URL: baseurl,
+		},
+	}
+	return api.NewAPIClient(cfg)
 }

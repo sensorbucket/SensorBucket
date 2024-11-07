@@ -14,11 +14,14 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+	"github.com/ory/nosurf"
 
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	tenantsinfra "sensorbucket.nl/sensorbucket/services/tenants/infrastructure"
 	"sensorbucket.nl/sensorbucket/services/tenants/migrations"
+	"sensorbucket.nl/sensorbucket/services/tenants/sessions"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 	tenantstransports "sensorbucket.nl/sensorbucket/services/tenants/transports"
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui"
@@ -30,7 +33,7 @@ var (
 	HTTP_WEBUI_ADDR  = env.Could("HTTP_WEBUI_ADDR", ":3001")
 	HTTP_WEBUI_BASE  = env.Could("HTTP_WEBUI_BASE", "http://localhost:3000/auth")
 	KRATOS_ADMIN_API = env.Could("KRATOS_ADMIN_API", "http://kratos:4434/")
-	SB_API           = env.Must("SB_API")
+	AUTH_JWKS_URL    = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
 	DB_DSN           = env.Must("DB_DSN")
 )
 
@@ -51,11 +54,15 @@ func Run() error {
 		panic(err)
 	}
 
+	stopProfiler, err := web.RunProfiler()
+	if err != nil {
+		fmt.Printf("could not setup profiler server: %s\n", err)
+	}
 	stopAPI, err := runAPI(errC, db)
 	if err != nil {
 		return fmt.Errorf("could not setup API server: %w", err)
 	}
-	stopWebUI, err := runWebUI(errC)
+	stopWebUI, err := runWebUI(errC, db)
 	if err != nil {
 		return fmt.Errorf("could not setup WebUI server: %w", err)
 	}
@@ -70,6 +77,7 @@ func Run() error {
 
 	stopAPI(ctxTO)
 	stopWebUI(ctxTO)
+	stopProfiler(ctxTO)
 
 	return err
 }
@@ -83,13 +91,18 @@ func runAPI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 	// Setup Tenants service
 	tenantStore := tenantsinfra.NewTenantsStorePSQL(db)
 	kratosAdmin := tenantsinfra.NewKratosUserValidator(KRATOS_ADMIN_API)
-	tenantSvc := tenants.NewTenantService(tenantStore, kratosAdmin)
-	_ = tenantstransports.NewTenantsHTTP(r, tenantSvc, HTTP_API_BASE)
+	tenantSVC := tenants.NewTenantService(tenantStore, kratosAdmin)
+	_ = tenantstransports.NewTenantsHTTP(r, tenantSVC, HTTP_API_BASE)
 
 	// Setup API keys service
 	apiKeyStore := tenantsinfra.NewAPIKeyStorePSQL(db)
-	apiKeySvc := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
-	_ = tenantstransports.NewAPIKeysHTTP(r, apiKeySvc, HTTP_API_BASE)
+	apiKeySVC := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
+	_ = tenantstransports.NewAPIKeysHTTP(r, apiKeySVC, HTTP_API_BASE)
+
+	// Setup oathkeeper endpoint
+	userPreferences := sessions.NewUserPreferenceService(tenantStore)
+	oathkeeperTransport := tenantstransports.NewOathkeeperEndpoint(userPreferences, tenantSVC)
+	r.Mount("/oathkeeper", oathkeeperTransport)
 
 	// Run the HTTP Server
 	srv := &http.Server{
@@ -113,17 +126,39 @@ func runAPI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 	}, nil
 }
 
-func runWebUI(errC chan<- error) (func(context.Context), error) {
-	ui, err := webui.New(HTTP_WEBUI_BASE, SB_API)
+func runWebUI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
+	// Setup Tenants service
+	tenantStore := tenantsinfra.NewTenantsStorePSQL(db)
+	kratosAdmin := tenantsinfra.NewKratosUserValidator(KRATOS_ADMIN_API)
+	tenantSvc := tenants.NewTenantService(tenantStore, kratosAdmin)
+	userPreferences := sessions.NewUserPreferenceService(tenantStore)
+	apiKeyStore := tenantsinfra.NewAPIKeyStorePSQL(db)
+	apiKeySvc := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
+
+	ui, err := webui.New(
+		HTTP_WEBUI_BASE,
+		AUTH_JWKS_URL,
+		tenantSvc,
+		apiKeySvc,
+		userPreferences,
+	)
 	if err != nil {
 		errC <- err
 		return noopCleanup, nil
 	}
+
+	httpHandler := nosurf.New(ui)
+	httpHandler.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("nosurf.Reason(r): %v\n", nosurf.Reason(r))
+		w.Header().Add("HX-Trigger", `{"error":"CSRF token was invalid"}`)
+		//nolint
+		w.Write([]byte("A CSRF error occured. Reload the previous page and try again"))
+	}))
 	srv := &http.Server{
 		Addr:         HTTP_WEBUI_ADDR,
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
-		Handler:      ui,
+		Handler:      httpHandler,
 	}
 
 	go func() {

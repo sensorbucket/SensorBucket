@@ -5,7 +5,8 @@
 
     forward_auth oathkeeper:4456 {
         uri /decisions
-        copy_headers Authorization
+        copy_headers authorization
+        copy_headers accept
     }
 
     handle_path /.ory/* {
@@ -55,6 +56,11 @@
         reverse_proxy mail-server:8025
     }
 
+    handle_path /pprof/tenants/* {
+        reverse_proxy tenants:3100
+    }
+
+    redir / /dashboard/
     redir /dashboard /dashboard/
     handle_path /dashboard/* {
         reverse_proxy dashboard:3000

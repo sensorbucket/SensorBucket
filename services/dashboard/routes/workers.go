@@ -13,14 +13,14 @@ import (
 )
 
 type WorkerPageHandler struct {
-	router chi.Router
-	client *api.APIClient
+	router        chi.Router
+	workersClient *api.APIClient
 }
 
-func CreateWorkerPageHandler(client *api.APIClient) *WorkerPageHandler {
+func CreateWorkerPageHandler(workers *api.APIClient) *WorkerPageHandler {
 	handler := &WorkerPageHandler{
-		router: chi.NewRouter(),
-		client: client,
+		router:        chi.NewRouter(),
+		workersClient: workers,
 	}
 	handler.SetupRoutes(handler.router)
 	return handler
@@ -41,8 +41,10 @@ func (h *WorkerPageHandler) SetupRoutes(r chi.Router) {
 
 func (h *WorkerPageHandler) listWorkers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		page := &views.WorkerListPage{}
-		res, _, err := h.client.WorkersApi.ListWorkers(r.Context()).Execute()
+		page := &views.WorkerListPage{
+			BasePage: createBasePage(r),
+		}
+		res, _, err := h.workersClient.WorkersApi.ListWorkers(r.Context()).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -51,9 +53,7 @@ func (h *WorkerPageHandler) listWorkers() http.HandlerFunc {
 		page.WorkersNextPage = res.Links.GetNext()
 
 		if res.Links.GetNext() != "" {
-			if err == nil {
-				page.WorkersNextPage = views.U("/workers/table?cursor=" + getCursor(res.Links.GetNext()))
-			}
+			page.WorkersNextPage = views.U("/workers/table?cursor=%s", getCursor(res.Links.GetNext()))
 		}
 
 		fmt.Println("Cursor", res.Links.GetNext())
@@ -68,7 +68,7 @@ func (h *WorkerPageHandler) listWorkers() http.HandlerFunc {
 func (h *WorkerPageHandler) workersTable() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("get table")
-		req := h.client.WorkersApi.ListWorkers(r.Context())
+		req := h.workersClient.WorkersApi.ListWorkers(r.Context())
 		if r.URL.Query().Has("cursor") {
 			req = req.Cursor(r.URL.Query().Get("cursor"))
 		}
@@ -80,7 +80,7 @@ func (h *WorkerPageHandler) workersTable() http.HandlerFunc {
 
 		nextCursor := ""
 		if res.Links.GetNext() != "" {
-			nextCursor = views.U("/workers/table?cursor=" + getCursor(res.Links.GetNext()))
+			nextCursor = views.U("/workers/table?cursor=%s", getCursor(res.Links.GetNext()))
 		}
 
 		if isHX(r) {
@@ -91,14 +91,16 @@ func (h *WorkerPageHandler) workersTable() http.HandlerFunc {
 
 func (h *WorkerPageHandler) workerDetails() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		page := &views.WorkerEditorPage{}
+		page := &views.WorkerEditorPage{
+			BasePage: createBasePage(r),
+		}
 		workerID := chi.URLParam(r, "id")
-		res, _, err := h.client.WorkersApi.GetWorker(r.Context(), workerID).Execute()
+		res, _, err := h.workersClient.WorkersApi.GetWorker(r.Context(), workerID).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
-		resUC, _, err := h.client.WorkersApi.GetWorkerUserCode(r.Context(), workerID).Execute()
+		resUC, _, err := h.workersClient.WorkersApi.GetWorkerUserCode(r.Context(), workerID).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -140,7 +142,7 @@ func (h *WorkerPageHandler) updateWorker() http.HandlerFunc {
 			dto.UserCode = &userCode
 		}
 
-		_, _, err := h.client.WorkersApi.UpdateWorker(r.Context(), workerID).UpdateWorkerRequest(dto).Execute()
+		_, _, err := h.workersClient.WorkersApi.UpdateWorker(r.Context(), workerID).UpdateWorkerRequest(dto).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -152,12 +154,13 @@ func (h *WorkerPageHandler) updateWorker() http.HandlerFunc {
 
 func (h *WorkerPageHandler) createWorkerPage() http.HandlerFunc {
 	const defaultUserCode = `
-def process(payload, msg):
-    return payload
+def process(msg):
+    return msg
     `
 	ucb64 := base64.StdEncoding.EncodeToString([]byte(defaultUserCode))
 	return func(w http.ResponseWriter, r *http.Request) {
 		page := &views.WorkerEditorPage{
+			BasePage: createBasePage(r),
 			UserCode: ucb64,
 		}
 		if isHX(r) {
@@ -179,7 +182,7 @@ func (h *WorkerPageHandler) createWorker() http.HandlerFunc {
 		dto.SetUserCode(r.FormValue("userCode"))
 		dto.SetDescription(r.FormValue("description"))
 
-		_, _, err := h.client.WorkersApi.CreateWorker(r.Context()).CreateUserWorkerRequest(dto).Execute()
+		_, _, err := h.workersClient.WorkersApi.CreateWorker(r.Context()).CreateUserWorkerRequest(dto).Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return

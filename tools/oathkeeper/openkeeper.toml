@@ -1,0 +1,24 @@
+Target = "./generated_rules.json"
+
+[Oathkeeper.Authenticators.CookieSession]
+Handler = "cookie_session"
+[Oathkeeper.Authenticators.APIKey]
+Handler = "bearer_token"
+[Oathkeeper.Authenticators.Noop]
+Handler = "noop"
+[Oathkeeper.Mutators.Hydrate]
+Handler = "hydrator"
+[Oathkeeper.Mutators.IDToken]
+Handler = "id_token"
+[Oathkeeper.Mutators.Noop]
+Handler = "noop"
+[Oathkeeper.Errors.Redirect]
+Handler = "redirect"
+ 
+[OpenAPI3.OASAPI]
+File = "bundled_openapi.yaml"
+Domains = ["https://acc.sensorbucket.nl/api"]
+
+[TOML.Manual]
+File = "manual_rules.toml"
+Domains = ["https://acc.sensorbucket.nl"]

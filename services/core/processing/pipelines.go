@@ -39,6 +39,7 @@ func StrToStatus(str string) (PipelineStatus, error) {
 
 type Pipeline struct {
 	ID               string         `json:"id"`
+	TenantID         int64          `json:"tenant_id"`
 	Description      string         `json:"description"`
 	Status           PipelineStatus `json:"status"`
 	Steps            []string       `json:"steps"`
@@ -46,9 +47,10 @@ type Pipeline struct {
 	CreatedAt        time.Time      `json:"created_at"`
 }
 
-func NewPipeline(description string, steps []string) (*Pipeline, error) {
+func NewPipeline(tenantID int64, description string, steps []string) (*Pipeline, error) {
 	p := &Pipeline{
 		ID:          uuid.Must(uuid.NewRandom()).String(),
+		TenantID:    tenantID,
 		Description: description,
 		Status:      PipelineActive,
 		CreatedAt:   time.Now(),

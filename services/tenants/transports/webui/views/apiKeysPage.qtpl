@@ -1,9 +1,8 @@
 {% import "time" %}
 {% import "strings" %}
-{% import "sensorbucket.nl/sensorbucket/internal/flash_messages" %}
 {% func (p *APIKeysPage) Body() %}
     <section>
-    {%= p.FlashMessagesContainer.Render() %}
+    {%= p.Base.FlashMessagesContainer.Render() %}
     <header class="w-full flex items-center justify-between border-b py-2 px-4 text-sm text-slate-700">
         <section>
             API Keys
@@ -69,13 +68,9 @@
         {%s strings.Join(key.Permissions, ", ") %}
     </td>
     <td class="px-4 h-10 border-b w-[1em] max-w-[1em]">
-        <button hx-confirm="Are you sure you want to revoke API key with name {%s key.Name %}?"
-            hx-delete="{%s U("/api-keys/revoke/%d", key.ID) %}" hx-trigger="click once"
-            hx-target="#flash-messages"
-            hx-swap="innerHTML"
-            class="float-right text-xs bg-red-400 hover:bg-red-500 text-white border border-red-500 rounded px-2 py-1">
-            Revoke
-        </button>
+        <a href="{%s U("/api-keys/revoke/%d", key.ID) %}"
+            class="float-right text-xs bg-red-400 hover:bg-red-500 text-white border border-red-500 rounded px-2 py-1"
+        >Revoke</a>
     </td>
 </tr>
 {% endfor %}
@@ -97,7 +92,6 @@
 {% code
 type APIKeysPage struct {
 Base
-flash_messages.FlashMessagesContainer
 Tenants []TenantInfo
 TenantsNextPage string
 }

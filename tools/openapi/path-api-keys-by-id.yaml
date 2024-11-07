@@ -1,3 +1,32 @@
+get:
+  operationId: GetAPIKey
+  summary: Get an API Key by ID
+  description: |
+    Get an API Key by ID
+  parameters: 
+    - name: api_key_id
+      description: The identifier of the API key
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+  tags: ["APIKeys"]
+  responses:
+    '200':
+      description: Fetched API key
+      content:
+        application/json:
+          schema:
+            $ref: "schemas.yaml#/apiKey"
+    '400':
+      $ref: 'responses.yaml#/400'
+    '500':
+      $ref: './responses.yaml#/500'
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
 delete:
   tags: ['APIKeys']
   operationId: RevokeApiKey

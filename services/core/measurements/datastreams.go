@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"sensorbucket.nl/sensorbucket/internal/web"
 )
 
@@ -16,7 +17,7 @@ var (
 )
 
 type DatastreamFinderCreater interface {
-	FindDatastream(sensorID int64, observedProperty string) (*Datastream, error)
+	FindDatastream(tenantID, sensorID int64, observedProperty string) (*Datastream, error)
 	CreateDatastream(*Datastream) error
 }
 
@@ -27,9 +28,10 @@ type Datastream struct {
 	ObservedProperty  string    `json:"observed_property" db:"observed_property"`
 	UnitOfMeasurement string    `json:"unit_of_measurement" db:"unit_of_measurement"`
 	CreatedAt         time.Time `json:"created_at" db:"created_at"`
+	TenantID          int64     `json:"-"`
 }
 
-func newDatastream(sensorID int64, obs, uom string) (*Datastream, error) {
+func newDatastream(tenantID, sensorID int64, obs, uom string) (*Datastream, error) {
 	// TODO: Check UoM conforms to UCUM
 	if uom == "" || false {
 		return nil, ErrUoMInvalid
@@ -39,6 +41,7 @@ func newDatastream(sensorID int64, obs, uom string) (*Datastream, error) {
 	}
 	return &Datastream{
 		ID:                uuid.New(),
+		TenantID:          tenantID,
 		Description:       "",
 		SensorID:          sensorID,
 		ObservedProperty:  obs,
@@ -47,10 +50,10 @@ func newDatastream(sensorID int64, obs, uom string) (*Datastream, error) {
 	}, nil
 }
 
-func FindOrCreateDatastream(sensorID int64, obs, uom string, store DatastreamFinderCreater) (*Datastream, error) {
-	ds, err := store.FindDatastream(sensorID, obs)
+func FindOrCreateDatastream(tenantID, sensorID int64, obs, uom string, store DatastreamFinderCreater) (*Datastream, error) {
+	ds, err := store.FindDatastream(tenantID, sensorID, obs)
 	if errors.Is(err, ErrDatastreamNotFound) {
-		ds, err := newDatastream(sensorID, obs, uom)
+		ds, err := newDatastream(tenantID, sensorID, obs, uom)
 		if err != nil {
 			return nil, err
 		}

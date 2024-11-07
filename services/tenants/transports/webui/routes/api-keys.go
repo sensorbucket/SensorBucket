@@ -1,39 +1,48 @@
 package routes
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ory/nosurf"
 	"github.com/samber/lo"
 
 	"sensorbucket.nl/sensorbucket/internal/flash_messages"
-	"sensorbucket.nl/sensorbucket/pkg/api"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/layout"
+	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
+	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 	"sensorbucket.nl/sensorbucket/services/tenants/transports/webui/views"
 )
 
 type APIKeysPageHandler struct {
-	router chi.Router
-	client *api.APIClient
+	router  chi.Router
+	apiKeys *apikeys.Service
+	tenants *tenants.TenantService
 }
 
-func SetupAPIKeyRoutes(client *api.APIClient) *APIKeysPageHandler {
+func SetupAPIKeyRoutes(apiKeys *apikeys.Service, tenants *tenants.TenantService) *APIKeysPageHandler {
 	handler := &APIKeysPageHandler{
-		router: chi.NewRouter(),
-		client: client,
+		router:  chi.NewRouter(),
+		apiKeys: apiKeys,
+		tenants: tenants,
 	}
 	handler.router.With(flash_messages.ExtractFlashMessage).Get("/", handler.apiKeysListPage())
 	handler.router.With(flash_messages.ExtractFlashMessage).Get("/create", handler.createAPIKeyView())
-	handler.router.Delete("/revoke/{api_key_id}", handler.revokeAPIKey())
 	handler.router.Get("/table", handler.apiKeysGetTableRows())
 	handler.router.Post("/create", handler.createAPIKey())
+
+	handler.router.Route("/revoke/{api_key_id}", func(r chi.Router) {
+		r.Get("/", handler.revokeAPIKey())
+		r.Delete("/", handler.revokeAPIKey())
+		// Post also here since html forms can only GET/POST...
+		r.Post("/", handler.revokeAPIKey())
+	})
 	return handler
 }
 
@@ -43,21 +52,26 @@ func (h APIKeysPageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *APIKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := h.client.ApiKeysApi.ListApiKeys(r.Context())
-		if r.URL.Query().Has("cursor") {
-			req = req.Cursor(r.URL.Query().Get("cursor"))
-		} else {
-			// If no cursor is given, the initial state must be derived from the url params
-			req = req.Limit(15)
-			tenantId := r.URL.Query().Get("tenant_id")
-			id, err := strconv.ParseInt(tenantId, 10, 64)
+		var tenantIDS []int64
+		query := r.URL.Query()
+		for _, tenantIDString := range query["tenant_id"] {
+			tenantID, err := strconv.ParseInt(tenantIDString, 10, 64)
 			if err != nil {
 				flash_messages.WriteErrorFlashMessage(w, r, "tenant_id must be a valid number")
 				return
 			}
-			req = req.TenantId(id)
+			tenantIDS = append(tenantIDS, tenantID)
 		}
-		res, _, err := req.Execute()
+		apiKeyPage, err := h.apiKeys.ListAPIKeys(
+			r.Context(),
+			apikeys.Filter{
+				TenantID: tenantIDS,
+			},
+			pagination.Request{
+				Cursor: r.URL.Query().Get("cursor"),
+				Limit:  15,
+			},
+		)
 		if err != nil {
 			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
 				log.Printf("list api key for table result api unexpected status code: %s\n", err)
@@ -70,15 +84,15 @@ func (h *APIKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 		}
 
 		nextPage := ""
-		if res.Links.GetNext() != "" {
-			nextPage = views.U("/api-keys/table?cursor=" + getCursor(res.Links.GetNext()))
+		if apiKeyPage.Cursor != "" {
+			nextPage = views.U("/api-keys/table?cursor=%s", apiKeyPage.Cursor)
 		}
 
 		viewKeys := []views.APIKey{}
-		for _, key := range res.Data {
+		for _, key := range apiKeyPage.Data {
 			viewKeys = append(viewKeys, views.APIKey{
-				ID:             int(key.Id),
-				TenantID:       int(key.TenantId),
+				ID:             int(key.ID),
+				TenantID:       int(key.TenantID),
 				Created:        key.Created,
 				ExpirationDate: key.ExpirationDate,
 				Name:           key.Name,
@@ -91,7 +105,11 @@ func (h *APIKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create the page and ensure the page is written in any circumstance
-		page := &views.APIKeysPage{}
+		page := &views.APIKeysPage{
+			Base: views.Base{
+				CSRFToken: nosurf.Token(r),
+			},
+		}
 		defer func() {
 			flash_messages.AddContextFlashMessages(r, &page.FlashMessagesContainer)
 
@@ -104,9 +122,13 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 		}()
 
 		// The initial page starts with an overview of different tenants
-		req := h.client.TenantsApi.ListTenants(r.Context())
-		req = req.State(1) // State Active
-		list, resp, err := req.Execute()
+		tenantPage, err := h.tenants.ListTenants(
+			r.Context(),
+			tenants.Filter{
+				State: []tenants.State{1},
+			},
+			pagination.Request{},
+		)
 		if err != nil {
 			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
 				log.Printf("list api key result api unexpected status code: %s\n", err)
@@ -117,34 +139,55 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 			}
 			return
 		}
-		if resp.StatusCode != http.StatusOK {
-			log.Printf("api key api returned unexpected status code\n")
-			flash_messages.AddErrorFlashMessageToPage(r, &page.FlashMessagesContainer, "An unexpected error occurred in the API")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
 
 		// Convert the tenants so they can be displayed in the view
-		page.Tenants = toViewTenants(list.Data)
+		page.Tenants = toViewTenants(tenantPage.Data)
 	}
 }
 
 func (h *APIKeysPageHandler) revokeAPIKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		apiKeyId := chi.URLParam(r, "api_key_id")
-		if apiKeyId == "" {
+		apiKeyIDStr := chi.URLParam(r, "api_key_id")
+		if apiKeyIDStr == "" {
 			flash_messages.AddErrorFlashMessage(w, r, "api_key_id must be given")
 			w.WriteHeader(http.StatusBadRequest)
+			http.Redirect(w, r, views.U("/api-keys"), http.StatusSeeOther)
 			return
 		}
-		id, err := strconv.ParseInt(apiKeyId, 10, 64)
+		apiKeyID, err := strconv.ParseInt(apiKeyIDStr, 10, 64)
 		if err != nil {
 			flash_messages.AddErrorFlashMessage(w, r, "api_key_id must be a number")
 			w.WriteHeader(http.StatusBadRequest)
+			http.Redirect(w, r, views.U("/api-keys"), http.StatusSeeOther)
 			return
 		}
-		req := h.client.ApiKeysApi.RevokeApiKey(context.Background(), id)
-		resp, err := req.Execute()
+
+		if r.Method == http.MethodGet {
+			key, err := h.apiKeys.GetAPIKey(r.Context(), apiKeyID)
+			if err != nil {
+				flash_messages.AddErrorFlashMessage(w, r, "Could not get requested API Key")
+				w.Header().Set("HX-Redirect", "/tenants/api-keys")
+				http.Redirect(w, r, views.U("/api-keys"), http.StatusSeeOther)
+				return
+			}
+			tenant, err := h.tenants.GetTenantByID(r.Context(), key.TenantID)
+			if err != nil {
+				flash_messages.AddErrorFlashMessage(w, r, "Could not get requested API Key")
+				w.Header().Set("HX-Redirect", "/tenants/api-keys")
+				http.Redirect(w, r, views.U("/api-keys"), http.StatusSeeOther)
+				return
+			}
+			views.WriteLayout(w, &views.APIKeyDeletePage{
+				Base: views.Base{
+					CSRFToken: nosurf.Token(r),
+				},
+				KeyName:   key.Name,
+				KeyTenant: tenant.Name,
+			})
+			return
+		}
+
+		err = h.apiKeys.RevokeApiKey(r.Context(), apiKeyID)
 		if err != nil {
 			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
 				log.Printf("revoke api key result api unexpected status code: %s\n", err)
@@ -154,19 +197,14 @@ func (h *APIKeysPageHandler) revokeAPIKey() http.HandlerFunc {
 				flash_messages.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
 			}
 			w.Header().Set("HX-Redirect", "/tenants/api-keys")
-			return
-		}
-		if resp.StatusCode != http.StatusOK {
-			log.Printf("revoke api key result unexpected status code: %d\n", resp.StatusCode)
-			flash_messages.WriteErrorFlashMessage(w, r, "An unexpected error occurred")
-			w.WriteHeader(resp.StatusCode)
-			w.Header().Set("HX-Redirect", "/tenants/api-keys")
+			http.Redirect(w, r, views.U("/api-keys"), http.StatusSeeOther)
 			return
 		}
 
 		// Success, set the flash message and redirect
 		w.Header().Set("HX-Redirect", "/tenants/api-keys")
 		flash_messages.AddSuccessFlashMessage(w, r, "Succesfully deleted API key")
+		http.Redirect(w, r, views.U("/api-keys"), http.StatusSeeOther)
 	}
 }
 
@@ -178,10 +216,10 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 			return
 		}
 		name := r.FormValue("api-key-name")
-		expiry := r.FormValue("api-key-expiry")
+		expiryString := r.FormValue("api-key-expiry")
 		tenantId := r.FormValue("api-key-tenant")
-		permissions, ok := r.Form["api-key-permissions"]
-		if name == "" || tenantId == "" || !ok || len(permissions) == 0 {
+		permissionStrings, ok := r.Form["api-key-permissions"]
+		if name == "" || tenantId == "" || !ok || len(permissionStrings) == 0 {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -191,22 +229,26 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 			return
 		}
 
-		var dto api.CreateApiKeyRequest
-		dto.SetName(name)
-		dto.SetTenantId(id)
-		dto.SetPermissions(permissions)
-
 		// Expiry is an optional value
-		if expiry != "" {
-			parsedTime, err := time.Parse("2006-01-02", expiry)
+		var expiry *time.Time
+		if expiryString != "" {
+			parsedTime, err := time.Parse("2006-01-02", expiryString)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			dto.SetExpirationDate(parsedTime)
+			expiry = &parsedTime
 		}
 
-		apiKey, resp, err := h.client.ApiKeysApi.CreateApiKey(r.Context()).CreateApiKeyRequest(dto).Execute()
+		// Validate permissions
+		permissions, err := auth.StringsToPermissions(permissionStrings)
+		if err != nil {
+			log.Printf("create api key, invalid permission: %s\n", err)
+			flash_messages.AddErrorFlashMessage(w, r, err.Error())
+			return
+		}
+
+		apiKey, err := h.apiKeys.GenerateNewApiKey(r.Context(), name, id, permissions, expiry)
 		if err != nil {
 			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
 				log.Printf("create api key result api unexpected status code: %s\n", err)
@@ -218,17 +260,11 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
-		if resp.StatusCode != http.StatusCreated {
-			log.Printf("revoke api key result unexpected status code: %d\n", resp.StatusCode)
-			flash_messages.AddErrorFlashMessage(w, r, "An unexpected error occurred")
-			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
-			return
-		}
 
 		// Add the API key as a flash message
 		flash_messages.AddWarningFlashMessage(w, r,
 			"This is your API key. Please copy your API key immediately as it will not be shown again.",
-			apiKey.ApiKey,
+			apiKey,
 			true)
 
 		// Redirect to overview page so that it may be shown
@@ -239,9 +275,7 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Retrieve the tenants for the select box in the create view
-		req := h.client.TenantsApi.ListTenants(r.Context())
-		req = req.State(1) // State Active
-		list, resp, err := req.Execute()
+		tenantsPage, err := h.tenants.ListTenants(r.Context(), tenants.Filter{State: []tenants.State{tenants.Active}}, pagination.Request{})
 		if err != nil {
 			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
 				log.Printf("list api key result for create view api unexpected status code: %s\n", err)
@@ -253,12 +287,7 @@ func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
 			return
 		}
-		if resp.StatusCode != http.StatusOK {
-			log.Printf("api key list failed : %d\n", resp.StatusCode)
-			flash_messages.AddErrorFlashMessage(w, r, "An unexpected error occurred in the API")
-			http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
-			return
-		}
+
 		perms, err := toViewPermissions()
 		if err != nil {
 			log.Printf("error creating api key view, converting to view permissions: %s\n", err)
@@ -266,7 +295,10 @@ func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 			return
 		}
 		page := &views.APIKeysCreatePage{
-			Tenants:     toViewTenants(list.Data),
+			Base: views.Base{
+				CSRFToken: nosurf.Token(r),
+			},
+			Tenants:     toViewTenants(tenantsPage.Data),
 			Permissions: perms,
 		}
 		if layout.IsHX(r) {
@@ -376,24 +408,13 @@ func createAPIKeyViewPermissions() map[views.OrderedMapKey][]views.APIKeysPermis
 	}
 }
 
-func toViewTenants(tenants []api.Tenant) []views.TenantInfo {
+func toViewTenants(tenants []tenants.CreateTenantDTO) []views.TenantInfo {
 	viewTenants := []views.TenantInfo{}
 	for _, tenant := range tenants {
 		viewTenants = append(viewTenants, views.TenantInfo{
-			ID:   int(tenant.Id),
+			ID:   int(tenant.ID),
 			Name: tenant.Name,
 		})
 	}
 	return viewTenants
-}
-
-func getCursor(next string) string {
-	if next == "" {
-		return ""
-	}
-	u, err := url.Parse(next)
-	if err != nil {
-		return ""
-	}
-	return u.Query().Get("cursor")
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/authtest"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
 	seed "sensorbucket.nl/sensorbucket/services/core/devices/infra/test_seed"
@@ -37,7 +38,7 @@ func (s *SensorGroupStoreSuite) TestSensorGroupStoreSavesCorrect() {
 	t := s.T()
 	d1 := s.seedDevices[0]
 
-	group, err := devices.NewSensorGroup("test", "Some description")
+	group, err := devices.NewSensorGroup(authtest.DefaultTenantID, "test", "Some description")
 	assert.NoError(t, err)
 	s.NoError(group.Add(&d1.Sensors[0]))
 	s.NoError(group.Add(&d1.Sensors[1]))
@@ -54,61 +55,61 @@ func (s *SensorGroupStoreSuite) TestSensorGroupStoreSavesCorrect() {
 }
 
 func (s *SensorGroupStoreSuite) TestSensorGroupListGroups() {
-	sg1, err := devices.NewSensorGroup("sg1", "")
+	sg1, err := devices.NewSensorGroup(authtest.DefaultTenantID, "sg1", "")
 	require.NoError(s.T(), err)
-	sg2, err := devices.NewSensorGroup("sg2", "")
+	sg2, err := devices.NewSensorGroup(authtest.DefaultTenantID, "sg2", "")
 	require.NoError(s.T(), err)
-	sg3, err := devices.NewSensorGroup("sg3", "")
+	sg3, err := devices.NewSensorGroup(authtest.DefaultTenantID, "sg3", "")
 	require.NoError(s.T(), err)
 	require.NoError(s.T(), s.store.Save(sg1))
 	require.NoError(s.T(), s.store.Save(sg2))
 	require.NoError(s.T(), s.store.Save(sg3))
 
-	page, err := s.store.List(pagination.Request{})
+	page, err := s.store.List(authtest.DefaultTenantID, pagination.Request{})
 	assert.NoError(s.T(), err, "error listing sensor groups")
 
 	assert.Subset(s.T(), page.Data, []devices.SensorGroup{*sg1, *sg2, *sg3})
 }
 
 func (s *SensorGroupStoreSuite) TestSensorGroupFind() {
-	sg1, err := devices.NewSensorGroup("sg1", "")
+	sg1, err := devices.NewSensorGroup(authtest.DefaultTenantID, "sg1", "")
 	require.NoError(s.T(), err)
 	require.NoError(s.T(), s.store.Save(sg1))
 
 	// Act
-	sg1db, err := s.store.Get(sg1.ID)
+	sg1db, err := s.store.Get(sg1.ID, authtest.DefaultTenantID)
 	require.NoError(s.T(), err, "store find error")
 	assert.Equal(s.T(), sg1, sg1db)
 }
 
 func (s *SensorGroupStoreSuite) TestSensorGroupAddDeleteSensor() {
-	sg1, err := devices.NewSensorGroup("sg1", "")
+	sg1, err := devices.NewSensorGroup(authtest.DefaultTenantID, "sg1", "")
 	require.NoError(s.T(), err)
 	require.NoError(s.T(), s.store.Save(sg1))
 
 	s.NoError(sg1.Add(&s.seedDevices[0].Sensors[0]))
 	require.NoError(s.T(), s.store.Save(sg1))
 
-	sg1db, err := s.store.Get(sg1.ID)
+	sg1db, err := s.store.Get(sg1.ID, authtest.DefaultTenantID)
 	require.NoError(s.T(), err, "store get error")
 	assert.Equal(s.T(), sg1, sg1db)
 
 	s.NoError(sg1.Remove(s.seedDevices[0].Sensors[0].ID))
 	require.NoError(s.T(), s.store.Save(sg1))
 
-	sg1db, err = s.store.Get(sg1.ID)
+	sg1db, err = s.store.Get(sg1.ID, authtest.DefaultTenantID)
 	require.NoError(s.T(), err, "store get error")
 	assert.Equal(s.T(), sg1, sg1db)
 }
 
 func (s *SensorGroupStoreSuite) TestSensorGroupDelete() {
-	sg1, err := devices.NewSensorGroup("sg1", "")
+	sg1, err := devices.NewSensorGroup(authtest.DefaultTenantID, "sg1", "")
 	require.NoError(s.T(), err)
 	require.NoError(s.T(), s.store.Save(sg1))
 
 	err = s.store.Delete(sg1.ID)
 	require.NoError(s.T(), err, "store delete error")
 
-	_, err = s.store.Get(sg1.ID)
+	_, err = s.store.Get(sg1.ID, authtest.DefaultTenantID)
 	assert.ErrorIs(s.T(), err, devices.ErrSensorGroupNotFound, "Should not find sensor group")
 }

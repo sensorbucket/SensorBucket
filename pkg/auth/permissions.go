@@ -34,6 +34,10 @@ const (
 	READ_TENANTS  Permission = "READ_TENANTS"
 	WRITE_TENANTS Permission = "WRITE_TENANTS"
 
+	// Pipelines
+	READ_PIPELINES  Permission = "READ_PIPELINES"
+	WRITE_PIPELINES Permission = "WRITE_PIPELINES"
+
 	// Measurement permissions
 	READ_MEASUREMENTS  Permission = "READ_MEASUREMENTS"
 	WRITE_MEASUREMENTS Permission = "WRITE_MEASUREMENTS"
@@ -53,6 +57,8 @@ var allPermissions = Permissions{
 	WRITE_API_KEYS,
 	READ_TENANTS,
 	WRITE_TENANTS,
+	READ_PIPELINES,
+	WRITE_PIPELINES,
 	READ_MEASUREMENTS,
 	WRITE_MEASUREMENTS,
 	READ_TRACING,
@@ -76,7 +82,7 @@ func (this Permissions) Fulfills(that Permissions) error {
 	return nil
 }
 
-func stringToPermission(str string) (Permission, bool) {
+func SringToPermission(str string) (Permission, bool) {
 	p, ok := stringPermissionMap[str]
 	if !ok {
 		log.Printf("Tried converting non-existant string to permission: %s\n", str)
@@ -84,10 +90,10 @@ func stringToPermission(str string) (Permission, bool) {
 	return p, ok
 }
 
-func stringsToPermissions(keys []string) (Permissions, error) {
+func StringsToPermissions(keys []string) (Permissions, error) {
 	permissions := make([]Permission, 0, len(keys))
 	for _, str := range keys {
-		permission, ok := stringToPermission(str)
+		permission, ok := SringToPermission(str)
 		if !ok {
 			return nil, fmt.Errorf("%w: %s", ErrPermissionInvalid, str)
 		}
@@ -105,7 +111,7 @@ func (permissions *Permissions) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &strings); err != nil {
 		return fmt.Errorf("could not unmarshal permissions: %w", err)
 	}
-	perms, err := stringsToPermissions(strings)
+	perms, err := StringsToPermissions(strings)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal permissions: %w", err)
 	}

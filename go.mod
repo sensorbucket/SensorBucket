@@ -18,6 +18,7 @@ require (
 	github.com/jackc/pgx/v5 v5.5.2
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/ory/client-go v1.5.1
+	github.com/ory/nosurf v1.2.7
 	github.com/prometheus/client_golang v1.15.1
 	github.com/rabbitmq/amqp091-go v1.3.4
 	github.com/rs/cors v1.8.2

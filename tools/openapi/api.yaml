@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Sensorbucket API
-  version: '1.1-rc1'
+  version: '1.2.5'
   license:
     name: EUPLv1.2
     url: 'https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt'
@@ -14,7 +14,7 @@ info:
 
     Find out more at: https://developer.sensorbucket.nl/
 
-    Developed and designed by Provincie Zeeland and Pollex
+    Developed and designed by Provincie Zeeland and Pollex'
   contact:
     name: Tim van Osch
     email: info@pollex.nl
@@ -22,8 +22,6 @@ info:
 servers:
   - description: Production
     url: 'https://sensorbucket.nl/api'
-  - description: Local docker environment
-    url: 'http://localhost:3000/api'
 paths: 
   /devices:
     $ref: 'path-devices.yaml'
@@ -31,7 +29,7 @@ paths:
     $ref: 'path-devices-by-id.yaml'
   /devices/{device_id}/sensors:
     $ref: 'path-devices-by-sensors.yaml'
-  /device/{device_id}/sensors/{sensor_code}:
+  /devices/{device_id}/sensors/{sensor_code}:
     $ref: 'path-devices-by-sensors-id.yaml'
   /sensors:
     $ref: 'path-sensors.yaml'
@@ -77,13 +75,23 @@ paths:
     $ref: 'path-api-keys-by-id.yaml'
 components:
   securitySchemes:
-    basicAuth:
+    CookieSession:
       description: |
-        Temporary default authentication method until token based authentication is implemented.
+        When a user is logged in a session cookie will be set which authenticates the user.
+      type: apiKey
+      in: cookie
+      name: SID
+    APIKey:
+      description: |
+        An API Key given through the Authorization header will authenticate an organisation
       type: http
-      scheme: basic
+      scheme: Bearer
+x-oathkeeper-mutators:
+  - Hydrate
+  - IDToken
 security:
-  - basicAuth: []
+  - CookieSession: []
+  - APIKey: []
 tags:
   - name: Devices
   - name: Pipelines

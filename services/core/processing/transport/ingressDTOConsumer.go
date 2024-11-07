@@ -1,7 +1,6 @@
 package processingtransport
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
@@ -43,7 +42,7 @@ func StartIngressDTOConsumer(conn *mq.AMQPConnection, svc *processing.Service, q
 			continue
 		}
 
-		if err := svc.ProcessIngressDTO(context.Background(), dto); err != nil {
+		if err := svc.ProcessIngressDTO(dto); err != nil {
 			fmt.Printf("Error processing ingress DTO: %v\n", err)
 			if err := delivery.Nack(false, false); err != nil {
 				fmt.Printf("Error Nacking ingress delivery: %v\n", err)

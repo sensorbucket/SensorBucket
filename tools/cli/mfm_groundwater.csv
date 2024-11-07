@@ -1,0 +1,141 @@
+"Optioneel gebruikersveld, geen invloed op kritische functionaliteit","Verplicht gebruikersveld, dient ingevuld te zijn maar geen invloed op kritische functionaliteit","Verplicht systeemveld, dient exact ingevuld te zijn om data te kunnen verwerken",,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,
+"Verplicht gebruikersveld, bevat een naam of code van het apparaat ","Optioneel gebruikersveld, bevat extra informatie over het apparaat","Optioneel gebruikersveld, bevat de EPSG:4326 latitude coordinaat van het apparaat","Optioneel gebruikersveld, bevat de EPSG:4326 longitude coordinaat van het apparaat","Optioneel gebruikersveld, geen betekenis","Optioneel gebruikersveld, bevat het verwachte zendinterval van het apparaat","Verplicht systeemveld voor LoRaWAN apparaten, bevat de DEVICE EUI ","Optioneel gebruikersveld, bevat de installatie datum in yyyy-mm-dd","Optioneel gebruikersveld, bevat de firmware versie van het apparaat","Optioneel gebruikersveld, bevat het serie nummer van de MFM Hoofdprintplaat","Optioneel gebruikersveld, bevat de putcode van de peilbuis waarbij apparaat is gemonteerd","Optioneel gebruikersveld, bevat de putcode van de peilbuis waarin de sensor is gemonteerd","Optioneel gebruikersveld, bevat het filternummer waarin de sensor is gemonteerd","Optioneel gebruikersveld, bevat het serienummer van de sensormodule","Optioneel gebruikersveld, bevat de firmware versie van de sensormodule","Verplicht gebruikersveld, bevat een naam voor de sensor","Optioneel gebruikersveld, bevat het merk of type sensor","Optioneel gebruikersveld, bevat extra informatie over de sensor","Verplicht systeemveld, bevat de identificatie naam zoals opgegeven in het Worker Script voor het matchen van binnenkomende data","Optioneel gebruikersveld, bevat het serienummer van de sensor","Optioneel gebruikersveld, bevat de totale kabel lengte van de sensor. Opgegeven in meters","Optioneel gebruikersveld, bevat de ophanghoogte/diepte van de sensor in het filter. Opgegeven in meters"
+device code,device description,device latitude,device longitude,device altitude,device properties interval,device properties dev_eui,device properties installation_date,device properties firmware_version,device properties serial_no,device properties veldcode,sensor properties veldcode,sensor properties filter,sensor properties module_serial_no,sensor properties firmware_version,sensor code,sensor brand,sensor description,sensor external_id,sensor properties serial_no,sensor properties cable_length,sensor properties depth
+B42E0043,Haamstede Lagezoom,51.7129164873744,3.75817051777838,,3600,0080E115054465E1,2024-08-27,0.2.04,24230020,B42E0043,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42E0043,1,24230011,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668273,4,3.5
+,,,,,,,,,,,B42E0043,3,24230011,0.6A,keller_1_2,Keller PR-26X,Keller Module 1 Slot 2,keller_1_2,1668279,4,3.5
+,,,,,,,,,,,B42E0043,4,24230030,0.6A,keller_2_1,Keller PR-26X,Keller Module 2 Slot 1,keller_2_1,1668331,4,3.5
+B42E0274,Haamstede Kloosterweg,51.71086448999048,3.7245268595709473,,3600,0080E11505446570,2024-08-28,0.2.04,24230037,B42E0274,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42E0274,1,24230013,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668249,4,3.5
+,,,,,,,,,,,B42E0274,3,24230013,0.6A,keller_1_2,Keller PR-26X,Keller Module 1 Slot 2,keller_1_2,1668565,4,3.5
+B42E0283,Renesse Lagezoom,51.72087513588954,3.771457162627798,,1800,0080E11505446824,2024-08-28,0.2.04,24230007,B42E0283,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42E0283,1,24230002,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668269,4,3
+B42E0284,Renesse Laone Parking,51.73478399400206,3.778176563721494,,1800,0080E11505445D9E,2024-08-29,0.2.04,24230048,B42E0284,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42E0284,1,24230018,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668280,4,3
+B42E0753,Noordwelle Lokkershofweg (Met logger),51.71524192751099,3.7939941031527855,,3600,0080E11505445F15,2024-08-29,0.2.04,24010008,B42E0753,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42E0753,1,24030004,0.5,huba_1_1,Huba 713.D100302110,Huba Module 1 Slot 1,huba_1_1,231219-961-01-0003,5,3
+B42D0548,Westenschouwen Kraaijensteinweg,"51,6794871075044","3,72426778201634",,3600,0080E1150544627F,2024.09.04,0.2.04,24230021,B42D0548,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42D0548,1,24230037,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668325,4,3
+B42H0041,Zierikzee Lange Blokweg,51.662485060876755,3.9235652110614354,,3600,0080E11505446B14,2024-09-06,0.2.04,24230026,B42H0041,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42H0041,1,24230003,0.6A,huba_1_1,Huba 713.D100302110,Huba Module 1 Slot 1,huba_1_1,240426-090-01-0005,5,3
+,,,,,,,,,,,B42H0041,3,24230003,0.6A,huba_1_2,Huba 713.D100302110,Huba Module 1 Slot 2,huba_1_2,240426-090-01-0004,5,4.5
+B42H0186,Zierikzee Gouweveerseweg,51.648225249,3.942335761,,3600,0080E11505446ACC,2024-09-10,0.2.04,24230016,B42H0186,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42H0186,1,24230008,0.6A,huba_1_1,Huba 713.D100302110,Huba Module 1 Slot 1,huba_1_1,240426-090-01-0002,5,4.5
+,,,,,,,,,,,B42H0186,3,24230008,0.6A,huba_1_2,Huba 713.D100302110,Huba Module 1 Slot 2,huba_1_2,240426-090-01-0003,5,4.5
+B42H0195,Zierikzee Boerenweg,51.654673966,3.898121227,,3600,0080E1150510A5AD,2024-09-10,0.2.04,24230018,B42H0195,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42H0195,1,24230006,0.6A,huba_1_1,Huba 713.D100302110,Huba Module 1 Slot 1,huba_1_1,240426-090-01-0001,5,4.5
+,,,,,,,,,,,B42H0195,3,24230006,0.6A,huba_1_2,Huba 713.D100302110,Huba Module 1 Slot 2,huba_1_2,240426-090-01-0030,5,4.5
+B42E0262-1,Kerkwerve Zwaardweg,51.702662864,3.856406417,,3600,0080E1150544600C,2024-09-13,0.2.04,24230035,B42E0262-1,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42E0262-1,1,24230002,0.6A,huba_1_1,731.D100302110,Huba Module 1 Slot 1,huba_1_1,2404260-090-01-0029,5,4.5
+B42H0192,Kerkwerve Verseputseweg,51.678889929,3.876877133,,3600,0080E1150544655A,2024-09-13,0.2.04,24230028,B42H0192,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42H0192,1,24230001,0.6A,huba_1_1,Huba 713.D100302110,Huba Module 1 Slot 1,huba_1_1,240426-090-01-0009,5,4.5
+,,,,,,,,,,,B42H0192,2,24230001,0.6A,huba_1_2,Huba 713.D100302110,Huba Module 1 Slot 2,huba_1_2,240426-090-01-0008,5,4.5
+B49C0125,Walsoorden Walsoordensestraat,51.3769001,4.0231947,,3600,0080E11505446AEE,2024-10-02,0.2.04,24230024,B49C0125 ,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B49C0125 ,1,24230007,0.6A,huba_1_1,Huba 713.D100302110,Huba Module 1 Slot 1,huba_1_1,240426-090-01-0006,5,4
+B54F0046,Zaamslag Molenweg,51.321536376,3.900389088,,3600,0080E1150544682B,2024-10-02,0.2.04,24230022,B54F0046,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B54F0046,1,24230019,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668288,4,3.5
+,,,,,,,,,,,B54F0046,2,24230019,0.6A,keller_1_2,Keller PR-26X,Keller Module 1 Slot 2,keller_1_2,1668322,4,3.5
+B54F0058,Zaamslag Poonstraat,51.339363513,3.946900770,,3600,0080E11505445FB1,2024-10-02,0.2.04,24230039,B54F0058,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B54F0058,1,24230026,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,,4,3.5
+B54F0059,Vogelwaarde Kamperweg,51.34277,3.975618,,3600,0080E11505446CF8,2024-10-02,0.2.04,24230001,B54F0059,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B54F0059,1,24230036,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668272,4,3.5
+B55A0226,Kuitaart Grootmoedersdijk,51.325449180,4.037131350,,3600,0080E1150544656F,2024-10-02,0.2.04,24230050,B55A0226,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B55A0226,1,24230007,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668250,4,3.5
+,,,,,,,,,,,B55A0226,2,24230007,0.6A,keller_1_2,Keller PR-26X,Keller Module 1 Slot 2,keller_1_2,1668262,4,3.5
+B55A0227,Graauw Polvisstraat,51.322194120,4.074817460,,3600,0080E11505445FD1,2024-10-02,0.2.04,24230011,B55A0227,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B55A0227,1,24230010,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668324,4,3.5
+,,,,,,,,,,,B55A0227,2,24230010,0.6A,keller_1_2,Keller PR-26X,Keller Module 1 Slot 2,keller_1_2,1668286,4,3.5
+B55A0230,Clinge Statenboomweg,51.280832240 ,4.122733230,,3600,0080E11505446B04,2024-10-03,0.2.04,24230047,B55A0230,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B55A0230,1,24230005,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668253,4,3.5
+,,,,,,,,,,,B55A0230,2,24230005,0.6A,keller_1_2,Keller PR-26X,Keller Module 1 Slot 2,keller_1_2,1668567,4,3.5
+B55A0242,Vogelwaarde Cambronsestraat,51.302552950,4.031783950,,3600,0080E1150544684D,2024-10-03,0.2.04,24230006,B55A0242,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B55A0242,2,24230020,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668289,4,3.5
+B54F0055,Heikant Oud Ferdinandusdijk,51.253436521,4.021347173,,3600,0080E1150544600B,2024-10-03,0.2.04,24230012,B54F0055,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B54F0055,2,24230039,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668317,4,3.5
+B54F0052,Hulst Plattendijk,51.279418715,4.029172313,,3600,0080E11505445FAE,2024-10-03,0.2.04,24230023,B54F0052,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B54F0052,1,24230021,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668298,4,3.5
+,,,,,,,,,,,B54F0052,3,24230021,0.6A,keller_1_2,Keller PR-26X,Keller Module 1 Slot 2,keller_1_2,1668301,4,3.5
+B54H0011,Koewacht Boerenkavelweg,51.228316471,3.939380627,,3600,0080E11505445F9B,2024-10-04,0.2.04,24230043,B54H0011,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B54H0011,1,24230032,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668302,4,3.5
+,,,,,,,,,,,B54H0011,3,24230032,0.6A,keller_1_2,Keller PR-26X,Keller Module 1 Slot 2,keller_1_2,1668264,4,3.5
+B54G0034,Zuiddorpe Canisvlietweg,51.228546842,3.875528673,,3600,0080E1150544631B,2024-10-04,0.2.04,24230015,B54G0034,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B54G0034,1,24230004,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668328,4,3.5
+,,,,,,,,,,,B54G0034,2,24230010,0.6A,huba_2_1,Huba 713.D100302110,Huba Module 2 Slot 1,huba_2_1,240426-090-01-0007,5,4.5
+B54G0032,Westdorpe Nieuwe Dreef,51.239320729,3.846358106,,3600,0080E11505446569,2024-10-04,0.2.04,24230029,B54G0032,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B54G0032,1,24230003,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668319,4,3.5
+,,,,,,,,,,,B54G0032,2,24230003,0.6A,keller_1_2,Keller PR-26X,Keller Module 1 Slot 2,keller_1_2,1668263,4,3.5
+B54F0051,Axel Buthweg,51.276261572,3.896083627,,3600,0080E11505446CEF,2024-10-04,0.2.04,24230017,B54F0051,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B54F0051,1,24230024,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668271,4,3.5
+,,,,,,,,,,,B54F0051,2,24230024,0.6A,keller_1_2,Keller PR-26X,Keller Module 1 Slot 2,keller_1_2,1668277,4,3.5
+B42E0992,Renesse Hogezoom,51.717299680,3.756566760,,3600,0080E11505445D3E,2024-10-09,0.2.04,24230009,B42E0992,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42E0992,1,24230034,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668251,4,3.5
+B42B0155,Nieuw-Haamstede Vliegveld,51.706676750,3.709690960,,3600,0080E11505446853,2024-10-11,0.2.04,24230030,B42B0155,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42B0155,1,24230040,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668270,4,3.5
+B42E0276,Haamstede Moolweg,51.6974452,3.7327341,,3600,0080E11505446856,2024-10-11,0.2.04,24230027,B42E0276,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42E0276,1,24230035,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668636,4,2.5
+B42E0991,Renesse Vroongrond,51.718306180,3.755893600,,3600,0080E11505445D55,2024-10-11,0.2.04,24230004,B42E0991,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42E0991,1,24230028,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668315,4,3
+B42E0993,Renesse Vroongrond,51.726439540,3.762823590,,3600,0080E11505446286,2024-10-11,0.2.04,24230009,24230045,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42E0993,1,24230027,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668321,4,3
+B48F0122,Kats Zeedijk,51.5581774227259,3.89051389917464,,3600,0080E11505446BBD,2024-05-24,0.2.04,24010009,B48F0122,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B48F0122,1,23420008,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,,4,3.5
+,,,,,,,,,,,B48F0122,2,23420008,0.6A,keller_1_2,Keller PR-26X,Keller Module 1 Slot 2,keller_1_2,,4,3.5
+,,,,,,,,,,,B48F0122,4,24030003,0.6A,huba_1_1,Huba 713.D100302110,Huba Module 2 Slot 1,huba_1_1,231219-961-01-0002,5,4.5
+B42F0111,Kerkwerve Papeweg,51.696672302,3.900803898,,3600,0080e11505446852,2024-10-16,0.2.04,24230008,B42F0111,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42F0111,1,24230004,0.6A,huba_1_1,Huba 713.D100302110,Huba Module 1 Slot 1,huba_1_1,240426-090-01-0010,5,4.5
+B48B0142,Nieuw en Sint Joosland,51.48609985143024,3.66270661354065,,3600,0080E115054460F0,2024-06-13,0.2.04,24010010,B48B0142,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B48B0142,1,23420009,0.5,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1718787,4,3.5
+,,,,,,,,,,,B48B0142,2,23420009,0.5,keller_1_2,Keller PR-26X,Keller Module 1 Slot 2,keller_1_2,1718790,4,3.5
+B48E0197,Heinkenszand Zuidzaksedijk (incl logger),51.46615302074211,3.825720548629761,,3600,0080E11505446669,2024-06-13,0.2.04,24010007,B48E0197,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B48E0197,3,,0.5,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1718784,4,3.5
+,,,,,,,,,,,B48E0197,5,,0.5,keller_1_2,Keller PR-26X,Keller Module 1 Slot 1,keller_1_2,,4,3.5
+B54F0065,Axel Langeweg,51.259729822,3.957758971,,3600,0080E11505446562,2024-10-17,0.2.04,24230019,B54F0065,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B54F0065,2,24230017,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668259,4,3.5
+B54F0049,Axel Zaaidijk,51.291145016,3.921248899,,3600,0080E11505446890,2024-05-24,0.2.04,24230040,B54F0049,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B54F0049,2,24230009,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668290,4,3.5
+Haamstede_Oosterscheldelaan,Haamstede Oosterscheldelaan ,51.7076831864754,3.7383234500885014,,3600,0080E11505446B2E,2024-10-30,0.2.04,24230010,,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,,1,24230008,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668813,4,3
+B42B0153,Nieuw Haamstede Torenweg,51.709982610,3.694518290,,3600,0080E11505446AAC,2024-10-31,0.2.04,24230025,B42B0153,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42B0153,1,24230029,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668267,4,3.5
+B42B0154,Nieuw-Haamstede 't Oude Vuur,51.705407560,3.690855120,,3600,0080E11505446029,2024-10-31,0.2.04,24230031,B42B0154,,,,,multiflexmeter,Multiflexmeter,De MFM Hoofdprintplaat,multiflexmeter,,,
+,,,,,,,,,,,,,,,antenna,RF Solutions ANT-PUKDB,De antenna voor signaal informatie,antenna,,,
+,,,,,,,,,,,B42B0154,1,24230023,0.6A,keller_1_1,Keller PR-26X,Keller Module 1 Slot 1,keller_1_1,1668303,4,3.5

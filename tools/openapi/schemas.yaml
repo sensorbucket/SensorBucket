@@ -80,7 +80,7 @@ device:
     - code
     - state
     - description
-    - organisation
+    - tenant_id
     - properties
     - sensors
     - created_at
@@ -97,9 +97,10 @@ device:
     description:
       type: string
       example: Grasfield pipe 24
-    organisation:
-      type: string
-      example: provincie_zeeland
+    tenant_id:
+      type: integer
+      format: int64
+      example: 1
     properties:
       type: object
       example:
@@ -136,6 +137,25 @@ createSensorRequest:
     code:
       type: string
       example: S123
+    description:
+      type: string
+      example: Pressure sensor at 5 meters depth
+    external_id:
+      type: string
+      example: "5"
+    brand:
+      type: string
+      example: "sensor brand ABC"
+    properties:
+      type: object
+      example: 
+        mount_height: 15cm
+    archive_time:
+      type: integer
+      example: 7
+updateSensorRequest:
+  type: object
+  properties:
     description:
       type: string
       example: Pressure sensor at 5 meters depth
@@ -372,6 +392,7 @@ trace_step:
 measurement:
   type: object
   required:
+    - measurement_id
     - uplink_message_id
     - device_id
     - device_code
@@ -386,6 +407,10 @@ measurement:
     - measurement_value
     - measurement_expiration
   properties:
+    measurement_id:
+      type: integer
+      format: int64
+      example: 458412
     uplink_message_id:
       type: string
       example: ca29e28e-eeb6-4662-922c-6cf6a36ccb6e
@@ -643,7 +668,7 @@ userWorker:
     language:
       type: string
       enum: ["python"]
-    organisation:
+    tenant_id:
       type: integer
       format: int64
     revision:

@@ -77,7 +77,7 @@ func (ctrl *KubernetesController) findWanderingFunctions(ctx context.Context) ([
 		return nil, err
 	}
 	ids := lo.Keys(fns)
-	existing, err := ctrl.store.WorkersExists(ids, ListWorkerFilters{State: StateEnabled})
+	existing, err := ctrl.store.WorkersExists(ids, WorkerFilters{State: StateEnabled})
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (ctrl *KubernetesController) findWanderingPackages(ctx context.Context) ([]
 		return nil, err
 	}
 	ids := lo.Keys(pkgs)
-	existing, err := ctrl.store.WorkersExists(ids, ListWorkerFilters{State: StateEnabled})
+	existing, err := ctrl.store.WorkersExists(ids, WorkerFilters{State: StateEnabled})
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (ctrl *KubernetesController) findWanderingMessageQueueTriggers(ctx context.
 		return nil, err
 	}
 	ids := lo.Keys(mqts)
-	existing, err := ctrl.store.WorkersExists(ids, ListWorkerFilters{State: StateEnabled})
+	existing, err := ctrl.store.WorkersExists(ids, WorkerFilters{State: StateEnabled})
 	if err != nil {
 		return nil, err
 	}

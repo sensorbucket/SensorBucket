@@ -5,9 +5,11 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
 
@@ -25,11 +27,16 @@ type (
 	}
 )
 
-func New(publisher IngressDTOPublisher) *HTTPImporter {
+func New(publisher IngressDTOPublisher, keySource auth.JWKSClient) *HTTPImporter {
 	svc := &HTTPImporter{
 		router:    chi.NewRouter(),
 		publisher: publisher,
 	}
+	svc.router.Use(
+		chimw.Logger,
+		auth.Authenticate(keySource),
+		auth.Protect(),
+	)
 	svc.router.Post("/{uuid}", svc.httpPostUplink())
 	return svc
 }
@@ -46,16 +53,28 @@ func (h *HTTPImporter) httpPostUplink() http.HandlerFunc {
 			return
 		}
 
+		if err := auth.MustHavePermissions(r.Context(), auth.Permissions{auth.WRITE_MEASUREMENTS}); err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+		tenantID, err := auth.GetTenant(r.Context())
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+		accessToken, err := auth.GetAccessToken(r.Context())
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+
 		payload, err := io.ReadAll(r.Body)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
 
-		// TODO: Implement authentication logic then add owner to ingress
-		var ownerID int64 = 1
-
-		dto := processing.CreateIngressDTO(pipelineID, ownerID, payload)
+		dto := processing.CreateIngressDTO(accessToken, pipelineID, tenantID, payload)
 		h.publisher <- dto
 
 		web.HTTPResponse(rw, http.StatusAccepted, &web.APIResponseAny{

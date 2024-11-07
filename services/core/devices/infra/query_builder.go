@@ -1,12 +1,14 @@
 package deviceinfra
 
 import (
+	"context"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
 
@@ -27,7 +29,7 @@ func newDeviceQueryBuilder() deviceQueryBuilder {
 		"devices.id",
 		"devices.code",
 		"devices.description",
-		"devices.organisation",
+		"devices.tenant_id",
 		"devices.properties",
 		"devices.location_description",
 		"ST_X(devices.location::geometry) AS longitude",
@@ -73,7 +75,7 @@ func (b deviceQueryBuilder) WithinRange(r devices.RangeFilter) deviceQueryBuilde
 	return b
 }
 
-func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[devices.Device], error) {
+func (b deviceQueryBuilder) Query(ctx context.Context, db *sqlx.DB) (*pagination.Page[devices.Device], error) {
 	if b.err != nil {
 		return nil, b.err
 	}
@@ -102,6 +104,12 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[devices.Device]
 	if len(b.filters.Code) > 0 {
 		q = q.Where(sq.Eq{"devices.code": b.filters.Code})
 	}
+<<<<<<< HEAD
+=======
+
+	// Authorize
+	q = auth.ProtectedQuery(ctx, q)
+>>>>>>> main
 
 	// Fetch devices
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(db).Query()
@@ -117,7 +125,7 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[devices.Device]
 			&model.ID,
 			&model.Code,
 			&model.Description,
-			&model.Organisation,
+			&model.TenantID,
 			&model.Properties,
 			&model.LocationDescription,
 			&model.Longitude,
@@ -147,7 +155,7 @@ func (b deviceQueryBuilder) Query(db *sqlx.DB) (*pagination.Page[devices.Device]
 	}
 
 	// Fetch sensors for devices
-	sensors, err := listSensors(db, func(q sq.SelectBuilder) sq.SelectBuilder {
+	sensors, err := listSensors(ctx, db, func(q sq.SelectBuilder) sq.SelectBuilder {
 		return q.Where(sq.Eq{"device_id": ids})
 	})
 	if err != nil {

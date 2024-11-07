@@ -1,10 +1,11 @@
 package tenantstransports
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -38,9 +39,10 @@ func (t *APIKeysHTTPTransport) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 func (t *APIKeysHTTPTransport) setupRoutes(r chi.Router) {
 	r.Get("/api-keys", t.httpListApiKeys())
+	r.Get("/api-keys/{api_key_id}", t.httpGetApiKey())
 	r.Delete("/api-keys/{api_key_id}", t.httpRevokeApiKey())
 	r.Post("/api-keys", t.httpCreateApiKey())
-	r.Get("/api-keys/authenticate", t.httpAuthenticateApiKey())
+	r.Handle("/api-keys/authenticate", t.httpAuthenticateApiKey())
 }
 
 func (t *APIKeysHTTPTransport) httpRevokeApiKey() http.HandlerFunc {
@@ -59,7 +61,7 @@ func (t *APIKeysHTTPTransport) httpRevokeApiKey() http.HandlerFunc {
 			})
 			return
 		}
-		if err = t.apiKeySvc.RevokeApiKey(apiKeyId); err != nil {
+		if err = t.apiKeySvc.RevokeApiKey(r.Context(), apiKeyId); err != nil {
 			if errors.Is(err, apikeys.ErrKeyNotFound) {
 				web.HTTPResponse(w, http.StatusNotFound, web.APIResponseAny{
 					Message: "Key does not exist",
@@ -121,7 +123,7 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 			return
 		}
 
-		apiKey, err := t.apiKeySvc.GenerateNewApiKey(params.Name, params.TenantID, params.Permissions, params.ExpirationDate)
+		apiKey, err := t.apiKeySvc.GenerateNewApiKey(r.Context(), params.Name, params.TenantID, params.Permissions, params.ExpirationDate)
 		if err != nil {
 			if errors.Is(err, apikeys.ErrTenantIsNotValid) {
 				web.HTTPResponse(w, http.StatusNotFound, web.APIResponseAny{
@@ -140,31 +142,69 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 }
 
 func (t *APIKeysHTTPTransport) httpAuthenticateApiKey() http.HandlerFunc {
+	type AuthenticationSession struct {
+		Subject      string         `json:"subject,omitempty"`
+		Extra        map[string]any `json:"extra,omitempty"`
+		Header       any            `json:"header,omitempty"`
+		MatchContext any            `json:"match_context,omitempty"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		token, ok := auth.StripBearer(r.Header.Get("Authorization"))
+		if !ok {
 			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
 				Message: "Authorization header must be set",
 			})
 			return
 		}
-		idAndKeyCombination := strings.TrimPrefix(authHeader, "Bearer ")
-		validResp, err := t.apiKeySvc.AuthenticateApiKey(idAndKeyCombination)
+		keyInfo, err := t.apiKeySvc.AuthenticateApiKey(r.Context(), token)
 		if err == nil {
-			web.HTTPResponse(w, http.StatusOK, validResp)
+			session := AuthenticationSession{
+				Subject: "",
+				Extra: map[string]any{
+					"tid":   keyInfo.TenantID,
+					"perms": keyInfo.Permissions,
+				},
+			}
+			if keyInfo.Expiration != nil {
+				session.Extra["exp"] = *keyInfo.Expiration
+			}
+			web.HTTPResponse(w, http.StatusOK, session)
 			return
 		} else if errors.Is(err, apikeys.ErrInvalidEncoding) {
+			fmt.Printf("API authenticate denied: %s\n", err)
 			web.HTTPResponse(w, http.StatusBadRequest, web.APIResponseAny{
 				Message: "Invalid input",
 			})
 			return
 		} else if errors.Is(err, apikeys.ErrKeyNotFound) {
+			fmt.Printf("API authenticate denied: %s\n", err)
 			web.HTTPResponse(w, http.StatusUnauthorized, web.APIResponseAny{})
 			return
 		} else {
+			fmt.Printf("API authenticate denied: %s\n", err)
 			web.HTTPError(w, err)
 			return
 		}
+	}
+}
+
+func (t *APIKeysHTTPTransport) httpGetApiKey() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		keyIDStr := chi.URLParam(r, "api_key_id")
+		keyID, err := strconv.ParseInt(keyIDStr, 10, 64)
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+		key, err := t.apiKeySvc.GetAPIKey(r.Context(), keyID)
+		if err != nil {
+			web.HTTPError(rw, err)
+			return
+		}
+
+		web.HTTPResponse(rw, http.StatusOK, web.APIResponseAny{
+			Data: key,
+		})
 	}
 }
 
@@ -179,7 +219,7 @@ func (t *APIKeysHTTPTransport) httpListApiKeys() http.HandlerFunc {
 			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "invalid params", ""))
 			return
 		}
-		page, err := t.apiKeySvc.ListAPIKeys(params.Filter, params.Request)
+		page, err := t.apiKeySvc.ListAPIKeys(r.Context(), params.Filter, params.Request)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
@@ -190,8 +230,9 @@ func (t *APIKeysHTTPTransport) httpListApiKeys() http.HandlerFunc {
 }
 
 type ApiKeyService interface {
-	AuthenticateApiKey(base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error)
-	GenerateNewApiKey(name string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error)
-	RevokeApiKey(id int64) error
-	ListAPIKeys(filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
+	AuthenticateApiKey(ctx context.Context, base64IdAndKeyCombination string) (apikeys.ApiKeyAuthenticationDTO, error)
+	GenerateNewApiKey(ctx context.Context, name string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error)
+	RevokeApiKey(ctx context.Context, id int64) error
+	ListAPIKeys(ctx context.Context, filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
+	GetAPIKey(ctx context.Context, id int64) (*apikeys.HashedApiKey, error)
 }

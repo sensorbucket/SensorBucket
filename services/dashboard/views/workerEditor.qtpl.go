@@ -32,45 +32,50 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
             Worker Details
         </header>
         <form class="p-4 flex flex-col gap-4">
+            `)
+//line views/workerEditor.qtpl:12
+	p.streamrenderCSRFToken(qw422016)
+//line views/workerEditor.qtpl:12
+	qw422016.N().S(`
             <fieldset>
                 <label for="worker-name" class="ml-1 -mb-1 block"><small class="text-xs text-slate-500">Worker name</small></label>
                 <input
                     type="text" name="name" id="worker-name"
                     class="block w-full px-2 py-1 border rounded-md bg-white placeholder:text-slate-600
                     `)
-//line views/workerEditor.qtpl:17
+//line views/workerEditor.qtpl:18
 	if p.Worker != nil {
-//line views/workerEditor.qtpl:17
+//line views/workerEditor.qtpl:18
 		qw422016.N().S(`
                         text-slate-500
                         bg-slate-50
                     `)
-//line views/workerEditor.qtpl:20
+//line views/workerEditor.qtpl:21
 	} else {
-//line views/workerEditor.qtpl:20
+//line views/workerEditor.qtpl:21
 		qw422016.N().S(`
                         text-slate-700
                     `)
-//line views/workerEditor.qtpl:22
+//line views/workerEditor.qtpl:23
 	}
-//line views/workerEditor.qtpl:22
+//line views/workerEditor.qtpl:23
 	qw422016.N().S(`
                     "
 
                     `)
-//line views/workerEditor.qtpl:25
+//line views/workerEditor.qtpl:26
 	if p.Worker != nil {
-//line views/workerEditor.qtpl:25
+//line views/workerEditor.qtpl:26
 		qw422016.N().S(`
                     value="`)
-//line views/workerEditor.qtpl:26
+//line views/workerEditor.qtpl:27
 		qw422016.E().S(p.Worker.Name)
-//line views/workerEditor.qtpl:26
+//line views/workerEditor.qtpl:27
 		qw422016.N().S(`"
                     `)
-//line views/workerEditor.qtpl:27
+//line views/workerEditor.qtpl:28
 	}
-//line views/workerEditor.qtpl:27
+//line views/workerEditor.qtpl:28
 	qw422016.N().S(`
                 />
             </fieldset>
@@ -82,15 +87,14 @@ func (p *WorkerEditorPage) StreamBody(qw422016 *qt422016.Writer) {
                         text-slate-500
                         "
                 >`)
-//line views/workerEditor.qtpl:37
+//line views/workerEditor.qtpl:38
 	if p.Worker != nil {
-//line views/workerEditor.qtpl:37
+//line views/workerEditor.qtpl:38
 		qw422016.E().S(p.Worker.Description)
-//line views/workerEditor.qtpl:37
+//line views/workerEditor.qtpl:38
 	}
-//line views/workerEditor.qtpl:37
-	qw422016.N().S(`
-                </textarea>
+//line views/workerEditor.qtpl:38
+	qw422016.N().S(`</textarea>
             </fieldset>
             <div class="col-span-full flex justify-between">
                 <section>
