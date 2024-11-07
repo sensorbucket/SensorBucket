@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"time"
@@ -47,31 +46,36 @@ to quickly create a Cobra application.`,
 		jsonFile.Close()
 		log.Println("done caching")
 
-		for {
-			randomIndex := rand.Intn(len(data))
-			el := data[randomIndex]
-			fmt.Println("sending", string(el))
+		for ix, el := range data {
+			if ix%100 == 0 {
+				fmt.Printf("%d / %d\n", ix, len(data))
+			}
 			req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/uplinks/%s", host, pipelineId), bytes.NewBuffer(el))
 			if err != nil {
 				fmt.Println("Error creating request:", err)
 				continue
 			}
 			req.Header.Set("Content-Type", "application/json")
+			key, _ := cmd.Flags().GetString("apikey")
+			req.Header.Set("Authorization", "Bearer "+key)
 			client := &http.Client{}
 			resp, err := client.Do(req)
 			if err != nil {
 				fmt.Println("Error sending request:", err)
 				continue
 			}
-			respBody, err := io.ReadAll(resp.Body)
-			if err != nil {
-				fmt.Println("Error sending request:", err)
-				continue
+			if resp.StatusCode < 200 || resp.StatusCode > 299 {
+				respBody, err := io.ReadAll(resp.Body)
+				if err != nil {
+					fmt.Println("Error sending request:", err)
+					continue
+				}
+				fmt.Println("Response Status:", resp.Status)
+				fmt.Println("Response Body:", string(respBody))
 			}
-			fmt.Println("Response Status:", resp.Status)
-			fmt.Println("Response Body:", string(respBody))
 			time.Sleep(time.Duration(interval) * time.Millisecond)
 		}
+		return nil
 	},
 }
 

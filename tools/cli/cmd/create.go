@@ -6,10 +6,12 @@ package cmd
 import (
 	"context"
 	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -22,6 +24,9 @@ type Device struct {
 	Description string
 	Properties  map[string]any
 	Sensors     []Sensor
+	Latitude    float64
+	Longitude   float64
+	Altitude    float64
 }
 
 type Sensor struct {
@@ -33,6 +38,7 @@ type Sensor struct {
 	ExcludeFromCreation bool // Used if the sensor already exists in the API
 }
 
+// createCmd represents the create command
 // createCmd represents the create command
 var createCmd = &cobra.Command{
 	Use:       "create <file>",
@@ -46,6 +52,16 @@ var createCmd = &cobra.Command{
 			return fmt.Errorf("could not open file: %w", err)
 		}
 		reader := csv.NewReader(file)
+
+		// Skip rows if specified
+		skipRows, _ := cmd.Flags().GetInt("skip")
+		for i := 0; i < skipRows; i++ {
+			_, err := reader.Read()
+			if err != nil {
+				return fmt.Errorf("error skipping rows: %w", err)
+			}
+		}
+		dryRun, _ := cmd.Flags().GetBool("dry")
 
 		// Read header
 		header, err := reader.Read()
@@ -72,16 +88,21 @@ var createCmd = &cobra.Command{
 			dev.Sensors = append(dev.Sensors, sensor)
 		}
 
-		// Create devices
-		client := CreateAPIClient(cmd)
-		for _, device := range devices {
-			err := createDeviceOnAPI(cmd.Context(), client, device)
-			if err != nil {
-				return fmt.Errorf("error during creation: %w", err)
+		if dryRun {
+			data, _ := json.Marshal(devices)
+			fmt.Println(string(data))
+		} else {
+			// Create devices
+			client := CreateAPIClient(cmd)
+			for _, device := range devices {
+				err := createDeviceOnAPI(cmd.Context(), client, device)
+				if err != nil {
+					return fmt.Errorf("error during creation: %w", err)
+				}
 			}
-		}
 
-		fmt.Print("Finished creating devices and sensors...\n")
+			fmt.Print("Finished creating devices and sensors...\n")
+		}
 
 		return nil
 	},
@@ -98,11 +119,22 @@ func createDeviceOnAPI(ctx context.Context, client *api.APIClient, device Device
 	if len(page.Data) > 0 && page.Data[0].GetCode() == device.Code {
 		deviceID = page.Data[0].GetId()
 		fmt.Printf("Device found\t\t%d\t\t%s\n", page.Data[0].GetId(), page.Data[0].GetCode())
+		_, _, err := client.DevicesApi.UpdateDevice(ctx, deviceID).UpdateDeviceRequest(api.UpdateDeviceRequest{
+			Properties: device.Properties,
+			Latitude:   &device.Latitude,
+			Longitude:  &device.Longitude,
+		}).Execute()
+		if err != nil {
+			return fmt.Errorf("could not create new device: %w", err)
+		}
+		fmt.Printf("Device updated\t\t%d\n", deviceID)
 	} else {
 		page, _, err := client.DevicesApi.CreateDevice(ctx).CreateDeviceRequest(api.CreateDeviceRequest{
 			Code:        device.Code,
 			Properties:  device.Properties,
 			Description: &device.Description,
+			Latitude:    &device.Latitude,
+			Longitude:   &device.Longitude,
 		}).Execute()
 		if err != nil {
 			return fmt.Errorf("could not create new device: %w", err)
@@ -132,6 +164,15 @@ func createDeviceOnAPI(ctx context.Context, client *api.APIClient, device Device
 	// Create sensors
 	for _, sensor := range device.Sensors {
 		if sensor.ExcludeFromCreation {
+			_, _, err := client.DevicesApi.UpdateDevice(ctx, deviceID).UpdateDeviceRequest(api.UpdateDeviceRequest{
+				Properties: device.Properties,
+				Latitude:   &device.Latitude,
+				Longitude:  &device.Longitude,
+			}).Execute()
+			if err != nil {
+				return fmt.Errorf("could not create new device: %w", err)
+			}
+			fmt.Printf("Sensor updated\t\t%d\n", deviceID)
 			continue
 		}
 		page, _, err := client.DevicesApi.CreateDeviceSensor(ctx, int32(deviceID)).CreateSensorRequest(api.CreateSensorRequest{
@@ -190,6 +231,18 @@ func headerToClosure(header string) ColumnAssigner {
 		return func(d *Device, s *Sensor, v string) {
 			d.Description = v
 		}
+	case "device.latitude":
+		return func(d *Device, s *Sensor, v string) {
+			d.Latitude, _ = strconv.ParseFloat(v, 64)
+		}
+	case "device.longitude":
+		return func(d *Device, s *Sensor, v string) {
+			d.Longitude, _ = strconv.ParseFloat(v, 64)
+		}
+	case "device.altitude":
+		return func(d *Device, s *Sensor, v string) {
+			d.Altitude, _ = strconv.ParseFloat(v, 64)
+		}
 	case "sensor.code":
 		return func(d *Device, s *Sensor, v string) {
 			s.Code = v
@@ -238,4 +291,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// createCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	createCmd.Flags().Int("skip", 0, "Number of rows to skip at the beginning of the CSV file")
+	createCmd.Flags().Bool("dry", false, "Do not call the API")
 }
