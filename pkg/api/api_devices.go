@@ -3,7 +3,7 @@ Sensorbucket API
 
 SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex' 
 
-API version: 1.1-rc1
+API version: 1.2.5
 Contact: info@pollex.nl
 */
 
@@ -471,6 +471,110 @@ func (a *DevicesApiService) CreateSensorGroupExecute(r ApiCreateSensorGroupReque
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiDeleteDeviceRequest struct {
+	ctx context.Context
+	ApiService *DevicesApiService
+	id int64
+}
+
+func (r ApiDeleteDeviceRequest) Execute() (*DeleteDevice200Response, *http.Response, error) {
+	return r.ApiService.DeleteDeviceExecute(r)
+}
+
+/*
+DeleteDevice Delete device
+
+Delete the device with the given identifier.
+
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param id The numeric ID of the device
+ @return ApiDeleteDeviceRequest
+*/
+func (a *DevicesApiService) DeleteDevice(ctx context.Context, id int64) ApiDeleteDeviceRequest {
+	return ApiDeleteDeviceRequest{
+		ApiService: a,
+		ctx: ctx,
+		id: id,
+	}
+}
+
+// Execute executes the request
+//  @return DeleteDevice200Response
+func (a *DevicesApiService) DeleteDeviceExecute(r ApiDeleteDeviceRequest) (*DeleteDevice200Response, *http.Response, error) {
+	var (
+		localVarHTTPMethod   = http.MethodDelete
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *DeleteDevice200Response
+	)
+
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.DeleteDevice")
+	if err != nil {
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/devices/{id}"
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterToString(r.id, "")), -1)
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	// to determine the Content-Type header
+	localVarHTTPContentTypes := []string{}
+
+	// set Content-Type header
+	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
+	if localVarHTTPContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
+	}
+
+	// to determine the Accept header
+	localVarHTTPHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
+	if localVarHTTPHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
+	}
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.client.callAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarHTTPResponse.Body.Close()
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
 type ApiDeleteDeviceSensorRequest struct {
 	ctx context.Context
 	ApiService *DevicesApiService
@@ -519,7 +623,7 @@ func (a *DevicesApiService) DeleteDeviceSensorExecute(r ApiDeleteDeviceSensorReq
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/device/{device_id}/sensors/{sensor_code}"
+	localVarPath := localBasePath + "/devices/{device_id}/sensors/{sensor_code}"
 	localVarPath = strings.Replace(localVarPath, "{"+"device_id"+"}", url.PathEscape(parameterToString(r.deviceId, "")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"sensor_code"+"}", url.PathEscape(parameterToString(r.sensorCode, "")), -1)
 
@@ -840,6 +944,116 @@ func (a *DevicesApiService) GetDeviceExecute(r ApiGetDeviceRequest) (*GetDevice2
 
 	localVarPath := localBasePath + "/devices/{id}"
 	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterToString(r.id, "")), -1)
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	// to determine the Content-Type header
+	localVarHTTPContentTypes := []string{}
+
+	// set Content-Type header
+	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
+	if localVarHTTPContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
+	}
+
+	// to determine the Accept header
+	localVarHTTPHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
+	if localVarHTTPHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
+	}
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.client.callAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarHTTPResponse.Body.Close()
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+type ApiGetSensorRequest struct {
+	ctx context.Context
+	ApiService *DevicesApiService
+	deviceId int32
+	sensorCode string
+}
+
+func (r ApiGetSensorRequest) Execute() (*GetSensor200Response, *http.Response, error) {
+	return r.ApiService.GetSensorExecute(r)
+}
+
+/*
+GetSensor Get sensor
+
+Get the sensor with the given identifier.
+
+The returned sensor will also include the full model of the sensors attached to that sensor.
+
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param deviceId The identifier of the device
+ @param sensorCode The code of the sensor
+ @return ApiGetSensorRequest
+*/
+func (a *DevicesApiService) GetSensor(ctx context.Context, deviceId int32, sensorCode string) ApiGetSensorRequest {
+	return ApiGetSensorRequest{
+		ApiService: a,
+		ctx: ctx,
+		deviceId: deviceId,
+		sensorCode: sensorCode,
+	}
+}
+
+// Execute executes the request
+//  @return GetSensor200Response
+func (a *DevicesApiService) GetSensorExecute(r ApiGetSensorRequest) (*GetSensor200Response, *http.Response, error) {
+	var (
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *GetSensor200Response
+	)
+
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.GetSensor")
+	if err != nil {
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/devices/{device_id}/sensors/{sensor_code}"
+	localVarPath = strings.Replace(localVarPath, "{"+"device_id"+"}", url.PathEscape(parameterToString(r.deviceId, "")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"sensor_code"+"}", url.PathEscape(parameterToString(r.sensorCode, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1687,6 +1901,124 @@ func (a *DevicesApiService) UpdateDeviceExecute(r ApiUpdateDeviceRequest) (*Upda
 	}
 	// body params
 	localVarPostBody = r.updateDeviceRequest
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.client.callAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarHTTPResponse.Body.Close()
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+type ApiUpdateSensorRequest struct {
+	ctx context.Context
+	ApiService *DevicesApiService
+	deviceId int32
+	sensorCode string
+	updateSensorRequest *UpdateSensorRequest
+}
+
+func (r ApiUpdateSensorRequest) UpdateSensorRequest(updateSensorRequest UpdateSensorRequest) ApiUpdateSensorRequest {
+	r.updateSensorRequest = &updateSensorRequest
+	return r
+}
+
+func (r ApiUpdateSensorRequest) Execute() (*UpdateSensor200Response, *http.Response, error) {
+	return r.ApiService.UpdateSensorExecute(r)
+}
+
+/*
+UpdateSensor Update sensor properties
+
+Update a some properties of the sensor with the given identifier.
+
+The request body should contain one or more modifiable properties of the Sensor.
+
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param deviceId The identifier of the device
+ @param sensorCode The code of the sensor
+ @return ApiUpdateSensorRequest
+*/
+func (a *DevicesApiService) UpdateSensor(ctx context.Context, deviceId int32, sensorCode string) ApiUpdateSensorRequest {
+	return ApiUpdateSensorRequest{
+		ApiService: a,
+		ctx: ctx,
+		deviceId: deviceId,
+		sensorCode: sensorCode,
+	}
+}
+
+// Execute executes the request
+//  @return UpdateSensor200Response
+func (a *DevicesApiService) UpdateSensorExecute(r ApiUpdateSensorRequest) (*UpdateSensor200Response, *http.Response, error) {
+	var (
+		localVarHTTPMethod   = http.MethodPatch
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *UpdateSensor200Response
+	)
+
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DevicesApiService.UpdateSensor")
+	if err != nil {
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/devices/{device_id}/sensors/{sensor_code}"
+	localVarPath = strings.Replace(localVarPath, "{"+"device_id"+"}", url.PathEscape(parameterToString(r.deviceId, "")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"sensor_code"+"}", url.PathEscape(parameterToString(r.sensorCode, "")), -1)
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	// to determine the Content-Type header
+	localVarHTTPContentTypes := []string{"application/json"}
+
+	// set Content-Type header
+	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
+	if localVarHTTPContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
+	}
+
+	// to determine the Accept header
+	localVarHTTPHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
+	if localVarHTTPHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
+	}
+	// body params
+	localVarPostBody = r.updateSensorRequest
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
 		return localVarReturnValue, nil, err

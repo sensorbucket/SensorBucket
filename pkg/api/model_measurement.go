@@ -3,7 +3,7 @@ Sensorbucket API
 
 SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex' 
 
-API version: 1.1-rc1
+API version: 1.2.5
 Contact: info@pollex.nl
 */
 
@@ -18,6 +18,7 @@ import (
 
 // Measurement struct for Measurement
 type Measurement struct {
+	MeasurementId int64 `json:"measurement_id"`
 	UplinkMessageId string `json:"uplink_message_id"`
 	DeviceId int64 `json:"device_id"`
 	DeviceCode string `json:"device_code"`
@@ -53,8 +54,9 @@ type Measurement struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewMeasurement(uplinkMessageId string, deviceId int64, deviceCode string, deviceState int32, sensorId int64, sensorCode string, sensorExternalId string, datastreamId string, datastreamObservedProperty string, datastreamUnitOfMeasurement string, measurementTimestamp time.Time, measurementValue float64, measurementExpiration time.Time) *Measurement {
+func NewMeasurement(measurementId int64, uplinkMessageId string, deviceId int64, deviceCode string, deviceState int32, sensorId int64, sensorCode string, sensorExternalId string, datastreamId string, datastreamObservedProperty string, datastreamUnitOfMeasurement string, measurementTimestamp time.Time, measurementValue float64, measurementExpiration time.Time) *Measurement {
 	this := Measurement{}
+	this.MeasurementId = measurementId
 	this.UplinkMessageId = uplinkMessageId
 	this.DeviceId = deviceId
 	this.DeviceCode = deviceCode
@@ -77,6 +79,30 @@ func NewMeasurement(uplinkMessageId string, deviceId int64, deviceCode string, d
 func NewMeasurementWithDefaults() *Measurement {
 	this := Measurement{}
 	return &this
+}
+
+// GetMeasurementId returns the MeasurementId field value
+func (o *Measurement) GetMeasurementId() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.MeasurementId
+}
+
+// GetMeasurementIdOk returns a tuple with the MeasurementId field value
+// and a boolean to check if the value has been set.
+func (o *Measurement) GetMeasurementIdOk() (*int64, bool) {
+	if o == nil {
+    return nil, false
+	}
+	return &o.MeasurementId, true
+}
+
+// SetMeasurementId sets field value
+func (o *Measurement) SetMeasurementId(v int64) {
+	o.MeasurementId = v
 }
 
 // GetUplinkMessageId returns the UplinkMessageId field value
@@ -905,6 +931,9 @@ func (o *Measurement) SetCreatedAt(v time.Time) {
 
 func (o Measurement) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
+	if true {
+		toSerialize["measurement_id"] = o.MeasurementId
+	}
 	if true {
 		toSerialize["uplink_message_id"] = o.UplinkMessageId
 	}

@@ -3,7 +3,7 @@ Sensorbucket API
 
 SensorBucket processes data from different sources and devices into a single standardized format.  An applications connected to SensorBucket, can use all devices SensorBucket supports.  Missing a device or source? SensorBucket is designed to be scalable and extendable. Create your own worker that receives data from an AMQP source, process said data and output in the expected worker output format.  Find out more at: https://developer.sensorbucket.nl/  Developed and designed by Provincie Zeeland and Pollex' 
 
-API version: 1.1-rc1
+API version: 1.2.5
 Contact: info@pollex.nl
 */
 
@@ -22,7 +22,7 @@ type UserWorker struct {
 	Description string `json:"description"`
 	State string `json:"state"`
 	Language string `json:"language"`
-	Organisation int64 `json:"organisation"`
+	TenantId *int64 `json:"tenant_id,omitempty"`
 	Revision int32 `json:"revision"`
 	Status string `json:"status"`
 }
@@ -31,14 +31,13 @@ type UserWorker struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewUserWorker(id string, name string, description string, state string, language string, organisation int64, revision int32, status string) *UserWorker {
+func NewUserWorker(id string, name string, description string, state string, language string, revision int32, status string) *UserWorker {
 	this := UserWorker{}
 	this.Id = id
 	this.Name = name
 	this.Description = description
 	this.State = state
 	this.Language = language
-	this.Organisation = organisation
 	this.Revision = revision
 	this.Status = status
 	return &this
@@ -172,28 +171,36 @@ func (o *UserWorker) SetLanguage(v string) {
 	o.Language = v
 }
 
-// GetOrganisation returns the Organisation field value
-func (o *UserWorker) GetOrganisation() int64 {
-	if o == nil {
+// GetTenantId returns the TenantId field value if set, zero value otherwise.
+func (o *UserWorker) GetTenantId() int64 {
+	if o == nil || isNil(o.TenantId) {
 		var ret int64
 		return ret
 	}
-
-	return o.Organisation
+	return *o.TenantId
 }
 
-// GetOrganisationOk returns a tuple with the Organisation field value
+// GetTenantIdOk returns a tuple with the TenantId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *UserWorker) GetOrganisationOk() (*int64, bool) {
-	if o == nil {
+func (o *UserWorker) GetTenantIdOk() (*int64, bool) {
+	if o == nil || isNil(o.TenantId) {
     return nil, false
 	}
-	return &o.Organisation, true
+	return o.TenantId, true
 }
 
-// SetOrganisation sets field value
-func (o *UserWorker) SetOrganisation(v int64) {
-	o.Organisation = v
+// HasTenantId returns a boolean if a field has been set.
+func (o *UserWorker) HasTenantId() bool {
+	if o != nil && !isNil(o.TenantId) {
+		return true
+	}
+
+	return false
+}
+
+// SetTenantId gets a reference to the given int64 and assigns it to the TenantId field.
+func (o *UserWorker) SetTenantId(v int64) {
+	o.TenantId = &v
 }
 
 // GetRevision returns the Revision field value
@@ -261,8 +268,8 @@ func (o UserWorker) MarshalJSON() ([]byte, error) {
 	if true {
 		toSerialize["language"] = o.Language
 	}
-	if true {
-		toSerialize["organisation"] = o.Organisation
+	if !isNil(o.TenantId) {
+		toSerialize["tenant_id"] = o.TenantId
 	}
 	if true {
 		toSerialize["revision"] = o.Revision

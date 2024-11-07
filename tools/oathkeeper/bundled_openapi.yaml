@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Sensorbucket API
-  version: 1.2.2
+  version: 1.2.5
   license:
     name: EUPLv1.2
     url: https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
@@ -386,6 +386,91 @@ paths:
         '404':
           $ref: '#/components/responses/404'
   /devices/{device_id}/sensors/{sensor_code}:
+    get:
+      operationId: GetSensor
+      summary: Get sensor
+      description: |
+        Get the sensor with the given identifier.
+
+        The returned sensor will also include the full model of the sensors attached to that sensor.
+      tags:
+        - Devices
+      parameters:
+        - name: device_id
+          description: The identifier of the device
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sensor_code
+          description: The code of the sensor
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Fetched sensor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched sensor
+                  data:
+                    $ref: '#/components/schemas/sensor'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    patch:
+      operationId: UpdateSensor
+      summary: Update sensor properties
+      description: |
+        Update a some properties of the sensor with the given identifier.
+
+        The request body should contain one or more modifiable properties of the Sensor.
+      tags:
+        - Devices
+      parameters:
+        - name: device_id
+          description: The identifier of the device
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sensor_code
+          description: The code of the sensor
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateSensorRequest'
+      responses:
+        '200':
+          description: Updated sensor properties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Updated sensor properties
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
     delete:
       operationId: DeleteDeviceSensor
       summary: Delete sensor
@@ -1996,6 +2081,25 @@ components:
         archive_time:
           type: integer
           example: 7
+    updateSensorRequest:
+      type: object
+      properties:
+        description:
+          type: string
+          example: Pressure sensor at 5 meters depth
+        external_id:
+          type: string
+          example: '5'
+        brand:
+          type: string
+          example: sensor brand ABC
+        properties:
+          type: object
+          example:
+            mount_height: 15cm
+        archive_time:
+          type: integer
+          example: 7
     sensorGroup:
       type: object
       required:
@@ -2033,6 +2137,7 @@ components:
     measurement:
       type: object
       required:
+        - measurement_id
         - uplink_message_id
         - device_id
         - device_code
@@ -2047,6 +2152,10 @@ components:
         - measurement_value
         - measurement_expiration
       properties:
+        measurement_id:
+          type: integer
+          format: int64
+          example: 458412
         uplink_message_id:
           type: string
           example: ca29e28e-eeb6-4662-922c-6cf6a36ccb6e

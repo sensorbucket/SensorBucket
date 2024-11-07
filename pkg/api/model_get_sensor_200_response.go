@@ -15,32 +15,31 @@ import (
 	"encoding/json"
 )
 
-// GetWorkerUserCode200Response struct for GetWorkerUserCode200Response
-type GetWorkerUserCode200Response struct {
+// GetSensor200Response struct for GetSensor200Response
+type GetSensor200Response struct {
 	Message *string `json:"message,omitempty"`
-	// The usercode base64 encoded
-	Data *string `json:"data,omitempty"`
+	Data *Sensor `json:"data,omitempty"`
 }
 
-// NewGetWorkerUserCode200Response instantiates a new GetWorkerUserCode200Response object
+// NewGetSensor200Response instantiates a new GetSensor200Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGetWorkerUserCode200Response() *GetWorkerUserCode200Response {
-	this := GetWorkerUserCode200Response{}
+func NewGetSensor200Response() *GetSensor200Response {
+	this := GetSensor200Response{}
 	return &this
 }
 
-// NewGetWorkerUserCode200ResponseWithDefaults instantiates a new GetWorkerUserCode200Response object
+// NewGetSensor200ResponseWithDefaults instantiates a new GetSensor200Response object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewGetWorkerUserCode200ResponseWithDefaults() *GetWorkerUserCode200Response {
-	this := GetWorkerUserCode200Response{}
+func NewGetSensor200ResponseWithDefaults() *GetSensor200Response {
+	this := GetSensor200Response{}
 	return &this
 }
 
 // GetMessage returns the Message field value if set, zero value otherwise.
-func (o *GetWorkerUserCode200Response) GetMessage() string {
+func (o *GetSensor200Response) GetMessage() string {
 	if o == nil || isNil(o.Message) {
 		var ret string
 		return ret
@@ -50,7 +49,7 @@ func (o *GetWorkerUserCode200Response) GetMessage() string {
 
 // GetMessageOk returns a tuple with the Message field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetWorkerUserCode200Response) GetMessageOk() (*string, bool) {
+func (o *GetSensor200Response) GetMessageOk() (*string, bool) {
 	if o == nil || isNil(o.Message) {
     return nil, false
 	}
@@ -58,7 +57,7 @@ func (o *GetWorkerUserCode200Response) GetMessageOk() (*string, bool) {
 }
 
 // HasMessage returns a boolean if a field has been set.
-func (o *GetWorkerUserCode200Response) HasMessage() bool {
+func (o *GetSensor200Response) HasMessage() bool {
 	if o != nil && !isNil(o.Message) {
 		return true
 	}
@@ -67,14 +66,14 @@ func (o *GetWorkerUserCode200Response) HasMessage() bool {
 }
 
 // SetMessage gets a reference to the given string and assigns it to the Message field.
-func (o *GetWorkerUserCode200Response) SetMessage(v string) {
+func (o *GetSensor200Response) SetMessage(v string) {
 	o.Message = &v
 }
 
 // GetData returns the Data field value if set, zero value otherwise.
-func (o *GetWorkerUserCode200Response) GetData() string {
+func (o *GetSensor200Response) GetData() Sensor {
 	if o == nil || isNil(o.Data) {
-		var ret string
+		var ret Sensor
 		return ret
 	}
 	return *o.Data
@@ -82,7 +81,7 @@ func (o *GetWorkerUserCode200Response) GetData() string {
 
 // GetDataOk returns a tuple with the Data field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetWorkerUserCode200Response) GetDataOk() (*string, bool) {
+func (o *GetSensor200Response) GetDataOk() (*Sensor, bool) {
 	if o == nil || isNil(o.Data) {
     return nil, false
 	}
@@ -90,7 +89,7 @@ func (o *GetWorkerUserCode200Response) GetDataOk() (*string, bool) {
 }
 
 // HasData returns a boolean if a field has been set.
-func (o *GetWorkerUserCode200Response) HasData() bool {
+func (o *GetSensor200Response) HasData() bool {
 	if o != nil && !isNil(o.Data) {
 		return true
 	}
@@ -98,12 +97,12 @@ func (o *GetWorkerUserCode200Response) HasData() bool {
 	return false
 }
 
-// SetData gets a reference to the given string and assigns it to the Data field.
-func (o *GetWorkerUserCode200Response) SetData(v string) {
+// SetData gets a reference to the given Sensor and assigns it to the Data field.
+func (o *GetSensor200Response) SetData(v Sensor) {
 	o.Data = &v
 }
 
-func (o GetWorkerUserCode200Response) MarshalJSON() ([]byte, error) {
+func (o GetSensor200Response) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
 	if !isNil(o.Message) {
 		toSerialize["message"] = o.Message
@@ -114,38 +113,38 @@ func (o GetWorkerUserCode200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-type NullableGetWorkerUserCode200Response struct {
-	value *GetWorkerUserCode200Response
+type NullableGetSensor200Response struct {
+	value *GetSensor200Response
 	isSet bool
 }
 
-func (v NullableGetWorkerUserCode200Response) Get() *GetWorkerUserCode200Response {
+func (v NullableGetSensor200Response) Get() *GetSensor200Response {
 	return v.value
 }
 
-func (v *NullableGetWorkerUserCode200Response) Set(val *GetWorkerUserCode200Response) {
+func (v *NullableGetSensor200Response) Set(val *GetSensor200Response) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableGetWorkerUserCode200Response) IsSet() bool {
+func (v NullableGetSensor200Response) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableGetWorkerUserCode200Response) Unset() {
+func (v *NullableGetSensor200Response) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableGetWorkerUserCode200Response(val *GetWorkerUserCode200Response) *NullableGetWorkerUserCode200Response {
-	return &NullableGetWorkerUserCode200Response{value: val, isSet: true}
+func NewNullableGetSensor200Response(val *GetSensor200Response) *NullableGetSensor200Response {
+	return &NullableGetSensor200Response{value: val, isSet: true}
 }
 
-func (v NullableGetWorkerUserCode200Response) MarshalJSON() ([]byte, error) {
+func (v NullableGetSensor200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableGetWorkerUserCode200Response) UnmarshalJSON(src []byte) error {
+func (v *NullableGetSensor200Response) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

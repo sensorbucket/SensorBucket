@@ -103,10 +103,10 @@ func StreamDeviceDetailBlock(qw422016 *qt422016.Writer, device api.Device) {
 	qw422016.N().S(`</span>
         </div>
         <div class="flex flex-col">
-            <small class="text-xs font-semibold text-slate-500">Organisation</small>
+            <small class="text-xs font-semibold text-slate-500">TenantID</small>
             <span>`)
 //line views/detailBlocks.qtpl:31
-	qw422016.E().S(device.Organisation)
+	qw422016.N().DL(device.TenantId)
 //line views/detailBlocks.qtpl:31
 	qw422016.N().S(`</span>
         </div>
