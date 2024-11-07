@@ -234,6 +234,54 @@ func (s *Service) GetSensor(ctx context.Context, id int64) (*Sensor, error) {
 	return s.store.GetSensor(ctx, id)
 }
 
+type UpdateSensorOpts struct {
+	Description *string         `json:"description"`
+	Brand       *string         `json:"brand"`
+	ArchiveTime *int            `json:"archive_time"`
+	ExternalID  *string         `json:"external_id"`
+	IsFallback  *bool           `json:"is_fallback"`
+	Properties  json.RawMessage `json:"properties"`
+}
+
+func (s *Service) UpdateSensor(ctx context.Context, device *Device, sensor *Sensor, opt UpdateSensorOpts) error {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
+		return err
+	}
+
+	if opt.Description != nil {
+		sensor.Description = *opt.Description
+	}
+	if opt.Brand != nil {
+		sensor.Brand = *opt.Brand
+	}
+	if opt.ArchiveTime != nil {
+		if *opt.ArchiveTime == 0 {
+			sensor.ArchiveTime = nil
+		} else {
+			sensor.ArchiveTime = opt.ArchiveTime
+		}
+	}
+	if opt.ExternalID != nil {
+		sensor.ExternalID = *opt.ExternalID
+	}
+	if opt.IsFallback != nil {
+		sensor.IsFallback = *opt.IsFallback
+	}
+	if opt.Properties != nil {
+		sensor.Properties = opt.Properties
+	}
+
+	if err := device.UpdateSensor(sensor); err != nil {
+		return err
+	}
+
+	if err := s.store.Save(ctx, device); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Service) CreateSensorGroup(ctx context.Context, name, description string) (*SensorGroup, error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
 		return nil, err

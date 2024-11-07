@@ -12,6 +12,12 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
 
+var ErrHTTPSensorIDInvalid = web.NewError(
+	http.StatusBadRequest,
+	"Sensor ID must be an integer",
+	"SENSOR_ID_INVALID",
+)
+
 func (t *CoreTransport) httpListDeviceSensors() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		device := r.Context().Value(ctxDeviceKey).(*devices.Device)
@@ -46,21 +52,16 @@ func (t *CoreTransport) httpAddSensor() http.HandlerFunc {
 
 func (t *CoreTransport) httpDeleteSensor() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		dev := r.Context().Value(ctxDeviceKey).(*devices.Device)
+		device := r.Context().Value(ctxDeviceKey).(*devices.Device)
+		sensor := r.Context().Value(ctxSensorKey).(*devices.Sensor)
 
-		sensor, err := dev.GetSensorByCode(chi.URLParam(r, "sensor_code"))
-		if err != nil {
-			web.HTTPError(rw, err)
-			return
-		}
-
-		if err := t.deviceService.DeleteSensor(r.Context(), dev, sensor); err != nil {
+		if err := t.deviceService.DeleteSensor(r.Context(), device, sensor); err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
 
 		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
-			Message: "Deleted sensor from device",
+			Message: "Deleted sensor",
 		})
 	}
 }
@@ -83,22 +84,54 @@ func (t *CoreTransport) httpListSensors() http.HandlerFunc {
 
 func (t *CoreTransport) httpGetSensor() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		sensorIDQ := chi.URLParam(r, "id")
-		sensorID, err := strconv.ParseInt(sensorIDQ, 10, 64)
-		if err != nil {
-			web.HTTPError(w, web.NewError(http.StatusBadRequest, "invalid sensor id", ""))
+		sensorCTX := r.Context().Value(ctxSensorKey)
+		if sensorCTX != nil {
+			web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
+				Message: "Fetched sensor",
+				Data:    sensorCTX.(*devices.Sensor),
+			})
 			return
 		}
-
+		sensorIDString := chi.URLParam(r, "sensor_id")
+		if sensorIDString == "" {
+			web.HTTPError(w, ErrHTTPSensorIDInvalid)
+			return
+		}
+		sensorID, err := strconv.ParseInt(sensorIDString, 10, 64)
+		if err != nil {
+			web.HTTPError(w, ErrHTTPDeviceIDInvalid)
+			return
+		}
 		sensor, err := t.deviceService.GetSensor(r.Context(), sensorID)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
-
 		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
 			Message: "Fetched sensor",
 			Data:    sensor,
+		})
+	}
+}
+
+func (t *CoreTransport) httpUpdateSensor() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		dev := r.Context().Value(ctxDeviceKey).(*devices.Device)
+		sensor := r.Context().Value(ctxSensorKey).(*devices.Sensor)
+
+		var dto devices.UpdateSensorOpts
+		if err := web.DecodeJSON(r, &dto); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		if err := t.deviceService.UpdateSensor(r.Context(), dev, sensor, dto); err != nil {
+			web.HTTPError(w, err)
+			return
+		}
+
+		web.HTTPResponse(w, http.StatusOK, &web.APIResponseAny{
+			Message: "Updated sensor",
 		})
 	}
 }

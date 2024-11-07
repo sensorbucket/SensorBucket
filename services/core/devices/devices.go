@@ -259,6 +259,19 @@ func (d *Device) DeleteSensorByID(id int64) error {
 	return ErrSensorNotFound
 }
 
+func (d *Device) UpdateSensor(sensor *Sensor) error {
+	if sensor == nil {
+		return nil
+	}
+	for ix := range d.Sensors {
+		if d.Sensors[ix].ID == sensor.ID {
+			d.Sensors[ix] = *sensor
+			return nil
+		}
+	}
+	return fmt.Errorf("cant update sensor: %w", ErrSensorNotFound)
+}
+
 func (d *Device) ClearLocation() {
 	d.Latitude = nil
 	d.Longitude = nil

@@ -75,12 +75,19 @@ func (t *CoreTransport) routes() {
 		r.Route("/sensors", func(r chi.Router) {
 			r.Get("/", t.httpListDeviceSensors())
 			r.Post("/", t.httpAddSensor())
-			r.Delete("/{sensor_code}", t.httpDeleteSensor())
+			r.Route("/{sensor_code}", func(r chi.Router) {
+				r.Use(t.useSensorResolver())
+				r.Get("/", t.httpGetSensor())
+				r.Delete("/", t.httpDeleteSensor())
+				r.Patch("/", t.httpUpdateSensor())
+			})
 		})
 	})
 
 	r.Get("/sensors", t.httpListSensors())
-	r.Get("/sensors/{id}", t.httpGetSensor())
+	r.Route("/sensors/{sensor_id}", func(r chi.Router) {
+		r.Get("/", t.httpGetSensor())
+	})
 	r.Route("/sensor-groups", func(r chi.Router) {
 		r.Post("/", t.httpCreateSensorGroup())
 		r.Get("/", t.httpListSensorGroups())
