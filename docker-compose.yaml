@@ -13,7 +13,7 @@ services:
     build:
       context: .
       dockerfile: services/dashboard/Dockerfile
-      target: dev
+      target: builder
     volumes:
       - .:/workspace:cached
     environment:
@@ -62,7 +62,7 @@ services:
     build:
       context: .
       dockerfile: services/tenants/Dockerfile
-      target: dev
+      target: builder
     volumes:
       - .:/workspace:cached
     environment:
