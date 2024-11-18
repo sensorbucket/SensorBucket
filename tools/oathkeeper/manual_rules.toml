@@ -28,12 +28,12 @@ Mutators = ["Hydrate", "IDToken"]
 Path = "/tenants/api-keys<(/.*)?>"
 Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
 
-[Rules.TenantsAuthCheck]
-Description = "Check auth token"
-Authenticators = ["APIKey", "CookieSession"]
-Mutators = ["Hydrate", "IDToken"]
-Path = "/tenants/auth"
-Methods = ["GET"]
+#[Rules.TenantsAuthCheck]
+#Description = "Check auth token"
+#Authenticators = ["APIKey", "CookieSession"]
+#Mutators = ["Hydrate", "IDToken"]
+#Path = "/tenants/auth"
+#Methods = ["GET"]
 
 [Rules.TenantsPublicStatic]
 Description = "Static UI Files"
@@ -41,3 +41,11 @@ Authenticators = ["Noop"]
 Mutators = ["Noop"]
 Path = "/tenants/static/<.*>"
 Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
+
+[Rules.APIKeysReflectAuth]
+Description = "Echoes the header Authorization header"
+Domains = ["*"]
+Authenticators = ["APIKey"]
+Mutators = ["Hydrate", "IDToken"]
+Path = "/api-keys/reflect"
+Methods = ["GET"]
