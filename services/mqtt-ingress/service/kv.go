@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -40,13 +41,17 @@ func (kv *KV[T]) StartCleaner(interval time.Duration) {
 
 func (kv *KV[T]) Clean() {
 	now := time.Now()
+	count := uint(0)
 	kv.lock.Lock()
 	for key, value := range kv.values {
 		if now.After(value.Expiry) {
 			delete(kv.values, key)
+			count++
 		}
 	}
-	defer kv.lock.Unlock()
+	kv.lock.Unlock()
+	tooketh := time.Now().Sub(now)
+	fmt.Printf("KV Clean: took %d ms and %d items cleared\n", tooketh.Milliseconds(), count)
 }
 
 func (kv *KV[T]) Set(key string, value T, expiry time.Time) {

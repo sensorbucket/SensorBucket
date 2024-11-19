@@ -1,11 +1,12 @@
 # Build stage
-FROM --platform=$BUILDPLATFORM golang:1.22-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.22-alpine AS dev
 
 # Set working directory
-WORKDIR /app
+WORKDIR /workspace
 
 RUN go install github.com/valyala/quicktemplate/qtc@latest
 RUN go install github.com/evanw/esbuild/cmd/esbuild@latest
+RUN go install github.com/cespare/reflex@latest
 RUN apk add --no-cache git ca-certificates tzdata make curl
 RUN curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/download/v3.3.3/tailwindcss-linux-x64 \
     && chmod +x tailwindcss-linux-x64 \
@@ -17,6 +18,11 @@ COPY go.mod go.sum ./
 
 # Download dependencies
 RUN go mod download
+
+CMD make -C services/tenants watch
+
+FROM dev AS builder
+WORKDIR /app
 
 # Copy the source code
 COPY . .

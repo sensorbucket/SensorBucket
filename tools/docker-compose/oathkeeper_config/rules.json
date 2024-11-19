@@ -4,7 +4,11 @@
         "match": {
             "url": "http://<127.0.0.1|localhost>:3000/<(\\.ory|tenants/auth/settings|tenants/auth/login|tenants/auth/logout|tenants/auth/recovery|tenants/static|dev|pprof)(/.+)?>",
             "methods": [
-                "GET","POST","PATCH","PUT","DELETE"
+                "GET",
+                "POST",
+                "PATCH",
+                "PUT",
+                "DELETE"
             ]
         },
         "authenticators": [
@@ -15,7 +19,11 @@
         "authorizer": {
             "handler": "allow"
         },
-        "mutators": [{"handler":"noop"}]
+        "mutators": [
+            {
+                "handler": "noop"
+            }
+        ]
     },
     {
         "id": "auth",
@@ -77,6 +85,40 @@
         "mutators": [
             {
                 "handler": "noop"
+            }
+        ]
+    },
+    {
+        "id": "apikey-reflection",
+        "match": {
+            "url": "http://oathkeeper:4456</?>",
+            "methods": [
+                "GET",
+                "POST",
+                "PATCH",
+                "PUT",
+                "DELETE"
+            ]
+        },
+        "authenticators": [
+            {
+                "handler": "bearer_token"
+            }
+        ],
+        "authorizer": {
+            "handler": "allow"
+        },
+        "mutators": [
+            {
+                "handler": "hydrator"
+            },
+            {
+                "handler": "id_token"
+            }
+        ],
+        "errors": [
+            {
+                "handler": "json"
             }
         ]
     }

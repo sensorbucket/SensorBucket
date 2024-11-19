@@ -2,20 +2,27 @@ package main
 
 import (
 	"context"
-	"io"
+	"fmt"
 	"log"
 	"net/http"
 	"os/signal"
 	"syscall"
 
 	mqtt "github.com/mochi-mqtt/server/v2"
-	"github.com/mochi-mqtt/server/v2/hooks/auth"
+	mqqtauth "github.com/mochi-mqtt/server/v2/hooks/auth"
 	"github.com/mochi-mqtt/server/v2/listeners"
 	"sensorbucket.nl/sensorbucket/internal/env"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/mqtt-ingress/service"
 )
 
-var APIKEY_TRADE_URL = env.Must("APIKEY_TRADE_URL")
+var (
+	APIKEY_TRADE_URL = env.Must("APIKEY_TRADE_URL")
+	AMQP_HOST        = env.Could("AMQP_HOST", "amqp://guest:guest@localhost/")
+	AMQP_XCHG        = env.Could("AMQP_XCHG", "ingress")
+	AMQP_XCHG_TOPIC  = env.Could("AMQP_XCHG_TOPIC", "ingress.httpimporter")
+)
 
 func main() {
 	if err := Run(); err != nil {
@@ -27,17 +34,25 @@ func Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	authRules := &auth.Ledger{
-		ACL: auth.ACLRules{
-			{Filters: auth.Filters{
-				"#": auth.WriteOnly,
+	// Create AMQP Message Queue
+	mqConn := mq.NewConnection(AMQP_HOST)
+	go mqConn.Start()
+	defer mqConn.Shutdown()
+	publisher := service.StartIngressDTOPublisher(mqConn, AMQP_XCHG, AMQP_XCHG_TOPIC)
+	log.Printf("AMQP Publisher started...\n")
+
+	authRules := &mqqtauth.Ledger{
+		ACL: mqqtauth.ACLRules{
+			{Filters: mqqtauth.Filters{
+				"#": mqqtauth.WriteOnly,
 			}},
 		},
 	}
 
 	server := mqtt.New(nil)
 	if err := server.AddHook(new(service.Auther), &service.AuthHookOptions{
-		Context: ctx,
+		Context:   ctx,
+		Publisher: publisher,
 		APIKeyTrader: func(apiKey string) (string, error) {
 			req, _ := http.NewRequest("GET", APIKEY_TRADE_URL, nil)
 			req.Header.Set("Authorization", "Bearer "+apiKey)
@@ -45,17 +60,16 @@ func Run() error {
 			if err != nil {
 				return "", err
 			}
-			body, err := io.ReadAll(res.Body)
-			if err != nil {
-				return "", err
+			if res.StatusCode != http.StatusOK {
+				return "", fmt.Errorf("expected status 200 got: %d", res.StatusCode)
 			}
-			res.Body.Close()
-			return string(body), nil
+			newAuth, _ := auth.StripBearer(res.Header.Get("Authorization"))
+			return newAuth, nil
 		},
 	}); err != nil {
 		return err
 	}
-	err := server.AddHook(new(auth.Hook), &auth.Options{
+	err := server.AddHook(new(mqqtauth.Hook), &mqqtauth.Options{
 		Ledger: authRules,
 	})
 	if err != nil {
@@ -77,6 +91,7 @@ func Run() error {
 		}
 	}()
 
+	log.Println("Server running")
 	select {
 	case err = <-errC:
 		log.Println("Closing due to error")

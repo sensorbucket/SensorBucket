@@ -6,105 +6,173 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var (
-	ErrMalformedJWT = errors.New("JWT is malformed")
-	ErrJWTExpired   = errors.New("JWT is expired")
-	ErrNoAPIKey     = errors.New("no APIKey available")
+	ErrMalformedJWT   = errors.New("JWT is malformed")
+	ErrJWTExpired     = errors.New("JWT is expired")
+	ErrClientNotFound = errors.New("client info is missing")
 )
 
 type APIKeyTrader func(jwt string) (string, error)
 
+type ClientInfo struct {
+	// Static; won't be refreshed
+	PipelineID uuid.UUID
+	APIKey     string
+	// Dynamic; will be refreshed
+	TenantID    int64
+	AccessToken string
+	Expiry      time.Time
+}
+type Client struct {
+	info         ClientInfo
+	tradeKey     APIKeyTrader
+	jwtTTLMargin time.Duration
+	lock         sync.RWMutex
+}
+
+func NewClient(pipelineID uuid.UUID, apiKey string, tradeKey APIKeyTrader, jwtTTLMargin time.Duration) (*Client, error) {
+	client := &Client{
+		info: ClientInfo{
+			PipelineID: pipelineID,
+			APIKey:     apiKey,
+		},
+		tradeKey:     tradeKey,
+		jwtTTLMargin: jwtTTLMargin,
+		lock:         sync.RWMutex{},
+	}
+	if err := client.refresh(); err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
+func (client *Client) refresh() error {
+	jwt, err := client.tradeKey(client.info.APIKey)
+	if err != nil {
+		return fmt.Errorf("authenticating APIKey: %w", err)
+	}
+	claims, err := extractClaims(jwt)
+	if err != nil {
+		return fmt.Errorf("extracting JWT claims: %w", err)
+	}
+	expiry := time.Unix(claims.Expiry, 0).Add(-client.jwtTTLMargin)
+	if time.Now().After(expiry) {
+		return fmt.Errorf("%w at %v, TTLMargin too big", ErrJWTExpired, expiry)
+	}
+	log.Printf("MQTT Client (%s) refreshed, expires at: %s\n", "unknown", expiry.String())
+
+	client.info.AccessToken = jwt
+	client.info.TenantID = claims.TenantID
+	client.info.Expiry = expiry
+	return nil
+}
+
+func (client *Client) Info() (ClientInfo, error) {
+	client.lock.RLock()
+	info := client.info
+	if time.Now().Before(info.Expiry) {
+		client.lock.RUnlock()
+		return info, nil
+	}
+	client.lock.RUnlock()
+
+	// Info was expired when we read it, take full lock and refresh info
+	// Make sure that the info wasn't refreshed in between our locks
+	client.lock.Lock()
+	// Info was refreshed between locks, return new info
+	if time.Now().Before(client.info.Expiry) {
+		info = client.info
+		client.lock.Unlock()
+		return info, nil
+	}
+
+	if err := client.refresh(); err != nil {
+		return ClientInfo{}, err
+	}
+	info = client.info
+	client.lock.Unlock()
+
+	return info, nil
+}
+
 type ClientKeySets struct {
-	apiKeys  map[string]string
-	jwts     *KV[string]
-	tradeKey APIKeyTrader
+	clients      map[string]*Client
+	jwtTTLMargin time.Duration
+	tradeKey     APIKeyTrader
 }
 
 func CreateClientKeySets(ctx context.Context, apiKeyTrader APIKeyTrader) *ClientKeySets {
 	ks := &ClientKeySets{
-		apiKeys:  map[string]string{},
-		jwts:     NewKV[string](ctx),
-		tradeKey: apiKeyTrader,
+		clients:      map[string]*Client{},
+		tradeKey:     apiKeyTrader,
+		jwtTTLMargin: time.Minute * 1,
 	}
-	go ks.jwts.StartCleaner(5 * time.Second)
 	return ks
 }
 
-func (keysets *ClientKeySets) Authenticate(clientID, apiKey string) error {
-	jwt, err := keysets.tradeKey(apiKey)
+func (keysets *ClientKeySets) Authenticate(clientID, username, apiKey string) error {
+	pipelineID, err := uuid.Parse(username)
+	if err != nil {
+		return fmt.Errorf("invalid pipelineID: %w", err)
+	}
+
+	client, err := NewClient(pipelineID, apiKey, keysets.tradeKey, keysets.jwtTTLMargin)
 	if err != nil {
 		return err
 	}
 
-	// APIKey can be traded for JWT so its valid
-	keysets.apiKeys[clientID] = apiKey
-	if err := keysets.updateJWT(clientID, jwt); err != nil {
-		return fmt.Errorf("updating JWT in memory: %w", err)
-	}
+	keysets.clients[clientID] = client
 
 	return nil
 }
 
 func (keysets *ClientKeySets) Destroy(clientID string) {
-	delete(keysets.apiKeys, clientID)
-	keysets.jwts.Delete(clientID)
+	delete(keysets.clients, clientID)
 }
 
-func (keysets *ClientKeySets) GetClientJWT(clientID string) (string, error) {
-	jwt, ok := keysets.jwts.Get(clientID)
-	if ok {
-		return jwt, nil
-	}
-
-	return keysets.refreshJWT(clientID)
-}
-
-func (keysets *ClientKeySets) refreshJWT(clientID string) (string, error) {
-	apiKey, ok := keysets.apiKeys[clientID]
+func (keysets *ClientKeySets) GetClient(clientID string) (ClientInfo, error) {
+	client, ok := keysets.clients[clientID]
 	if !ok {
-		return "", ErrNoAPIKey
+		return ClientInfo{}, ErrClientNotFound
 	}
 
-	jwt, err := keysets.tradeKey(apiKey)
-	if err != nil {
-		return "", fmt.Errorf("authenticating APIKey: %w", err)
-	}
-	if err := keysets.updateJWT(clientID, jwt); err != nil {
-		return "", fmt.Errorf("updating JWT in memory: %w", err)
-	}
-
-	return jwt, nil
+	return client.Info()
 }
 
-type jwtExpiry struct {
-	Expiry int64 `json:"exp"`
+type jwtClaims struct {
+	Expiry   int64 `json:"exp"`
+	TenantID int64 `json:"tid"`
 }
 
-func (keysets *ClientKeySets) updateJWT(clientID, jwt string) error {
+func extractClaims(jwt string) (jwtClaims, error) {
+	var claims jwtClaims
+
 	parts := strings.Split(jwt, ".")
 	if len(parts) != 3 {
-		return ErrMalformedJWT
+		return claims, ErrMalformedJWT
 	}
 
 	data, err := base64.StdEncoding.WithPadding(base64.NoPadding).DecodeString(parts[1])
 	if err != nil {
-		return err
+		return claims, err
 	}
 
-	var body jwtExpiry
-	if err := json.Unmarshal(data, &body); err != nil {
-		return err
+	if err := json.Unmarshal(data, &claims); err != nil {
+		return claims, err
 	}
 
-	expiry := time.UnixMilli(body.Expiry)
+	expiry := time.Unix(claims.Expiry, 0)
 	if time.Now().After(expiry) {
-		return ErrJWTExpired
+		return claims, fmt.Errorf("%w at %v", ErrJWTExpired, expiry)
 	}
-	keysets.jwts.Set(clientID, jwt, expiry)
 
-	return nil
+	return claims, nil
 }
