@@ -38,7 +38,7 @@
 
     handle_path /dev/metrics/* {
         handle_path /mqttingress* {
-            reverse_proxy mqttingress:3100
+            reverse_proxy mqttingress:2112
         }
     }
 

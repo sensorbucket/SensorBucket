@@ -142,6 +142,7 @@ services:
     - AMQP_XCHG=ingress
     - AMQP_XCHG_TOPIC=ingress.mqtt
     - PROFILER_ADDR=:3100
+    - METRICS_ADDR=:2112
 
   oathkeeper:
     image: oryd/oathkeeper:v0.40.6
