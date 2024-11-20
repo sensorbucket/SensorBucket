@@ -65,8 +65,8 @@ func (h *Auther) OnClientExpired(cl *mqtt.Client) {
 	h.clients.Destroy(cl.ID)
 }
 
-type IngressPayload struct {
-	Topic string
+type DTOMetadata struct {
+	Topic string `json:"topic"`
 }
 
 func (h *Auther) OnPublish(cl *mqtt.Client, pk packets.Packet) (packets.Packet, error) {
@@ -75,10 +75,14 @@ func (h *Auther) OnPublish(cl *mqtt.Client, pk packets.Packet) (packets.Packet, 
 
 	client, err := h.clients.GetClient(cl.ID)
 	if err != nil {
-		return packets.Packet{}, err
+		return pk, err
 	}
 
-	h.publisher <- processing.CreateIngressDTO(client.APIKey, client.PipelineID, client.TenantID, pk.Payload)
+	dto := processing.CreateIngressDTO(client.AccessToken, client.PipelineID, client.TenantID, pk.Payload)
+	dto.Metadata["mqtt"] = DTOMetadata{
+		Topic: pk.TopicName,
+	}
+	h.publisher <- dto
 
 	return pk, nil
 }

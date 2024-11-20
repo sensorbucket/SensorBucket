@@ -9,12 +9,13 @@ import (
 )
 
 type IngressDTO struct {
-	TracingID   uuid.UUID `json:"tracing_id"`
-	PipelineID  uuid.UUID `json:"pipeline_id"`
-	TenantID    int64     `json:"tenant_id"`
-	Payload     []byte    `json:"payload,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	AccessToken string    `json:"access_token"`
+	TracingID   uuid.UUID      `json:"tracing_id"`
+	PipelineID  uuid.UUID      `json:"pipeline_id"`
+	TenantID    int64          `json:"tenant_id"`
+	Payload     []byte         `json:"payload,omitempty"`
+	CreatedAt   time.Time      `json:"created_at"`
+	AccessToken string         `json:"access_token"`
+	Metadata    map[string]any `json:"metadata"`
 }
 
 func CreateIngressDTO(accessToken string, pipeline uuid.UUID, ownerID int64, payload []byte) IngressDTO {
@@ -25,6 +26,7 @@ func CreateIngressDTO(accessToken string, pipeline uuid.UUID, ownerID int64, pay
 		TenantID:    ownerID,
 		Payload:     payload,
 		AccessToken: accessToken,
+		Metadata:    make(map[string]any),
 	}
 }
 
@@ -40,7 +42,7 @@ func TransformIngressDTOToPipelineMessage(dto IngressDTO, pl *Pipeline) (*pipeli
 		PipelineSteps: pl.Steps,
 		StepIndex:     0,
 		Measurements:  []pipeline.Measurement{},
-		Metadata:      make(map[string]any),
+		Metadata:      dto.Metadata,
 	}
 	return &pipelineMessage, nil
 }
