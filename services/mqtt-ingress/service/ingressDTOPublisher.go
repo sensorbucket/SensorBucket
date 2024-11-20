@@ -1,10 +1,12 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 
 	"github.com/rabbitmq/amqp091-go"
+	"go.opentelemetry.io/otel/metric"
 
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
@@ -17,6 +19,13 @@ func StartIngressDTOPublisher(conn *mq.AMQPConnection, xchg, topic string) chan<
 		return c.ExchangeDeclare(xchg, "topic", true, false, false, false, nil)
 	})
 	dtoC := make(chan processing.IngressDTO, buffer)
+	_, err := meter.Int64ObservableGauge("dto_publisher_backlog_count", metric.WithInt64Callback(func(ctx context.Context, o metric.Int64Observer) error {
+		o.Observe(int64(len(dtoC)))
+		return nil
+	}))
+	if err != nil {
+		log.Printf("In IngressDTOPublisher, could not create backlog metric: %s\n", err.Error())
+	}
 	go func() {
 		log.Println("IngressDTOPublisher running...")
 		for dto := range dtoC {

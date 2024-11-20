@@ -129,6 +129,7 @@ func (keysets *ClientKeySets) Authenticate(clientID, username, apiKey string) er
 		return err
 	}
 
+	keysets.Destroy(clientID)
 	keysets.clients[clientID] = client
 
 	return nil

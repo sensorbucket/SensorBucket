@@ -52,10 +52,12 @@ func (h *Auther) Provides(b byte) bool {
 }
 
 func (h *Auther) OnConnectAuthenticate(cl *mqtt.Client, pk packets.Packet) bool {
+	cntClientAuth.Add(context.Background(), 1)
 	if err := h.clients.Authenticate(cl.ID, string(cl.Properties.Username), string(pk.Connect.Password)); err != nil {
 		log.Printf("Error authenticating APIKey: %s\n", err.Error())
 		return false
 	}
+	cntClientAuthSuccess.Add(context.Background(), 1)
 	return true
 }
 
@@ -68,6 +70,7 @@ type IngressPayload struct {
 }
 
 func (h *Auther) OnPublish(cl *mqtt.Client, pk packets.Packet) (packets.Packet, error) {
+	cntMQTTPublishes.Add(context.Background(), 1)
 	pk.Ignore = true
 
 	client, err := h.clients.GetClient(cl.ID)
@@ -76,7 +79,6 @@ func (h *Auther) OnPublish(cl *mqtt.Client, pk packets.Packet) (packets.Packet, 
 	}
 
 	h.publisher <- processing.CreateIngressDTO(client.APIKey, client.PipelineID, client.TenantID, pk.Payload)
-	// fmt.Printf("dto: %v\n", dto)
 
 	return pk, nil
 }
