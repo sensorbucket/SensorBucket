@@ -40,6 +40,21 @@ func CreateToken() string {
 	return tokenString
 }
 
+func CreateTokenWithExpiry(expires time.Time) string {
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
+		"tid":   DefaultTenantID,
+		"perms": auth.AllPermissions(),
+		"sub":   DefaultSub,
+		"exp":   expires.Unix(),
+	})
+	token.Header["kid"] = "test-key"
+	tokenString, err := token.SignedString(JsonPrivateKey())
+	if err != nil {
+		panic(err)
+	}
+	return tokenString
+}
+
 func AuthenticateRequest(req *http.Request) {
 	req.Header.Add("Authorization", "Bearer "+CreateToken())
 }

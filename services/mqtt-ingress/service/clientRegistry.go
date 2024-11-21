@@ -20,7 +20,7 @@ var (
 	ErrClientNotFound = errors.New("client info is missing")
 )
 
-type APIKeyTrader func(jwt string) (string, error)
+type APIKeyTrader func(apikey string) (string, error)
 
 type ClientInfo struct {
 	// Static; won't be refreshed
@@ -112,11 +112,11 @@ type ClientRegistry struct {
 	tradeKey     APIKeyTrader
 }
 
-func CreateClientRegistry(ctx context.Context, apiKeyTrader APIKeyTrader) *ClientRegistry {
+func CreateClientRegistry(ctx context.Context, apiKeyTrader APIKeyTrader, jwtTTLMargin time.Duration) *ClientRegistry {
 	ks := &ClientRegistry{
 		clients:      map[string]*Client{},
 		tradeKey:     apiKeyTrader,
-		jwtTTLMargin: time.Minute * 1,
+		jwtTTLMargin: jwtTTLMargin,
 	}
 	return ks
 }

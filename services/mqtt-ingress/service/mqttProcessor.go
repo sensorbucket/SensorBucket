@@ -37,7 +37,7 @@ func (h *MQTTProcessor) Init(_opts any) error {
 	}
 
 	h.ctx = opts.Context
-	h.clients = CreateClientRegistry(h.ctx, opts.APIKeyTrader)
+	h.clients = CreateClientRegistry(h.ctx, opts.APIKeyTrader, 5*time.Minute)
 	h.publisher = opts.Publisher
 
 	return nil
