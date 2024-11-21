@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"log"
+	"time"
 
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/packets"
@@ -85,6 +86,7 @@ func (h *MQTTProcessor) OnPublish(cl *mqtt.Client, pk packets.Packet) (packets.P
 	dto.Metadata["mqtt"] = DTOMetadata{
 		Topic: pk.TopicName,
 	}
+	dto.CreatedAt = time.Unix(pk.Created, 0)
 	h.publisher <- dto
 
 	return pk, nil
