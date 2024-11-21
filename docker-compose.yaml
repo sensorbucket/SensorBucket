@@ -1,4 +1,3 @@
-version: '3'
 name: sensorbucket
 services:
   caddy:
@@ -125,6 +124,25 @@ services:
     - AMQP_XCHG=ingress
     - AMQP_XCHG_TOPIC=ingress.httpimporter
     - PROFILER_ADDR=:3100
+
+  mqttingress:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "1883:1883"
+    volumes:
+      - .:/workspace:cached
+    environment:
+    - APP_NAME=mqtt-ingress
+    - APP_TYPE=service
+    - "APIKEY_TRADE_URL=http://oathkeeper:4456/decisions/"
+    - AMQP_HOST=amqp://guest:guest@mq:5672/
+    - AMQP_XCHG=ingress
+    - AMQP_XCHG_TOPIC=ingress.mqtt
+    - PROFILER_ADDR=:3100
+    - METRICS_ADDR=:2112
 
   oathkeeper:
     image: oryd/oathkeeper:v0.40.6

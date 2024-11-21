@@ -36,6 +36,12 @@
         }
     }
 
+    handle_path /dev/metrics/* {
+        handle_path /mqttingress* {
+            reverse_proxy mqttingress:2112
+        }
+    }
+
     redir /dev/mq /dev/mq/
     handle_path /dev/mq/* {
         reverse_proxy mq:15672

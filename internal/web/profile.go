@@ -29,7 +29,7 @@ func RunProfiler() (func(context.Context), error) {
 	}
 	go func() {
 		log.Printf("[Info] Running Profiler on: %s\n", srv.Addr)
-		if err := srv.ListenAndServe(); err != nil {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Printf("[Warn] Profiler server crashed: %s\n", err.Error())
 		}
 	}()

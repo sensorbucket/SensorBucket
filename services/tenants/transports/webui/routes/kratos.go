@@ -46,7 +46,6 @@ func SetupKratosRoutes() *KratosRoutes {
 	}
 	k.ory = ory.NewAPIClient(oryConfig)
 
-	k.router.Get("/", k.httpDefaultPage())
 	k.router.With(k.extractFlow(FlowLogin)).Get("/login", k.httpLoginPage())
 	k.router.With(k.extractFlow(FlowRecovery)).Get("/recovery", k.httpRecoveryPage())
 	k.router.With(
@@ -63,14 +62,6 @@ func SetupKratosRoutes() *KratosRoutes {
 
 func (k KratosRoutes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	k.router.ServeHTTP(w, r)
-}
-
-func (k KratosRoutes) httpDefaultPage() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		web.HTTPResponse(w, http.StatusOK, web.APIResponseAny{
-			Data: r.Header.Get("Authorization"),
-		})
-	}
 }
 
 type ctxKey string
