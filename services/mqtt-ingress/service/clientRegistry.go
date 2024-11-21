@@ -31,6 +31,8 @@ type ClientInfo struct {
 	AccessToken string
 	Expiry      time.Time
 }
+
+// Client manages ClientInfo and performs a concurrent safe refresh of the access token after expiry
 type Client struct {
 	info         ClientInfo
 	tradeKey     APIKeyTrader
@@ -103,14 +105,15 @@ func (client *Client) Info() (ClientInfo, error) {
 	return info, nil
 }
 
-type ClientKeySets struct {
+// ClientRegistry is a glorified slice with CLient structs mapped using their clientID
+type ClientRegistry struct {
 	clients      map[string]*Client
 	jwtTTLMargin time.Duration
 	tradeKey     APIKeyTrader
 }
 
-func CreateClientKeySets(ctx context.Context, apiKeyTrader APIKeyTrader) *ClientKeySets {
-	ks := &ClientKeySets{
+func CreateClientRegistry(ctx context.Context, apiKeyTrader APIKeyTrader) *ClientRegistry {
+	ks := &ClientRegistry{
 		clients:      map[string]*Client{},
 		tradeKey:     apiKeyTrader,
 		jwtTTLMargin: time.Minute * 1,
@@ -118,29 +121,29 @@ func CreateClientKeySets(ctx context.Context, apiKeyTrader APIKeyTrader) *Client
 	return ks
 }
 
-func (keysets *ClientKeySets) Authenticate(clientID, username, apiKey string) error {
+func (registry *ClientRegistry) Authenticate(clientID, username, apiKey string) error {
 	pipelineID, err := uuid.Parse(username)
 	if err != nil {
 		return fmt.Errorf("invalid pipelineID: %w", err)
 	}
 
-	client, err := NewClient(pipelineID, apiKey, keysets.tradeKey, keysets.jwtTTLMargin)
+	client, err := NewClient(pipelineID, apiKey, registry.tradeKey, registry.jwtTTLMargin)
 	if err != nil {
 		return err
 	}
 
-	keysets.Destroy(clientID)
-	keysets.clients[clientID] = client
+	registry.Destroy(clientID)
+	registry.clients[clientID] = client
 
 	return nil
 }
 
-func (keysets *ClientKeySets) Destroy(clientID string) {
-	delete(keysets.clients, clientID)
+func (registry *ClientRegistry) Destroy(clientID string) {
+	delete(registry.clients, clientID)
 }
 
-func (keysets *ClientKeySets) GetClient(clientID string) (ClientInfo, error) {
-	client, ok := keysets.clients[clientID]
+func (registry *ClientRegistry) GetClient(clientID string) (ClientInfo, error) {
+	client, ok := registry.clients[clientID]
 	if !ok {
 		return ClientInfo{}, ErrClientNotFound
 	}

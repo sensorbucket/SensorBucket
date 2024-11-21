@@ -10,40 +10,43 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
 
-type Auther struct {
+// MQTTProcessor is mochi-mqtt hook that authenticates mqtt clients using the username and password as
+// pipelineID and APIKey respectively. The hook builds an IngressDTO for each publish, and forwards this to the
+// AMQP Message Queue.
+type MQTTProcessor struct {
 	mqtt.HookBase
 	ctx       context.Context
-	clients   *ClientKeySets
+	clients   *ClientRegistry
 	publisher chan<- processing.IngressDTO
 }
 
-type AuthHookOptions struct {
+type MQTTProcessorOptions struct {
 	Context      context.Context
 	APIKeyTrader APIKeyTrader
 	Publisher    chan<- processing.IngressDTO
 }
 
-func (h *Auther) Init(_opts any) error {
-	if _, ok := _opts.(*AuthHookOptions); !ok && _opts != nil {
+func (h *MQTTProcessor) Init(_opts any) error {
+	if _, ok := _opts.(*MQTTProcessorOptions); !ok && _opts != nil {
 		return mqtt.ErrInvalidConfigType
 	}
-	opts := &AuthHookOptions{}
+	opts := &MQTTProcessorOptions{}
 	if _opts != nil {
-		opts = _opts.(*AuthHookOptions)
+		opts = _opts.(*MQTTProcessorOptions)
 	}
 
 	h.ctx = opts.Context
-	h.clients = CreateClientKeySets(h.ctx, opts.APIKeyTrader)
+	h.clients = CreateClientRegistry(h.ctx, opts.APIKeyTrader)
 	h.publisher = opts.Publisher
 
 	return nil
 }
 
-func (h *Auther) ID() string {
+func (h *MQTTProcessor) ID() string {
 	return "auth-sensorbucket"
 }
 
-func (h *Auther) Provides(b byte) bool {
+func (h *MQTTProcessor) Provides(b byte) bool {
 	return bytes.Contains([]byte{
 		mqtt.OnConnectAuthenticate,
 		mqtt.OnClientExpired,
@@ -51,7 +54,7 @@ func (h *Auther) Provides(b byte) bool {
 	}, []byte{b})
 }
 
-func (h *Auther) OnConnectAuthenticate(cl *mqtt.Client, pk packets.Packet) bool {
+func (h *MQTTProcessor) OnConnectAuthenticate(cl *mqtt.Client, pk packets.Packet) bool {
 	cntClientAuth.Add(context.Background(), 1)
 	if err := h.clients.Authenticate(cl.ID, string(cl.Properties.Username), string(pk.Connect.Password)); err != nil {
 		log.Printf("Error authenticating APIKey: %s\n", err.Error())
@@ -61,7 +64,7 @@ func (h *Auther) OnConnectAuthenticate(cl *mqtt.Client, pk packets.Packet) bool 
 	return true
 }
 
-func (h *Auther) OnClientExpired(cl *mqtt.Client) {
+func (h *MQTTProcessor) OnClientExpired(cl *mqtt.Client) {
 	h.clients.Destroy(cl.ID)
 }
 
@@ -69,7 +72,7 @@ type DTOMetadata struct {
 	Topic string `json:"topic"`
 }
 
-func (h *Auther) OnPublish(cl *mqtt.Client, pk packets.Packet) (packets.Packet, error) {
+func (h *MQTTProcessor) OnPublish(cl *mqtt.Client, pk packets.Packet) (packets.Packet, error) {
 	cntMQTTPublishes.Add(context.Background(), 1)
 	pk.Ignore = true
 

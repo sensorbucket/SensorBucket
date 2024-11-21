@@ -54,21 +54,20 @@ func (c *Cleanupper) Execute(timeout time.Duration) error {
 }
 
 func main() {
-	if err := Run(); err != nil {
-		log.Fatalf("Error: %s\n", err.Error())
-	}
-}
-
-func Run() error {
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
-
 	var cleanup Cleanupper
 	defer func() {
 		if err := cleanup.Execute(5 * time.Second); err != nil {
 			log.Printf("[Warn] Cleanup error(s) occured: %s\n", err)
 		}
 	}()
+	if err := Run(cleanup); err != nil {
+		log.Fatalf("Error: %s\n", err.Error())
+	}
+}
+
+func Run(cleanup Cleanupper) error {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	errC := make(chan error, 1)
 
@@ -103,7 +102,7 @@ func Run() error {
 	case <-ctx.Done():
 	}
 
-	// Cleanupper defer is called to cleanup all servers
+	// Cleanupper is called after Run
 
 	log.Println("Shutting down...")
 	return err
@@ -131,7 +130,7 @@ func startMQTTServer(ctx context.Context, publisher chan<- processing.IngressDTO
 	}
 
 	server := mqtt.New(nil)
-	if err := server.AddHook(new(service.Auther), &service.AuthHookOptions{
+	if err := server.AddHook(new(service.MQTTProcessor), &service.MQTTProcessorOptions{
 		Context:   ctx,
 		Publisher: publisher,
 		APIKeyTrader: func(apiKey string) (string, error) {
