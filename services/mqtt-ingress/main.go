@@ -31,6 +31,7 @@ var (
 	AMQP_XCHG        = env.Could("AMQP_XCHG", "ingress")
 	AMQP_XCHG_TOPIC  = env.Could("AMQP_XCHG_TOPIC", "ingress.httpimporter")
 	METRICS_ADDR     = env.Could("METRICS_ADDR", ":2112")
+	MQTT_ADDR        = env.Could("MQTT_ADDR", ":1883")
 )
 
 type ShutdownFunc func(context.Context) error
@@ -158,7 +159,7 @@ func startMQTTServer(ctx context.Context, publisher chan<- processing.IngressDTO
 
 	tcp := listeners.NewTCP(listeners.Config{
 		ID:      "t1",
-		Address: ":1883",
+		Address: MQTT_ADDR,
 	})
 	if err := server.AddListener(tcp); err != nil {
 		return err
