@@ -43,9 +43,9 @@ Path = "/tenants/static/<.*>"
 Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
 
 [Rules.APIKeysReflectAuth]
-Description = "Echoes the header Authorization header"
+Description = "Allows a service to call <oathkeeper>/decisions/reflect to get the jwt from an apikey"
 Domains = ["*"]
 Authenticators = ["APIKey"]
 Mutators = ["Hydrate", "IDToken"]
-Path = "/api-keys/reflect"
+Path = "/reflect"
 Methods = ["GET"]
