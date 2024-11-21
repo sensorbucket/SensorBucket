@@ -75,6 +75,7 @@ type DTOMetadata struct {
 
 func (h *MQTTProcessor) OnPublish(cl *mqtt.Client, pk packets.Packet) (packets.Packet, error) {
 	cntMQTTPublishes.Add(context.Background(), 1)
+	defer timer(histProcessDuration)()
 	pk.Ignore = true
 
 	client, err := h.clients.GetClient(cl.ID)
