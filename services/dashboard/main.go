@@ -21,6 +21,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/healthchecker"
 	"sensorbucket.nl/sensorbucket/pkg/layout"
 	"sensorbucket.nl/sensorbucket/services/dashboard/routes"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
@@ -116,6 +117,9 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		Handler:      csrfWrappedHandler,
 	}
 	cleanup.Add(srv.Shutdown)
+
+	shutdownHealthServer := healthchecker.Create().WithEnv().Start(ctx)
+	cleanup.Add(shutdownHealthServer)
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

@@ -18,6 +18,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/healthchecker"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	tenantsinfra "sensorbucket.nl/sensorbucket/services/tenants/infrastructure"
 	"sensorbucket.nl/sensorbucket/services/tenants/migrations"
@@ -75,6 +76,9 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		return fmt.Errorf("could not setup WebUI server: %w", err)
 	}
 	cleanup.Add(stopWebUI)
+
+	shutdownHealth := healthchecker.Create().WithEnv().Start(ctx)
+	cleanup.Add(shutdownHealth)
 
 	select {
 	case err = <-errC:

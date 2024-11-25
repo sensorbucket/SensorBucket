@@ -18,6 +18,7 @@ services:
     environment:
     - STATIC_PATH=services/dashboard/static
     - HTTP_BASE=/dashboard
+    - HEALTH_ADDR=:3030
     - EP_CORE=http://caddy/api
     - EP_TRACING=http://caddy/api
     - EP_WORKERS=http://caddy/api
@@ -73,6 +74,7 @@ services:
       - KRATOS_ADMIN_API=http://kratos:4434
       - KRATOS_SERVER_API=http://127.0.0.1:3000/.ory
       - PROFILER_ADDR=:3100
+      - HEALTH_ADDR=:3030
 
   userworkers:
     build: 
@@ -86,6 +88,7 @@ services:
       - APP_NAME=fission-user-workers
       - APP_TYPE=service
       - HTTP_ADDR=:3000
+      - HEALTH_ADDR=:3030
       - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/userworkers?sslmode=disable
       - PROFILER_ADDR=:3100
       - WORKER_NAMESPACE=default

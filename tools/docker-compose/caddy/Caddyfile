@@ -43,6 +43,15 @@
         handle_path /core* {
             reverse_proxy core:3030
         }
+        handle_path /userworkers* {
+            reverse_proxy userworkers:3030
+        }
+        handle_path /dashboard* {
+            reverse_proxy dashboard:3030
+        }
+        handle_path /tenants* {
+            reverse_proxy tenants:3030
+        }
     }
 
     handle_path /dev/metrics/* {

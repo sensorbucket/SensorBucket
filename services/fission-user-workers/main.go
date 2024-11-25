@@ -17,6 +17,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/healthchecker"
 	"sensorbucket.nl/sensorbucket/services/fission-user-workers/migrations"
 	userworkers "sensorbucket.nl/sensorbucket/services/fission-user-workers/service"
 )
@@ -131,6 +132,9 @@ func Run(cleanup cleanupper.Cleanupper) error {
 			}
 		}
 	}()
+
+	shutdownHealth := healthchecker.Create().WithEnv().Start(ctx)
+	cleanup.Add(shutdownHealth)
 
 	<-ctx.Done()
 	log.Println("Shutting down gracefully...")

@@ -75,10 +75,11 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
 	}
-	cleanup.Add(func(ctx context.Context) error { return srv.Shutdown(ctx) })
+	cleanup.Add(srv.Shutdown)
 
 	shutdownHealthServer := healthchecker.Create().WithEnv().WithMessagQueue(mqConn).Start(ctx)
 	cleanup.Add(shutdownHealthServer)
+
 	errC := make(chan error)
 	go func() {
 		log.Printf("HTTP Server listening on: %s\n", srv.Addr)
