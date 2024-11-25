@@ -30,9 +30,15 @@ COPY . .
 RUN make -C services/tenants build
 
 # Build the application
-ARG TARGETOS TARGETARCH
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
-    -ldflags='-w -s -extldflags "-static"' \
+ARG TARGETOS TARGETARCH GITVERSION
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    GITVERSION=${GITVERSION} GOVERSION=$(go version) BUILDDATE=$(date -Is) \
+    go build \
+    -ldflags="-w -s -extldflags \"-static\" \
+    -X 'sensorbucket.nl/sensorbucket/internal/buildinfo.GitVersion=${GITVERSION}' \
+    -X 'sensorbucket.nl/sensorbucket/internal/buildinfo.BuildTime=$(date -Is)' \
+    -X 'sensorbucket.nl/sensorbucket/internal/buildinfo.Architecture=${TARGETARCH}' \
+    -X 'sensorbucket.nl/sensorbucket/internal/buildinfo.GoVersion=$(go version)'" \
     -tags timetzdata \
     -o /tenants \
     services/tenants/main.go

@@ -12,6 +12,7 @@ import (
 
 	"github.com/rs/cors"
 
+	"sensorbucket.nl/sensorbucket/internal/buildinfo"
 	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
@@ -36,6 +37,7 @@ var (
 )
 
 func main() {
+	buildinfo.Print()
 	cleanup := cleanupper.Create()
 	defer func() {
 		if err := cleanup.Execute(5 * time.Second); err != nil {

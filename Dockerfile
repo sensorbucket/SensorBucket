@@ -18,7 +18,12 @@ ARG APP_TYPE
 WORKDIR /workspace
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/${APP_NAME} ${APP_TYPE}s/${APP_NAME}/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-X internal.version.version.GitVersion=${git describe --tags --first-parent --dirty --always}" \
+    -ldflags="-X internal.version.version.BuildTime=${date --rfc-3339=seconds}" \
+    -ldflags="-X internal.version.version.Architecture=${TARGETARCH}" \
+    -ldflags="-X internal.version.version.GoVersion=${go version}" \
+    -a -installsuffix cgo -o /app/${APP_NAME} ${APP_TYPE}s/${APP_NAME}/main.go
 
 FROM scratch AS production
 ARG APP_NAME

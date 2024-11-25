@@ -16,6 +16,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/ory/nosurf"
 
+	"sensorbucket.nl/sensorbucket/internal/buildinfo"
 	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
@@ -28,6 +29,7 @@ import (
 )
 
 func main() {
+	buildinfo.Print()
 	cleanup := cleanupper.Create()
 	defer func() {
 		if err := cleanup.Execute(5 * time.Second); err != nil {
