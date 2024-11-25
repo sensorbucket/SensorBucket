@@ -20,6 +20,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/healthchecker"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	"sensorbucket.nl/sensorbucket/services/mqtt-ingress/service"
@@ -81,11 +82,13 @@ func Run(cleanup Cleanupper) error {
 		return nil
 	})
 
+	health := healthchecker.Create().WithEnv()
+
 	err = startTelemetry(ctx, cleanup)
 	if err != nil {
 		return err
 	}
-	publisher, err := startDTOPublisher(cleanup)
+	publisher, err := startDTOPublisher(health, cleanup)
 	if err != nil {
 		return err
 	}
@@ -93,6 +96,7 @@ func Run(cleanup Cleanupper) error {
 	if err != nil {
 		return err
 	}
+	cleanup.Add(health.Start(ctx))
 
 	// Wait for error or interrupt to stop the server
 	log.Println("Server running")
@@ -109,8 +113,9 @@ func Run(cleanup Cleanupper) error {
 	return err
 }
 
-func startDTOPublisher(cleanup Cleanupper) (chan<- processing.IngressDTO, error) {
+func startDTOPublisher(health *healthchecker.Builder, cleanup Cleanupper) (chan<- processing.IngressDTO, error) {
 	mqConn := mq.NewConnection(AMQP_HOST)
+	health.WithMessagQueue(mqConn)
 	go mqConn.Start()
 	cleanup.Add(func(_ context.Context) error {
 		mqConn.Shutdown()

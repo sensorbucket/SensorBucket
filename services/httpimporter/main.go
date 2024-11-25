@@ -15,14 +15,13 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
-	"sensorbucket.nl/sensorbucket/pkg/health"
+	"sensorbucket.nl/sensorbucket/pkg/healthchecker"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/httpimporter/service"
 )
 
 var (
 	HTTP_ADDR       = env.Could("HTTP_ADDR", ":3000")
-	HEALTH_ADDR     = env.Could("HEALTH_ADDR", ":3030")
 	AMQP_HOST       = env.Could("AMQP_HOST", "amqp://guest:guest@localhost/")
 	AMQP_XCHG       = env.Could("AMQP_XCHG", "ingress")
 	AMQP_XCHG_TOPIC = env.Could("AMQP_XCHG_TOPIC", "ingress.httpimporter")
@@ -69,19 +68,7 @@ func Run() error {
 		ReadTimeout:  5 * time.Second,
 	}
 
-	shutdownHealthEndpoint := health.NewHealthEndpoint().
-		WithReadyChecks(
-			map[string]health.Check{
-				"mqconn-ready": mqConn.Ready,
-			},
-		).
-		WithLiveChecks(
-			map[string]health.Check{
-				"mqconn-healthy": mqConn.Healthy,
-			},
-		).
-		RunAsServer(HEALTH_ADDR)
-
+	shutdownHealthServer := healthchecker.Create().WithEnv().WithMessagQueue(mqConn).Start(ctx)
 	errC := make(chan error)
 	go func() {
 		log.Printf("HTTP Server listening on: %s\n", srv.Addr)
@@ -101,7 +88,7 @@ func Run() error {
 	if err := srv.Shutdown(ctxTO); err != nil {
 		log.Printf("Error shutting down HTTP Server: %v\n", err)
 	}
-	if err := shutdownHealthEndpoint(ctxTO); err != nil {
+	if err := shutdownHealthServer(ctxTO); err != nil {
 		log.Printf("Error shutting down Health Server: %v\n", err)
 	}
 	stopProfiler(ctxTO)

@@ -34,6 +34,15 @@
         handle_path /httpimporter* {
             reverse_proxy httpimporter:3030
         }
+        handle_path /tracing* {
+            reverse_proxy tracing:3030
+        }
+        handle_path /mqttingress* {
+            reverse_proxy mqttingress:3030
+        }
+        handle_path /core* {
+            reverse_proxy core:3030
+        }
     }
 
     handle_path /dev/metrics/* {

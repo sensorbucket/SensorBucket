@@ -18,6 +18,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/healthchecker"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
@@ -128,6 +129,8 @@ func Run() error {
 	)
 	go amqpConn.Start()
 
+	healthShutdown := healthchecker.Create().WithEnv().WithMessagQueue(amqpConn).Start(ctx)
+
 	// Wait for shutdown signal
 	log.Println("Server running, send interrupt (i.e. CTRL+C) to initiate shutdown")
 	<-ctx.Done()
@@ -143,6 +146,7 @@ func Run() error {
 	}
 	amqpConn.Shutdown()
 	stopProfiler(ctxTO)
+	healthShutdown(ctxTO)
 
 	log.Println("Shutdown complete")
 	return nil

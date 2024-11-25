@@ -18,6 +18,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/healthchecker"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
 	"sensorbucket.nl/sensorbucket/services/tracing/migrations"
@@ -55,15 +56,15 @@ func main() {
 		panic(fmt.Sprintf("could not create database connection: %v\n", err))
 	}
 
-	mqConn := mq.NewConnection(AMQP_HOST)
-	go mqConn.Start()
-
 	r := chi.NewRouter()
 	r.Use(
 		chimw.Logger,
 		auth.Authenticate(auth.NewJWKSHttpClient(AUTH_JWKS_URL)),
 		auth.Protect(),
 	)
+
+	mqConn := mq.NewConnection(AMQP_HOST)
+	go mqConn.Start()
 
 	// Setup the ingress-archiver service
 	{
@@ -91,6 +92,8 @@ func main() {
 		tracinghttp.SetupRoutes(r)
 	}
 
+	healthShutdown := healthchecker.Create().WithEnv().WithMessagQueue(mqConn).Start(ctx)
+
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
 		WriteTimeout: 5 * time.Second,
@@ -117,6 +120,7 @@ func main() {
 	}
 	mqConn.Shutdown()
 	stopProfiler(ctxTO)
+	healthShutdown(ctxTO)
 
 	log.Println("Shutdown complete")
 }
