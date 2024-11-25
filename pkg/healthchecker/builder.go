@@ -133,7 +133,7 @@ func (b *Builder) Start(ctx context.Context) func(ctx context.Context) error {
 			log.Printf("Health Server error: %v\n", err)
 		}
 	}()
-	log.Printf("Health Server available at: %s\n", srv.Addr)
+	log.Printf("[HealthServer] available at: %s\n", srv.Addr)
 
 	return func(ctx context.Context) error {
 		return srv.Shutdown(ctx)
