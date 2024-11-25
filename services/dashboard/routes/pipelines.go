@@ -70,7 +70,7 @@ func (h *PipelinePageHandler) pipelineListPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		pipelines, _, err := h.coreClient.PipelinesApi.ListPipelines(r.Context()).Execute()
 		if err != nil {
-			web.HTTPError(w, err)
+			web.HTTPError(w, fmt.Errorf("could not list pipelines: %w", err))
 			return
 		}
 
@@ -109,7 +109,7 @@ func (h *PipelinePageHandler) createPipeline() http.HandlerFunc {
 
 		_, resp, err := h.coreClient.PipelinesApi.CreatePipeline(r.Context()).CreatePipelineRequest(dto).Execute()
 		if err != nil {
-			web.HTTPError(w, err)
+			web.HTTPError(w, fmt.Errorf("could not create pipeline: %w", err))
 			return
 		}
 
@@ -405,7 +405,7 @@ func (h *PipelinePageHandler) resolvePipeline(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		pipeline, resp, err := h.coreClient.PipelinesApi.GetPipeline(r.Context(), chi.URLParam(r, "pipeline_id")).Execute()
 		if err != nil {
-			web.HTTPError(w, err)
+			web.HTTPError(w, fmt.Errorf("could not get pipeline by id: %w", err))
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
@@ -437,7 +437,7 @@ func (h *PipelinePageHandler) resolveWorkersInPipeline(next http.Handler) http.H
 
 		workersInPipeline, err := h.getWorkersForSteps(r, pipeline.Steps)
 		if err != nil {
-			web.HTTPError(w, err)
+			web.HTTPError(w, fmt.Errorf("could not get workers in steps: %w", err))
 			return
 		}
 
@@ -456,7 +456,7 @@ func (h *PipelinePageHandler) resolveWorkers(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		workers, resp, err := h.workersClient.WorkersApi.ListWorkers(r.Context()).Cursor("").Execute()
 		if err != nil {
-			web.HTTPError(w, err)
+			web.HTTPError(w, fmt.Errorf("could not list workers: %w", err))
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
