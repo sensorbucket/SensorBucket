@@ -13,6 +13,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
+	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
@@ -31,7 +32,13 @@ var (
 )
 
 func main() {
-	if err := Run(); err != nil {
+	cleanup := cleanupper.Create()
+	defer func() {
+		if err := cleanup.Execute(5 * time.Second); err != nil {
+			log.Printf("[Warn] Cleanup error(s) occured: %s\n", err)
+		}
+	}()
+	if err := Run(cleanup); err != nil {
 		panic(err)
 	}
 }
@@ -52,7 +59,7 @@ func (c *StubController) Reconcile(context.Context) error {
 	return nil
 }
 
-func Run() error {
+func Run(cleanup cleanupper.Cleanupper) error {
 	var err error
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -62,6 +69,7 @@ func Run() error {
 	if err != nil {
 		fmt.Printf("could not setup profiler server: %s\n", err)
 	}
+	cleanup.Add(stopProfiler)
 
 	db := sqlx.MustOpen("pgx", DB_DSN)
 	store := userworkers.NewPSQLStore(db)
@@ -72,6 +80,9 @@ func Run() error {
 	app := userworkers.NewApplication(store)
 	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
 	srv := userworkers.NewHTTPTransport(app, HTTP_BASE, HTTP_ADDR, jwks)
+	cleanup.Add(func(ctx context.Context) error {
+		return srv.Stop(ctx)
+	})
 	go func() {
 		if err := srv.Start(); !errors.Is(err, http.ErrServerClosed) && err != nil {
 			log.Printf("Error starting HTTP Server: %v\n", err)
@@ -82,15 +93,17 @@ func Run() error {
 
 	switch CTRL_TYPE {
 	case "k8s":
-		ctrl, err = userworkers.CreateKubernetesController(store, AMQP_XCHG)
+		controller, err := userworkers.CreateKubernetesController(store, AMQP_XCHG)
 		if err != nil {
 			return err
 		}
+		ctrl = controller
 	case "docker":
-		ctrl, err = userworkers.CreateDockerController(store)
+		controller, err := userworkers.CreateDockerController(store)
 		if err != nil {
 			return err
 		}
+		cleanup.Add(controller.Shutdown)
 	default:
 		log.Println("WARNING, no controller selected, defaulting to none meaning only the API will be accessible and no workers will be create")
 		ctrl = &StubController{}
@@ -120,19 +133,6 @@ func Run() error {
 
 	<-ctx.Done()
 	log.Println("Shutting down gracefully...")
-	ctxTO, cancelTO := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelTO()
-
-	if ctrlStopper, ok := ctrl.(Shutdowner); ok {
-		err = errors.Join(err, ctrlStopper.Shutdown(ctxTO))
-	}
-
-	stopProfiler(ctxTO)
-
-	err = errors.Join(err, srv.Stop(ctxTO))
-	if err != nil {
-		log.Printf("One or more errors occured shutting down: %s\n", err)
-	}
 
 	return nil
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/rs/cors"
 
+	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
@@ -35,12 +36,18 @@ var (
 )
 
 func main() {
-	if err := Run(); err != nil {
+	cleanup := cleanupper.Create()
+	defer func() {
+		if err := cleanup.Execute(5 * time.Second); err != nil {
+			log.Printf("[Warn] Cleanup error(s) occured: %s\n", err)
+		}
+	}()
+	if err := Run(cleanup); err != nil {
 		panic(fmt.Sprintf("Fatal error: %v", err))
 	}
 }
 
-func Run() error {
+func Run(cleanup cleanupper.Cleanupper) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
@@ -48,6 +55,7 @@ func Run() error {
 	if err != nil {
 		fmt.Printf("could not setup profiler server: %s\n", err)
 	}
+	cleanup.Add(stopProfiler)
 
 	// Create AMQP Message Queue
 	mqConn := mq.NewConnection(AMQP_HOST)
@@ -67,8 +75,10 @@ func Run() error {
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
 	}
+	cleanup.Add(func(ctx context.Context) error { return srv.Shutdown(ctx) })
 
 	shutdownHealthServer := healthchecker.Create().WithEnv().WithMessagQueue(mqConn).Start(ctx)
+	cleanup.Add(shutdownHealthServer)
 	errC := make(chan error)
 	go func() {
 		log.Printf("HTTP Server listening on: %s\n", srv.Addr)
@@ -81,17 +91,6 @@ func Run() error {
 	case <-ctx.Done():
 	case err = <-errC:
 	}
-
-	ctxTO, cancelTO := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelTO()
-
-	if err := srv.Shutdown(ctxTO); err != nil {
-		log.Printf("Error shutting down HTTP Server: %v\n", err)
-	}
-	if err := shutdownHealthServer(ctxTO); err != nil {
-		log.Printf("Error shutting down Health Server: %v\n", err)
-	}
-	stopProfiler(ctxTO)
 
 	return err
 }

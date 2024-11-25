@@ -17,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rabbitmq/amqp091-go"
 
+	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
@@ -38,8 +39,14 @@ var (
 )
 
 func main() {
-	if err := Run(); err != nil {
-		panic(err)
+	cleanup := cleanupper.Create()
+	defer func() {
+		if err := cleanup.Execute(5 * time.Second); err != nil {
+			log.Printf("[Warn] Cleanup error(s) occured: %s\n", err)
+		}
+	}()
+	if err := Run(cleanup); err != nil {
+		log.Fatalf("error occured: %s\n", err)
 	}
 }
 
@@ -54,7 +61,7 @@ var (
 	METRICS_ADDR  = env.Could("METRICS_ADDR", ":2112")
 )
 
-func Run() error {
+func Run(cleanup cleanupper.Cleanupper) error {
 	prefetch, err := strconv.Atoi(AMQP_PREFETCH)
 	if err != nil {
 		return err
@@ -68,9 +75,14 @@ func Run() error {
 	if err != nil {
 		fmt.Printf("could not setup profiler server: %s\n", err)
 	}
+	cleanup.Add(stopProfiler)
 
 	log.Printf("Consuming from queue: %s and producing to exchange: %s\n", AMQP_QUEUE, AMQP_XCHG)
 	conn := mq.NewConnection(AMQP_HOST)
+	cleanup.Add(func(ctx context.Context) error {
+		conn.Shutdown()
+		return nil
+	})
 	successChan := conn.Publisher(AMQP_XCHG, func(c *amqp091.Channel) error {
 		return nil
 	})
@@ -134,12 +146,6 @@ func Run() error {
 	defer cancel()
 	<-ctx.Done()
 	log.Printf("RabbitMQ-Fission interrupted, shutting down gracefully...\n")
-
-	ctxTO, cancelTO := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelTO()
-
-	conn.Shutdown()
-	stopProfiler(ctxTO)
 
 	return nil
 }

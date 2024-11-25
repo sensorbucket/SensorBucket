@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/ory/nosurf"
 
+	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
@@ -38,12 +38,18 @@ var (
 )
 
 func main() {
-	if err := Run(); err != nil {
+	cleanup := cleanupper.Create()
+	defer func() {
+		if err := cleanup.Execute(5 * time.Second); err != nil {
+			log.Printf("[Warn] Cleanup error(s) occured: %s\n", err)
+		}
+	}()
+	if err := Run(cleanup); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 	}
 }
 
-func Run() error {
+func Run(cleanup cleanupper.Cleanupper) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	errC := make(chan error, 1)
@@ -58,33 +64,29 @@ func Run() error {
 	if err != nil {
 		fmt.Printf("could not setup profiler server: %s\n", err)
 	}
+	cleanup.Add(stopProfiler)
 	stopAPI, err := runAPI(errC, db)
 	if err != nil {
 		return fmt.Errorf("could not setup API server: %w", err)
 	}
+	cleanup.Add(stopAPI)
 	stopWebUI, err := runWebUI(errC, db)
 	if err != nil {
 		return fmt.Errorf("could not setup WebUI server: %w", err)
 	}
+	cleanup.Add(stopWebUI)
 
 	select {
 	case err = <-errC:
 	case <-ctx.Done():
 	}
 
-	ctxTO, cancelTO := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelTO()
-
-	stopAPI(ctxTO)
-	stopWebUI(ctxTO)
-	stopProfiler(ctxTO)
-
 	return err
 }
 
-var noopCleanup = func(ctx context.Context) {}
+var noopCleanup = func(ctx context.Context) error { return nil }
 
-func runAPI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
+func runAPI(errC chan<- error, db *sqlx.DB) (func(context.Context) error, error) {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -119,14 +121,10 @@ func runAPI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 		}
 	}()
 
-	return func(shutdownCtx context.Context) {
-		if err := srv.Shutdown(shutdownCtx); !errors.Is(err, http.ErrServerClosed) && err != nil {
-			log.Printf("API HTTP Server error during shutdown: %v\n", err)
-		}
-	}, nil
+	return srv.Shutdown, nil
 }
 
-func runWebUI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
+func runWebUI(errC chan<- error, db *sqlx.DB) (func(context.Context) error, error) {
 	// Setup Tenants service
 	tenantStore := tenantsinfra.NewTenantsStorePSQL(db)
 	kratosAdmin := tenantsinfra.NewKratosUserValidator(KRATOS_ADMIN_API)
@@ -168,11 +166,7 @@ func runWebUI(errC chan<- error, db *sqlx.DB) (func(context.Context), error) {
 		}
 	}()
 
-	return func(shutdownCtx context.Context) {
-		if err := srv.Shutdown(shutdownCtx); !errors.Is(err, http.ErrServerClosed) && err != nil {
-			log.Printf("WebUI HTTP Server error during shutdown: %v\n", err)
-		}
-	}, nil
+	return srv.Shutdown, nil
 }
 
 func createDB() (*sqlx.DB, error) {

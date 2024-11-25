@@ -5,6 +5,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/ory/nosurf"
 
+	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
@@ -25,8 +27,14 @@ import (
 )
 
 func main() {
-	if err := Run(); err != nil {
-		panic(fmt.Sprintf("error: %v\n", err))
+	cleanup := cleanupper.Create()
+	defer func() {
+		if err := cleanup.Execute(5 * time.Second); err != nil {
+			log.Printf("[Warn] Cleanup error(s) occured: %s\n", err)
+		}
+	}()
+	if err := Run(cleanup); err != nil {
+		log.Fatalf("error: %s\n", err)
 	}
 }
 
@@ -42,7 +50,7 @@ var (
 //go:embed static/*
 var staticFS embed.FS
 
-func Run() error {
+func Run(cleanup cleanupper.Cleanupper) error {
 	errC := make(chan error, 1)
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
@@ -51,6 +59,7 @@ func Run() error {
 	if err != nil {
 		fmt.Printf("could not setup profiler server: %s\n", err)
 	}
+	cleanup.Add(stopProfiler)
 
 	router := chi.NewRouter()
 	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
@@ -106,6 +115,7 @@ func Run() error {
 		ReadTimeout:  5 * time.Second,
 		Handler:      csrfWrappedHandler,
 	}
+	cleanup.Add(srv.Shutdown)
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -120,14 +130,6 @@ func Run() error {
 	case err = <-errC:
 		cancel()
 	}
-
-	ctxTO, cancelTO := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelTO()
-
-	if err := srv.Shutdown(ctxTO); err != nil {
-		fmt.Printf("could not gracefully shutdown http server: %s\n", err)
-	}
-	stopProfiler(ctxTO)
 
 	return err
 }
