@@ -93,20 +93,21 @@ func Run(cleanup cleanupper.Cleanupper) error {
 
 	switch CTRL_TYPE {
 	case "k8s":
-		controller, err := userworkers.CreateKubernetesController(store, AMQP_XCHG)
+		ctrl, err = userworkers.CreateKubernetesController(store, AMQP_XCHG)
 		if err != nil {
 			return err
 		}
-		ctrl = controller
 	case "docker":
-		controller, err := userworkers.CreateDockerController(store)
+		ctrl, err = userworkers.CreateDockerController(store)
 		if err != nil {
 			return err
 		}
-		cleanup.Add(controller.Shutdown)
 	default:
 		log.Println("WARNING, no controller selected, defaulting to none meaning only the API will be accessible and no workers will be create")
 		ctrl = &StubController{}
+	}
+	if shutdown, ok := ctrl.(Shutdowner); ok {
+		cleanup.Add(shutdown.Shutdown)
 	}
 
 	// Start reconcile loop
