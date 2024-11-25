@@ -15,9 +15,11 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
+	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/healthchecker"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
 	"sensorbucket.nl/sensorbucket/services/tracing/migrations"
@@ -41,22 +43,32 @@ var (
 )
 
 func main() {
+	cleanup := cleanupper.Create()
+	defer func() {
+		if err := cleanup.Execute(5 * time.Second); err != nil {
+			log.Printf("[Warn] Cleanup error(s) occured: %s\n", err)
+		}
+	}()
+	if err := Run(cleanup); err != nil {
+		log.Fatalf("Fatal error: %v\n", err)
+	}
+}
+
+func Run(cleanup cleanupper.Cleanupper) error {
 	// Create shutdown context
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
 	stopProfiler, err := web.RunProfiler()
 	if err != nil {
-		fmt.Printf("could not setup profiler server: %s\n", err)
+		log.Printf("could not setup profiler server: %s\n", err)
 	}
+	cleanup.Add(stopProfiler)
 
 	db, err := createDB()
 	if err != nil {
-		panic(fmt.Sprintf("could not create database connection: %v\n", err))
+		return fmt.Errorf("could not create database connection: %w", err)
 	}
-
-	mqConn := mq.NewConnection(AMQP_HOST)
-	go mqConn.Start()
 
 	r := chi.NewRouter()
 	r.Use(
@@ -64,6 +76,13 @@ func main() {
 		auth.Authenticate(auth.NewJWKSHttpClient(AUTH_JWKS_URL)),
 		auth.Protect(),
 	)
+
+	mqConn := mq.NewConnection(AMQP_HOST)
+	cleanup.Add(func(ctx context.Context) error {
+		mqConn.Shutdown()
+		return nil
+	})
+	go mqConn.Start()
 
 	// Setup the ingress-archiver service
 	{
@@ -91,12 +110,18 @@ func main() {
 		tracinghttp.SetupRoutes(r)
 	}
 
+	healthShutdown := healthchecker.Create().WithEnv().WithMessagQueue(mqConn).Start(ctx)
+	cleanup.Add(healthShutdown)
+
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
 		Handler:      r,
 	}
+	cleanup.Add(func(ctx context.Context) error {
+		return srv.Shutdown(ctx)
+	})
 	go func() {
 		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) && err != nil {
 			log.Printf("HTTP Server error: %v\n", err)
@@ -107,18 +132,7 @@ func main() {
 	<-ctx.Done()
 	log.Println("Shutting down... send another interrupt to force shutdown")
 
-	// Create timeout for graceful shutdown
-	ctxTO, cancelTO := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancelTO()
-
-	// Shutdown transports
-	if err := srv.Shutdown(ctxTO); err != nil {
-		log.Printf("error shutting down httpserver: %s\n", err)
-	}
-	mqConn.Shutdown()
-	stopProfiler(ctxTO)
-
-	log.Println("Shutdown complete")
+	return nil
 }
 
 func createDB() (*sqlx.DB, error) {

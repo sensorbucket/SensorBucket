@@ -37,6 +37,7 @@ services:
     - HTTP_ADDR=:3000
     - AMQP_HOST=amqp://guest:guest@mq:5672/
     - PROFILER_ADDR=:3100
+    - HEALTH_ADDR=:3030
 
   tracing:
     build:
@@ -56,6 +57,7 @@ services:
     - AMQP_XCHG_INGRESS=ingress
     - AMQP_XCHG_INGRESS_TOPIC=ingress.#
     - PROFILER_ADDR=:3100
+    - HEALTH_ADDR=:3030
 
   tenants:
     build:
@@ -124,6 +126,7 @@ services:
     - AMQP_XCHG=ingress
     - AMQP_XCHG_TOPIC=ingress.httpimporter
     - PROFILER_ADDR=:3100
+    - HEALTH_ADDR=:3030
 
   mqttingress:
     build:
@@ -143,6 +146,7 @@ services:
     - AMQP_XCHG_TOPIC=ingress.mqtt
     - PROFILER_ADDR=:3100
     - METRICS_ADDR=:2112
+    - HEALTH_ADDR=:3030
 
   oathkeeper:
     image: oryd/oathkeeper:v0.40.6

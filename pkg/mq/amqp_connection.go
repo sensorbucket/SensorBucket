@@ -115,12 +115,8 @@ func (c *AMQPConnection) Start() {
 	}
 }
 
-func (c *AMQPConnection) Ready() bool {
-	return c.state == AMQP_CONNECTED
-}
-
-func (c *AMQPConnection) Healthy() bool {
-	return c.state != AMQP_UNREACHABLE
+func (c *AMQPConnection) State() AMQPState {
+	return c.state
 }
 
 func (c *AMQPConnection) Shutdown() {

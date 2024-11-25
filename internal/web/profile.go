@@ -16,10 +16,10 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/env"
 )
 
-func RunProfiler() (func(context.Context), error) {
+func RunProfiler() (func(context.Context) error, error) {
 	addr := env.Could("PROFILER_ADDR", "")
 	if addr == "" {
-		return func(ctx context.Context) {}, nil
+		return func(ctx context.Context) error { return nil }, nil
 	}
 	srv := &http.Server{
 		Addr:         addr,
@@ -34,10 +34,11 @@ func RunProfiler() (func(context.Context), error) {
 		}
 	}()
 
-	return func(shutdownCtx context.Context) {
+	return func(shutdownCtx context.Context) error {
 		if err := srv.Shutdown(shutdownCtx); !errors.Is(err, http.ErrServerClosed) && err != nil {
-			log.Printf("Profiler HTTP Server error during shutdown: %v\n", err)
+			return fmt.Errorf("profiler HTTP Server error during shutdown: %w", err)
 		}
+		return nil
 	}, nil
 }
 

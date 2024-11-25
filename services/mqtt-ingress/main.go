@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,9 +16,11 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/healthchecker"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	"sensorbucket.nl/sensorbucket/services/mqtt-ingress/service"
@@ -34,28 +35,8 @@ var (
 	MQTT_ADDR        = env.Could("MQTT_ADDR", ":1883")
 )
 
-type ShutdownFunc func(context.Context) error
-
-type Cleanupper []ShutdownFunc
-
-func (c *Cleanupper) Add(fn ShutdownFunc) {
-	*c = append(*c, fn)
-}
-
-func (c *Cleanupper) Execute(timeout time.Duration) error {
-	ctxTO, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	var cleanupErrors error
-	for _, fn := range *c {
-		cleanupErrors = errors.Join(cleanupErrors, fn(ctxTO))
-	}
-
-	return cleanupErrors
-}
-
 func main() {
-	var cleanup Cleanupper
+	cleanup := cleanupper.Create()
 	defer func() {
 		if err := cleanup.Execute(5 * time.Second); err != nil {
 			log.Printf("[Warn] Cleanup error(s) occured: %s\n", err)
@@ -66,7 +47,7 @@ func main() {
 	}
 }
 
-func Run(cleanup Cleanupper) error {
+func Run(cleanup cleanupper.Cleanupper) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
@@ -76,16 +57,15 @@ func Run(cleanup Cleanupper) error {
 	if err != nil {
 		fmt.Printf("could not setup profiler server: %s\n", err)
 	}
-	cleanup.Add(func(ctx context.Context) error {
-		stopProfiler(ctx)
-		return nil
-	})
+	cleanup.Add(stopProfiler)
+
+	health := healthchecker.Create().WithEnv()
 
 	err = startTelemetry(ctx, cleanup)
 	if err != nil {
 		return err
 	}
-	publisher, err := startDTOPublisher(cleanup)
+	publisher, err := startDTOPublisher(health, cleanup)
 	if err != nil {
 		return err
 	}
@@ -93,6 +73,7 @@ func Run(cleanup Cleanupper) error {
 	if err != nil {
 		return err
 	}
+	cleanup.Add(health.Start(ctx))
 
 	// Wait for error or interrupt to stop the server
 	log.Println("Server running")
@@ -109,8 +90,9 @@ func Run(cleanup Cleanupper) error {
 	return err
 }
 
-func startDTOPublisher(cleanup Cleanupper) (chan<- processing.IngressDTO, error) {
+func startDTOPublisher(health *healthchecker.Builder, cleanup cleanupper.Cleanupper) (chan<- processing.IngressDTO, error) {
 	mqConn := mq.NewConnection(AMQP_HOST)
+	health.WithMessagQueue(mqConn)
 	go mqConn.Start()
 	cleanup.Add(func(_ context.Context) error {
 		mqConn.Shutdown()
@@ -121,7 +103,7 @@ func startDTOPublisher(cleanup Cleanupper) (chan<- processing.IngressDTO, error)
 	return publisher, nil
 }
 
-func startMQTTServer(ctx context.Context, publisher chan<- processing.IngressDTO, errC chan<- error, cleanup Cleanupper) error {
+func startMQTTServer(ctx context.Context, publisher chan<- processing.IngressDTO, errC chan<- error, cleanup cleanupper.Cleanupper) error {
 	authRules := &mqqtauth.Ledger{
 		ACL: mqqtauth.ACLRules{
 			{Filters: mqqtauth.Filters{
@@ -178,7 +160,7 @@ func startMQTTServer(ctx context.Context, publisher chan<- processing.IngressDTO
 	return nil
 }
 
-func startTelemetry(_ context.Context, cleanup Cleanupper) error {
+func startTelemetry(_ context.Context, cleanup cleanupper.Cleanupper) error {
 	promMetrics, err := prometheus.New()
 	if err != nil {
 		return err

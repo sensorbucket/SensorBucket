@@ -2,7 +2,7 @@
     {
         "id": "passthrough-authentication",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<(\\.ory|tenants/auth/settings|tenants/auth/login|tenants/auth/logout|tenants/auth/recovery|tenants/static|dev|pprof)(/.+)?>",
+            "url": "http://<127.0.0.1|localhost>:3000/<(\\.ory|tenants/auth/settings|tenants/auth/login|tenants/auth/logout|tenants/auth/recovery|tenants/static|dev|pprof|health)(/.+)?>",
             "methods": [
                 "GET",
                 "POST",
