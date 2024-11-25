@@ -14,13 +14,15 @@ import (
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 )
 
-func StartIngressDTOConsumer(conn *mq.AMQPConnection, svc *Application, queue, xchg, topic string) {
+func StartIngressDTOConsumer(conn *mq.AMQPConnection, svc *Application, queue, xchg, topic string, prefetch int) {
 	consume := conn.Consume(queue, func(c *amqp091.Channel) error {
+		if err := c.Qos(prefetch, 0, false); err != nil {
+			return fmt.Errorf("error setting Qos with prefetch on amqp: %w", err)
+		}
 		_, err := c.QueueDeclare(queue, true, false, false, false, nil)
 		if err != nil {
 			return err
 		}
-
 		// Create exchange and bind if both arguments are provided, this is optional
 		if xchg != "" && topic != "" {
 			if err := c.ExchangeDeclare(xchg, "topic", true, false, false, false, nil); err != nil {

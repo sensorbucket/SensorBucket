@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -40,6 +41,7 @@ var (
 	AMQP_QUEUE_INGRESS               = env.Could("AMQP_QUEUE_INGRESS", "archive-ingress")
 	AMQP_XCHG_INGRESS                = env.Could("AMQP_XCHG_INGRESS", "ingress")
 	AMQP_XCHG_INGRESS_TOPIC          = env.Could("AMQP_XCHG_INGRESS_TOPIC", "ingress.*")
+	AMQP_PREFETCH                    = env.Could("AMQP_PREFETCH", "5")
 	AUTH_JWKS_URL                    = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
 )
 
@@ -60,6 +62,11 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	// Create shutdown context
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
+
+	prefetch, err := strconv.Atoi(AMQP_PREFETCH)
+	if err != nil {
+		return err
+	}
 
 	stopProfiler, err := web.RunProfiler()
 	if err != nil {
@@ -93,6 +100,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		go ingressarchiver.StartIngressDTOConsumer(
 			mqConn, svc,
 			AMQP_QUEUE_INGRESS, AMQP_XCHG_INGRESS, AMQP_XCHG_INGRESS_TOPIC,
+			prefetch,
 		)
 		ingressarchiver.CreateHTTPTransport(r, svc)
 	}
@@ -107,6 +115,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 			AMQP_QUEUE_PIPELINEMESSAGES,
 			AMQP_XCHG_PIPELINEMESSAGES,
 			AMQP_XCHG_PIPELINEMESSAGES_TOPIC,
+			prefetch,
 		)
 		tracinghttp := tracingtransport.NewHTTP(tracingService, HTTP_BASE)
 		tracinghttp.SetupRoutes(r)
