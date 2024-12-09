@@ -23,11 +23,8 @@ import (
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/healthchecker"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
-	ingressarchiver "sensorbucket.nl/sensorbucket/services/tracing/ingress-archiver/service"
 	"sensorbucket.nl/sensorbucket/services/tracing/migrations"
 	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
-	tracinginfra "sensorbucket.nl/sensorbucket/services/tracing/tracing/infra"
-	tracingtransport "sensorbucket.nl/sensorbucket/services/tracing/tracing/transport"
 )
 
 var (
@@ -93,33 +90,19 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	})
 	go mqConn.Start()
 
-	// Setup the ingress-archiver service
-	{
-		store := ingressarchiver.NewStorePSQL(db)
-		svc := ingressarchiver.New(store)
-		go ingressarchiver.StartIngressDTOConsumer(
-			mqConn, svc,
-			AMQP_QUEUE_INGRESS, AMQP_XCHG_INGRESS, AMQP_XCHG_INGRESS_TOPIC,
-			prefetch,
-		)
-		ingressarchiver.CreateHTTPTransport(r, svc)
-	}
-
-	// Setup the tracing service
-	{
-		tracingStepStore := tracinginfra.NewStorePSQL(db)
-		tracingService := tracing.New(tracingStepStore)
-		go tracingtransport.StartMQ(
-			tracingService,
-			mqConn,
-			AMQP_QUEUE_PIPELINEMESSAGES,
-			AMQP_XCHG_PIPELINEMESSAGES,
-			AMQP_XCHG_PIPELINEMESSAGES_TOPIC,
-			prefetch,
-		)
-		tracinghttp := tracingtransport.NewHTTP(tracingService, HTTP_BASE)
-		tracinghttp.SetupRoutes(r)
-	}
+	svc := tracing.Create(db)
+	transportHTTP := tracing.CreateTransport(svc)
+	r.Mount("/", transportHTTP)
+	shutdownMQTransport := tracing.StartMQTransport(mqConn, svc, tracing.MQConfig{
+		Prefetch:              prefetch,
+		QueueIngress:          AMQP_QUEUE_INGRESS,
+		ExchangeIngress:       AMQP_XCHG_INGRESS,
+		ExchangeIngressTopic:  AMQP_XCHG_INGRESS_TOPIC,
+		QueueMessages:         AMQP_QUEUE_PIPELINEMESSAGES,
+		ExchangeMessages:      AMQP_XCHG_PIPELINEMESSAGES,
+		ExchangeMessagesTopic: AMQP_XCHG_PIPELINEMESSAGES_TOPIC,
+	})
+	cleanup.Add(shutdownMQTransport)
 
 	healthShutdown := healthchecker.Create().WithEnv().WithMessagQueue(mqConn).Start(ctx)
 	cleanup.Add(healthShutdown)

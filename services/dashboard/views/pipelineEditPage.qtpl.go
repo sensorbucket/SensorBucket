@@ -239,7 +239,6 @@ func (p *PipelineEditPage) StreamRenderPipelineSteps(qw422016 *qt422016.Writer, 
                         },
                         onEnd: function(evt) {
                             ghostStyles.forEach((item) => evt.item.classList.remove(item));
-
                             reorderSortables();
                         }
                     });
@@ -297,13 +296,10 @@ func (p *PipelineEditPage) StreamRenderPipelineSteps(qw422016 *qt422016.Writer, 
 
             // Create a FormData object from the form
             const formData = new FormData(form);
-            let data = {}
+            let data = []
             for (var [key, value] of formData.entries()) { 
                 if (key == "csrf_token") continue;
-                if(!data[key]) {
-                    data[key] = [];
-                }
-                data[key].push(value);
+                data.push(key)
             }
 
             return data;
@@ -324,201 +320,201 @@ func (p *PipelineEditPage) StreamRenderPipelineSteps(qw422016 *qt422016.Writer, 
     </div>
     <form id="sortableForm" name="sortable" class="sortable" hx-indicator="#stepsIndicator" hx-vals="js:{steps: getSteps()}"
         `)
-//line views/pipelineEditPage.qtpl:194
+//line views/pipelineEditPage.qtpl:190
 	if pipeline == nil {
-//line views/pipelineEditPage.qtpl:194
+//line views/pipelineEditPage.qtpl:190
 		qw422016.N().S(`
             hx-patch="`)
-//line views/pipelineEditPage.qtpl:195
+//line views/pipelineEditPage.qtpl:191
 		qw422016.E().S(U("/pipelines/validate"))
-//line views/pipelineEditPage.qtpl:195
+//line views/pipelineEditPage.qtpl:191
 		qw422016.N().S(`" hx-trigger="form-updated"
         `)
-//line views/pipelineEditPage.qtpl:196
+//line views/pipelineEditPage.qtpl:192
 	}
-//line views/pipelineEditPage.qtpl:196
+//line views/pipelineEditPage.qtpl:192
 	qw422016.N().S(`>
         `)
-//line views/pipelineEditPage.qtpl:197
+//line views/pipelineEditPage.qtpl:193
 	if workers != nil {
-//line views/pipelineEditPage.qtpl:197
+//line views/pipelineEditPage.qtpl:193
 		qw422016.N().S(`
             `)
-//line views/pipelineEditPage.qtpl:198
+//line views/pipelineEditPage.qtpl:194
 		StreamRenderPipelineStepsSortable(qw422016, p.CSRFToken, *workers)
-//line views/pipelineEditPage.qtpl:198
+//line views/pipelineEditPage.qtpl:194
 		qw422016.N().S(`
         `)
-//line views/pipelineEditPage.qtpl:199
+//line views/pipelineEditPage.qtpl:195
 	} else {
-//line views/pipelineEditPage.qtpl:199
+//line views/pipelineEditPage.qtpl:195
 		qw422016.N().S(`
             `)
-//line views/pipelineEditPage.qtpl:200
+//line views/pipelineEditPage.qtpl:196
 		p.streamrenderCSRFToken(qw422016)
-//line views/pipelineEditPage.qtpl:200
+//line views/pipelineEditPage.qtpl:196
 		qw422016.N().S(`
         `)
-//line views/pipelineEditPage.qtpl:201
+//line views/pipelineEditPage.qtpl:197
 	}
-//line views/pipelineEditPage.qtpl:201
+//line views/pipelineEditPage.qtpl:197
 	qw422016.N().S(`
     </form>
 `)
-//line views/pipelineEditPage.qtpl:203
+//line views/pipelineEditPage.qtpl:199
 }
 
-//line views/pipelineEditPage.qtpl:203
+//line views/pipelineEditPage.qtpl:199
 func (p *PipelineEditPage) WriteRenderPipelineSteps(qq422016 qtio422016.Writer, pipeline *api.Pipeline, workers *[]api.UserWorker) {
-//line views/pipelineEditPage.qtpl:203
+//line views/pipelineEditPage.qtpl:199
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/pipelineEditPage.qtpl:203
+//line views/pipelineEditPage.qtpl:199
 	p.StreamRenderPipelineSteps(qw422016, pipeline, workers)
-//line views/pipelineEditPage.qtpl:203
+//line views/pipelineEditPage.qtpl:199
 	qt422016.ReleaseWriter(qw422016)
-//line views/pipelineEditPage.qtpl:203
+//line views/pipelineEditPage.qtpl:199
 }
 
-//line views/pipelineEditPage.qtpl:203
+//line views/pipelineEditPage.qtpl:199
 func (p *PipelineEditPage) RenderPipelineSteps(pipeline *api.Pipeline, workers *[]api.UserWorker) string {
-//line views/pipelineEditPage.qtpl:203
+//line views/pipelineEditPage.qtpl:199
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/pipelineEditPage.qtpl:203
+//line views/pipelineEditPage.qtpl:199
 	p.WriteRenderPipelineSteps(qb422016, pipeline, workers)
-//line views/pipelineEditPage.qtpl:203
+//line views/pipelineEditPage.qtpl:199
 	qs422016 := string(qb422016.B)
-//line views/pipelineEditPage.qtpl:203
+//line views/pipelineEditPage.qtpl:199
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/pipelineEditPage.qtpl:203
+//line views/pipelineEditPage.qtpl:199
 	return qs422016
-//line views/pipelineEditPage.qtpl:203
+//line views/pipelineEditPage.qtpl:199
 }
 
-//line views/pipelineEditPage.qtpl:205
+//line views/pipelineEditPage.qtpl:201
 func StreamRenderPipelineStepsSortable(qw422016 *qt422016.Writer, csrfToken string, steps []api.UserWorker) {
-//line views/pipelineEditPage.qtpl:205
+//line views/pipelineEditPage.qtpl:201
 	qw422016.N().S(`
     `)
-//line views/pipelineEditPage.qtpl:206
+//line views/pipelineEditPage.qtpl:202
 	streamrenderCSRFToken(qw422016, csrfToken)
-//line views/pipelineEditPage.qtpl:206
+//line views/pipelineEditPage.qtpl:202
 	qw422016.N().S(`
     `)
-//line views/pipelineEditPage.qtpl:207
+//line views/pipelineEditPage.qtpl:203
 	for ix, step := range steps {
-//line views/pipelineEditPage.qtpl:207
+//line views/pipelineEditPage.qtpl:203
 		qw422016.N().S(`
         <div id="sortable-item-`)
-//line views/pipelineEditPage.qtpl:208
+//line views/pipelineEditPage.qtpl:204
 		qw422016.E().S(step.Id)
-//line views/pipelineEditPage.qtpl:208
+//line views/pipelineEditPage.qtpl:204
 		qw422016.N().S(`" class="p-2 w-2/4 mt-1.5 mx-auto text-white bg-secondary-600 rounded-lg flex justify-between items-center">
             <input type="hidden" name="`)
-//line views/pipelineEditPage.qtpl:209
+//line views/pipelineEditPage.qtpl:205
 		qw422016.E().S(step.Id)
-//line views/pipelineEditPage.qtpl:209
+//line views/pipelineEditPage.qtpl:205
 		qw422016.N().S(`" value="`)
-//line views/pipelineEditPage.qtpl:209
+//line views/pipelineEditPage.qtpl:205
 		qw422016.N().D(ix)
-//line views/pipelineEditPage.qtpl:209
+//line views/pipelineEditPage.qtpl:205
 		qw422016.N().S(`" />
             <div>
                 <p class="text-lg">`)
-//line views/pipelineEditPage.qtpl:211
+//line views/pipelineEditPage.qtpl:207
 		qw422016.E().S(step.Name)
-//line views/pipelineEditPage.qtpl:211
+//line views/pipelineEditPage.qtpl:207
 		qw422016.N().S(` v`)
-//line views/pipelineEditPage.qtpl:211
+//line views/pipelineEditPage.qtpl:207
 		qw422016.E().V(step.Revision)
-//line views/pipelineEditPage.qtpl:211
+//line views/pipelineEditPage.qtpl:207
 		qw422016.N().S(`</p>
                 <p class="text-sm font-thin">`)
-//line views/pipelineEditPage.qtpl:212
+//line views/pipelineEditPage.qtpl:208
 		qw422016.E().S(step.Description)
-//line views/pipelineEditPage.qtpl:212
+//line views/pipelineEditPage.qtpl:208
 		qw422016.N().S(`</p>
             </div>
             <div class="cursor-pointer w-10 p-2" onclick="removeFromSortable('`)
-//line views/pipelineEditPage.qtpl:214
+//line views/pipelineEditPage.qtpl:210
 		qw422016.E().S(step.Id)
-//line views/pipelineEditPage.qtpl:214
+//line views/pipelineEditPage.qtpl:210
 		qw422016.N().S(`')">
                 <iconify-icon icon="basil:trash-solid" width="100%" height="100%" class="text-white"></iconify-icon>
             </div>
         </div>
     `)
-//line views/pipelineEditPage.qtpl:218
+//line views/pipelineEditPage.qtpl:214
 	}
-//line views/pipelineEditPage.qtpl:218
+//line views/pipelineEditPage.qtpl:214
 	qw422016.N().S(`
 `)
-//line views/pipelineEditPage.qtpl:219
+//line views/pipelineEditPage.qtpl:215
 }
 
-//line views/pipelineEditPage.qtpl:219
+//line views/pipelineEditPage.qtpl:215
 func WriteRenderPipelineStepsSortable(qq422016 qtio422016.Writer, csrfToken string, steps []api.UserWorker) {
-//line views/pipelineEditPage.qtpl:219
+//line views/pipelineEditPage.qtpl:215
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/pipelineEditPage.qtpl:219
+//line views/pipelineEditPage.qtpl:215
 	StreamRenderPipelineStepsSortable(qw422016, csrfToken, steps)
-//line views/pipelineEditPage.qtpl:219
+//line views/pipelineEditPage.qtpl:215
 	qt422016.ReleaseWriter(qw422016)
-//line views/pipelineEditPage.qtpl:219
+//line views/pipelineEditPage.qtpl:215
 }
 
-//line views/pipelineEditPage.qtpl:219
+//line views/pipelineEditPage.qtpl:215
 func RenderPipelineStepsSortable(csrfToken string, steps []api.UserWorker) string {
-//line views/pipelineEditPage.qtpl:219
+//line views/pipelineEditPage.qtpl:215
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/pipelineEditPage.qtpl:219
+//line views/pipelineEditPage.qtpl:215
 	WriteRenderPipelineStepsSortable(qb422016, csrfToken, steps)
-//line views/pipelineEditPage.qtpl:219
+//line views/pipelineEditPage.qtpl:215
 	qs422016 := string(qb422016.B)
-//line views/pipelineEditPage.qtpl:219
+//line views/pipelineEditPage.qtpl:215
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/pipelineEditPage.qtpl:219
+//line views/pipelineEditPage.qtpl:215
 	return qs422016
-//line views/pipelineEditPage.qtpl:219
+//line views/pipelineEditPage.qtpl:215
 }
 
-//line views/pipelineEditPage.qtpl:221
+//line views/pipelineEditPage.qtpl:217
 func StreamRenderPipelineDetailEditor(qw422016 *qt422016.Writer) {
-//line views/pipelineEditPage.qtpl:221
+//line views/pipelineEditPage.qtpl:217
 	qw422016.N().S(`
  // TODO
 `)
-//line views/pipelineEditPage.qtpl:223
+//line views/pipelineEditPage.qtpl:219
 }
 
-//line views/pipelineEditPage.qtpl:223
+//line views/pipelineEditPage.qtpl:219
 func WriteRenderPipelineDetailEditor(qq422016 qtio422016.Writer) {
-//line views/pipelineEditPage.qtpl:223
+//line views/pipelineEditPage.qtpl:219
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/pipelineEditPage.qtpl:223
+//line views/pipelineEditPage.qtpl:219
 	StreamRenderPipelineDetailEditor(qw422016)
-//line views/pipelineEditPage.qtpl:223
+//line views/pipelineEditPage.qtpl:219
 	qt422016.ReleaseWriter(qw422016)
-//line views/pipelineEditPage.qtpl:223
+//line views/pipelineEditPage.qtpl:219
 }
 
-//line views/pipelineEditPage.qtpl:223
+//line views/pipelineEditPage.qtpl:219
 func RenderPipelineDetailEditor() string {
-//line views/pipelineEditPage.qtpl:223
+//line views/pipelineEditPage.qtpl:219
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/pipelineEditPage.qtpl:223
+//line views/pipelineEditPage.qtpl:219
 	WriteRenderPipelineDetailEditor(qb422016)
-//line views/pipelineEditPage.qtpl:223
+//line views/pipelineEditPage.qtpl:219
 	qs422016 := string(qb422016.B)
-//line views/pipelineEditPage.qtpl:223
+//line views/pipelineEditPage.qtpl:219
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/pipelineEditPage.qtpl:223
+//line views/pipelineEditPage.qtpl:219
 	return qs422016
-//line views/pipelineEditPage.qtpl:223
+//line views/pipelineEditPage.qtpl:219
 }
 
-//line views/pipelineEditPage.qtpl:225
+//line views/pipelineEditPage.qtpl:221
 func StreamRenderPipelineEditWorkerTable(qw422016 *qt422016.Writer, workers []api.UserWorker, nextPage string) {
-//line views/pipelineEditPage.qtpl:225
+//line views/pipelineEditPage.qtpl:221
 	qw422016.N().S(`
     <table class="w-full text-sm border-separate border-spacing-0" id="device-table">
         <thead class="text-left text-slate-500 sticky top-0 bg-white">
@@ -545,110 +541,110 @@ func StreamRenderPipelineEditWorkerTable(qw422016 *qt422016.Writer, workers []ap
         </thead>
         <tbody>
             `)
-//line views/pipelineEditPage.qtpl:250
+//line views/pipelineEditPage.qtpl:246
 	StreamRenderPipelineEditWorkerTableRows(qw422016, workers, nextPage)
-//line views/pipelineEditPage.qtpl:250
+//line views/pipelineEditPage.qtpl:246
 	qw422016.N().S(`
         </tbody>
     </table>
 `)
-//line views/pipelineEditPage.qtpl:253
+//line views/pipelineEditPage.qtpl:249
 }
 
-//line views/pipelineEditPage.qtpl:253
+//line views/pipelineEditPage.qtpl:249
 func WriteRenderPipelineEditWorkerTable(qq422016 qtio422016.Writer, workers []api.UserWorker, nextPage string) {
-//line views/pipelineEditPage.qtpl:253
+//line views/pipelineEditPage.qtpl:249
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/pipelineEditPage.qtpl:253
+//line views/pipelineEditPage.qtpl:249
 	StreamRenderPipelineEditWorkerTable(qw422016, workers, nextPage)
-//line views/pipelineEditPage.qtpl:253
+//line views/pipelineEditPage.qtpl:249
 	qt422016.ReleaseWriter(qw422016)
-//line views/pipelineEditPage.qtpl:253
+//line views/pipelineEditPage.qtpl:249
 }
 
-//line views/pipelineEditPage.qtpl:253
+//line views/pipelineEditPage.qtpl:249
 func RenderPipelineEditWorkerTable(workers []api.UserWorker, nextPage string) string {
-//line views/pipelineEditPage.qtpl:253
+//line views/pipelineEditPage.qtpl:249
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/pipelineEditPage.qtpl:253
+//line views/pipelineEditPage.qtpl:249
 	WriteRenderPipelineEditWorkerTable(qb422016, workers, nextPage)
-//line views/pipelineEditPage.qtpl:253
+//line views/pipelineEditPage.qtpl:249
 	qs422016 := string(qb422016.B)
-//line views/pipelineEditPage.qtpl:253
+//line views/pipelineEditPage.qtpl:249
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/pipelineEditPage.qtpl:253
+//line views/pipelineEditPage.qtpl:249
 	return qs422016
-//line views/pipelineEditPage.qtpl:253
+//line views/pipelineEditPage.qtpl:249
 }
 
-//line views/pipelineEditPage.qtpl:255
+//line views/pipelineEditPage.qtpl:251
 func StreamRenderPipelineEditWorkerTableRows(qw422016 *qt422016.Writer, workers []api.UserWorker, nextPage string) {
-//line views/pipelineEditPage.qtpl:255
+//line views/pipelineEditPage.qtpl:251
 	qw422016.N().S(`
     `)
-//line views/pipelineEditPage.qtpl:256
+//line views/pipelineEditPage.qtpl:252
 	for ix, worker := range workers {
-//line views/pipelineEditPage.qtpl:256
+//line views/pipelineEditPage.qtpl:252
 		qw422016.N().S(`
     <tr
         class="hover:bg-slate-50 group"
         `)
-//line views/pipelineEditPage.qtpl:259
+//line views/pipelineEditPage.qtpl:255
 		if nextPage != "" && ix == len(workers)-1 {
-//line views/pipelineEditPage.qtpl:259
+//line views/pipelineEditPage.qtpl:255
 			qw422016.N().S(`
         hx-trigger="revealed"
         hx-target="this"
         hx-swap="afterend"
         hx-get="`)
-//line views/pipelineEditPage.qtpl:263
+//line views/pipelineEditPage.qtpl:259
 			qw422016.E().S(nextPage)
-//line views/pipelineEditPage.qtpl:263
+//line views/pipelineEditPage.qtpl:259
 			qw422016.N().S(`"
         `)
-//line views/pipelineEditPage.qtpl:264
+//line views/pipelineEditPage.qtpl:260
 		}
-//line views/pipelineEditPage.qtpl:264
+//line views/pipelineEditPage.qtpl:260
 		qw422016.N().S(`
     >
         <td class="border-b"><a
             class="flex items-center px-4 h-10 text-primary-700 group-hover:underline"
             href="`)
-//line views/pipelineEditPage.qtpl:268
+//line views/pipelineEditPage.qtpl:264
 		qw422016.E().S(U("/workers/%s", worker.Id))
-//line views/pipelineEditPage.qtpl:268
+//line views/pipelineEditPage.qtpl:264
 		qw422016.N().S(`"
             hx-target="main"
         >`)
-//line views/pipelineEditPage.qtpl:270
+//line views/pipelineEditPage.qtpl:266
 		qw422016.E().S(worker.Name)
-//line views/pipelineEditPage.qtpl:270
+//line views/pipelineEditPage.qtpl:266
 		qw422016.N().S(`</a></td>
         <td class="px-4 h-10 border-b">`)
-//line views/pipelineEditPage.qtpl:271
+//line views/pipelineEditPage.qtpl:267
 		qw422016.N().D(int(worker.Revision))
-//line views/pipelineEditPage.qtpl:271
+//line views/pipelineEditPage.qtpl:267
 		qw422016.N().S(`</td>
         <td class="px-4 h-10 border-b">`)
-//line views/pipelineEditPage.qtpl:272
+//line views/pipelineEditPage.qtpl:268
 		qw422016.E().S(worker.Id)
-//line views/pipelineEditPage.qtpl:272
+//line views/pipelineEditPage.qtpl:268
 		qw422016.N().S(`</td>
         <td class="px-4 h-10 border-b">`)
-//line views/pipelineEditPage.qtpl:273
+//line views/pipelineEditPage.qtpl:269
 		qw422016.E().S(worker.Description)
-//line views/pipelineEditPage.qtpl:273
+//line views/pipelineEditPage.qtpl:269
 		qw422016.N().S(`</td>
         <td class="px-4 h-10 border-b">Python</td>
         <td class="px-4 h-10 border-b">
             <button onclick="addSortable('`)
-//line views/pipelineEditPage.qtpl:276
+//line views/pipelineEditPage.qtpl:272
 		qw422016.E().S(worker.Name)
-//line views/pipelineEditPage.qtpl:276
+//line views/pipelineEditPage.qtpl:272
 		qw422016.N().S(`', '`)
-//line views/pipelineEditPage.qtpl:276
+//line views/pipelineEditPage.qtpl:272
 		qw422016.E().S(worker.Id)
-//line views/pipelineEditPage.qtpl:276
+//line views/pipelineEditPage.qtpl:272
 		qw422016.N().S(`')" class="text-xs bg-emerald-400 hover:bg-emerald-500 text-white border border-emerald-500 rounded px-2 py-1">
                 Add
             </button>              
@@ -656,41 +652,41 @@ func StreamRenderPipelineEditWorkerTableRows(qw422016 *qt422016.Writer, workers 
         <!-- opacity-50 cursor-not-allowed pointer-events-none  -->
     </tr>
     `)
-//line views/pipelineEditPage.qtpl:282
+//line views/pipelineEditPage.qtpl:278
 	}
-//line views/pipelineEditPage.qtpl:282
+//line views/pipelineEditPage.qtpl:278
 	qw422016.N().S(`
 `)
-//line views/pipelineEditPage.qtpl:283
+//line views/pipelineEditPage.qtpl:279
 }
 
-//line views/pipelineEditPage.qtpl:283
+//line views/pipelineEditPage.qtpl:279
 func WriteRenderPipelineEditWorkerTableRows(qq422016 qtio422016.Writer, workers []api.UserWorker, nextPage string) {
-//line views/pipelineEditPage.qtpl:283
+//line views/pipelineEditPage.qtpl:279
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line views/pipelineEditPage.qtpl:283
+//line views/pipelineEditPage.qtpl:279
 	StreamRenderPipelineEditWorkerTableRows(qw422016, workers, nextPage)
-//line views/pipelineEditPage.qtpl:283
+//line views/pipelineEditPage.qtpl:279
 	qt422016.ReleaseWriter(qw422016)
-//line views/pipelineEditPage.qtpl:283
+//line views/pipelineEditPage.qtpl:279
 }
 
-//line views/pipelineEditPage.qtpl:283
+//line views/pipelineEditPage.qtpl:279
 func RenderPipelineEditWorkerTableRows(workers []api.UserWorker, nextPage string) string {
-//line views/pipelineEditPage.qtpl:283
+//line views/pipelineEditPage.qtpl:279
 	qb422016 := qt422016.AcquireByteBuffer()
-//line views/pipelineEditPage.qtpl:283
+//line views/pipelineEditPage.qtpl:279
 	WriteRenderPipelineEditWorkerTableRows(qb422016, workers, nextPage)
-//line views/pipelineEditPage.qtpl:283
+//line views/pipelineEditPage.qtpl:279
 	qs422016 := string(qb422016.B)
-//line views/pipelineEditPage.qtpl:283
+//line views/pipelineEditPage.qtpl:279
 	qt422016.ReleaseByteBuffer(qb422016)
-//line views/pipelineEditPage.qtpl:283
+//line views/pipelineEditPage.qtpl:279
 	return qs422016
-//line views/pipelineEditPage.qtpl:283
+//line views/pipelineEditPage.qtpl:279
 }
 
-//line views/pipelineEditPage.qtpl:286
+//line views/pipelineEditPage.qtpl:282
 type PipelineEditPage struct {
 	BasePage
 	Pipeline          *api.Pipeline

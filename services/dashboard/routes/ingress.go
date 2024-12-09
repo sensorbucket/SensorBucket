@@ -13,7 +13,6 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/api"
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
-	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
 )
 
 type IngressPageHandler struct {
@@ -105,7 +104,7 @@ func (h *IngressPageHandler) createViewIngresses(ctx context.Context) ([]views.I
 			{
 				Label:   "Information not available",
 				Tooltip: "The pipeline was modified after this message was received, information is not available",
-				Status:  int(tracing.Unknown),
+				Status:  int(0),
 			},
 		}
 		if len(traceLog.Steps) != len(pl.Steps) {

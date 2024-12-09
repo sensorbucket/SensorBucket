@@ -107,7 +107,6 @@
                         },
                         onEnd: function(evt) {
                             ghostStyles.forEach((item) => evt.item.classList.remove(item));
-
                             reorderSortables();
                         }
                     });
@@ -165,13 +164,10 @@
 
             // Create a FormData object from the form
             const formData = new FormData(form);
-            let data = {}
+            let data = []
             for (var [key, value] of formData.entries()) { 
                 if (key == "csrf_token") continue;
-                if(!data[key]) {
-                    data[key] = [];
-                }
-                data[key].push(value);
+                data.push(key)
             }
 
             return data;

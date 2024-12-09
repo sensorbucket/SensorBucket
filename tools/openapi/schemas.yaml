@@ -335,12 +335,10 @@ apiKeyCreated:
 trace:
   type: object
   required:
-    - tracing_id
+    - id
     - device_id
     - start_time
     - steps
-    - status
-    - status_string
   properties:
     tracing_id:
       type: string

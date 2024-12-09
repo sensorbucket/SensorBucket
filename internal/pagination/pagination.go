@@ -156,8 +156,15 @@ func columnAlias(name string) string {
 	return "paginated_" + name
 }
 
+func ApplyNoLimit[T any](q sq.SelectBuilder, c Cursor[T]) (sq.SelectBuilder, error) {
+	c.Limit = 0
+	return Apply(q, c)
+}
+
 func Apply[T any](q sq.SelectBuilder, c Cursor[T]) (sq.SelectBuilder, error) {
-	q = q.Limit(c.Limit)
+	if c.Limit > 0 {
+		q = q.Limit(c.Limit)
+	}
 	rt := reflect.TypeOf(c.Columns)
 	rv := reflect.ValueOf(c.Columns)
 	columns := []whereCol{}
