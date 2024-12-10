@@ -18,7 +18,7 @@ get:
       schema:
         type: integer
     - in: query
-      name: tracing_id
+      name: pipeline_id
       style: form
       explode: true
       schema:
@@ -33,21 +33,6 @@ get:
         type: integer
         format: int64
         example: 5
-    - in: query
-      name: status
-      schema:
-        type: integer
-        example: 2
-    - in: query
-      name: duration_greater_than
-      schema:
-        type: integer
-        example: 5 
-    - in: query
-      name: duration_smaller_than
-      schema:
-        type: integer
-        example: 10
 
   responses:
     "200":

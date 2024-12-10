@@ -336,12 +336,19 @@ trace:
   type: object
   required:
     - id
+    - pipeline_id
     - device_id
     - start_time
-    - steps
+    - workers
+    - worker_times
   properties:
-    tracing_id:
+    id:
       type: string
+      format: uuid
+      example: "a59d28c8-2a0f-4e89-9f49-6942f1c04342"
+    pipeline_id:
+      type: string
+      format: uuid
       example: "a59d28c8-2a0f-4e89-9f49-6942f1c04342"
     device_id:
       type: integer
@@ -351,41 +358,20 @@ trace:
     start_time:
       type: string
       format: date-time
-    status:
-      type: integer
-      example: 2
-    status_string:
-      type: string
-      example: "succes"
-    steps:
+    workers:
       type: array
       items:
-        $ref: '#/trace_step'
-
-trace_step:
-  type: object
-  required:
-    - status
-    - status_string
-    - duration
-    - error
-  properties:
-    start_time:
-      type: string
-      format: date-time
-    status:
-      type: integer
-      example: 2
-    status_string:
-      type: string
-      example: "succes"
-    duration:
-      type: number
-      format: double
-      description: Duration in seconds
-      example: 5.321
+        type: string
+    worker_times:
+      type: array
+      items:
+        type: string
+        format: date-time
     error:
       type: string
+    error_at:
+      type: string
+      format: date-time
 
 measurement:
   type: object
@@ -705,54 +691,6 @@ createUserWorkerRequest:
     state:
       type: string
       enum: ["enabled", "disabled"]
-
-ingressDTO:
-  type: object
-  required:
-    - tracing_id
-    - pipeline_id
-    - owner_id
-    - payload
-    - created_at
-  properties:
-    tracing_id:
-      type: string
-      format: uuid
-    pipeline_id:
-      type: string
-      format: uuid
-    owner_id:
-      type: integer
-      format: int64
-    payload:
-      type: string
-      format: base64
-    created_at:
-      type: string
-      format: date-time
-
-archivedIngress:
-  type: object
-  required:
-    - tracing_id
-    - raw_message
-    - archived_at
-    - expires_at
-  properties:
-    tracing_id:
-      type: string
-      format: uuid
-    raw_message:
-      type: string
-      format: base64
-    archived_at:
-      type: string
-      format: date-time
-    expires_at:
-      type: string
-      format: date-time
-    ingress_dto:
-      $ref: "#/ingressDTO"
 
 apiError:
     type: object

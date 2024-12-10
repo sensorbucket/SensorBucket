@@ -127,8 +127,8 @@ type Trace struct {
 	PipelineID  uuid.UUID   `json:"pipeline_id"`
 	DeviceID    int64       `json:"device_id"`
 	StartTime   time.Time   `json:"start_time"`
-	Workers     []string    `json:"steps"`
-	WorkerTimes []time.Time `json:"queue_times"`
+	Workers     []string    `json:"workers"`
+	WorkerTimes []time.Time `json:"worker_times"`
 	Error       *string     `json:"error"`
 	ErrorAt     *time.Time  `json:"error_at"`
 }
@@ -152,6 +152,10 @@ func (svc *Service) Query(ctx context.Context, filters TraceFilter, r pagination
 		"trace.id", "trace.pipeline_id", "trace.created_at", "trace.error", "trace.error_at",
 		"steps.device_id", "steps.workers", "steps.worker_times",
 	).From("traces trace").OrderBy("trace.created_at DESC")
+
+	if filters.PipelineIDs != nil {
+		tracesQ = tracesQ.Where(sq.Eq{"pipeline_id": filters.PipelineIDs})
+	}
 
 	stepAggregationQ := pq.Select(
 		"step.tracing_id",
