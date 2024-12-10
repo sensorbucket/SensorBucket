@@ -1,6 +1,7 @@
 package tracing
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -23,18 +24,18 @@ func CreateTransport(svc *Service) *HTTPTransport {
 	return t
 }
 
-type httpGetTracesParameters struct {
-	TraceFilter
-	pagination.Request
-}
-
 func (t *HTTPTransport) httpGetTraces() http.HandlerFunc {
+	type Params struct {
+		TraceFilter
+		pagination.Request
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		params, err := httpfilter.Parse[httpGetTracesParameters](r)
+		params, err := httpfilter.Parse[Params](r)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
+		fmt.Printf("params: %v\n", params)
 
 		page, err := t.service.Query(r.Context(), params.TraceFilter, params.Request)
 		if err != nil {

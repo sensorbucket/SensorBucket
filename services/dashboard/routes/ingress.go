@@ -2,9 +2,11 @@ package routes
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
 	"net/http"
+	"strconv"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -15,169 +17,193 @@ import (
 	"sensorbucket.nl/sensorbucket/services/dashboard/views"
 )
 
-type IngressPageHandler struct {
+type TracesPageHandler struct {
 	router        chi.Router
 	coreClient    *api.APIClient
-	tracingClient *api.APIClient
+	tracesClient  *api.APIClient
 	workersClient *api.APIClient
 }
 
-func CreateIngressPageHandler(core, tracing, workers *api.APIClient) *IngressPageHandler {
-	handler := &IngressPageHandler{
+func CreateTracesPageHandler(core, traces, workers *api.APIClient) *TracesPageHandler {
+	handler := &TracesPageHandler{
 		router:        chi.NewRouter(),
 		coreClient:    core,
-		tracingClient: tracing,
+		tracesClient:  traces,
 		workersClient: workers,
 	}
 	handler.SetupRoutes(handler.router)
 	return handler
 }
 
-func (h IngressPageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h TracesPageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.router.ServeHTTP(w, r)
 }
 
-func (h *IngressPageHandler) SetupRoutes(r chi.Router) {
-	r.Get("/", h.ingressListPage())
-	r.Get("/list", h.ingressListPartial())
+func (h *TracesPageHandler) SetupRoutes(r chi.Router) {
+	r.Get("/list", h.listPartial())
 }
 
-func (h *IngressPageHandler) createViewIngresses(ctx context.Context) ([]views.Ingress, error) {
-	resIngresses, _, err := h.tracingClient.TracingApi.ListIngresses(ctx).Limit(30).Execute()
-	if err != nil {
-		return nil, fmt.Errorf("error listing ingresses: %w", err)
-	}
-	resPipelines, _, err := h.coreClient.PipelinesApi.ListPipelines(ctx).Execute()
-	if err != nil {
-		return nil, fmt.Errorf("error listing pipelines: %w", err)
-	}
-
-	plSteps := lo.FlatMap(resPipelines.Data, func(p api.Pipeline, _ int) []string { return p.Steps })
-	plSteps = lo.Uniq(plSteps)
-	resWorkers, _, err := h.workersClient.WorkersApi.ListWorkers(ctx).Id(plSteps).Execute()
-	if err != nil {
-		return nil, fmt.Errorf("error listing workers: %w", err)
-	}
-	workerNames := lo.SliceToMap(resWorkers.Data, func(w api.UserWorker) (string, string) {
-		return w.GetId(), w.GetName()
-	})
-
-	traceIDs := lo.Map(resIngresses.Data, func(ing api.ArchivedIngress, _ int) string { return ing.GetTracingId() })
-	traceIDs = lo.Uniq(traceIDs)
-	resLogs, _, err := h.tracingClient.TracingApi.ListTraces(ctx).TracingId(traceIDs).Execute()
-	if err != nil {
-		return nil, fmt.Errorf("error listing traces: %w", err)
-	}
-	traceMap := lo.SliceToMap(resLogs.Data, func(steplog api.Trace) (string, api.Trace) {
-		return steplog.TracingId, steplog
-	})
-
-	deviceIDs := lo.FilterMap(resLogs.Data, func(traceLog api.Trace, _ int) (int64, bool) {
-		return traceLog.DeviceId, traceLog.DeviceId > 0
-	})
-	resDevices, _, err := h.coreClient.DevicesApi.ListDevices(ctx).Id(lo.Uniq(deviceIDs)).Execute()
-	if err != nil {
-		return nil, fmt.Errorf("error listing devices: %w", err)
-	}
-	deviceMap := lo.SliceToMap(resDevices.Data, func(device api.Device) (int64, api.Device) {
-		return device.Id, device
-	})
-
-	ingresses := make([]views.Ingress, 0, len(resIngresses.Data))
-	for _, ingress := range resIngresses.Data {
-		if ingress.IngressDto == nil {
-			continue
-		}
-		pl, found := lo.Find(resPipelines.Data, func(pl api.Pipeline) bool {
-			return pl.Id == ingress.IngressDto.PipelineId
-		})
-		if !found {
-			continue
-		}
-		traceLog, ok := traceMap[ingress.TracingId]
-		if !ok {
-			log.Printf("warning: could not find trace for archived ingres: %s\n", ingress.TracingId)
-			continue
-		}
-
-		viewSteps := []views.IngressStep{
-			{
-				Label:   "Information not available",
-				Tooltip: "The pipeline was modified after this message was received, information is not available",
-				Status:  int(0),
-			},
-		}
-		if len(traceLog.Steps) != len(pl.Steps) {
-			// The default viewSteps array above already has an "error" set by default.
-			// If we can show all the steps, then the whole array is overwritten. See the next "else"
-			log.Printf(
-				"warning: pipeline has %d steps, but log only has %d. Pipeline has probably been modified after this ingress. Showing no steps...\n",
-				len(pl.Steps),
-				len(traceLog.Steps),
-			)
-		} else {
-			// TODO: This currently requires that there are an equal number of StepDTO's and Pipeline Steps
-			// In the future pipelines will have revisions and are not directly mutable, thus this should always be equal
-			viewSteps = lo.Map(pl.Steps, func(stepKey string, ix int) views.IngressStep {
-				step := traceLog.Steps[ix]
-				stepName := stepKey
-				if workerName, ok := workerNames[stepName]; ok {
-					stepName = workerName
-				}
-				viewStep := views.IngressStep{
-					Label:  stepName,
-					Status: int(step.Status),
-				}
-				if step.Error != "" {
-					viewStep.Tooltip = step.Error
-				} else if step.Duration != 0 {
-					viewStep.Tooltip = time.Duration(step.Duration * float64(time.Second)).String()
-				} else if step.Status == 3 || viewStep.Status == 4 {
-					viewStep.Tooltip = "<1s"
-				}
-				return viewStep
-			})
-		}
-
-		ingress := views.Ingress{
-			TracingID: ingress.TracingId,
-			CreatedAt: ingress.IngressDto.CreatedAt,
-			Steps:     viewSteps,
-		}
-		if traceLog.DeviceId != 0 {
-			ingress.Device = deviceMap[traceLog.DeviceId]
-		}
-		ingresses = append(ingresses, ingress)
-	}
-	return ingresses, nil
-}
-
-func (h *IngressPageHandler) ingressListPage() http.HandlerFunc {
+func (h *TracesPageHandler) listPartial() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ingresses, err := h.createViewIngresses(r.Context())
+		req := h.tracesClient.TracingApi.ListTraces(r.Context())
+
+		if pipelineIDs, ok := r.URL.Query()["pipeline"]; ok {
+			req = req.Pipeline(pipelineIDs)
+		}
+		if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+			limit, err := strconv.Atoi(limitStr)
+			if err != nil {
+				web.HTTPError(w, err)
+				return
+			}
+			req = req.Limit(int32(limit))
+		}
+
+		traces, _, err := req.Execute()
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
-		page := &views.IngressPage{
-			BasePage:  createBasePage(r),
-			Ingresses: ingresses,
-		}
-		if isHX(r) {
-			page.WriteBody(w)
-			return
-		}
-		views.WriteIndex(w, page)
-	}
-}
-
-func (h *IngressPageHandler) ingressListPartial() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ingresses, err := h.createViewIngresses(r.Context())
+		viewModels, err := h.createViewData(r.Context(), traces.GetData())
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
-		views.WriteRenderIngressList(w, ingresses)
+		views.WriteRenderTracesList(w, viewModels)
 	}
+}
+
+func formatSince(t time.Time) string {
+	d := time.Since(t)
+	if d.Hours() > 24 {
+		return "More than a day ago"
+	}
+	if int(d.Hours()) > 1 {
+		return fmt.Sprintf("About %d hours ago", int(d.Hours()))
+	}
+	if int(d.Hours()) > 0 {
+		return fmt.Sprintf("About %d hours ago", int(d.Hours()))
+	}
+	if int(d.Minutes()) > 1 {
+		return fmt.Sprintf("About %d minutes ago", int(d.Minutes()))
+	}
+	if int(d.Minutes()) > 0 {
+		return fmt.Sprintf("About %d minute ago", int(d.Minutes()))
+	}
+	return fmt.Sprintf("About %d seconds ago", int(d.Seconds()))
+}
+
+func (h *TracesPageHandler) createViewData(ctx context.Context, traces []api.Trace) ([]views.Trace, error) {
+	deviceIDs := lo.Map(traces, func(trace api.Trace, _ int) int64 { return trace.GetDeviceId() })
+	pipelineIDs := lo.Map(traces, func(trace api.Trace, _ int) string { return trace.GetPipelineId() })
+	workerIDs := lo.FlatMap(traces, func(trace api.Trace, _ int) []string { return trace.GetWorkers() })
+
+	devices, pipelines, workers, err := h.enrichData(ctx, deviceIDs, pipelineIDs, workerIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	viewModels := make([]views.Trace, len(traces))
+	for i, trace := range traces {
+
+		viewModels[i] = views.Trace{
+			ID:         trace.GetId(),
+			StartTime:  trace.GetStartTime(),
+			TimeAgo:    formatSince(trace.GetStartTime()),
+			PipelineID: pipelineIDs[i],
+			DeviceID:   deviceIDs[i],
+			Steps:      make([]views.Step, 0, len(trace.GetWorkers())),
+		}
+
+		pipeline, ok := pipelines[pipelineIDs[i]]
+		if ok {
+			viewModels[i].PipelineName = pipeline.GetDescription()
+		}
+		device, ok := devices[deviceIDs[i]]
+		if ok {
+			viewModels[i].DeviceCode = device.GetCode()
+		}
+
+		// First add all workers from the trace to the viewModel
+		workerIndex := 0
+		for j, workerID := range trace.GetWorkers() {
+			step := views.Step{
+				Name:   workerID,
+				Status: views.StatusCompleted,
+			}
+			worker, ok := workers[workerID]
+			if ok {
+				step.Name = worker.GetName()
+			}
+			viewModels[i].Steps = append(viewModels[i].Steps, step)
+
+			// update last worker with duration
+			if j > 0 {
+				viewModels[i].Steps[j-1].Label = trace.WorkerTimes[j].Sub(trace.WorkerTimes[j-1]).String()
+			}
+
+			workerIndex++
+		}
+
+		// Set the last trace to pending, unless its storage
+		if workerIndex > 0 && trace.HasError() {
+			viewModels[i].Steps[workerIndex-1].Status = views.StatusError
+			viewModels[i].Steps[workerIndex-1].Label = trace.GetError()
+		} else if workerIndex > 0 && trace.Workers[workerIndex-1] != "storage" {
+			viewModels[i].Steps[workerIndex-1].Status = views.StatusPending
+		}
+
+		// Then add all the workers from the pipeline to the model, starting from the last added worker
+		for ; workerIndex < len(pipeline.Steps); workerIndex++ {
+			workerID := pipeline.Steps[workerIndex]
+			step := views.Step{
+				Name: workerID,
+			}
+			worker, ok := workers[workerID]
+			if ok {
+				step.Name = worker.GetName()
+			}
+			viewModels[i].Steps = append(viewModels[i].Steps, step)
+		}
+	}
+	return viewModels, nil
+}
+
+func (h *TracesPageHandler) enrichData(ctx context.Context, deviceIDs []int64, pipelineIDs, workerIDs []string) (
+	devices map[int64]api.Device, pipelines map[string]api.Pipeline, workers map[string]api.UserWorker, err error,
+) {
+	errs := make([]error, 3)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		res, _, err := h.coreClient.DevicesApi.ListDevices(ctx).Id(deviceIDs).Execute()
+		if err != nil {
+			errs[0] = err
+			return
+		}
+		devices = lo.KeyBy(res.GetData(), func(d api.Device) int64 { return d.GetId() })
+	}()
+	go func() {
+		defer wg.Done()
+		res, _, err := h.coreClient.PipelinesApi.ListPipelines(ctx).Id(pipelineIDs).Execute()
+		if err != nil {
+			errs[1] = err
+			return
+		}
+		pipelines = lo.KeyBy(res.GetData(), func(p api.Pipeline) string { return p.GetId() })
+		workerIDs = append(workerIDs, lo.FlatMap(res.GetData(), func(p api.Pipeline, _ int) []string { return p.GetSteps() })...)
+
+		wRes, _, err := h.workersClient.WorkersApi.ListWorkers(ctx).Id(workerIDs).Execute()
+		if err != nil {
+			errs[2] = err
+			return
+		}
+		workers = lo.KeyBy(wRes.GetData(), func(w api.UserWorker) string { return w.GetId() })
+	}()
+
+	wg.Wait()
+	err = errors.Join(errs...)
+	return
 }

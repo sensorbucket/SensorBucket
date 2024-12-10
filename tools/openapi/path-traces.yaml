@@ -18,9 +18,7 @@ get:
       schema:
         type: integer
     - in: query
-      name: pipeline_id
-      style: form
-      explode: true
+      name: pipeline
       schema:
         type: array
         items:

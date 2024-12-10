@@ -122,8 +122,7 @@ Class | Method | HTTP request | Description
 *TenantsApi* | [**ListTenants**](docs/TenantsApi.md#listtenants) | **Get** /tenants | Retrieves tenants
 *TenantsApi* | [**RemoveTenantMember**](docs/TenantsApi.md#removetenantmember) | **Delete** /tenants/{tenant_id}/members/{user_id} | Removes a member from a tenant
 *TenantsApi* | [**UpdateTenantMember**](docs/TenantsApi.md#updatetenantmember) | **Patch** /tenants/{tenant_id}/members/{user_id} | Update a tenant member&#39;s permissions
-*TracingApi* | [**ListIngresses**](docs/TracingApi.md#listingresses) | **Get** /ingresses | List ingresses
-*TracingApi* | [**ListTraces**](docs/TracingApi.md#listtraces) | **Get** /tracing | List traces
+*TracingApi* | [**ListTraces**](docs/TracingApi.md#listtraces) | **Get** /traces | List traces
 *UplinkApi* | [**ProcessUplinkData**](docs/UplinkApi.md#processuplinkdata) | **Post** /uplinks/{pipeline_id} | Process uplink message
 *WorkersApi* | [**CreateWorker**](docs/WorkersApi.md#createworker) | **Post** /workers | Create Worker
 *WorkersApi* | [**GetWorker**](docs/WorkersApi.md#getworker) | **Get** /workers/{id} | Get worker
@@ -141,7 +140,6 @@ Class | Method | HTTP request | Description
  - [ApiError](docs/ApiError.md)
  - [ApiKey](docs/ApiKey.md)
  - [ApiKeyCreated](docs/ApiKeyCreated.md)
- - [ArchivedIngress](docs/ArchivedIngress.md)
  - [CreateApiKeyRequest](docs/CreateApiKeyRequest.md)
  - [CreateDevice201Response](docs/CreateDevice201Response.md)
  - [CreateDeviceRequest](docs/CreateDeviceRequest.md)
@@ -168,7 +166,6 @@ Class | Method | HTTP request | Description
  - [GetSensorGroup200Response](docs/GetSensorGroup200Response.md)
  - [GetWorker200Response](docs/GetWorker200Response.md)
  - [GetWorkerUserCode200Response](docs/GetWorkerUserCode200Response.md)
- - [IngressDTO](docs/IngressDTO.md)
  - [ListApiKeys200Response](docs/ListApiKeys200Response.md)
  - [ListApiKeys200ResponseAllOf](docs/ListApiKeys200ResponseAllOf.md)
  - [ListDatastreams200Response](docs/ListDatastreams200Response.md)
@@ -177,8 +174,6 @@ Class | Method | HTTP request | Description
  - [ListDeviceSensors200ResponseAllOf](docs/ListDeviceSensors200ResponseAllOf.md)
  - [ListDevices200Response](docs/ListDevices200Response.md)
  - [ListDevices200ResponseAllOf](docs/ListDevices200ResponseAllOf.md)
- - [ListIngresses200Response](docs/ListIngresses200Response.md)
- - [ListIngresses200ResponseAllOf](docs/ListIngresses200ResponseAllOf.md)
  - [ListPipelines200Response](docs/ListPipelines200Response.md)
  - [ListPipelines200ResponseAllOf](docs/ListPipelines200ResponseAllOf.md)
  - [ListSensorGroups200Response](docs/ListSensorGroups200Response.md)
@@ -201,7 +196,6 @@ Class | Method | HTTP request | Description
  - [SensorGroup](docs/SensorGroup.md)
  - [Tenant](docs/Tenant.md)
  - [Trace](docs/Trace.md)
- - [TraceStep](docs/TraceStep.md)
  - [UpdateDevice200Response](docs/UpdateDevice200Response.md)
  - [UpdateDeviceRequest](docs/UpdateDeviceRequest.md)
  - [UpdatePipeline200Response](docs/UpdatePipeline200Response.md)

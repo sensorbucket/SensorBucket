@@ -119,7 +119,7 @@ func (svc *Service) ProcessTraceStep(msg pipeline.Message, queueTime time.Time) 
 }
 
 type TraceFilter struct {
-	PipelineIDs []string
+	Pipeline []string
 }
 
 type Trace struct {
@@ -153,8 +153,9 @@ func (svc *Service) Query(ctx context.Context, filters TraceFilter, r pagination
 		"steps.device_id", "steps.workers", "steps.worker_times",
 	).From("traces trace").OrderBy("trace.created_at DESC")
 
-	if filters.PipelineIDs != nil {
-		tracesQ = tracesQ.Where(sq.Eq{"pipeline_id": filters.PipelineIDs})
+	if filters.Pipeline != nil {
+		tracesQ = tracesQ.Where(sq.Eq{"trace.pipeline_id": filters.Pipeline})
+		fmt.Printf("filters.PipelineID: %v\n", filters.Pipeline)
 	}
 
 	stepAggregationQ := pq.Select(

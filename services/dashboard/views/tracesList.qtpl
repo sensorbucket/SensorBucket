@@ -1,0 +1,90 @@
+{% import "time" %}
+
+{% func RenderTracesList(traces []Trace) %}
+<article class="grid grid-cols-[max-content,1fr,max-content] items-center gap-4 text-sm border-b bg-white px-4 py-2">
+    {% if len(traces) == 0 %}
+      <span></span>
+      <span class="text-slate-500 text-center">No traces found</span>
+      <span></span>
+    {% endif %}
+    {% for _, trace := range traces %}
+          <span>{%s trace.TimeAgo %}</span>
+          <section class="flex flex-col">
+              <span>{%s trace.ID %}</span>
+              <div class="text-slate-500 text-xs">
+                  <span>{%s trace.StartTime.Format("15:04:05 2006-01-02") %}</span>
+                  {% if trace.DeviceID != 0 %}
+                      <a hx-target="main" href="{%s U("/overview/devices/%d", trace.DeviceID) %}" class="ml-3 text-sky-600 hover:underline">{%s trace.DeviceCode %}</a>
+                  {% endif %}
+              </div>
+          </section>
+          <section class="relative flex items-center">
+              <ul class="flex items-center gap-4 z-10">
+                  {% for _, step := range trace.Steps %}
+                      <li class="
+                          flex relative items-center rounded-full py-1 px-2 text-xs border
+                          bg-white group
+                          {% switch step.Status %}
+                          {% case StatusCompleted %}
+                           border-emerald-500
+                          {% case StatusPending %}
+                           border-orange-500
+                          {% case StatusError %}
+                           border-rose-500
+                          {% default %}
+                          {% endswitch %}
+                      ">
+                          {%s step.Name %}
+                          {% switch step.Status %}
+                          {% case StatusCompleted %}
+                          <iconify-icon class="w-3 pl-1 text-emerald-800" icon="fluent:checkmark-12-filled"></iconify-icon>
+                          {% case StatusPending %}
+                          <iconify-icon class="w-3 pl-1 text-orange-800" icon="carbon:in-progress"></iconify-icon>
+                          {% case StatusError %}
+                          <iconify-icon class="w-3 pl-1 text-rose-800" icon="material-symbols:error"></iconify-icon>
+                          {% default %}
+                          <iconify-icon class="w-3 pl-1 text-slate-800" icon="material-symbols:question-mark"></iconify-icon>
+                          {% endswitch %}
+                          {% if step.Label != "" %}
+                          <div class="
+                              hidden hover:block group-hover:block absolute text-white bg-gray-800 bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 rounded py-1
+                              after:content-['_'] after:absolute after:top-full after:-translate-y-[0.25rem] after:left-1/2 after:-translate-x-1/2 after:bg-gray-800 after:w-2 after:h-2 after:rotate-45
+                          ">
+                              {%s step.Label %}
+                          </div>
+                          {% endif %}
+                      </li>
+                  {% endfor %}
+              </ul>
+              <div class="absolute border-b-2 left-0 right-0 top-1/2 -translate-y-1/2"></div>
+          </section>
+    {% endfor %}
+</article>
+{% endfunc %}
+
+{% code
+type Trace struct {
+  ID string
+  StartTime time.Time
+  TimeAgo string
+  PipelineID string
+  PipelineName string
+  DeviceID int64
+  DeviceCode string
+  Steps []Step
+}
+
+type StepStatus uint
+const (
+  StatusUnknown StepStatus = iota
+  StatusCompleted 
+  StatusPending 
+  StatusError 
+)
+
+type Step struct {
+  Name string
+  Status StepStatus
+  Label string
+}
+%}

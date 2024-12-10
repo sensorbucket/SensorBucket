@@ -84,6 +84,16 @@
             </div>
         </div>
     </template>
+    <div 
+        class="bg-white border rounded-md lg:col-span-3 xl:col-span-3"
+    >
+        <header class="flex border-b py-2 px-4 text-sm text-slate-700">
+          <span class="flex-1">Incoming data and processing statusses</span>
+          <button hx-get="{%s U("/traces/list?pipeline=%s&limit=%d", p.Pipeline.Id, 10) %}" hx-trigger="load, click" hx-target="next div">Refresh</button>
+        </header>
+        <div>
+        </div>
+    </div>
 </div>
 {% endfunc %}
 
