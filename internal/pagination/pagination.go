@@ -3,6 +3,7 @@ package pagination
 import (
 	"encoding/base64"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -16,6 +17,19 @@ const (
 	MAX_LIMIT     = 1000
 	DEFAULT_LIMIT = 100
 )
+
+var enc cbor.EncMode
+
+func init() {
+	var err error
+	encOpts := cbor.CoreDetEncOptions()
+	encOpts.Time = cbor.TimeUnixMicro
+	encOpts.TimeTag = cbor.EncTagRequired
+	enc, err = encOpts.EncMode()
+	if err != nil {
+		log.Fatalf("could not create cursor encoder: %s\n", err.Error())
+	}
+}
 
 type Links struct {
 	Previous string `json:"previous"`
@@ -90,11 +104,7 @@ func CreatePageT[T1 any, T2 any](data []T1, cursor Cursor[T2]) Page[T1] {
 }
 
 func EncodeCursor[T any](f Cursor[T]) string {
-	opt := cbor.CanonicalEncOptions()
-	opt.Time = cbor.TimeUnix
-	enc, _ := opt.EncMode()
-
-	data, err := enc.Marshal(&f)
+	data, err := enc.Marshal(f)
 	if err != nil {
 		panic(err)
 	}
