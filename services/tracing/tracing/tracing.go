@@ -149,9 +149,9 @@ func (svc *Service) Query(ctx context.Context, filters TraceFilter, r pagination
 	}
 
 	tracesQ := pq.Select(
-		"trace.id", "trace.pipeline_id", "trace.error", "trace.error_at",
+		"trace.id", "trace.pipeline_id", "trace.created_at", "trace.error", "trace.error_at",
 		"steps.device_id", "steps.workers", "steps.worker_times",
-	).From("traces trace")
+	).From("traces trace").OrderBy("trace.created_at DESC")
 
 	stepAggregationQ := pq.Select(
 		"step.tracing_id",
@@ -167,6 +167,7 @@ func (svc *Service) Query(ctx context.Context, filters TraceFilter, r pagination
 	if err != nil {
 		return nil, err
 	}
+	tracesQ = auth.ProtectedQuery(ctx, tracesQ)
 
 	query, params, err := tracesQ.ToSql()
 	if err != nil {
@@ -194,7 +195,7 @@ func (svc *Service) Query(ctx context.Context, filters TraceFilter, r pagination
 		for rows.Next() {
 			var trace Trace
 			if err := rows.Scan(
-				&trace.ID, &trace.PipelineID, &trace.Error, &trace.ErrorAt,
+				&trace.ID, &trace.PipelineID, &trace.StartTime, &trace.Error, &trace.ErrorAt,
 				&trace.DeviceID, &trace.Workers, &trace.WorkerTimes,
 				&cursor.Columns.StartTime, &cursor.Columns.TraceID,
 			); err != nil {
