@@ -447,5 +447,10 @@ func (s *MeasurementStorePSQL) StoreMeasurements(measurements []measurements.Mea
 		)
 	}
 
+	_, err := q.RunWith(s.db).Exec()
+	if err != nil {
+		return fmt.Errorf("could not insert measurements: %w", err)
+	}
+
 	return nil
 }

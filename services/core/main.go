@@ -47,7 +47,7 @@ var (
 	AUTH_JWKS_URL                = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
 	SYS_ARCHIVE_TIME             = env.Could("SYS_ARCHIVE_TIME", "30")
 	MEASUREMENT_BATCH_SIZE       = env.CouldInt("MEASUREMENT_BATCH_SIZE", 1024)
-	MEASUREMENT_COMMIT_INTERVAL  = env.CouldInt("MEASUREMENT_COMMIT_INTERVAL", 1)
+	MEASUREMENT_COMMIT_INTERVAL  = env.CouldInt("MEASUREMENT_COMMIT_INTERVAL", 1000)
 )
 
 func main() {
@@ -97,7 +97,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	}
 	measurementstore := measurementsinfra.NewPSQL(db)
 	measurementservice := measurements.New(measurementstore, sysArchiveTime, keyClient)
-	cleanup.Add(measurementservice.StartMeasurementBatchStorer(MEASUREMENT_BATCH_SIZE, time.Duration(MEASUREMENT_COMMIT_INTERVAL)*time.Second))
+	cleanup.Add(measurementservice.StartMeasurementBatchStorer(MEASUREMENT_BATCH_SIZE, time.Duration(MEASUREMENT_COMMIT_INTERVAL)*time.Millisecond))
 
 	processingstore := processinginfra.NewPSQLStore(db)
 	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)

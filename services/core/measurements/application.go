@@ -51,9 +51,10 @@ func (s *Service) StartMeasurementBatchStorer(batchSize int, interval time.Durat
 	t := time.NewTicker(interval)
 
 	commit := func() {
-		if len(measurements) > 0 {
-			log.Printf("Committing %d measurements\n", len(measurements))
+		if len(measurements) == 0 {
+			return
 		}
+		log.Printf("Committing %d measurements\n", len(measurements))
 		err := s.store.StoreMeasurements(measurements)
 		if err != nil {
 			log.Printf("Error storing measurements: %s\n", err.Error())
@@ -118,8 +119,7 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 		CreatedAt:                 time.Now(),
 	}
 
-	measurements := make([]Measurement, len(msg.Measurements))
-	for ix, m := range msg.Measurements {
+	for _, m := range msg.Measurements {
 
 		sensor, err := dev.GetSensorByExternalIDOrFallback(m.SensorExternalID)
 		if err != nil {
@@ -161,7 +161,7 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 			measurement.MeasurementAltitude = m.Altitude
 		}
 
-		measurements[ix] = measurement
+		s.measurementBatch <- measurement
 	}
 
 	return nil
