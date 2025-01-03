@@ -1,6 +1,7 @@
 package measurementtransport
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/rabbitmq/amqp091-go"
 
+	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
@@ -21,30 +23,10 @@ func StartMQ(
 	measurementStorageTopic,
 	measurementErrorTopic string,
 	prefetch int,
-) func() {
+) cleanupper.Shutdown {
 	done := make(chan struct{})
-	consume := mq.Consume(conn, measurementQueue, func(c *amqp091.Channel) error {
-		if err := c.Qos(prefetch, 0, false); err != nil {
-			return fmt.Errorf("error setting Qos with prefetch on amqp: %w", err)
-		}
-		q, err := c.QueueDeclare(measurementQueue, true, false, false, false, nil)
-		if err != nil {
-			return fmt.Errorf("error declaring amqp queue: %w", err)
-		}
-		err = c.ExchangeDeclare(pipelineMessagesExchange, "topic", true, false, false, false, nil)
-		if err != nil {
-			return fmt.Errorf("error declaring amqp exchange: %w", err)
-		}
-		err = c.QueueBind(q.Name, measurementStorageTopic, pipelineMessagesExchange, false, nil)
-		if err != nil {
-			return fmt.Errorf("error binding amqp queue to exchange: %w", err)
-		}
-		return nil
-	})
-	publish := mq.Publisher(conn, pipelineMessagesExchange, func(c *amqp091.Channel) error {
-		err := c.ExchangeDeclare(pipelineMessagesExchange, "topic", true, false, false, false, nil)
-		return err
-	})
+	consume := mq.Consume(conn, measurementQueue, mq.WithDefaults(), mq.WithTopicBinding())
+	publish := mq.Publisher(conn, pipelineMessagesExchange, mq.WithDefaults(), mq.WithExchange())
 
 	go func() {
 		log.Println("Measurement MQ Transport running...")
@@ -95,7 +77,8 @@ func StartMQ(
 		}
 	}()
 
-	return func() {
+	return func(ctx context.Context) error {
 		close(done)
+		return nil
 	}
 }

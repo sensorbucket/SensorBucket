@@ -2,7 +2,6 @@ package tracingtransport
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -86,26 +85,5 @@ func processMessage(deliveries <-chan amqp091.Delivery, svc *tracing.Service) {
 		if err := msg.Ack(false); err != nil {
 			log.Printf("Error: failed to ACK message: %s\n", err.Error())
 		}
-	}
-}
-
-func setupFunc(prefetch int, queue, xchg, topic string) mq.AMQPSetupFunc {
-	return func(c *amqp091.Channel) error {
-		if err := c.Qos(prefetch, 0, false); err != nil {
-			return fmt.Errorf("error setting Qos with prefetch on amqp: %w", err)
-		}
-		_, err := c.QueueDeclare(queue, true, false, false, false, nil)
-		if err != nil {
-			return fmt.Errorf("error declaring amqp queue: %w", err)
-		}
-		err = c.ExchangeDeclare(xchg, "topic", true, false, false, false, nil)
-		if err != nil {
-			return fmt.Errorf("error declaring amqp exchange: %w", err)
-		}
-		err = c.QueueBind(queue, topic, xchg, false, nil)
-		if err != nil {
-			return fmt.Errorf("error binding amqp queue to exchange: %w", err)
-		}
-		return nil
 	}
 }

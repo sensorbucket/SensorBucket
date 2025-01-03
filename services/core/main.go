@@ -26,11 +26,9 @@ import (
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	measurementsinfra "sensorbucket.nl/sensorbucket/services/core/measurements/infra"
-	measurementtransport "sensorbucket.nl/sensorbucket/services/core/measurements/transport"
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	processinginfra "sensorbucket.nl/sensorbucket/services/core/processing/infra"
-	processingtransport "sensorbucket.nl/sensorbucket/services/core/processing/transport"
 	coretransport "sensorbucket.nl/sensorbucket/services/core/transport"
 )
 
@@ -124,22 +122,19 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	log.Printf("HTTP Listening: %s\n", httpsrv.Addr)
 
 	// Setup MQ Transports
-	measurementtransport.StartMQ(
-		measurementservice,
+	go mq.StartQueueProcessor(
 		amqpConn,
-		AMQP_XCHG_PIPELINE_MESSAGES,
 		AMQP_QUEUE_MEASUREMENTS,
+		AMQP_XCHG_PIPELINE_MESSAGES,
 		AMQP_XCHG_MEASUREMENTS_TOPIC,
-		AMQP_QUEUE_ERRORS,
-		prefetch,
+		measurementservice.StorePipelineMessage,
 	)
-	go processingtransport.StartIngressDTOConsumer(
+	go mq.StartQueueProcessor(
 		amqpConn,
-		processingservice,
 		AMQP_QUEUE_INGRESS,
 		AMQP_XCHG_INGRESS,
 		AMQP_XCHG_INGRESS_TOPIC,
-		prefetch,
+		processingservice.ProcessIngressDTO,
 	)
 	go amqpConn.Start()
 

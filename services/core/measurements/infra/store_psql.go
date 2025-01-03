@@ -1,6 +1,7 @@
 package measurementsinfra
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -351,4 +352,108 @@ func (s *MeasurementStorePSQL) GetDatastream(id uuid.UUID, filter measurements.D
 		return nil, err
 	}
 	return &ds, nil
+}
+
+func (s *MeasurementStorePSQL) BeginMeasurementTransaction() (*MeasurementPSQLStorer, error) {
+	tx, err := s.db.BeginTxx(context.Background(), nil)
+	if err != nil {
+		return nil, err
+	}
+	return &MeasurementPSQLStorer{tx, nil}, nil
+}
+
+type MeasurementPSQLStorer struct {
+	tx    *sqlx.Tx
+	error error
+}
+
+func (measurementStorer *MeasurementPSQLStorer) GetDatastream(tenantID, sensorID int64, observedProperty, unitOfMeasurement string) (*measurements.Datastream, error) {
+}
+
+func (measurementStorer *MeasurementPSQLStorer) AddMeasurements(measurements []measurements.Measurement) error {
+	q := pq.Insert("measurements").Columns(
+		"uplink_message_id",
+		"organisation_id",
+		"organisation_name",
+		"organisation_address",
+		"organisation_zipcode",
+		"organisation_city",
+		"organisation_chamber_of_commerce_id",
+		"organisation_headquarter_id",
+		"organisation_state",
+		"organisation_archive_time",
+		"device_id",
+		"device_code",
+		"device_description",
+		"device_location",
+		"device_altitude",
+		"device_location_description",
+		"device_state",
+		"device_properties",
+		"sensor_id",
+		"sensor_code",
+		"sensor_description",
+		"sensor_external_id",
+		"sensor_properties",
+		"sensor_brand",
+		"sensor_archive_time",
+		"datastream_id",
+		"datastream_description",
+		"datastream_observed_property",
+		"datastream_unit_of_measurement",
+		"measurement_timestamp",
+		"measurement_value",
+		"measurement_location",
+		"measurement_altitude",
+		"measurement_expiration",
+		"created_at",
+	)
+	for _, measurement := range measurements {
+		q = q.Values(
+			measurement.UplinkMessageID,
+			measurement.OrganisationID,
+			measurement.OrganisationName,
+			measurement.OrganisationAddress,
+			measurement.OrganisationZipcode,
+			measurement.OrganisationCity,
+			measurement.OrganisationChamberOfCommerceID,
+			measurement.OrganisationHeadquarterID,
+			measurement.OrganisationState,
+			measurement.OrganisationArchiveTime,
+			measurement.DeviceID,
+			measurement.DeviceCode,
+			measurement.DeviceDescription,
+			sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", measurement.DeviceLongitude, measurement.DeviceLatitude),
+			measurement.DeviceAltitude,
+			measurement.DeviceLocationDescription,
+			measurement.DeviceState,
+			measurement.DeviceProperties,
+			measurement.SensorID,
+			measurement.SensorCode,
+			measurement.SensorDescription,
+			measurement.SensorExternalID,
+			measurement.SensorProperties,
+			measurement.SensorBrand,
+			measurement.SensorArchiveTime,
+			measurement.DatastreamID,
+			measurement.DatastreamDescription,
+			measurement.DatastreamObservedProperty,
+			measurement.DatastreamUnitOfMeasurement,
+			measurement.MeasurementTimestamp,
+			measurement.MeasurementValue,
+			sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", measurement.MeasurementLongitude, measurement.MeasurementLatitude),
+			measurement.MeasurementAltitude,
+			measurement.MeasurementExpiration,
+			measurement.CreatedAt,
+		)
+	}
+
+	return nil
+}
+
+func (measurementStorer *MeasurementPSQLStorer) Finish() error {
+	if measurementStorer.error != nil {
+		return measurementStorer.tx.Rollback()
+	}
+	return measurementStorer.tx.Commit()
 }

@@ -1,7 +1,6 @@
 package measurements
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
@@ -15,11 +14,6 @@ var (
 	ErrUoMInvalid         = web.NewError(http.StatusBadRequest, "Unit of Measure is invalid and does not conform to UCUM standards", "ERR_UOM_INVALID")
 	ErrInvalidSensorID    = web.NewError(http.StatusBadRequest, "Invalid sensorID", "ERR_SENSORID_INVALID")
 )
-
-type DatastreamFinderCreater interface {
-	FindDatastream(tenantID, sensorID int64, observedProperty string) (*Datastream, error)
-	CreateDatastream(*Datastream) error
-}
 
 type Datastream struct {
 	ID                uuid.UUID `json:"id"`
@@ -48,22 +42,4 @@ func newDatastream(tenantID, sensorID int64, obs, uom string) (*Datastream, erro
 		UnitOfMeasurement: uom,
 		CreatedAt:         time.Now(),
 	}, nil
-}
-
-func FindOrCreateDatastream(tenantID, sensorID int64, obs, uom string, store DatastreamFinderCreater) (*Datastream, error) {
-	ds, err := store.FindDatastream(tenantID, sensorID, obs)
-	if errors.Is(err, ErrDatastreamNotFound) {
-		ds, err := newDatastream(tenantID, sensorID, obs, uom)
-		if err != nil {
-			return nil, err
-		}
-		if err := store.CreateDatastream(ds); err != nil {
-			return nil, err
-		}
-		return ds, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return ds, nil
 }

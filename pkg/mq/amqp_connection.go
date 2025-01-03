@@ -134,10 +134,10 @@ func (c *AMQPConnection) UseConnection() <-chan *amqp.Connection {
 	return user
 }
 
-func (c *AMQPConnection) Consume(queue string, setup AMQPSetupFunc) <-chan amqp.Delivery {
+func (c *AMQPConnection) Consume(queue string, setup ...SetupOption) <-chan amqp.Delivery {
 	return Consume(c, queue, setup)
 }
 
-func (c *AMQPConnection) Publisher(xchg string, setup AMQPSetupFunc) chan<- PublishMessage {
+func (c *AMQPConnection) Publisher(xchg string, setup ...SetupOption) chan<- PublishMessage {
 	return Publisher(c, xchg, setup)
 }
