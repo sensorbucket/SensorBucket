@@ -2,7 +2,7 @@ package tracingtransport
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/rabbitmq/amqp091-go"
@@ -12,78 +12,42 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
 )
 
-func StartMQ(svc *tracing.Service, conn *mq.AMQPConnection, queue, xchg, topic string, prefetch int) {
-	pipelineMessages := mq.Consume(conn, queue, setupFunc(prefetch, queue, xchg, topic))
-
-	log.Println("Measurement MQ Transport running")
-	go processMessage(pipelineMessages, svc)
-}
-
-func processMessage(deliveries <-chan amqp091.Delivery, svc *tracing.Service) {
-	log.Println("Measurement MQ Transport running, tracing pipeline errors...")
-	for msg := range deliveries {
-		tsHeader, ok := msg.Headers["timestamp"]
-		if !ok {
-			if err := msg.Nack(false, false); err != nil {
-				log.Printf("Error: failed to NACK message: %s\n", err.Error())
+func MQMessageProcessor(svc *tracing.Service) mq.ProcessorFuncBuilder {
+	return func() mq.ProcessorFunc {
+		return func(delivery amqp091.Delivery) error {
+			tsHeader, ok := delivery.Headers["timestamp"]
+			if !ok {
+				return fmt.Errorf("%w: message missing timestamp HEADER", mq.ErrMalformed)
 			}
-			log.Printf("Error: Message missing timestamp HEADER\n")
-			continue
-		}
-		tsMilli, ok := tsHeader.(int64)
-		if !ok {
-			if err := msg.Nack(false, false); err != nil {
-				log.Printf("Error: failed to NACK message: %s\n", err.Error())
+			tsMilli, ok := tsHeader.(int64)
+			if !ok {
+				return fmt.Errorf("%w: message timestamp header is invalid type: %T", mq.ErrMalformed, tsHeader)
 			}
-			log.Printf("Error: Message timestamp header is invalid type: %T\n", tsHeader)
-			continue
-		}
 
-		ts := time.UnixMilli(tsMilli)
-		if ts.IsZero() {
-			if err := msg.Nack(false, false); err != nil {
-				log.Printf("Error: failed to NACK message: %s\n", err.Error())
+			ts := time.UnixMilli(tsMilli)
+			if ts.IsZero() {
+				return fmt.Errorf("%w: delivery timestamp cannot be empty", mq.ErrMalformed)
 			}
-			log.Printf("Error: msg timestamp cannot be empty\n")
-			continue
-		}
-		if msg.RoutingKey == "errors" {
-			var res pipeline.PipelineError
-			if err := json.Unmarshal(msg.Body, &res); err != nil {
-				if err := msg.Nack(false, false); err != nil {
-					log.Printf("Error: failed to NACK message: %s\n", err.Error())
+			if delivery.RoutingKey == "errors" {
+				var res pipeline.PipelineError
+				if err := json.Unmarshal(delivery.Body, &res); err != nil {
+					return fmt.Errorf("%w: unmarshalling amqp message body to pipeline.Message: %w", mq.ErrMalformed, err)
 				}
-				log.Printf("Error unmarshalling amqp message body to pipeline.Message: %v", err)
-				continue
-			}
 
-			if err := svc.HandlePipelineError(res, ts); err != nil {
-				if err := msg.Nack(false, false); err != nil {
-					log.Printf("Error: failed to NACK message: %s\n", err.Error())
+				if err := svc.HandlePipelineError(res, ts); err != nil {
+					return fmt.Errorf("handling pipeline message: %w", err)
 				}
-				log.Printf("Error handling pipeline message: %v\n", err)
-				continue
-			}
-		} else {
-			var res pipeline.Message
-			if err := json.Unmarshal(msg.Body, &res); err != nil {
-				if err := msg.Nack(false, false); err != nil {
-					log.Printf("Error: failed to NACK message: %s\n", err.Error())
+			} else {
+				var res pipeline.Message
+				if err := json.Unmarshal(delivery.Body, &res); err != nil {
+					return fmt.Errorf("%w: unmarshalling amqp message body to pipeline.Message: %w", mq.ErrMalformed, err)
 				}
-				log.Printf("Error unmarshalling amqp message body to pipeline.Message: %v", err)
-				continue
-			}
 
-			if err := svc.HandlePipelineMessage(res, ts); err != nil {
-				if err := msg.Nack(false, false); err != nil {
-					log.Printf("Error: failed to NACK message: %s\n", err.Error())
+				if err := svc.HandlePipelineMessage(res, ts); err != nil {
+					return fmt.Errorf("handling pipeline message: %w", err)
 				}
-				log.Printf("Error handling pipeline message: %v\n", err)
-				continue
 			}
-		}
-		if err := msg.Ack(false); err != nil {
-			log.Printf("Error: failed to ACK message: %s\n", err.Error())
+			return nil
 		}
 	}
 }

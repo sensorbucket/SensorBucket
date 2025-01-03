@@ -1,7 +1,6 @@
 package measurementsinfra
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -354,23 +353,23 @@ func (s *MeasurementStorePSQL) GetDatastream(id uuid.UUID, filter measurements.D
 	return &ds, nil
 }
 
-func (s *MeasurementStorePSQL) BeginMeasurementTransaction() (*MeasurementPSQLStorer, error) {
-	tx, err := s.db.BeginTxx(context.Background(), nil)
+func (s *MeasurementStorePSQL) FindOrCreateDatastream(tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
+	var ds measurements.Datastream
+	err := s.db.QueryRowx(
+		`SELECT 
+      id, description, sensor_id, observed_property, unit_of_measurement, created_at, tenant_id
+     FROM find_or_create_datastream($1, $2, $3, $4)`,
+		tenantID, sensorID, observedProperty, UnitOfMeasurement,
+	).Scan(
+		&ds.ID, &ds.Description, &ds.SensorID, &ds.ObservedProperty, &ds.UnitOfMeasurement, &ds.CreatedAt, &ds.TenantID,
+	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not query datastream: %w", err)
 	}
-	return &MeasurementPSQLStorer{tx, nil}, nil
+	return &ds, nil
 }
 
-type MeasurementPSQLStorer struct {
-	tx    *sqlx.Tx
-	error error
-}
-
-func (measurementStorer *MeasurementPSQLStorer) GetDatastream(tenantID, sensorID int64, observedProperty, unitOfMeasurement string) (*measurements.Datastream, error) {
-}
-
-func (measurementStorer *MeasurementPSQLStorer) AddMeasurements(measurements []measurements.Measurement) error {
+func (s *MeasurementStorePSQL) StoreMeasurements(measurements []measurements.Measurement) error {
 	q := pq.Insert("measurements").Columns(
 		"uplink_message_id",
 		"organisation_id",
@@ -449,11 +448,4 @@ func (measurementStorer *MeasurementPSQLStorer) AddMeasurements(measurements []m
 	}
 
 	return nil
-}
-
-func (measurementStorer *MeasurementPSQLStorer) Finish() error {
-	if measurementStorer.error != nil {
-		return measurementStorer.tx.Rollback()
-	}
-	return measurementStorer.tx.Commit()
 }

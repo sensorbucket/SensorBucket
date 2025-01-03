@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -63,11 +62,6 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	prefetch, err := strconv.Atoi(AMQP_PREFETCH)
-	if err != nil {
-		return err
-	}
-
 	stopProfiler, err := web.RunProfiler()
 	if err != nil {
 		log.Printf("could not setup profiler server: %s\n", err)
@@ -97,10 +91,10 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	{
 		store := ingressarchiver.NewStorePSQL(db)
 		svc := ingressarchiver.New(store)
-		go ingressarchiver.StartIngressDTOConsumer(
-			mqConn, svc,
+		go mq.StartQueueProcessor(
+			mqConn,
 			AMQP_QUEUE_INGRESS, AMQP_XCHG_INGRESS, AMQP_XCHG_INGRESS_TOPIC,
-			prefetch,
+			ingressarchiver.MQIngressProcessor(svc),
 		)
 		ingressarchiver.CreateHTTPTransport(r, svc)
 	}
@@ -109,13 +103,12 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	{
 		tracingStepStore := tracinginfra.NewStorePSQL(db)
 		tracingService := tracing.New(tracingStepStore)
-		go tracingtransport.StartMQ(
-			tracingService,
+		go mq.StartQueueProcessor(
 			mqConn,
 			AMQP_QUEUE_PIPELINEMESSAGES,
 			AMQP_XCHG_PIPELINEMESSAGES,
 			AMQP_XCHG_PIPELINEMESSAGES_TOPIC,
-			prefetch,
+			tracingtransport.MQMessageProcessor(tracingService),
 		)
 		tracinghttp := tracingtransport.NewHTTP(tracingService, HTTP_BASE)
 		tracinghttp.SetupRoutes(r)

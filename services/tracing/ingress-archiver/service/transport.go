@@ -14,43 +14,18 @@ import (
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 )
 
-func StartIngressDTOConsumer(conn *mq.AMQPConnection, svc *Application, queue, xchg, topic string, prefetch int) {
-	consume := conn.Consume(queue, func(c *amqp091.Channel) error {
-		if err := c.Qos(prefetch, 0, false); err != nil {
-			return fmt.Errorf("error setting Qos with prefetch on amqp: %w", err)
-		}
-		_, err := c.QueueDeclare(queue, true, false, false, false, nil)
-		if err != nil {
-			return err
-		}
-		// Create exchange and bind if both arguments are provided, this is optional
-		if xchg != "" && topic != "" {
-			if err := c.ExchangeDeclare(xchg, "topic", true, false, false, false, nil); err != nil {
-				return err
+func MQIngressProcessor(svc *Application) mq.ProcessorFuncBuilder {
+	return func() mq.ProcessorFunc {
+		return func(delivery amqp091.Delivery) error {
+			tracingID, err := uuid.Parse(delivery.MessageId)
+			if err != nil {
+				fmt.Printf("Delivery TracingID is not a UUID (%v)\n", err.Error())
+				tracingID = uuid.UUID{}
 			}
-			if err := c.QueueBind(queue, topic, xchg, false, nil); err != nil {
-				return err
+			if err := svc.ArchiveIngressDTO(tracingID, delivery.Body); err != nil {
+				return fmt.Errorf("processing ingress DTO: %w", err)
 			}
-		}
-		return nil
-	})
-
-	for delivery := range consume {
-		tracingID, err := uuid.Parse(delivery.MessageId)
-		if err != nil {
-			fmt.Printf("Delivery TracingID is not a UUID (%v)\n", err.Error())
-			tracingID = uuid.UUID{}
-		}
-		rawMessage := delivery.Body
-		if err := svc.ArchiveIngressDTO(tracingID, rawMessage); err != nil {
-			fmt.Printf("Error processing ingress DTO: %v\n", err)
-			if err := delivery.Nack(false, false); err != nil {
-				fmt.Printf("Error Nacking message: %s\n", err.Error())
-			}
-			continue
-		}
-		if err := delivery.Ack(false); err != nil {
-			fmt.Printf("Error Acking message: %s\n", err.Error())
+			return nil
 		}
 	}
 }

@@ -9,12 +9,7 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-// Must set QOS
-// Must default to Quoroum queue but offer alternative
-// Must offer queue/xchg bind
-// Must offer
-
-var defaultPrefetchCount int = 0
+var defaultPrefetchCount int = 50
 
 func DefaultPrefetch() int {
 	return defaultPrefetchCount

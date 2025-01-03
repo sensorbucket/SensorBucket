@@ -135,9 +135,9 @@ func (c *AMQPConnection) UseConnection() <-chan *amqp.Connection {
 }
 
 func (c *AMQPConnection) Consume(queue string, setup ...SetupOption) <-chan amqp.Delivery {
-	return Consume(c, queue, setup)
+	return Consume(c, queue, setup...)
 }
 
 func (c *AMQPConnection) Publisher(xchg string, setup ...SetupOption) chan<- PublishMessage {
-	return Publisher(c, xchg, setup)
+	return Publisher(c, xchg, setup...)
 }

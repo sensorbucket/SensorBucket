@@ -194,7 +194,7 @@ func doHTTPRequest(body []byte, endpoint string, retries int) (*http.Response, e
 			return nil, fmt.Errorf("error creating invocation for function: %s, error: %w", endpoint, err)
 		}
 		req.Header.Set("X-AMQP-Topic", AMQP_TOPIC)
-		res, err := http.DefaultClient.Do(req)
+		res, err = http.DefaultClient.Do(req)
 		if err != nil {
 			log.Printf("Invocation for %s failed with: %v\n", endpoint, err)
 			continue
