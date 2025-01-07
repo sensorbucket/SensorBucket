@@ -24,22 +24,3 @@ type Datastream struct {
 	CreatedAt         time.Time `json:"created_at" db:"created_at"`
 	TenantID          int64     `json:"-"`
 }
-
-func newDatastream(tenantID, sensorID int64, obs, uom string) (*Datastream, error) {
-	// TODO: Check UoM conforms to UCUM
-	if uom == "" || false {
-		return nil, ErrUoMInvalid
-	}
-	if sensorID == 0 {
-		return nil, ErrInvalidSensorID
-	}
-	return &Datastream{
-		ID:                uuid.New(),
-		TenantID:          tenantID,
-		Description:       "",
-		SensorID:          sensorID,
-		ObservedProperty:  obs,
-		UnitOfMeasurement: uom,
-		CreatedAt:         time.Now(),
-	}, nil
-}

@@ -58,15 +58,21 @@ func (s *Service) StartMeasurementBatchStorer(interval time.Duration) cleanupper
 		for {
 			select {
 			case <-stop:
-				s.CommitBatch(false)
+				if err := s.CommitBatch(false); err != nil {
+					log.Printf("error committing batch: %s\n", err.Error())
+				}
 				break outer
 			case m := <-s.measurementBatchChan:
 				s.measurementBatch = append(s.measurementBatch, m)
 				if len(s.measurementBatch) == cap(s.measurementBatch) {
-					s.CommitBatch(false)
+					if err := s.CommitBatch(false); err != nil {
+						log.Printf("error committing batch: %s\n", err.Error())
+					}
 				}
 			case <-t.C:
-				s.CommitBatch(false)
+				if err := s.CommitBatch(false); err != nil {
+					log.Printf("error committing batch: %s\n", err.Error())
+				}
 			}
 		}
 		close(done)

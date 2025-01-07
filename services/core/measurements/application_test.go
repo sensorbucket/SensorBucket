@@ -196,7 +196,7 @@ func TestShouldCopyOverDefaultFields(t *testing.T) {
 	// Act
 	err = svc.ProcessPipelineMessage(msg)
 	require.NoError(t, err)
-	svc.CommitBatch(true)
+	assert.NoError(t, svc.CommitBatch(true))
 
 	// Assert
 	require.Len(t, store.calls.StoreMeasurements, 1, "StoreMeasurements should've been called")
@@ -334,7 +334,7 @@ func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
 			require.NoError(t,
 				svc.ProcessPipelineMessage(msg),
 			)
-			svc.CommitBatch(true)
+			assert.NoError(t, svc.CommitBatch(true))
 
 			// Assert
 			require.Len(t, store.calls.StoreMeasurements, 1, "StoreMeasurements should've been called")
@@ -414,7 +414,7 @@ func TestShouldSetExpirationDate(t *testing.T) {
 		// Act
 		err = svc.ProcessPipelineMessage(msg)
 		require.NoError(t, err)
-		svc.CommitBatch(true)
+		assert.NoError(t, svc.CommitBatch(true))
 
 		// Assert
 		require.Len(t, store.calls.StoreMeasurements, 1, "StoreMeasurements should've been called")
