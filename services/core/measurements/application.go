@@ -47,13 +47,13 @@ func New(store Store, systemArchiveTime, batchSize int, keyClient auth.JWKSClien
 }
 
 func (s *Service) StartMeasurementBatchStorer(interval time.Duration) cleanupper.Shutdown {
-	log.Println("Measurement service batch storer started")
-	defer log.Println("Measurement service batch storer stopped!")
 	stop := make(chan struct{})
 	done := make(chan struct{})
 	t := time.NewTicker(interval)
 
 	go func() {
+		log.Println("Measurement service batch storer started")
+		defer log.Println("Measurement service batch storer stopped!")
 	outer:
 		for {
 			select {
