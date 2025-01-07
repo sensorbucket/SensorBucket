@@ -1,7 +1,5 @@
 package measurements
 
-//go:generate moq -pkg measurements_test -out mock_test.go . Store MeasurementStoreBuilder MeasurementStorer
-
 import (
 	"encoding/json"
 	"errors"

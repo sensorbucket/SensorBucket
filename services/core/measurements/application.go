@@ -1,5 +1,7 @@
 package measurements
 
+//go:generate moq -pkg measurements_test -out mock_test.go . Store
+
 import (
 	"context"
 	"fmt"
@@ -27,55 +29,44 @@ type Store interface {
 
 // Service is the measurement service which stores measurement data.
 type Service struct {
-	store             Store
-	systemArchiveTime int
-	keyClient         auth.JWKSClient
-	measurementBatch  chan Measurement
+	store                Store
+	systemArchiveTime    int
+	keyClient            auth.JWKSClient
+	measurementBatchChan chan Measurement
+	measurementBatch     []Measurement
 }
 
-func New(store Store, systemArchiveTime int, keyClient auth.JWKSClient) *Service {
+func New(store Store, systemArchiveTime, batchSize int, keyClient auth.JWKSClient) *Service {
 	return &Service{
-		store:             store,
-		systemArchiveTime: systemArchiveTime,
-		keyClient:         keyClient,
+		store:                store,
+		systemArchiveTime:    systemArchiveTime,
+		keyClient:            keyClient,
+		measurementBatch:     make([]Measurement, 0, batchSize),
+		measurementBatchChan: make(chan Measurement, batchSize),
 	}
 }
 
-func (s *Service) StartMeasurementBatchStorer(batchSize int, interval time.Duration) cleanupper.Shutdown {
+func (s *Service) StartMeasurementBatchStorer(interval time.Duration) cleanupper.Shutdown {
 	log.Println("Measurement service batch storer started")
 	defer log.Println("Measurement service batch storer stopped!")
 	stop := make(chan struct{})
 	done := make(chan struct{})
-	s.measurementBatch = make(chan Measurement, batchSize)
-	measurements := make([]Measurement, 0, batchSize)
 	t := time.NewTicker(interval)
-
-	commit := func() {
-		if len(measurements) == 0 {
-			return
-		}
-		log.Printf("Committing %d measurements\n", len(measurements))
-		err := s.store.StoreMeasurements(measurements)
-		if err != nil {
-			log.Printf("Error storing measurements: %s\n", err.Error())
-		}
-		measurements = measurements[:0]
-	}
 
 	go func() {
 	outer:
 		for {
 			select {
 			case <-stop:
-				commit()
+				s.CommitBatch(false)
 				break outer
-			case m := <-s.measurementBatch:
-				measurements = append(measurements, m)
-				if len(measurements) == batchSize {
-					commit()
+			case m := <-s.measurementBatchChan:
+				s.measurementBatch = append(s.measurementBatch, m)
+				if len(s.measurementBatch) == cap(s.measurementBatch) {
+					s.CommitBatch(false)
 				}
 			case <-t.C:
-				commit()
+				s.CommitBatch(false)
 			}
 		}
 		close(done)
@@ -86,6 +77,25 @@ func (s *Service) StartMeasurementBatchStorer(batchSize int, interval time.Durat
 		<-done
 		return nil
 	}
+}
+
+func (s *Service) CommitBatch(collect bool) error {
+	if len(s.measurementBatch) == 0 {
+		if !collect || len(s.measurementBatchChan) == 0 {
+			return nil
+		}
+		count := len(s.measurementBatchChan)
+		for i := 0; i < count; i++ {
+			s.measurementBatch = append(s.measurementBatch, <-s.measurementBatchChan)
+		}
+	}
+	log.Printf("Committing %d measurements\n", len(s.measurementBatch))
+	err := s.store.StoreMeasurements(s.measurementBatch)
+	if err != nil {
+		return fmt.Errorf("committing measurements failed: %w", err)
+	}
+	s.measurementBatch = s.measurementBatch[:0]
+	return nil
 }
 
 func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
@@ -161,7 +171,7 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 			measurement.MeasurementAltitude = m.Altitude
 		}
 
-		s.measurementBatch <- measurement
+		s.measurementBatchChan <- measurement
 	}
 
 	return nil
