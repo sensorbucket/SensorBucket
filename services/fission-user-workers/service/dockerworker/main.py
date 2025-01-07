@@ -82,7 +82,7 @@ def main():
     parameters = pika.URLParameters(amqp_url)
     conn = pika.BlockingConnection(parameters=parameters)
     chan = conn.channel()
-    chan.queue_declare("worker_" + worker_id, False, False, False, True, {})
+    chan.queue_declare("worker_" + worker_id, False, True, False, False, {"x-queue-type": "quorum"})
     chan.queue_bind("worker_" + worker_id, amqp_xchg, worker_id)
     chan.basic_consume("worker_" + worker_id, on_message)
     print("Worker ready. Starting consuming....")

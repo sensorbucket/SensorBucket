@@ -109,7 +109,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 	// Create measurements service
 	measurementStore := measurementsinfra.NewPSQL(db)
-	s.measurements = measurements.New(measurementStore, 10, authtest.JWKS())
+	s.measurements = measurements.New(measurementStore, 10, 1, authtest.JWKS())
 
 	// Create processing service
 	processingStore := processinginfra.NewPSQLStore(db)

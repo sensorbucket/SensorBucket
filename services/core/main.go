@@ -26,11 +26,9 @@ import (
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	measurementsinfra "sensorbucket.nl/sensorbucket/services/core/measurements/infra"
-	measurementtransport "sensorbucket.nl/sensorbucket/services/core/measurements/transport"
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	processinginfra "sensorbucket.nl/sensorbucket/services/core/processing/infra"
-	processingtransport "sensorbucket.nl/sensorbucket/services/core/processing/transport"
 	coretransport "sensorbucket.nl/sensorbucket/services/core/transport"
 )
 
@@ -44,11 +42,12 @@ var (
 	AMQP_QUEUE_INGRESS           = env.Could("AMQP_QUEUE_INGRESS", "core-ingress")
 	AMQP_XCHG_INGRESS            = env.Could("AMQP_XCHG_INGRESS", "ingress")
 	AMQP_QUEUE_ERRORS            = env.Could("AMQP_QUEUE_ERRORS", "errors")
-	AMQP_PREFETCH                = env.Could("AMQP_PREFETCH", "5")
 	HTTP_ADDR                    = env.Could("HTTP_ADDR", ":3000")
 	HTTP_BASE                    = env.Could("HTTP_BASE", "http://localhost:3000/api")
 	AUTH_JWKS_URL                = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
 	SYS_ARCHIVE_TIME             = env.Could("SYS_ARCHIVE_TIME", "30")
+	MEASUREMENT_BATCH_SIZE       = env.CouldInt("MEASUREMENT_BATCH_SIZE", 1024)
+	MEASUREMENT_COMMIT_INTERVAL  = env.CouldInt("MEASUREMENT_COMMIT_INTERVAL", 1000)
 )
 
 func main() {
@@ -68,11 +67,6 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	// Create shutdown context
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
-
-	prefetch, err := strconv.Atoi(AMQP_PREFETCH)
-	if err != nil {
-		return err
-	}
 
 	stopProfiler, err := web.RunProfiler()
 	if err != nil {
@@ -102,11 +96,29 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		return fmt.Errorf("could not convert SYS_ARCHIVE_TIME to integer: %w", err)
 	}
 	measurementstore := measurementsinfra.NewPSQL(db)
-	measurementservice := measurements.New(measurementstore, sysArchiveTime, keyClient)
+	measurementservice := measurements.New(measurementstore, MEASUREMENT_BATCH_SIZE, sysArchiveTime, keyClient)
+	cleanup.Add(measurementservice.StartMeasurementBatchStorer(time.Duration(MEASUREMENT_COMMIT_INTERVAL) * time.Millisecond))
 
 	processingstore := processinginfra.NewPSQLStore(db)
 	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
 	processingservice := processing.New(processingstore, processingPipelinePublisher, keyClient)
+
+	// Setup MQ Transports
+	go mq.StartQueueProcessor(
+		amqpConn,
+		AMQP_QUEUE_MEASUREMENTS,
+		AMQP_XCHG_PIPELINE_MESSAGES,
+		AMQP_XCHG_MEASUREMENTS_TOPIC,
+		measurements.MQMessageProcessor(measurementservice),
+	)
+	go mq.StartQueueProcessor(
+		amqpConn,
+		AMQP_QUEUE_INGRESS,
+		AMQP_XCHG_INGRESS,
+		AMQP_XCHG_INGRESS_TOPIC,
+		processing.MQIngressDTOProcessor(processingservice),
+	)
+	go amqpConn.Start()
 
 	// Setup HTTP Transport
 	httpsrv := createHTTPServer(coretransport.New(
@@ -122,26 +134,6 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		}
 	}()
 	log.Printf("HTTP Listening: %s\n", httpsrv.Addr)
-
-	// Setup MQ Transports
-	measurementtransport.StartMQ(
-		measurementservice,
-		amqpConn,
-		AMQP_XCHG_PIPELINE_MESSAGES,
-		AMQP_QUEUE_MEASUREMENTS,
-		AMQP_XCHG_MEASUREMENTS_TOPIC,
-		AMQP_QUEUE_ERRORS,
-		prefetch,
-	)
-	go processingtransport.StartIngressDTOConsumer(
-		amqpConn,
-		processingservice,
-		AMQP_QUEUE_INGRESS,
-		AMQP_XCHG_INGRESS,
-		AMQP_XCHG_INGRESS_TOPIC,
-		prefetch,
-	)
-	go amqpConn.Start()
 
 	healthShutdown := healthchecker.Create().WithEnv().WithMessagQueue(amqpConn).Start(ctx)
 	cleanup.Add(healthShutdown)

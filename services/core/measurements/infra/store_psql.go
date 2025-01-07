@@ -352,3 +352,105 @@ func (s *MeasurementStorePSQL) GetDatastream(id uuid.UUID, filter measurements.D
 	}
 	return &ds, nil
 }
+
+func (s *MeasurementStorePSQL) FindOrCreateDatastream(tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
+	var ds measurements.Datastream
+	err := s.db.QueryRowx(
+		`SELECT 
+      id, description, sensor_id, observed_property, unit_of_measurement, created_at, tenant_id
+     FROM find_or_create_datastream($1, $2, $3, $4)`,
+		tenantID, sensorID, observedProperty, UnitOfMeasurement,
+	).Scan(
+		&ds.ID, &ds.Description, &ds.SensorID, &ds.ObservedProperty, &ds.UnitOfMeasurement, &ds.CreatedAt, &ds.TenantID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query datastream: %w", err)
+	}
+	return &ds, nil
+}
+
+func (s *MeasurementStorePSQL) StoreMeasurements(measurements []measurements.Measurement) error {
+	q := pq.Insert("measurements").Columns(
+		"uplink_message_id",
+		"organisation_id",
+		"organisation_name",
+		"organisation_address",
+		"organisation_zipcode",
+		"organisation_city",
+		"organisation_chamber_of_commerce_id",
+		"organisation_headquarter_id",
+		"organisation_state",
+		"organisation_archive_time",
+		"device_id",
+		"device_code",
+		"device_description",
+		"device_location",
+		"device_altitude",
+		"device_location_description",
+		"device_state",
+		"device_properties",
+		"sensor_id",
+		"sensor_code",
+		"sensor_description",
+		"sensor_external_id",
+		"sensor_properties",
+		"sensor_brand",
+		"sensor_archive_time",
+		"datastream_id",
+		"datastream_description",
+		"datastream_observed_property",
+		"datastream_unit_of_measurement",
+		"measurement_timestamp",
+		"measurement_value",
+		"measurement_location",
+		"measurement_altitude",
+		"measurement_expiration",
+		"created_at",
+	)
+	for _, measurement := range measurements {
+		q = q.Values(
+			measurement.UplinkMessageID,
+			measurement.OrganisationID,
+			measurement.OrganisationName,
+			measurement.OrganisationAddress,
+			measurement.OrganisationZipcode,
+			measurement.OrganisationCity,
+			measurement.OrganisationChamberOfCommerceID,
+			measurement.OrganisationHeadquarterID,
+			measurement.OrganisationState,
+			measurement.OrganisationArchiveTime,
+			measurement.DeviceID,
+			measurement.DeviceCode,
+			measurement.DeviceDescription,
+			sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", measurement.DeviceLongitude, measurement.DeviceLatitude),
+			measurement.DeviceAltitude,
+			measurement.DeviceLocationDescription,
+			measurement.DeviceState,
+			measurement.DeviceProperties,
+			measurement.SensorID,
+			measurement.SensorCode,
+			measurement.SensorDescription,
+			measurement.SensorExternalID,
+			measurement.SensorProperties,
+			measurement.SensorBrand,
+			measurement.SensorArchiveTime,
+			measurement.DatastreamID,
+			measurement.DatastreamDescription,
+			measurement.DatastreamObservedProperty,
+			measurement.DatastreamUnitOfMeasurement,
+			measurement.MeasurementTimestamp,
+			measurement.MeasurementValue,
+			sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", measurement.MeasurementLongitude, measurement.MeasurementLatitude),
+			measurement.MeasurementAltitude,
+			measurement.MeasurementExpiration,
+			measurement.CreatedAt,
+		)
+	}
+
+	_, err := q.RunWith(s.db).Exec()
+	if err != nil {
+		return fmt.Errorf("could not insert measurements: %w", err)
+	}
+
+	return nil
+}

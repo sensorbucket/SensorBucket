@@ -12,8 +12,8 @@ type PublishMessage struct {
 	Publishing amqp.Publishing
 }
 
-func Publisher(conn *AMQPConnection, xchg string, setup AMQPSetupFunc) chan<- PublishMessage {
-	ch := make(chan PublishMessage, 10)
+func Publisher(conn *AMQPConnection, xchg string, opts ...SetupOption) chan<- PublishMessage {
+	ch := make(chan PublishMessage, DefaultPrefetch())
 	newConnection := conn.UseConnection()
 
 	go func() {
@@ -30,7 +30,7 @@ func Publisher(conn *AMQPConnection, xchg string, setup AMQPSetupFunc) chan<- Pu
 			}
 			returns := make(chan amqp.Return)
 			amqpChan.NotifyReturn(returns)
-			err = setup(amqpChan)
+			err = setupChannel(amqpChan, opts)
 			if err != nil {
 				continue
 			}

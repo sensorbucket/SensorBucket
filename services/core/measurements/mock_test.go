@@ -20,23 +20,20 @@ var _ measurements.Store = &StoreMock{}
 //
 //		// make and configure a mocked measurements.Store
 //		mockedStore := &StoreMock{
-//			CreateDatastreamFunc: func(datastream *measurements.Datastream) error {
-//				panic("mock out the CreateDatastream method")
-//			},
-//			FindDatastreamFunc: func(tenantID int64, sensorID int64, observedProperty string) (*measurements.Datastream, error) {
-//				panic("mock out the FindDatastream method")
+//			FindOrCreateDatastreamFunc: func(tenantID int64, sensorID int64, observedProperty string, UnitOfMeasurement string) (*measurements.Datastream, error) {
+//				panic("mock out the FindOrCreateDatastream method")
 //			},
 //			GetDatastreamFunc: func(id uuid.UUID, filter measurements.DatastreamFilter) (*measurements.Datastream, error) {
 //				panic("mock out the GetDatastream method")
-//			},
-//			InsertFunc: func(measurement measurements.Measurement) error {
-//				panic("mock out the Insert method")
 //			},
 //			ListDatastreamsFunc: func(datastreamFilter measurements.DatastreamFilter, request pagination.Request) (*pagination.Page[measurements.Datastream], error) {
 //				panic("mock out the ListDatastreams method")
 //			},
 //			QueryFunc: func(filter measurements.Filter, request pagination.Request) (*pagination.Page[measurements.Measurement], error) {
 //				panic("mock out the Query method")
+//			},
+//			StoreMeasurementsFunc: func(measurementsMoqParam []measurements.Measurement) error {
+//				panic("mock out the StoreMeasurements method")
 //			},
 //		}
 //
@@ -45,17 +42,11 @@ var _ measurements.Store = &StoreMock{}
 //
 //	}
 type StoreMock struct {
-	// CreateDatastreamFunc mocks the CreateDatastream method.
-	CreateDatastreamFunc func(datastream *measurements.Datastream) error
-
-	// FindDatastreamFunc mocks the FindDatastream method.
-	FindDatastreamFunc func(tenantID int64, sensorID int64, observedProperty string) (*measurements.Datastream, error)
+	// FindOrCreateDatastreamFunc mocks the FindOrCreateDatastream method.
+	FindOrCreateDatastreamFunc func(tenantID int64, sensorID int64, observedProperty string, UnitOfMeasurement string) (*measurements.Datastream, error)
 
 	// GetDatastreamFunc mocks the GetDatastream method.
 	GetDatastreamFunc func(id uuid.UUID, filter measurements.DatastreamFilter) (*measurements.Datastream, error)
-
-	// InsertFunc mocks the Insert method.
-	InsertFunc func(measurement measurements.Measurement) error
 
 	// ListDatastreamsFunc mocks the ListDatastreams method.
 	ListDatastreamsFunc func(datastreamFilter measurements.DatastreamFilter, request pagination.Request) (*pagination.Page[measurements.Datastream], error)
@@ -63,21 +54,21 @@ type StoreMock struct {
 	// QueryFunc mocks the Query method.
 	QueryFunc func(filter measurements.Filter, request pagination.Request) (*pagination.Page[measurements.Measurement], error)
 
+	// StoreMeasurementsFunc mocks the StoreMeasurements method.
+	StoreMeasurementsFunc func(measurementsMoqParam []measurements.Measurement) error
+
 	// calls tracks calls to the methods.
 	calls struct {
-		// CreateDatastream holds details about calls to the CreateDatastream method.
-		CreateDatastream []struct {
-			// Datastream is the datastream argument value.
-			Datastream *measurements.Datastream
-		}
-		// FindDatastream holds details about calls to the FindDatastream method.
-		FindDatastream []struct {
+		// FindOrCreateDatastream holds details about calls to the FindOrCreateDatastream method.
+		FindOrCreateDatastream []struct {
 			// TenantID is the tenantID argument value.
 			TenantID int64
 			// SensorID is the sensorID argument value.
 			SensorID int64
 			// ObservedProperty is the observedProperty argument value.
 			ObservedProperty string
+			// UnitOfMeasurement is the UnitOfMeasurement argument value.
+			UnitOfMeasurement string
 		}
 		// GetDatastream holds details about calls to the GetDatastream method.
 		GetDatastream []struct {
@@ -85,11 +76,6 @@ type StoreMock struct {
 			ID uuid.UUID
 			// Filter is the filter argument value.
 			Filter measurements.DatastreamFilter
-		}
-		// Insert holds details about calls to the Insert method.
-		Insert []struct {
-			// Measurement is the measurement argument value.
-			Measurement measurements.Measurement
 		}
 		// ListDatastreams holds details about calls to the ListDatastreams method.
 		ListDatastreams []struct {
@@ -105,84 +91,60 @@ type StoreMock struct {
 			// Request is the request argument value.
 			Request pagination.Request
 		}
+		// StoreMeasurements holds details about calls to the StoreMeasurements method.
+		StoreMeasurements []struct {
+			// MeasurementsMoqParam is the measurementsMoqParam argument value.
+			MeasurementsMoqParam []measurements.Measurement
+		}
 	}
-	lockCreateDatastream sync.RWMutex
-	lockFindDatastream   sync.RWMutex
-	lockGetDatastream    sync.RWMutex
-	lockInsert           sync.RWMutex
-	lockListDatastreams  sync.RWMutex
-	lockQuery            sync.RWMutex
+	lockFindOrCreateDatastream sync.RWMutex
+	lockGetDatastream          sync.RWMutex
+	lockListDatastreams        sync.RWMutex
+	lockQuery                  sync.RWMutex
+	lockStoreMeasurements      sync.RWMutex
 }
 
-// CreateDatastream calls CreateDatastreamFunc.
-func (mock *StoreMock) CreateDatastream(datastream *measurements.Datastream) error {
-	if mock.CreateDatastreamFunc == nil {
-		panic("StoreMock.CreateDatastreamFunc: method is nil but Store.CreateDatastream was just called")
+// FindOrCreateDatastream calls FindOrCreateDatastreamFunc.
+func (mock *StoreMock) FindOrCreateDatastream(tenantID int64, sensorID int64, observedProperty string, UnitOfMeasurement string) (*measurements.Datastream, error) {
+	if mock.FindOrCreateDatastreamFunc == nil {
+		panic("StoreMock.FindOrCreateDatastreamFunc: method is nil but Store.FindOrCreateDatastream was just called")
 	}
 	callInfo := struct {
-		Datastream *measurements.Datastream
+		TenantID          int64
+		SensorID          int64
+		ObservedProperty  string
+		UnitOfMeasurement string
 	}{
-		Datastream: datastream,
+		TenantID:          tenantID,
+		SensorID:          sensorID,
+		ObservedProperty:  observedProperty,
+		UnitOfMeasurement: UnitOfMeasurement,
 	}
-	mock.lockCreateDatastream.Lock()
-	mock.calls.CreateDatastream = append(mock.calls.CreateDatastream, callInfo)
-	mock.lockCreateDatastream.Unlock()
-	return mock.CreateDatastreamFunc(datastream)
+	mock.lockFindOrCreateDatastream.Lock()
+	mock.calls.FindOrCreateDatastream = append(mock.calls.FindOrCreateDatastream, callInfo)
+	mock.lockFindOrCreateDatastream.Unlock()
+	return mock.FindOrCreateDatastreamFunc(tenantID, sensorID, observedProperty, UnitOfMeasurement)
 }
 
-// CreateDatastreamCalls gets all the calls that were made to CreateDatastream.
+// FindOrCreateDatastreamCalls gets all the calls that were made to FindOrCreateDatastream.
 // Check the length with:
 //
-//	len(mockedStore.CreateDatastreamCalls())
-func (mock *StoreMock) CreateDatastreamCalls() []struct {
-	Datastream *measurements.Datastream
+//	len(mockedStore.FindOrCreateDatastreamCalls())
+func (mock *StoreMock) FindOrCreateDatastreamCalls() []struct {
+	TenantID          int64
+	SensorID          int64
+	ObservedProperty  string
+	UnitOfMeasurement string
 } {
 	var calls []struct {
-		Datastream *measurements.Datastream
+		TenantID          int64
+		SensorID          int64
+		ObservedProperty  string
+		UnitOfMeasurement string
 	}
-	mock.lockCreateDatastream.RLock()
-	calls = mock.calls.CreateDatastream
-	mock.lockCreateDatastream.RUnlock()
-	return calls
-}
-
-// FindDatastream calls FindDatastreamFunc.
-func (mock *StoreMock) FindDatastream(tenantID int64, sensorID int64, observedProperty string) (*measurements.Datastream, error) {
-	if mock.FindDatastreamFunc == nil {
-		panic("StoreMock.FindDatastreamFunc: method is nil but Store.FindDatastream was just called")
-	}
-	callInfo := struct {
-		TenantID         int64
-		SensorID         int64
-		ObservedProperty string
-	}{
-		TenantID:         tenantID,
-		SensorID:         sensorID,
-		ObservedProperty: observedProperty,
-	}
-	mock.lockFindDatastream.Lock()
-	mock.calls.FindDatastream = append(mock.calls.FindDatastream, callInfo)
-	mock.lockFindDatastream.Unlock()
-	return mock.FindDatastreamFunc(tenantID, sensorID, observedProperty)
-}
-
-// FindDatastreamCalls gets all the calls that were made to FindDatastream.
-// Check the length with:
-//
-//	len(mockedStore.FindDatastreamCalls())
-func (mock *StoreMock) FindDatastreamCalls() []struct {
-	TenantID         int64
-	SensorID         int64
-	ObservedProperty string
-} {
-	var calls []struct {
-		TenantID         int64
-		SensorID         int64
-		ObservedProperty string
-	}
-	mock.lockFindDatastream.RLock()
-	calls = mock.calls.FindDatastream
-	mock.lockFindDatastream.RUnlock()
+	mock.lockFindOrCreateDatastream.RLock()
+	calls = mock.calls.FindOrCreateDatastream
+	mock.lockFindOrCreateDatastream.RUnlock()
 	return calls
 }
 
@@ -219,38 +181,6 @@ func (mock *StoreMock) GetDatastreamCalls() []struct {
 	mock.lockGetDatastream.RLock()
 	calls = mock.calls.GetDatastream
 	mock.lockGetDatastream.RUnlock()
-	return calls
-}
-
-// Insert calls InsertFunc.
-func (mock *StoreMock) Insert(measurement measurements.Measurement) error {
-	if mock.InsertFunc == nil {
-		panic("StoreMock.InsertFunc: method is nil but Store.Insert was just called")
-	}
-	callInfo := struct {
-		Measurement measurements.Measurement
-	}{
-		Measurement: measurement,
-	}
-	mock.lockInsert.Lock()
-	mock.calls.Insert = append(mock.calls.Insert, callInfo)
-	mock.lockInsert.Unlock()
-	return mock.InsertFunc(measurement)
-}
-
-// InsertCalls gets all the calls that were made to Insert.
-// Check the length with:
-//
-//	len(mockedStore.InsertCalls())
-func (mock *StoreMock) InsertCalls() []struct {
-	Measurement measurements.Measurement
-} {
-	var calls []struct {
-		Measurement measurements.Measurement
-	}
-	mock.lockInsert.RLock()
-	calls = mock.calls.Insert
-	mock.lockInsert.RUnlock()
 	return calls
 }
 
@@ -326,124 +256,34 @@ func (mock *StoreMock) QueryCalls() []struct {
 	return calls
 }
 
-// Ensure, that DatastreamFinderCreaterMock does implement measurements.DatastreamFinderCreater.
-// If this is not the case, regenerate this file with moq.
-var _ measurements.DatastreamFinderCreater = &DatastreamFinderCreaterMock{}
-
-// DatastreamFinderCreaterMock is a mock implementation of measurements.DatastreamFinderCreater.
-//
-//	func TestSomethingThatUsesDatastreamFinderCreater(t *testing.T) {
-//
-//		// make and configure a mocked measurements.DatastreamFinderCreater
-//		mockedDatastreamFinderCreater := &DatastreamFinderCreaterMock{
-//			CreateDatastreamFunc: func(datastream *measurements.Datastream) error {
-//				panic("mock out the CreateDatastream method")
-//			},
-//			FindDatastreamFunc: func(tenantID int64, sensorID int64, observedProperty string) (*measurements.Datastream, error) {
-//				panic("mock out the FindDatastream method")
-//			},
-//		}
-//
-//		// use mockedDatastreamFinderCreater in code that requires measurements.DatastreamFinderCreater
-//		// and then make assertions.
-//
-//	}
-type DatastreamFinderCreaterMock struct {
-	// CreateDatastreamFunc mocks the CreateDatastream method.
-	CreateDatastreamFunc func(datastream *measurements.Datastream) error
-
-	// FindDatastreamFunc mocks the FindDatastream method.
-	FindDatastreamFunc func(tenantID int64, sensorID int64, observedProperty string) (*measurements.Datastream, error)
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// CreateDatastream holds details about calls to the CreateDatastream method.
-		CreateDatastream []struct {
-			// Datastream is the datastream argument value.
-			Datastream *measurements.Datastream
-		}
-		// FindDatastream holds details about calls to the FindDatastream method.
-		FindDatastream []struct {
-			// TenantID is the tenantID argument value.
-			TenantID int64
-			// SensorID is the sensorID argument value.
-			SensorID int64
-			// ObservedProperty is the observedProperty argument value.
-			ObservedProperty string
-		}
-	}
-	lockCreateDatastream sync.RWMutex
-	lockFindDatastream   sync.RWMutex
-}
-
-// CreateDatastream calls CreateDatastreamFunc.
-func (mock *DatastreamFinderCreaterMock) CreateDatastream(datastream *measurements.Datastream) error {
-	if mock.CreateDatastreamFunc == nil {
-		panic("DatastreamFinderCreaterMock.CreateDatastreamFunc: method is nil but DatastreamFinderCreater.CreateDatastream was just called")
+// StoreMeasurements calls StoreMeasurementsFunc.
+func (mock *StoreMock) StoreMeasurements(measurementsMoqParam []measurements.Measurement) error {
+	if mock.StoreMeasurementsFunc == nil {
+		panic("StoreMock.StoreMeasurementsFunc: method is nil but Store.StoreMeasurements was just called")
 	}
 	callInfo := struct {
-		Datastream *measurements.Datastream
+		MeasurementsMoqParam []measurements.Measurement
 	}{
-		Datastream: datastream,
+		MeasurementsMoqParam: measurementsMoqParam,
 	}
-	mock.lockCreateDatastream.Lock()
-	mock.calls.CreateDatastream = append(mock.calls.CreateDatastream, callInfo)
-	mock.lockCreateDatastream.Unlock()
-	return mock.CreateDatastreamFunc(datastream)
+	mock.lockStoreMeasurements.Lock()
+	mock.calls.StoreMeasurements = append(mock.calls.StoreMeasurements, callInfo)
+	mock.lockStoreMeasurements.Unlock()
+	return mock.StoreMeasurementsFunc(measurementsMoqParam)
 }
 
-// CreateDatastreamCalls gets all the calls that were made to CreateDatastream.
+// StoreMeasurementsCalls gets all the calls that were made to StoreMeasurements.
 // Check the length with:
 //
-//	len(mockedDatastreamFinderCreater.CreateDatastreamCalls())
-func (mock *DatastreamFinderCreaterMock) CreateDatastreamCalls() []struct {
-	Datastream *measurements.Datastream
+//	len(mockedStore.StoreMeasurementsCalls())
+func (mock *StoreMock) StoreMeasurementsCalls() []struct {
+	MeasurementsMoqParam []measurements.Measurement
 } {
 	var calls []struct {
-		Datastream *measurements.Datastream
+		MeasurementsMoqParam []measurements.Measurement
 	}
-	mock.lockCreateDatastream.RLock()
-	calls = mock.calls.CreateDatastream
-	mock.lockCreateDatastream.RUnlock()
-	return calls
-}
-
-// FindDatastream calls FindDatastreamFunc.
-func (mock *DatastreamFinderCreaterMock) FindDatastream(tenantID int64, sensorID int64, observedProperty string) (*measurements.Datastream, error) {
-	if mock.FindDatastreamFunc == nil {
-		panic("DatastreamFinderCreaterMock.FindDatastreamFunc: method is nil but DatastreamFinderCreater.FindDatastream was just called")
-	}
-	callInfo := struct {
-		TenantID         int64
-		SensorID         int64
-		ObservedProperty string
-	}{
-		TenantID:         tenantID,
-		SensorID:         sensorID,
-		ObservedProperty: observedProperty,
-	}
-	mock.lockFindDatastream.Lock()
-	mock.calls.FindDatastream = append(mock.calls.FindDatastream, callInfo)
-	mock.lockFindDatastream.Unlock()
-	return mock.FindDatastreamFunc(tenantID, sensorID, observedProperty)
-}
-
-// FindDatastreamCalls gets all the calls that were made to FindDatastream.
-// Check the length with:
-//
-//	len(mockedDatastreamFinderCreater.FindDatastreamCalls())
-func (mock *DatastreamFinderCreaterMock) FindDatastreamCalls() []struct {
-	TenantID         int64
-	SensorID         int64
-	ObservedProperty string
-} {
-	var calls []struct {
-		TenantID         int64
-		SensorID         int64
-		ObservedProperty string
-	}
-	mock.lockFindDatastream.RLock()
-	calls = mock.calls.FindDatastream
-	mock.lockFindDatastream.RUnlock()
+	mock.lockStoreMeasurements.RLock()
+	calls = mock.calls.StoreMeasurements
+	mock.lockStoreMeasurements.RUnlock()
 	return calls
 }

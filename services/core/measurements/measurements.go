@@ -1,7 +1,5 @@
 package measurements
 
-//go:generate moq -pkg measurements_test -out mock_test.go . Store DatastreamFinderCreater
-
 import (
 	"encoding/json"
 	"errors"
@@ -58,15 +56,4 @@ type Measurement struct {
 	MeasurementProperties           map[string]any      `json:"measurement_properties"`
 	MeasurementExpiration           time.Time           `json:"measurement_expiration"`
 	CreatedAt                       time.Time           `json:"created_at"`
-}
-
-func (m *Measurement) Validate() error {
-	if m.DeviceID == 0 {
-		return ErrMissingDeviceInMeasurement
-	}
-	if m.MeasurementTimestamp.IsZero() {
-		return ErrMissingTimestampInMeasurement
-	}
-	// TODO: Add validation
-	return nil
 }
