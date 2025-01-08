@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +27,7 @@ import (
 //go:embed seed_test.sql
 var seedFS embed.FS
 
-func createPostgresServer(t *testing.T) *pgx.Conn {
+func createPostgresServer(t *testing.T) *pgxpool.Pool {
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
 		Image: "docker.io/timescale/timescaledb-postgis:latest-pg12",
@@ -56,23 +57,25 @@ func createPostgresServer(t *testing.T) *pgx.Conn {
 	require.NoError(t, err, "failed to get testcontainer port")
 	host, err := pgc.Host(ctx)
 	require.NoError(t, err, "failed to get testcontainer host")
-	db, err := pgx.Connect(ctx, fmt.Sprintf(
+	pool, err := pgxpool.New(ctx, fmt.Sprintf(
 		"host=%s port=%s user=sensorbucket password=password dbname=sensorbucket sslmode=disable",
 		host, containerPort.Port(),
 	))
 	require.NoError(t, err)
-	_, err = db.Exec(ctx, "CREATE EXTENSION postgis;")
+	_, err = pool.Exec(ctx, "CREATE EXTENSION postgis;")
 	require.NoError(t, err)
-	err = migrations.MigratePostgres(db)
+	dbconn := stdlib.OpenDBFromPool(pool)
+	err = migrations.MigratePostgres(dbconn)
+	dbconn.Close()
 	require.NoError(t, err, "failed to migrate database")
 
 	// Seed data
 	seedSQL, err := seedFS.ReadFile("seed_test.sql")
 	require.NoError(t, err, "failed to read seed_test.sql")
-	_, err = db.Exec(string(seedSQL))
+	_, err = pool.Exec(ctx, string(seedSQL))
 	require.NoError(t, err)
 
-	return db
+	return pool
 }
 
 func timeParse(t *testing.T, s string) time.Time {
@@ -103,7 +106,7 @@ func TestShouldQueryCorrectly(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			page, err := store.Query(tC.filt, tC.req)
+			page, err := store.Query(context.Background(), tC.filt, tC.req)
 			assert.NoError(t, err)
 			ids := lo.Map(page.Data, func(d measurements.Measurement, ix int) int { return d.ID })
 			assert.Len(t, page.Data, len(tC.exp), "number of returned items differs from expected")
@@ -125,9 +128,9 @@ func TestDatastreamCreated(t *testing.T) {
 		CreatedAt:         time.Now(),
 		TenantID:          authtest.DefaultTenantID,
 	}
-	err := store.CreateDatastream(ds)
+	err := store.CreateDatastream(context.Background(), ds)
 	require.NoError(t, err)
-	ds2, err := store.FindDatastream(ds.TenantID, ds.SensorID, ds.ObservedProperty)
+	ds2, err := store.FindDatastream(context.Background(), ds.TenantID, ds.SensorID, ds.ObservedProperty)
 	require.NoError(t, err)
 	assert.Equal(t, ds.ID, ds2.ID)
 	assert.Equal(t, ds.UnitOfMeasurement, ds2.UnitOfMeasurement)

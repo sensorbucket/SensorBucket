@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jmoiron/sqlx"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +33,7 @@ import (
 	coretransport "sensorbucket.nl/sensorbucket/services/core/transport"
 )
 
-func createPostgresServer(t *testing.T) *sqlx.DB {
+func createPostgresServer(t *testing.T) (*sqlx.DB, *pgxpool.Pool) {
 	ctx := authtest.GodContext()
 	req := testcontainers.ContainerRequest{
 		Image: "docker.io/timescale/timescaledb-postgis:latest-pg12",
@@ -70,7 +71,13 @@ func createPostgresServer(t *testing.T) *sqlx.DB {
 	err = migrations.MigratePostgres(db.DB)
 	require.NoError(t, err)
 
-	return db
+	pool, err := pgxpool.New(ctx, fmt.Sprintf(
+		"host=%s port=%s user=sensorbucket password=password dbname=sensorbucket sslmode=disable",
+		host, containerPort.Port(),
+	))
+	require.NoError(t, err)
+
+	return db, pool
 }
 
 type IntegrationTestSuite struct {
@@ -96,7 +103,7 @@ func (s *IntegrationTestSuite) NewRequest(method, target string, body io.Reader)
 func (s *IntegrationTestSuite) SetupSuite() {
 	var err error
 	baseURL := "http://testurl"
-	db := createPostgresServer(s.T())
+	db, pool := createPostgresServer(s.T())
 	seedDevices := seed.Devices(s.T(), db)
 	s.d1 = &seedDevices[0]
 	s.d2 = &seedDevices[1]
@@ -108,7 +115,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.devices = devices.New(deviceStore, sensorGroupStore)
 
 	// Create measurements service
-	measurementStore := measurementsinfra.NewPSQL(db)
+	measurementStore := measurementsinfra.NewPSQL(pool)
 	s.measurements = measurements.New(measurementStore, 10, 1, authtest.JWKS())
 
 	// Create processing service
