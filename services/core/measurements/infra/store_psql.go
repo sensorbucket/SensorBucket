@@ -9,7 +9,10 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/twpayne/go-geom"
+	"github.com/twpayne/go-geom/encoding/wkb"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
@@ -385,45 +388,17 @@ func (s *MeasurementStorePSQL) FindOrCreateDatastream(ctx context.Context, tenan
 }
 
 func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measurements []measurements.Measurement) error {
-	q := pq.Insert("measurements").Columns(
-		"uplink_message_id",
-		"organisation_id",
-		"organisation_name",
-		"organisation_address",
-		"organisation_zipcode",
-		"organisation_city",
-		"organisation_chamber_of_commerce_id",
-		"organisation_headquarter_id",
-		"organisation_state",
-		"organisation_archive_time",
-		"device_id",
-		"device_code",
-		"device_description",
-		"device_location",
-		"device_altitude",
-		"device_location_description",
-		"device_state",
-		"device_properties",
-		"sensor_id",
-		"sensor_code",
-		"sensor_description",
-		"sensor_external_id",
-		"sensor_properties",
-		"sensor_brand",
-		"sensor_archive_time",
-		"datastream_id",
-		"datastream_description",
-		"datastream_observed_property",
-		"datastream_unit_of_measurement",
-		"measurement_timestamp",
-		"measurement_value",
-		"measurement_location",
-		"measurement_altitude",
-		"measurement_expiration",
-		"created_at",
-	)
+	rows := make([][]any, 0, len(measurements))
 	for _, measurement := range measurements {
-		q = q.Values(
+		var deviceLocation *wkb.Point
+		if measurement.DeviceLongitude != nil && measurement.DeviceLatitude != nil {
+			deviceLocation = &wkb.Point{Point: geom.NewPoint(geom.XY).MustSetCoords(geom.Coord{*measurement.DeviceLatitude, *measurement.DeviceLongitude}).SetSRID(4326)}
+		}
+		var measurementLocation *wkb.Point
+		if measurement.MeasurementLongitude != nil && measurement.MeasurementLatitude != nil {
+			measurementLocation = &wkb.Point{Point: geom.NewPoint(geom.XY).MustSetCoords(geom.Coord{*measurement.MeasurementLatitude, *measurement.MeasurementLongitude}).SetSRID(4326)}
+		}
+		rows = append(rows, []any{
 			measurement.UplinkMessageID,
 			measurement.OrganisationID,
 			measurement.OrganisationName,
@@ -437,7 +412,7 @@ func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measuremen
 			measurement.DeviceID,
 			measurement.DeviceCode,
 			measurement.DeviceDescription,
-			sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", measurement.DeviceLongitude, measurement.DeviceLatitude),
+			deviceLocation,
 			measurement.DeviceAltitude,
 			measurement.DeviceLocationDescription,
 			measurement.DeviceState,
@@ -455,20 +430,54 @@ func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measuremen
 			measurement.DatastreamUnitOfMeasurement,
 			measurement.MeasurementTimestamp,
 			measurement.MeasurementValue,
-			sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", measurement.MeasurementLongitude, measurement.MeasurementLatitude),
+			measurementLocation,
 			measurement.MeasurementAltitude,
 			measurement.MeasurementExpiration,
 			measurement.CreatedAt,
-		)
+		})
 	}
-
-	query, params, err := q.ToSql()
+	err := s.databasePool.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
+		_, err := c.CopyFrom(ctx, pgx.Identifier{"measurements"}, []string{
+			"uplink_message_id",
+			"organisation_id",
+			"organisation_name",
+			"organisation_address",
+			"organisation_zipcode",
+			"organisation_city",
+			"organisation_chamber_of_commerce_id",
+			"organisation_headquarter_id",
+			"organisation_state",
+			"organisation_archive_time",
+			"device_id",
+			"device_code",
+			"device_description",
+			"device_location",
+			"device_altitude",
+			"device_location_description",
+			"device_state",
+			"device_properties",
+			"sensor_id",
+			"sensor_code",
+			"sensor_description",
+			"sensor_external_id",
+			"sensor_properties",
+			"sensor_brand",
+			"sensor_archive_time",
+			"datastream_id",
+			"datastream_description",
+			"datastream_observed_property",
+			"datastream_unit_of_measurement",
+			"measurement_timestamp",
+			"measurement_value",
+			"measurement_location",
+			"measurement_altitude",
+			"measurement_expiration",
+			"created_at",
+		}, pgx.CopyFromRows(rows))
+		return err
+	})
 	if err != nil {
-		panic(err)
-	}
-	_, err = s.databasePool.Exec(ctx, query, params...)
-	if err != nil {
-		return fmt.Errorf("could not insert measurements: %w", err)
+		return fmt.Errorf("issue copying rows: %w", err)
 	}
 
 	return nil

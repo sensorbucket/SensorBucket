@@ -102,7 +102,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		return fmt.Errorf("could not convert SYS_ARCHIVE_TIME to integer: %w", err)
 	}
 	measurementstore := measurementsinfra.NewPSQL(pool)
-	measurementservice := measurements.New(measurementstore, MEASUREMENT_BATCH_SIZE, sysArchiveTime, keyClient)
+	measurementservice := measurements.New(measurementstore, sysArchiveTime, MEASUREMENT_BATCH_SIZE, keyClient)
 	cleanup.Add(measurementservice.StartMeasurementBatchStorer(time.Duration(MEASUREMENT_COMMIT_INTERVAL) * time.Millisecond))
 
 	processingstore := processinginfra.NewPSQLStore(db)
@@ -186,7 +186,14 @@ func createDB() (*sqlx.DB, error) {
 }
 
 func createPGXPool(ctx context.Context) (*pgxpool.Pool, error, cleanupper.Shutdown) {
-	pool, err := pgxpool.New(ctx, DB_DSN)
+	pgxConfig, err := pgxpool.ParseConfig(DB_DSN)
+	if err != nil {
+		return nil, fmt.Errorf("parsing db dsn: %w", err), cleanupper.Noop
+	}
+	// pgxConfig.AfterConnect = func(ctx context.Context, c *pgx.Conn) error {
+	// 	return nil
+	// }
+	pool, err := pgxpool.NewWithConfig(ctx, pgxConfig)
 	if err != nil {
 		return nil, fmt.Errorf("creating pgxpool: %w", err), cleanupper.Noop
 	}
