@@ -1,5 +1,5 @@
 # Build stage
-FROM --platform=$BUILDPLATFORM golang:1.22-alpine AS dev
+FROM --platform=$BUILDPLATFORM golang:alpine AS dev
 
 # Set working directory
 WORKDIR /workspace
