@@ -176,6 +176,9 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 	}
 
 	sqlQuery, params, err := q.ToSql()
+	if err != nil {
+		panic(err)
+	}
 	rows, err := s.databasePool.Query(ctx, sqlQuery, params...)
 	if err != nil {
 		return nil, err
