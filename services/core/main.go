@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/cors"
@@ -78,6 +79,11 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	if err != nil {
 		return fmt.Errorf("could not create database connection: %w", err)
 	}
+	pool, err, stopPool := createPGXPool(ctx)
+	if err != nil {
+		return fmt.Errorf("could not create database connection: %w", err)
+	}
+	cleanup.Add(stopPool)
 
 	keyClient := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
 
@@ -95,7 +101,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	if err != nil {
 		return fmt.Errorf("could not convert SYS_ARCHIVE_TIME to integer: %w", err)
 	}
-	measurementstore := measurementsinfra.NewPSQL(db)
+	measurementstore := measurementsinfra.NewPSQL(pool)
 	measurementservice := measurements.New(measurementstore, MEASUREMENT_BATCH_SIZE, sysArchiveTime, keyClient)
 	cleanup.Add(measurementservice.StartMeasurementBatchStorer(time.Duration(MEASUREMENT_COMMIT_INTERVAL) * time.Millisecond))
 
@@ -177,4 +183,16 @@ func createDB() (*sqlx.DB, error) {
 		return nil, fmt.Errorf("failed to migrate db: %w", err)
 	}
 	return db, nil
+}
+
+func createPGXPool(ctx context.Context) (*pgxpool.Pool, error, cleanupper.Shutdown) {
+	pool, err := pgxpool.New(ctx, DB_DSN)
+	if err != nil {
+		return nil, fmt.Errorf("creating pgxpool: %w", err), cleanupper.Noop
+	}
+
+	return pool, nil, func(ctx context.Context) error {
+		pool.Close()
+		return nil
+	}
 }

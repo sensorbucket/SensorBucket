@@ -17,7 +17,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/schema v1.2.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/jackc/pgx/v5 v5.5.2
+	github.com/jackc/pgx/v5 v5.7.2
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/mochi-mqtt/server/v2 v2.6.6
 	github.com/ory/client-go v1.5.1
@@ -33,7 +33,7 @@ require (
 	go.opentelemetry.io/otel v1.32.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.54.0
 	go.opentelemetry.io/otel/sdk/metric v1.32.0
-	golang.org/x/crypto v0.27.0
+	golang.org/x/crypto v0.31.0
 	golang.org/x/oauth2 v0.23.0
 	k8s.io/api v0.25.4
 	k8s.io/apimachinery v0.26.2
@@ -84,8 +84,8 @@ require (
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
-	github.com/jackc/puddle/v2 v2.2.1 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
@@ -131,10 +131,10 @@ require (
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/term v0.24.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/term v0.27.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect

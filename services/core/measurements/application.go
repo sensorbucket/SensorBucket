@@ -20,11 +20,11 @@ import (
 
 // Store stores measurement data
 type Store interface {
-	Query(Filter, pagination.Request) (*pagination.Page[Measurement], error)
-	ListDatastreams(DatastreamFilter, pagination.Request) (*pagination.Page[Datastream], error)
-	GetDatastream(id uuid.UUID, filter DatastreamFilter) (*Datastream, error)
-	FindOrCreateDatastream(tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*Datastream, error)
-	StoreMeasurements([]Measurement) error
+	Query(context.Context, Filter, pagination.Request) (*pagination.Page[Measurement], error)
+	ListDatastreams(context.Context, DatastreamFilter, pagination.Request) (*pagination.Page[Datastream], error)
+	GetDatastream(ctx context.Context, id uuid.UUID, filter DatastreamFilter) (*Datastream, error)
+	FindOrCreateDatastream(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*Datastream, error)
+	StoreMeasurements(context.Context, []Measurement) error
 }
 
 // Service is the measurement service which stores measurement data.
@@ -96,7 +96,7 @@ func (s *Service) CommitBatch(collect bool) error {
 		}
 	}
 	log.Printf("Committing %d measurements\n", len(s.measurementBatch))
-	err := s.store.StoreMeasurements(s.measurementBatch)
+	err := s.store.StoreMeasurements(context.Background(), s.measurementBatch)
 	if err != nil {
 		return fmt.Errorf("committing measurements failed: %w", err)
 	}
@@ -108,7 +108,7 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 	msg := PipelineMessage(pmsg)
 
 	// Only error when internal error and not a business error
-	_, err := msg.Authorize(s.keyClient)
+	ctx, err := msg.Authorize(s.keyClient)
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 
 		archiveTimeDays, _ := lo.Coalesce(sensor.ArchiveTime, &s.systemArchiveTime) // msg.Organisation.ArchiveTime)
 
-		ds, err := s.store.FindOrCreateDatastream(msg.TenantID, sensor.ID, m.ObservedProperty, m.UnitOfMeasurement)
+		ds, err := s.store.FindOrCreateDatastream(ctx, msg.TenantID, sensor.ID, m.ObservedProperty, m.UnitOfMeasurement)
 		if err != nil {
 			return err
 		}
@@ -203,7 +203,7 @@ func (s *Service) QueryMeasurements(ctx context.Context, f Filter, r pagination.
 	}
 	f.TenantID = []int64{tenantID}
 
-	page, err := s.store.Query(f, r)
+	page, err := s.store.Query(ctx, f, r)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (s *Service) ListDatastreams(ctx context.Context, filter DatastreamFilter, 
 	}
 	filter.TenantID = []int64{tenantID}
 
-	return s.store.ListDatastreams(filter, r)
+	return s.store.ListDatastreams(ctx, filter, r)
 }
 
 func (s *Service) GetDatastream(ctx context.Context, id uuid.UUID) (*Datastream, error) {
@@ -238,5 +238,5 @@ func (s *Service) GetDatastream(ctx context.Context, id uuid.UUID) (*Datastream,
 		return nil, err
 	}
 
-	return s.store.GetDatastream(id, DatastreamFilter{TenantID: []int64{tenantID}})
+	return s.store.GetDatastream(ctx, id, DatastreamFilter{TenantID: []int64{tenantID}})
 }

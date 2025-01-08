@@ -4,6 +4,7 @@
 package measurements_test
 
 import (
+	"context"
 	"github.com/google/uuid"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
@@ -20,19 +21,19 @@ var _ measurements.Store = &StoreMock{}
 //
 //		// make and configure a mocked measurements.Store
 //		mockedStore := &StoreMock{
-//			FindOrCreateDatastreamFunc: func(tenantID int64, sensorID int64, observedProperty string, UnitOfMeasurement string) (*measurements.Datastream, error) {
+//			FindOrCreateDatastreamFunc: func(ctx context.Context, tenantID int64, sensorID int64, observedProperty string, UnitOfMeasurement string) (*measurements.Datastream, error) {
 //				panic("mock out the FindOrCreateDatastream method")
 //			},
-//			GetDatastreamFunc: func(id uuid.UUID, filter measurements.DatastreamFilter) (*measurements.Datastream, error) {
+//			GetDatastreamFunc: func(ctx context.Context, id uuid.UUID, filter measurements.DatastreamFilter) (*measurements.Datastream, error) {
 //				panic("mock out the GetDatastream method")
 //			},
-//			ListDatastreamsFunc: func(datastreamFilter measurements.DatastreamFilter, request pagination.Request) (*pagination.Page[measurements.Datastream], error) {
+//			ListDatastreamsFunc: func(contextMoqParam context.Context, datastreamFilter measurements.DatastreamFilter, request pagination.Request) (*pagination.Page[measurements.Datastream], error) {
 //				panic("mock out the ListDatastreams method")
 //			},
-//			QueryFunc: func(filter measurements.Filter, request pagination.Request) (*pagination.Page[measurements.Measurement], error) {
+//			QueryFunc: func(contextMoqParam context.Context, filter measurements.Filter, request pagination.Request) (*pagination.Page[measurements.Measurement], error) {
 //				panic("mock out the Query method")
 //			},
-//			StoreMeasurementsFunc: func(measurementsMoqParam []measurements.Measurement) error {
+//			StoreMeasurementsFunc: func(contextMoqParam context.Context, measurementsMoqParam []measurements.Measurement) error {
 //				panic("mock out the StoreMeasurements method")
 //			},
 //		}
@@ -43,24 +44,26 @@ var _ measurements.Store = &StoreMock{}
 //	}
 type StoreMock struct {
 	// FindOrCreateDatastreamFunc mocks the FindOrCreateDatastream method.
-	FindOrCreateDatastreamFunc func(tenantID int64, sensorID int64, observedProperty string, UnitOfMeasurement string) (*measurements.Datastream, error)
+	FindOrCreateDatastreamFunc func(ctx context.Context, tenantID int64, sensorID int64, observedProperty string, UnitOfMeasurement string) (*measurements.Datastream, error)
 
 	// GetDatastreamFunc mocks the GetDatastream method.
-	GetDatastreamFunc func(id uuid.UUID, filter measurements.DatastreamFilter) (*measurements.Datastream, error)
+	GetDatastreamFunc func(ctx context.Context, id uuid.UUID, filter measurements.DatastreamFilter) (*measurements.Datastream, error)
 
 	// ListDatastreamsFunc mocks the ListDatastreams method.
-	ListDatastreamsFunc func(datastreamFilter measurements.DatastreamFilter, request pagination.Request) (*pagination.Page[measurements.Datastream], error)
+	ListDatastreamsFunc func(contextMoqParam context.Context, datastreamFilter measurements.DatastreamFilter, request pagination.Request) (*pagination.Page[measurements.Datastream], error)
 
 	// QueryFunc mocks the Query method.
-	QueryFunc func(filter measurements.Filter, request pagination.Request) (*pagination.Page[measurements.Measurement], error)
+	QueryFunc func(contextMoqParam context.Context, filter measurements.Filter, request pagination.Request) (*pagination.Page[measurements.Measurement], error)
 
 	// StoreMeasurementsFunc mocks the StoreMeasurements method.
-	StoreMeasurementsFunc func(measurementsMoqParam []measurements.Measurement) error
+	StoreMeasurementsFunc func(contextMoqParam context.Context, measurementsMoqParam []measurements.Measurement) error
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// FindOrCreateDatastream holds details about calls to the FindOrCreateDatastream method.
 		FindOrCreateDatastream []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// TenantID is the tenantID argument value.
 			TenantID int64
 			// SensorID is the sensorID argument value.
@@ -72,6 +75,8 @@ type StoreMock struct {
 		}
 		// GetDatastream holds details about calls to the GetDatastream method.
 		GetDatastream []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// ID is the id argument value.
 			ID uuid.UUID
 			// Filter is the filter argument value.
@@ -79,6 +84,8 @@ type StoreMock struct {
 		}
 		// ListDatastreams holds details about calls to the ListDatastreams method.
 		ListDatastreams []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
 			// DatastreamFilter is the datastreamFilter argument value.
 			DatastreamFilter measurements.DatastreamFilter
 			// Request is the request argument value.
@@ -86,6 +93,8 @@ type StoreMock struct {
 		}
 		// Query holds details about calls to the Query method.
 		Query []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
 			// Filter is the filter argument value.
 			Filter measurements.Filter
 			// Request is the request argument value.
@@ -93,6 +102,8 @@ type StoreMock struct {
 		}
 		// StoreMeasurements holds details about calls to the StoreMeasurements method.
 		StoreMeasurements []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
 			// MeasurementsMoqParam is the measurementsMoqParam argument value.
 			MeasurementsMoqParam []measurements.Measurement
 		}
@@ -105,16 +116,18 @@ type StoreMock struct {
 }
 
 // FindOrCreateDatastream calls FindOrCreateDatastreamFunc.
-func (mock *StoreMock) FindOrCreateDatastream(tenantID int64, sensorID int64, observedProperty string, UnitOfMeasurement string) (*measurements.Datastream, error) {
+func (mock *StoreMock) FindOrCreateDatastream(ctx context.Context, tenantID int64, sensorID int64, observedProperty string, UnitOfMeasurement string) (*measurements.Datastream, error) {
 	if mock.FindOrCreateDatastreamFunc == nil {
 		panic("StoreMock.FindOrCreateDatastreamFunc: method is nil but Store.FindOrCreateDatastream was just called")
 	}
 	callInfo := struct {
+		Ctx               context.Context
 		TenantID          int64
 		SensorID          int64
 		ObservedProperty  string
 		UnitOfMeasurement string
 	}{
+		Ctx:               ctx,
 		TenantID:          tenantID,
 		SensorID:          sensorID,
 		ObservedProperty:  observedProperty,
@@ -123,7 +136,7 @@ func (mock *StoreMock) FindOrCreateDatastream(tenantID int64, sensorID int64, ob
 	mock.lockFindOrCreateDatastream.Lock()
 	mock.calls.FindOrCreateDatastream = append(mock.calls.FindOrCreateDatastream, callInfo)
 	mock.lockFindOrCreateDatastream.Unlock()
-	return mock.FindOrCreateDatastreamFunc(tenantID, sensorID, observedProperty, UnitOfMeasurement)
+	return mock.FindOrCreateDatastreamFunc(ctx, tenantID, sensorID, observedProperty, UnitOfMeasurement)
 }
 
 // FindOrCreateDatastreamCalls gets all the calls that were made to FindOrCreateDatastream.
@@ -131,12 +144,14 @@ func (mock *StoreMock) FindOrCreateDatastream(tenantID int64, sensorID int64, ob
 //
 //	len(mockedStore.FindOrCreateDatastreamCalls())
 func (mock *StoreMock) FindOrCreateDatastreamCalls() []struct {
+	Ctx               context.Context
 	TenantID          int64
 	SensorID          int64
 	ObservedProperty  string
 	UnitOfMeasurement string
 } {
 	var calls []struct {
+		Ctx               context.Context
 		TenantID          int64
 		SensorID          int64
 		ObservedProperty  string
@@ -149,21 +164,23 @@ func (mock *StoreMock) FindOrCreateDatastreamCalls() []struct {
 }
 
 // GetDatastream calls GetDatastreamFunc.
-func (mock *StoreMock) GetDatastream(id uuid.UUID, filter measurements.DatastreamFilter) (*measurements.Datastream, error) {
+func (mock *StoreMock) GetDatastream(ctx context.Context, id uuid.UUID, filter measurements.DatastreamFilter) (*measurements.Datastream, error) {
 	if mock.GetDatastreamFunc == nil {
 		panic("StoreMock.GetDatastreamFunc: method is nil but Store.GetDatastream was just called")
 	}
 	callInfo := struct {
+		Ctx    context.Context
 		ID     uuid.UUID
 		Filter measurements.DatastreamFilter
 	}{
+		Ctx:    ctx,
 		ID:     id,
 		Filter: filter,
 	}
 	mock.lockGetDatastream.Lock()
 	mock.calls.GetDatastream = append(mock.calls.GetDatastream, callInfo)
 	mock.lockGetDatastream.Unlock()
-	return mock.GetDatastreamFunc(id, filter)
+	return mock.GetDatastreamFunc(ctx, id, filter)
 }
 
 // GetDatastreamCalls gets all the calls that were made to GetDatastream.
@@ -171,10 +188,12 @@ func (mock *StoreMock) GetDatastream(id uuid.UUID, filter measurements.Datastrea
 //
 //	len(mockedStore.GetDatastreamCalls())
 func (mock *StoreMock) GetDatastreamCalls() []struct {
+	Ctx    context.Context
 	ID     uuid.UUID
 	Filter measurements.DatastreamFilter
 } {
 	var calls []struct {
+		Ctx    context.Context
 		ID     uuid.UUID
 		Filter measurements.DatastreamFilter
 	}
@@ -185,21 +204,23 @@ func (mock *StoreMock) GetDatastreamCalls() []struct {
 }
 
 // ListDatastreams calls ListDatastreamsFunc.
-func (mock *StoreMock) ListDatastreams(datastreamFilter measurements.DatastreamFilter, request pagination.Request) (*pagination.Page[measurements.Datastream], error) {
+func (mock *StoreMock) ListDatastreams(contextMoqParam context.Context, datastreamFilter measurements.DatastreamFilter, request pagination.Request) (*pagination.Page[measurements.Datastream], error) {
 	if mock.ListDatastreamsFunc == nil {
 		panic("StoreMock.ListDatastreamsFunc: method is nil but Store.ListDatastreams was just called")
 	}
 	callInfo := struct {
+		ContextMoqParam  context.Context
 		DatastreamFilter measurements.DatastreamFilter
 		Request          pagination.Request
 	}{
+		ContextMoqParam:  contextMoqParam,
 		DatastreamFilter: datastreamFilter,
 		Request:          request,
 	}
 	mock.lockListDatastreams.Lock()
 	mock.calls.ListDatastreams = append(mock.calls.ListDatastreams, callInfo)
 	mock.lockListDatastreams.Unlock()
-	return mock.ListDatastreamsFunc(datastreamFilter, request)
+	return mock.ListDatastreamsFunc(contextMoqParam, datastreamFilter, request)
 }
 
 // ListDatastreamsCalls gets all the calls that were made to ListDatastreams.
@@ -207,10 +228,12 @@ func (mock *StoreMock) ListDatastreams(datastreamFilter measurements.DatastreamF
 //
 //	len(mockedStore.ListDatastreamsCalls())
 func (mock *StoreMock) ListDatastreamsCalls() []struct {
+	ContextMoqParam  context.Context
 	DatastreamFilter measurements.DatastreamFilter
 	Request          pagination.Request
 } {
 	var calls []struct {
+		ContextMoqParam  context.Context
 		DatastreamFilter measurements.DatastreamFilter
 		Request          pagination.Request
 	}
@@ -221,21 +244,23 @@ func (mock *StoreMock) ListDatastreamsCalls() []struct {
 }
 
 // Query calls QueryFunc.
-func (mock *StoreMock) Query(filter measurements.Filter, request pagination.Request) (*pagination.Page[measurements.Measurement], error) {
+func (mock *StoreMock) Query(contextMoqParam context.Context, filter measurements.Filter, request pagination.Request) (*pagination.Page[measurements.Measurement], error) {
 	if mock.QueryFunc == nil {
 		panic("StoreMock.QueryFunc: method is nil but Store.Query was just called")
 	}
 	callInfo := struct {
-		Filter  measurements.Filter
-		Request pagination.Request
+		ContextMoqParam context.Context
+		Filter          measurements.Filter
+		Request         pagination.Request
 	}{
-		Filter:  filter,
-		Request: request,
+		ContextMoqParam: contextMoqParam,
+		Filter:          filter,
+		Request:         request,
 	}
 	mock.lockQuery.Lock()
 	mock.calls.Query = append(mock.calls.Query, callInfo)
 	mock.lockQuery.Unlock()
-	return mock.QueryFunc(filter, request)
+	return mock.QueryFunc(contextMoqParam, filter, request)
 }
 
 // QueryCalls gets all the calls that were made to Query.
@@ -243,12 +268,14 @@ func (mock *StoreMock) Query(filter measurements.Filter, request pagination.Requ
 //
 //	len(mockedStore.QueryCalls())
 func (mock *StoreMock) QueryCalls() []struct {
-	Filter  measurements.Filter
-	Request pagination.Request
+	ContextMoqParam context.Context
+	Filter          measurements.Filter
+	Request         pagination.Request
 } {
 	var calls []struct {
-		Filter  measurements.Filter
-		Request pagination.Request
+		ContextMoqParam context.Context
+		Filter          measurements.Filter
+		Request         pagination.Request
 	}
 	mock.lockQuery.RLock()
 	calls = mock.calls.Query
@@ -257,19 +284,21 @@ func (mock *StoreMock) QueryCalls() []struct {
 }
 
 // StoreMeasurements calls StoreMeasurementsFunc.
-func (mock *StoreMock) StoreMeasurements(measurementsMoqParam []measurements.Measurement) error {
+func (mock *StoreMock) StoreMeasurements(contextMoqParam context.Context, measurementsMoqParam []measurements.Measurement) error {
 	if mock.StoreMeasurementsFunc == nil {
 		panic("StoreMock.StoreMeasurementsFunc: method is nil but Store.StoreMeasurements was just called")
 	}
 	callInfo := struct {
+		ContextMoqParam      context.Context
 		MeasurementsMoqParam []measurements.Measurement
 	}{
+		ContextMoqParam:      contextMoqParam,
 		MeasurementsMoqParam: measurementsMoqParam,
 	}
 	mock.lockStoreMeasurements.Lock()
 	mock.calls.StoreMeasurements = append(mock.calls.StoreMeasurements, callInfo)
 	mock.lockStoreMeasurements.Unlock()
-	return mock.StoreMeasurementsFunc(measurementsMoqParam)
+	return mock.StoreMeasurementsFunc(contextMoqParam, measurementsMoqParam)
 }
 
 // StoreMeasurementsCalls gets all the calls that were made to StoreMeasurements.
@@ -277,9 +306,11 @@ func (mock *StoreMock) StoreMeasurements(measurementsMoqParam []measurements.Mea
 //
 //	len(mockedStore.StoreMeasurementsCalls())
 func (mock *StoreMock) StoreMeasurementsCalls() []struct {
+	ContextMoqParam      context.Context
 	MeasurementsMoqParam []measurements.Measurement
 } {
 	var calls []struct {
+		ContextMoqParam      context.Context
 		MeasurementsMoqParam []measurements.Measurement
 	}
 	mock.lockStoreMeasurements.RLock()

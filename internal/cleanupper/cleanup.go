@@ -8,6 +8,8 @@ import (
 
 type Shutdown func(context.Context) error
 
+var Noop Shutdown = func(ctx context.Context) error { return nil }
+
 type Cleanupper []Shutdown
 
 func Create() Cleanupper {

@@ -1,6 +1,7 @@
 package measurementsinfra
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -8,7 +9,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
@@ -21,12 +22,12 @@ var _ measurements.Store = (*MeasurementStorePSQL)(nil)
 
 // MeasurementStorePSQL Implements the measurementstore with a PostgreSQL database as backend
 type MeasurementStorePSQL struct {
-	db *sqlx.DB
+	databasePool *pgxpool.Pool
 }
 
-func NewPSQL(db *sqlx.DB) *MeasurementStorePSQL {
+func NewPSQL(databasePool *pgxpool.Pool) *MeasurementStorePSQL {
 	return &MeasurementStorePSQL{
-		db: db,
+		databasePool: databasePool,
 	}
 }
 
@@ -72,13 +73,13 @@ func createInsertQuery(m measurements.Measurement) (string, []any, error) {
 	return pq.Insert("measurements").SetMap(values).ToSql()
 }
 
-func (s *MeasurementStorePSQL) Insert(m measurements.Measurement) error {
+func (s *MeasurementStorePSQL) Insert(ctx context.Context, m measurements.Measurement) error {
 	query, params, err := createInsertQuery(m)
 	if err != nil {
 		return fmt.Errorf("could not generate query: %w", err)
 	}
 
-	_, err = s.db.Exec(query, params...)
+	_, err = s.databasePool.Exec(ctx, query, params...)
 	if err != nil {
 		return fmt.Errorf("could not insert new measurement: %w", err)
 	}
@@ -98,7 +99,7 @@ type MeasurementQueryPage struct {
 	ID                   int64     `pagination:"id,DESC"`
 }
 
-func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Request) (*pagination.Page[measurements.Measurement], error) {
+func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Filter, r pagination.Request) (*pagination.Page[measurements.Measurement], error) {
 	var err error
 	q := pq.Select(
 		"id",
@@ -141,24 +142,24 @@ func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Req
 	).
 		From("measurements")
 
-	if !query.Start.IsZero() {
-		q = q.Where("measurement_timestamp >= ?", query.Start)
+	if !filter.Start.IsZero() {
+		q = q.Where("measurement_timestamp >= ?", filter.Start)
 	}
-	if !query.End.IsZero() {
-		q = q.Where("measurement_timestamp <= ?", query.End)
+	if !filter.End.IsZero() {
+		q = q.Where("measurement_timestamp <= ?", filter.End)
 	}
 
-	if len(query.DeviceIDs) > 0 {
-		q = q.Where(sq.Eq{"device_id": query.DeviceIDs})
+	if len(filter.DeviceIDs) > 0 {
+		q = q.Where(sq.Eq{"device_id": filter.DeviceIDs})
 	}
-	if len(query.SensorCodes) > 0 {
-		q = q.Where(sq.Eq{"sensor_code": query.SensorCodes})
+	if len(filter.SensorCodes) > 0 {
+		q = q.Where(sq.Eq{"sensor_code": filter.SensorCodes})
 	}
-	if len(query.Datastream) > 0 {
-		q = q.Where(sq.Eq{"datastream_id": query.Datastream})
+	if len(filter.Datastream) > 0 {
+		q = q.Where(sq.Eq{"datastream_id": filter.Datastream})
 	}
-	if len(query.TenantID) > 0 {
-		q = q.Where(sq.Eq{"organisation_id": query.TenantID})
+	if len(filter.TenantID) > 0 {
+		q = q.Where(sq.Eq{"organisation_id": filter.TenantID})
 	}
 
 	// pagination
@@ -171,7 +172,8 @@ func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Req
 		return nil, err
 	}
 
-	rows, err := q.RunWith(s.db).Query()
+	sqlQuery, params, err := q.ToSql()
+	rows, err := s.databasePool.Query(ctx, sqlQuery, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -231,14 +233,19 @@ func (s *MeasurementStorePSQL) Query(query measurements.Filter, r pagination.Req
 	return &page, nil
 }
 
-func (s *MeasurementStorePSQL) FindDatastream(tenantID, sensorID int64, obs string) (*measurements.Datastream, error) {
+func (s *MeasurementStorePSQL) FindDatastream(ctx context.Context, tenantID, sensorID int64, obs string) (*measurements.Datastream, error) {
 	var ds measurements.Datastream
-	err := pq.Select("id", "description", "sensor_id", "observed_property", "unit_of_measurement",
+	query, params, err := pq.Select("id", "description", "sensor_id", "observed_property", "unit_of_measurement",
 		"created_at", "tenant_id").From("datastreams").Where(sq.Eq{
 		"sensor_id":         sensorID,
 		"observed_property": obs,
 		"tenant_id":         tenantID,
-	}).RunWith(s.db).Scan(
+	}).ToSql()
+	if err != nil {
+		panic(err)
+	}
+	row := s.databasePool.QueryRow(ctx, query, params...)
+	err = row.Scan(
 		&ds.ID, &ds.Description, &ds.SensorID, &ds.ObservedProperty, &ds.UnitOfMeasurement, &ds.CreatedAt,
 		&ds.TenantID,
 	)
@@ -251,14 +258,14 @@ func (s *MeasurementStorePSQL) FindDatastream(tenantID, sensorID int64, obs stri
 	return &ds, nil
 }
 
-func (s *MeasurementStorePSQL) CreateDatastream(ds *measurements.Datastream) error {
+func (s *MeasurementStorePSQL) CreateDatastream(ctx context.Context, ds *measurements.Datastream) error {
 	// TODO: Why can't uuid be marshalled by pgx?
 	//
 	uuidB, err := ds.ID.MarshalBinary()
 	if err != nil {
 		return err
 	}
-	_, err = s.db.Exec(`
+	_, err = s.databasePool.Exec(ctx, `
 	INSERT INTO
 		"datastreams" (
 			id, "description", "sensor_id", "observed_property", "unit_of_measurement",
@@ -291,7 +298,7 @@ type datastreamPageQuery struct {
 	ID        uuid.UUID `pagination:"id,ASC"`
 }
 
-func (s *MeasurementStorePSQL) ListDatastreams(filter measurements.DatastreamFilter, r pagination.Request) (*pagination.Page[measurements.Datastream], error) {
+func (s *MeasurementStorePSQL) ListDatastreams(ctx context.Context, filter measurements.DatastreamFilter, r pagination.Request) (*pagination.Page[measurements.Datastream], error) {
 	var err error
 	ds := []measurements.Datastream{}
 	q := pq.Select(
@@ -308,7 +315,11 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter measurements.DatastreamFil
 		return nil, err
 	}
 
-	rows, err := q.RunWith(s.db).Query()
+	query, params, err := q.ToSql()
+	if err != nil {
+		panic(err)
+	}
+	rows, err := s.databasePool.Query(ctx, query, params...)
 	if err != nil {
 		return nil, fmt.Errorf("error selecting datastreams from db: %w", err)
 	}
@@ -336,7 +347,7 @@ func (s *MeasurementStorePSQL) ListDatastreams(filter measurements.DatastreamFil
 	return &page, nil
 }
 
-func (s *MeasurementStorePSQL) GetDatastream(id uuid.UUID, filter measurements.DatastreamFilter) (*measurements.Datastream, error) {
+func (s *MeasurementStorePSQL) GetDatastream(ctx context.Context, id uuid.UUID, filter measurements.DatastreamFilter) (*measurements.Datastream, error) {
 	var ds measurements.Datastream
 	idB, _ := id.MarshalBinary()
 	q := pq.Select(
@@ -344,7 +355,11 @@ func (s *MeasurementStorePSQL) GetDatastream(id uuid.UUID, filter measurements.D
 	).From("datastreams").Where(sq.Eq{"id": idB})
 	q = applyDatastreamFilter(q, filter)
 
-	err := q.RunWith(s.db).Scan(
+	query, params, err := q.ToSql()
+	if err != nil {
+		panic(err)
+	}
+	err = s.databasePool.QueryRow(ctx, query, params...).Scan(
 		&ds.ID, &ds.Description, &ds.SensorID, &ds.ObservedProperty, &ds.UnitOfMeasurement, &ds.CreatedAt,
 	)
 	if err != nil {
@@ -353,9 +368,9 @@ func (s *MeasurementStorePSQL) GetDatastream(id uuid.UUID, filter measurements.D
 	return &ds, nil
 }
 
-func (s *MeasurementStorePSQL) FindOrCreateDatastream(tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
+func (s *MeasurementStorePSQL) FindOrCreateDatastream(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
 	var ds measurements.Datastream
-	err := s.db.QueryRowx(
+	err := s.databasePool.QueryRow(ctx,
 		`SELECT 
       id, description, sensor_id, observed_property, unit_of_measurement, created_at, tenant_id
      FROM find_or_create_datastream($1, $2, $3, $4)`,
@@ -369,7 +384,7 @@ func (s *MeasurementStorePSQL) FindOrCreateDatastream(tenantID, sensorID int64, 
 	return &ds, nil
 }
 
-func (s *MeasurementStorePSQL) StoreMeasurements(measurements []measurements.Measurement) error {
+func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measurements []measurements.Measurement) error {
 	q := pq.Insert("measurements").Columns(
 		"uplink_message_id",
 		"organisation_id",
@@ -447,7 +462,11 @@ func (s *MeasurementStorePSQL) StoreMeasurements(measurements []measurements.Mea
 		)
 	}
 
-	_, err := q.RunWith(s.db).Exec()
+	query, params, err := q.ToSql()
+	if err != nil {
+		panic(err)
+	}
+	_, err = s.databasePool.Exec(ctx, query, params...)
 	if err != nil {
 		return fmt.Errorf("could not insert measurements: %w", err)
 	}

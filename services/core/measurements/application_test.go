@@ -1,6 +1,7 @@
 package measurements_test
 
 import (
+	"context"
 	"encoding/json"
 	"math"
 	"testing"
@@ -131,7 +132,7 @@ func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 			require.NoError(t, err)
 
 			store := &StoreMock{
-				FindOrCreateDatastreamFunc: func(tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
+				FindOrCreateDatastreamFunc: func(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
 					return &measurements.Datastream{}, nil
 				},
 			}
@@ -186,10 +187,10 @@ func TestShouldCopyOverDefaultFields(t *testing.T) {
 		UnitOfMeasurement: msg.Measurements[0].UnitOfMeasurement,
 	}
 	store := &StoreMock{
-		FindOrCreateDatastreamFunc: func(tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
+		FindOrCreateDatastreamFunc: func(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
 			return &ds, nil
 		},
-		StoreMeasurementsFunc: func(measurementsMoqParam []measurements.Measurement) error { return nil },
+		StoreMeasurementsFunc: func(ctx context.Context, measurementsMoqParam []measurements.Measurement) error { return nil },
 	}
 	svc := measurements.New(store, 0, 1, authtest.JWKS())
 
@@ -323,10 +324,10 @@ func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
 				UnitOfMeasurement: msg.Measurements[0].UnitOfMeasurement,
 			}
 			store := &StoreMock{
-				FindOrCreateDatastreamFunc: func(tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
+				FindOrCreateDatastreamFunc: func(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
 					return &ds, nil
 				},
-				StoreMeasurementsFunc: func(measurementsMoqParam []measurements.Measurement) error { return nil },
+				StoreMeasurementsFunc: func(ctx context.Context, measurementsMoqParam []measurements.Measurement) error { return nil },
 			}
 			svc := measurements.New(store, 0, 1, authtest.JWKS())
 
@@ -404,10 +405,10 @@ func TestShouldSetExpirationDate(t *testing.T) {
 			UnitOfMeasurement: msg.Measurements[0].UnitOfMeasurement,
 		}
 		store := &StoreMock{
-			FindOrCreateDatastreamFunc: func(tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
+			FindOrCreateDatastreamFunc: func(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
 				return &ds, nil
 			},
-			StoreMeasurementsFunc: func(measurementsMoqParam []measurements.Measurement) error { return nil },
+			StoreMeasurementsFunc: func(ctx context.Context, measurementsMoqParam []measurements.Measurement) error { return nil },
 		}
 		svc := measurements.New(store, sysArchiveTime, 1, authtest.JWKS())
 
