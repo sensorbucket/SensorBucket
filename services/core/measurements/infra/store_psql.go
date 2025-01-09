@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -391,7 +392,7 @@ func (s *MeasurementStorePSQL) FindOrCreateDatastream(ctx context.Context, tenan
 }
 
 func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measurements []measurements.Measurement) error {
-	rows := make([][]any, 0, len(measurements))
+	var batch pgx.Batch
 	for _, measurement := range measurements {
 		var deviceLocation *wkb.Point
 		if measurement.DeviceLongitude != nil && measurement.DeviceLatitude != nil {
@@ -401,7 +402,82 @@ func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measuremen
 		if measurement.MeasurementLongitude != nil && measurement.MeasurementLatitude != nil {
 			measurementLocation = &wkb.Point{Point: geom.NewPoint(geom.XY).MustSetCoords(geom.Coord{*measurement.MeasurementLatitude, *measurement.MeasurementLongitude}).SetSRID(4326)}
 		}
-		rows = append(rows, []any{
+		batch.Queue(`
+INSERT INTO measurements (
+			uplink_message_id,
+			organisation_id,
+			organisation_name,
+			organisation_address,
+			organisation_zipcode,
+			organisation_city,
+			organisation_chamber_of_commerce_id,
+			organisation_headquarter_id,
+			organisation_state,
+			organisation_archive_time,
+			device_id,
+			device_code,
+			device_description,
+			device_location,
+			device_altitude,
+			device_location_description,
+			device_state,
+			device_properties,
+			sensor_id,
+			sensor_code,
+			sensor_description,
+			sensor_external_id,
+			sensor_properties,
+			sensor_brand,
+			sensor_archive_time,
+			datastream_id,
+			datastream_description,
+			datastream_observed_property,
+			datastream_unit_of_measurement,
+			measurement_timestamp,
+			measurement_value,
+			measurement_location,
+			measurement_altitude,
+			measurement_expiration,
+			created_at
+) VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8,
+  $9,
+  $10,
+  $11,
+  $12,
+  $13,
+  ST_GeomFromWKB($14),
+  $15,
+  $16,
+  $17,
+  $18,
+  $19,
+  $20,
+  $21,
+  $22,
+  $23,
+  $24,
+  $25,
+  $26,
+  $27,
+  $28,
+  $29,
+  $30,
+  $31,
+  ST_GeomFromWKB($32),
+  $33,
+  $34,
+  $35
+);
+
+`,
 			measurement.UplinkMessageID,
 			measurement.OrganisationID,
 			measurement.OrganisationName,
@@ -437,50 +513,17 @@ func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measuremen
 			measurement.MeasurementAltitude,
 			measurement.MeasurementExpiration,
 			measurement.CreatedAt,
-		})
+		)
 	}
-	err := s.databasePool.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
-		_, err := c.CopyFrom(ctx, pgx.Identifier{"measurements"}, []string{
-			"uplink_message_id",
-			"organisation_id",
-			"organisation_name",
-			"organisation_address",
-			"organisation_zipcode",
-			"organisation_city",
-			"organisation_chamber_of_commerce_id",
-			"organisation_headquarter_id",
-			"organisation_state",
-			"organisation_archive_time",
-			"device_id",
-			"device_code",
-			"device_description",
-			"device_location",
-			"device_altitude",
-			"device_location_description",
-			"device_state",
-			"device_properties",
-			"sensor_id",
-			"sensor_code",
-			"sensor_description",
-			"sensor_external_id",
-			"sensor_properties",
-			"sensor_brand",
-			"sensor_archive_time",
-			"datastream_id",
-			"datastream_description",
-			"datastream_observed_property",
-			"datastream_unit_of_measurement",
-			"measurement_timestamp",
-			"measurement_value",
-			"measurement_location",
-			"measurement_altitude",
-			"measurement_expiration",
-			"created_at",
-		}, pgx.CopyFromRows(rows))
-		return err
-	})
-	if err != nil {
-		return fmt.Errorf("issue copying rows: %w", err)
+
+	batchResult := s.databasePool.SendBatch(ctx, &batch)
+	defer batchResult.Close()
+
+	for range len(measurements) {
+		_, err := batchResult.Exec()
+		if err != nil {
+			log.Printf("Batch inser resulted in an error: %s\n", err.Error())
+		}
 	}
 
 	return nil
