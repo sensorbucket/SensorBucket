@@ -12,8 +12,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/twpayne/go-geom"
-	"github.com/twpayne/go-geom/encoding/wkb"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
@@ -394,14 +392,6 @@ func (s *MeasurementStorePSQL) FindOrCreateDatastream(ctx context.Context, tenan
 func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measurements []measurements.Measurement) error {
 	var batch pgx.Batch
 	for _, measurement := range measurements {
-		var deviceLocation *wkb.Point
-		if measurement.DeviceLongitude != nil && measurement.DeviceLatitude != nil {
-			deviceLocation = &wkb.Point{Point: geom.NewPoint(geom.XY).MustSetCoords(geom.Coord{*measurement.DeviceLatitude, *measurement.DeviceLongitude}).SetSRID(4326)}
-		}
-		var measurementLocation *wkb.Point
-		if measurement.MeasurementLongitude != nil && measurement.MeasurementLatitude != nil {
-			measurementLocation = &wkb.Point{Point: geom.NewPoint(geom.XY).MustSetCoords(geom.Coord{*measurement.MeasurementLatitude, *measurement.MeasurementLongitude}).SetSRID(4326)}
-		}
 		batch.Queue(`
 INSERT INTO measurements (
 			uplink_message_id,
@@ -453,8 +443,7 @@ INSERT INTO measurements (
   $11,
   $12,
   $13,
-  ST_GeomFromWKB($14),
-  $15,
+  ST_SETSRID(ST_POINT($14,$15),4326),
   $16,
   $17,
   $18,
@@ -471,10 +460,11 @@ INSERT INTO measurements (
   $29,
   $30,
   $31,
-  ST_GeomFromWKB($32),
-  $33,
-  $34,
-  $35
+  $32,
+  ST_SETSRID(ST_POINT($33,$34),4326),
+  $35,
+  $36,
+  $37
 );
 
 `,
@@ -491,7 +481,7 @@ INSERT INTO measurements (
 			measurement.DeviceID,
 			measurement.DeviceCode,
 			measurement.DeviceDescription,
-			deviceLocation,
+			measurement.DeviceLongitude, measurement.DeviceLatitude,
 			measurement.DeviceAltitude,
 			measurement.DeviceLocationDescription,
 			measurement.DeviceState,
@@ -509,7 +499,7 @@ INSERT INTO measurements (
 			measurement.DatastreamUnitOfMeasurement,
 			measurement.MeasurementTimestamp,
 			measurement.MeasurementValue,
-			measurementLocation,
+			measurement.MeasurementLongitude, measurement.MeasurementLatitude,
 			measurement.MeasurementAltitude,
 			measurement.MeasurementExpiration,
 			measurement.CreatedAt,
