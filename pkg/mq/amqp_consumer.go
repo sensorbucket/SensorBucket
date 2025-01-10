@@ -1,11 +1,13 @@
 package mq
 
 import (
+	"fmt"
+
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func Consume(conn *AMQPConnection, queue string, setup AMQPSetupFunc) <-chan amqp.Delivery {
-	ch := make(chan amqp.Delivery, 10)
+func Consume(conn *AMQPConnection, queue string, opts ...SetupOption) <-chan amqp.Delivery {
+	ch := make(chan amqp.Delivery, DefaultPrefetch())
 	newConnection := conn.UseConnection()
 
 	go func() {
@@ -17,15 +19,18 @@ func Consume(conn *AMQPConnection, queue string, setup AMQPSetupFunc) <-chan amq
 			}
 			amqpChan, err := amqpConn.Channel()
 			if err != nil {
+				fmt.Printf("Error creating channel: %s\n", err.Error())
 				continue
 			}
-			err = setup(amqpChan)
+			err = setupChannel(amqpChan, opts)
 			if err != nil {
+				fmt.Printf("Error setting up consume channel: %s\n", err.Error())
 				continue
 			}
 
 			amqpDeliveryChan, err := amqpChan.Consume(queue, "", false, false, false, false, nil)
 			if err != nil {
+				fmt.Printf("Error consuming from consume channel: %s\n", err.Error())
 				continue
 			}
 

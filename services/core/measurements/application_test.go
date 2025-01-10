@@ -1,6 +1,7 @@
 package measurements_test
 
 import (
+	"context"
 	"encoding/json"
 	"math"
 	"testing"
@@ -20,8 +21,8 @@ func ptr[T any](v T) *T {
 	return &v
 }
 
-func newPipelineMessage(plID string, steps []string) *pipeline.Message {
-	return &pipeline.Message{
+func newPipelineMessage(plID string, steps []string) pipeline.Message {
+	return pipeline.Message{
 		TracingID:     uuid.NewString(),
 		ReceivedAt:    time.Now().UnixMilli(),
 		Timestamp:     time.Now().UnixMilli(),
@@ -129,19 +130,16 @@ func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 			err := msg.NewMeasurement().SetValue(5, tC.observationProperty, "1").SetSensor(tC.sensorExternalID).Add()
 			msg.AccessToken = authtest.CreateToken()
 			require.NoError(t, err)
+
 			store := &StoreMock{
-				FindDatastreamFunc: func(tenantID, sensorID int64, obs string) (*measurements.Datastream, error) {
-					assert.Equal(t, tC.expectedObservationProperty, obs, "expected observation property to match in query")
+				FindOrCreateDatastreamFunc: func(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
 					return &measurements.Datastream{}, nil
 				},
-				InsertFunc: func(measurement measurements.Measurement) error {
-					return nil
-				},
 			}
-			svc := measurements.New(store, 0, authtest.JWKS())
+			svc := measurements.New(store, 0, 1, authtest.JWKS())
 
 			// Act
-			err = svc.StorePipelineMessage(*msg)
+			err = svc.ProcessPipelineMessage(msg)
 			if tC.err != nil {
 				assert.Error(t, tC.err, err)
 			} else {
@@ -157,13 +155,13 @@ func TestShouldCopyOverDefaultFields(t *testing.T) {
 	msg := newPipelineMessage(uuid.NewString(), []string{})
 	msg.Device = &pipeline.Device{
 		ID:          1,
-		Code:        "",
+		Code:        "123",
 		Description: "",
 		TenantID:    10,
 		Sensors: []devices.Sensor{
 			{
 				ID:          1,
-				Code:        "",
+				Code:        "123",
 				Description: "",
 				Brand:       "",
 				ArchiveTime: nil,
@@ -189,22 +187,22 @@ func TestShouldCopyOverDefaultFields(t *testing.T) {
 		UnitOfMeasurement: msg.Measurements[0].UnitOfMeasurement,
 	}
 	store := &StoreMock{
-		FindDatastreamFunc: func(tenantID, sensorID int64, obs string) (*measurements.Datastream, error) {
+		FindOrCreateDatastreamFunc: func(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
 			return &ds, nil
 		},
-		InsertFunc: func(measurement measurements.Measurement) error {
-			return nil
-		},
+		StoreMeasurementsFunc: func(ctx context.Context, measurementsMoqParam []measurements.Measurement) error { return nil },
 	}
-	svc := measurements.New(store, 0, authtest.JWKS())
+	svc := measurements.New(store, 0, 1, authtest.JWKS())
 
 	// Act
-	err = svc.StorePipelineMessage(*msg)
+	err = svc.ProcessPipelineMessage(msg)
 	require.NoError(t, err)
+	assert.NoError(t, svc.CommitBatch(true))
 
 	// Assert
-	require.Len(t, store.calls.Insert, 1, "SQL Insert should've been called")
-	measurement := store.calls.Insert[0].Measurement
+	require.Len(t, store.calls.StoreMeasurements, 1, "StoreMeasurements should've been called")
+	require.Len(t, store.calls.StoreMeasurements[0].MeasurementsMoqParam, 1, "StoreMeasurements should've been supplied a measurements")
+	measurement := store.calls.StoreMeasurements[0].MeasurementsMoqParam[0]
 	assert.Equal(t, msg.TracingID, measurement.UplinkMessageID)
 	// assert.Equal(t, OrganisationName, measurement.OrganisationName)
 	// assert.Equal(t, OrganisationAddress, measurement.OrganisationAddress)
@@ -326,23 +324,23 @@ func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
 				UnitOfMeasurement: msg.Measurements[0].UnitOfMeasurement,
 			}
 			store := &StoreMock{
-				FindDatastreamFunc: func(tenantID, sensorID int64, obs string) (*measurements.Datastream, error) {
+				FindOrCreateDatastreamFunc: func(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
 					return &ds, nil
 				},
-				InsertFunc: func(measurement measurements.Measurement) error {
-					return nil
-				},
+				StoreMeasurementsFunc: func(ctx context.Context, measurementsMoqParam []measurements.Measurement) error { return nil },
 			}
-			svc := measurements.New(store, 0, authtest.JWKS())
+			svc := measurements.New(store, 0, 1, authtest.JWKS())
 
 			// Act
 			require.NoError(t,
-				svc.StorePipelineMessage(*msg),
+				svc.ProcessPipelineMessage(msg),
 			)
+			assert.NoError(t, svc.CommitBatch(true))
 
 			// Assert
-			require.Len(t, store.calls.Insert, 1, "SQL Insert should've been called")
-			measurement := store.calls.Insert[0].Measurement
+			require.Len(t, store.calls.StoreMeasurements, 1, "StoreMeasurements should've been called")
+			require.Len(t, store.calls.StoreMeasurements[0].MeasurementsMoqParam, 1, "StoreMeasurements should've been supplied a measurements")
+			measurement := store.calls.StoreMeasurements[0].MeasurementsMoqParam[0]
 			assert.Equal(t, tC.ExpectedLatitude, measurement.MeasurementLatitude)
 			assert.Equal(t, tC.ExpectedLongitude, measurement.MeasurementLongitude)
 			assert.Equal(t, tC.ExpectedAltitude, measurement.MeasurementAltitude)
@@ -407,22 +405,22 @@ func TestShouldSetExpirationDate(t *testing.T) {
 			UnitOfMeasurement: msg.Measurements[0].UnitOfMeasurement,
 		}
 		store := &StoreMock{
-			FindDatastreamFunc: func(tenantID, sensorID int64, obs string) (*measurements.Datastream, error) {
+			FindOrCreateDatastreamFunc: func(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
 				return &ds, nil
 			},
-			InsertFunc: func(measurement measurements.Measurement) error {
-				return nil
-			},
+			StoreMeasurementsFunc: func(ctx context.Context, measurementsMoqParam []measurements.Measurement) error { return nil },
 		}
-		svc := measurements.New(store, sysArchiveTime, authtest.JWKS())
+		svc := measurements.New(store, sysArchiveTime, 1, authtest.JWKS())
 
 		// Act
-		err = svc.StorePipelineMessage(*msg)
+		err = svc.ProcessPipelineMessage(msg)
 		require.NoError(t, err)
+		assert.NoError(t, svc.CommitBatch(true))
 
 		// Assert
-		require.Len(t, store.calls.Insert, 1, "SQL Insert should've been called")
-		measurement := store.calls.Insert[0].Measurement
+		require.Len(t, store.calls.StoreMeasurements, 1, "StoreMeasurements should've been called")
+		require.Len(t, store.calls.StoreMeasurements[0].MeasurementsMoqParam, 1, "StoreMeasurements should've been supplied a measurements")
+		measurement := store.calls.StoreMeasurements[0].MeasurementsMoqParam[0]
 		// Check if the difference in seconds is 0, otherwise there might be a subsecond difference
 		// due to parsing
 		assert.Equal(t,

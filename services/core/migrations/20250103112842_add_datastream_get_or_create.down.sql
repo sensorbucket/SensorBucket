@@ -1,0 +1,1 @@
+DROP FUNCTION find_or_create_datastream;

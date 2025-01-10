@@ -56,7 +56,6 @@ var (
 	AMQP_HOST     = env.Must("AMQP_HOST")
 	AMQP_QUEUE    = env.Must("QUEUE_NAME")
 	AMQP_TOPIC    = env.Must("TOPIC")
-	AMQP_PREFETCH = env.Could("AMQP_PREFETCH", "5")
 	AMQP_XCHG     = env.Must("EXCHANGE")
 	HTTP_ENDPOINT = env.Must("HTTP_ENDPOINT")
 	MAX_RETRIES   = env.Could("MAX_RETRIES", "3")
@@ -64,10 +63,6 @@ var (
 )
 
 func Run(cleanup cleanupper.Cleanupper) error {
-	prefetch, err := strconv.Atoi(AMQP_PREFETCH)
-	if err != nil {
-		return err
-	}
 	maxRetries, err := strconv.Atoi(MAX_RETRIES)
 	if err != nil {
 		return err
@@ -88,26 +83,10 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	successChan := conn.Publisher(AMQP_XCHG, func(c *amqp091.Channel) error {
 		return nil
 	})
-	consumeChan := conn.Consume(AMQP_QUEUE, func(c *amqp091.Channel) error {
-		// Cannot set autodelete because KEDA can't scale if the queue does not exist at all
-		_, err := c.QueueDeclare(AMQP_QUEUE, true, false, false, false, nil)
-		if err != nil {
-			return err
-		}
-		err = c.ExchangeDeclare(AMQP_XCHG, "topic", true, false, false, false, nil)
-		if err != nil {
-			return err
-		}
-		err = c.QueueBind(AMQP_QUEUE, AMQP_TOPIC, AMQP_XCHG, false, nil)
-		if err != nil {
-			return err
-		}
-		err = c.Qos(prefetch, 0, true)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	consumeChan := conn.Consume(AMQP_QUEUE,
+		mq.WithDefaults(),
+		mq.WithTopicBinding(AMQP_QUEUE, AMQP_XCHG, AMQP_TOPIC),
+	)
 	go conn.Start()
 
 	connector := Connector{
@@ -117,17 +96,11 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		Result:     successChan,
 	}
 
-	concurrency := make(chan int, prefetch)
-	go func(incoming <-chan amqp091.Delivery) {
-		for delivery := range incoming {
-			concurrency <- 1
-			go func(delivery amqp091.Delivery) {
-				log.Printf("Processing: %s\n", delivery.MessageId)
-				connector.handleDelivery(delivery)
-				<-concurrency
-			}(delivery)
+	go func() {
+		for delivery := range consumeChan {
+			go connector.handleDelivery(delivery)
 		}
-	}(consumeChan)
+	}()
 
 	if METRICS_ADDR != "" {
 		go func() {
@@ -221,7 +194,7 @@ func doHTTPRequest(body []byte, endpoint string, retries int) (*http.Response, e
 			return nil, fmt.Errorf("error creating invocation for function: %s, error: %w", endpoint, err)
 		}
 		req.Header.Set("X-AMQP-Topic", AMQP_TOPIC)
-		res, err := http.DefaultClient.Do(req)
+		res, err = http.DefaultClient.Do(req)
 		if err != nil {
 			log.Printf("Invocation for %s failed with: %v\n", endpoint, err)
 			continue

@@ -56,6 +56,7 @@ VALUES ($1, $2, $3, $4)
 }
 
 func (svc *Service) ProcessTrace(msg processing.IngressDTO, queueTime time.Time) error {
+	log.Printf("Processing trace %s\n", msg.TracingID)
 	_, err := svc.insertTraceStatement().Exec(msg.TracingID, msg.TenantID, msg.PipelineID, queueTime)
 	if err != nil {
 		return fmt.Errorf("while inserting trace: %w", err)
@@ -77,6 +78,7 @@ UPDATE traces SET error = $1, error_at = $2 WHERE id = $3
 }
 
 func (svc *Service) ProcessTraceError(tracingID string, queueTime time.Time, error string) error {
+	log.Printf("Processing trace error %s\n", tracingID)
 	_, err := svc.setTraceErrorStatement().Exec(error, queueTime, tracingID)
 	if err != nil {
 		return fmt.Errorf("while setting error on trace: %w", err)
@@ -99,6 +101,7 @@ func (svc *Service) insertStepStatement() *sqlx.Stmt {
 }
 
 func (svc *Service) ProcessTraceStep(msg pipeline.Message, queueTime time.Time) error {
+	log.Printf("Processing trace step %s\n", msg.TracingID)
 	deviceID := int64(0)
 	if msg.Device != nil {
 		deviceID = msg.Device.ID
@@ -166,7 +169,7 @@ func (svc *Service) Query(ctx context.Context, filters TraceFilter, r pagination
 	).From("trace_steps step").Where("trace.id = step.tracing_id").GroupBy("step.tracing_id")
 
 	tracesQ = tracesQ.JoinClause(
-		stepAggregationQ.Prefix("LEFT JOIN LATERAL (").Suffix(") AS steps ON trace.id = steps.tracing_id"))
+		stepAggregationQ.Prefix("INNER JOIN LATERAL (").Suffix(") AS steps ON trace.id = steps.tracing_id"))
 
 	tracesQ, err = pagination.Apply(tracesQ, cursor)
 	if err != nil {

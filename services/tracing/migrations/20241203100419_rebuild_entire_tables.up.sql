@@ -27,7 +27,7 @@ BEGIN;
     tracing_id UUID NOT NULL,
     worker_id TEXT NOT NULL,
     queue_time TIMESTAMPTZ NOT NULL,
-    device_id BIGINT
+    device_id BIGINT NOT NULL DEFAULT 0,
   );
   CREATE INDEX idx_trace_steps_pagination ON trace_steps(tracing_id, queue_time DESC);
 

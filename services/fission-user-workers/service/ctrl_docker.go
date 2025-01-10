@@ -108,7 +108,7 @@ func (ctrl *DockerController) Reconcile(ctx context.Context) error {
 	filter := filters.NewArgs(
 		filters.Arg("label", "controlled-by=sensorbucket"),
 	)
-	containers, err := ctrl.docker.ContainerList(ctx, types.ContainerListOptions{
+	containers, err := ctrl.docker.ContainerList(ctx, container.ListOptions{
 		Filters: filter,
 	})
 	if err != nil {
@@ -136,7 +136,7 @@ func (ctrl *DockerController) Reconcile(ctx context.Context) error {
 	log.Printf("Removing %d wandering containers\n", len(wandering))
 	for _, id := range wandering {
 		c := containerWorkerIDMap[id]
-		err := ctrl.docker.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{Force: true})
+		err := ctrl.docker.ContainerRemove(ctx, c.ID, container.RemoveOptions{Force: true})
 		if err != nil {
 			log.Printf("Error removing container: %s: %v\n", c.ID, err)
 			continue
@@ -161,7 +161,7 @@ func (ctrl *DockerController) Reconcile(ctx context.Context) error {
 				filters.Arg("label", "controlled-by=sensorbucket"),
 				filters.Arg("label", "worker-id="+worker.ID.String()),
 			)
-			candidates, err := ctrl.docker.ContainerList(ctx, types.ContainerListOptions{
+			candidates, err := ctrl.docker.ContainerList(ctx, container.ListOptions{
 				All:     true,
 				Filters: filter,
 			})
@@ -260,7 +260,7 @@ func (ctrl *DockerController) createContainerForWorker(ctx context.Context, work
 	if len(res.Warnings) > 0 {
 		log.Printf("Warnings creating worker (%s): \n%s\n", worker.ID.String(), strings.Join(res.Warnings, "\n"))
 	}
-	err = ctrl.docker.ContainerStart(ctx, res.ID, types.ContainerStartOptions{})
+	err = ctrl.docker.ContainerStart(ctx, res.ID, container.StartOptions{})
 	if err != nil {
 		return fmt.Errorf("error starting container: %s: %w", worker.ID.String(), err)
 	}
@@ -272,16 +272,16 @@ func (ctrl *DockerController) removeContainer(ctx context.Context, worker UserWo
 		filters.Arg("label", "controlled-by=sensorbucket"),
 		filters.Arg("label", fmt.Sprintf("worker-id=%s", worker.ID.String())),
 	)
-	containers, err := ctrl.docker.ContainerList(ctx, types.ContainerListOptions{
+	containers, err := ctrl.docker.ContainerList(ctx, container.ListOptions{
 		All:     true,
 		Filters: filter,
 	})
 	if err != nil {
 		return fmt.Errorf("error listing docker containers: %w", err)
 	}
-	for _, container := range containers {
-		if err := ctrl.docker.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
-			log.Printf("Error removing container: %s\n", container.ID)
+	for _, c := range containers {
+		if err := ctrl.docker.ContainerRemove(ctx, c.ID, container.RemoveOptions{Force: true}); err != nil {
+			log.Printf("Error removing container: %s\n", c.ID)
 		}
 	}
 	return nil

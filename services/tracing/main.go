@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+	"github.com/rabbitmq/amqp091-go"
 
 	"sensorbucket.nl/sensorbucket/internal/buildinfo"
 	"sensorbucket.nl/sensorbucket/internal/cleanupper"
@@ -32,7 +32,7 @@ var (
 	HTTP_BASE                        = env.Could("HTTP_BASE", "http://localhost:3000/api")
 	DB_DSN                           = env.Must("DB_DSN")
 	AMQP_HOST                        = env.Must("AMQP_HOST")
-	AMQP_QUEUE_PIPELINEMESSAGES      = env.Could("AMQP_QUEUE_PIPELINEMESSAGES", "tracing_pipeline_messages")
+	AMQP_QUEUE_TRACES                = env.Could("AMQP_QUEUE_TRACES", "tracing.traces")
 	AMQP_XCHG_PIPELINEMESSAGES       = env.Could("AMQP_XCHG_PIPELINEMESSAGES", "pipeline.messages")
 	AMQP_XCHG_PIPELINEMESSAGES_TOPIC = env.Could("AMQP_XCHG_PIPELINEMESSAGES_TOPIC", "#")
 	AMQP_QUEUE_INGRESS               = env.Could("AMQP_QUEUE_INGRESS", "archive-ingress")
@@ -59,11 +59,6 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	// Create shutdown context
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
-
-	prefetch, err := strconv.Atoi(AMQP_PREFETCH)
-	if err != nil {
-		return err
-	}
 
 	stopProfiler, err := web.RunProfiler()
 	if err != nil {
@@ -93,16 +88,28 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	svc := tracing.Create(db)
 	transportHTTP := tracing.CreateTransport(svc)
 	r.Mount("/", transportHTTP)
-	shutdownMQTransport := tracing.StartMQTransport(mqConn, svc, tracing.MQConfig{
-		Prefetch:              prefetch,
-		QueueIngress:          AMQP_QUEUE_INGRESS,
-		ExchangeIngress:       AMQP_XCHG_INGRESS,
-		ExchangeIngressTopic:  AMQP_XCHG_INGRESS_TOPIC,
-		QueueMessages:         AMQP_QUEUE_PIPELINEMESSAGES,
-		ExchangeMessages:      AMQP_XCHG_PIPELINEMESSAGES,
-		ExchangeMessagesTopic: AMQP_XCHG_PIPELINEMESSAGES_TOPIC,
-	})
-	cleanup.Add(shutdownMQTransport)
+	go mq.StartQueueProcessor(mqConn,
+		AMQP_QUEUE_INGRESS, AMQP_XCHG_INGRESS, AMQP_XCHG_INGRESS_TOPIC,
+		func() mq.ProcessorFunc {
+			return func(delivery amqp091.Delivery) error {
+				if err := tracing.ProcessIngress(svc, &delivery); err != nil {
+					return fmt.Errorf("process ingress message: %w", err)
+				}
+				return nil
+			}
+		},
+	)
+	go mq.StartQueueProcessor(mqConn,
+		AMQP_QUEUE_TRACES, AMQP_XCHG_PIPELINEMESSAGES, AMQP_XCHG_PIPELINEMESSAGES_TOPIC,
+		func() mq.ProcessorFunc {
+			return func(delivery amqp091.Delivery) error {
+				if err := tracing.ProcessMessage(svc, &delivery, "errors"); err != nil {
+					return fmt.Errorf("process ingress message: %w", err)
+				}
+				return nil
+			}
+		},
+	)
 
 	healthShutdown := healthchecker.Create().WithEnv().WithMessagQueue(mqConn).Start(ctx)
 	cleanup.Add(healthShutdown)

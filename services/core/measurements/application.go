@@ -1,5 +1,7 @@
 package measurements
 
+//go:generate moq -pkg measurements_test -out mock_test.go . Store
+
 import (
 	"context"
 	"fmt"
@@ -9,122 +11,115 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/lo"
 
+	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
 
-// iService is an interface for the service's exported interface, it can be used as a developer reference
-type iService interface {
-	StoreMeasurement(context.Context, Measurement) error
-	StorePipelineMessage(pipeline.Message) error
-	QueryMeasurements(context.Context, Filter, pagination.Request) (*pagination.Page[Measurement], error)
-	ListDatastreams(ctx context.Context, filter DatastreamFilter, r pagination.Request) (*pagination.Page[Datastream], error)
-	GetDatastream(ctx context.Context, id uuid.UUID) (*Datastream, error)
-}
-
-// Ensure Service implements iService
-var _ iService = (*Service)(nil)
-
 // Store stores measurement data
 type Store interface {
-	DatastreamFinderCreater
-
-	Insert(Measurement) error
-	Query(Filter, pagination.Request) (*pagination.Page[Measurement], error)
-	ListDatastreams(DatastreamFilter, pagination.Request) (*pagination.Page[Datastream], error)
-	GetDatastream(id uuid.UUID, filter DatastreamFilter) (*Datastream, error)
+	Query(context.Context, Filter, pagination.Request) (*pagination.Page[Measurement], error)
+	ListDatastreams(context.Context, DatastreamFilter, pagination.Request) (*pagination.Page[Datastream], error)
+	GetDatastream(ctx context.Context, id uuid.UUID, filter DatastreamFilter) (*Datastream, error)
+	FindOrCreateDatastream(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*Datastream, error)
+	StoreMeasurements(context.Context, []Measurement) error
 }
 
 // Service is the measurement service which stores measurement data.
 type Service struct {
-	store             Store
-	systemArchiveTime int
-	keyClient         auth.JWKSClient
+	store                Store
+	systemArchiveTime    int
+	keyClient            auth.JWKSClient
+	measurementBatchChan chan Measurement
+	measurementBatch     []Measurement
 }
 
-func New(store Store, systemArchiveTime int, keyClient auth.JWKSClient) *Service {
+func New(store Store, systemArchiveTime, batchSize int, keyClient auth.JWKSClient) *Service {
 	return &Service{
-		store:             store,
-		systemArchiveTime: systemArchiveTime,
-		keyClient:         keyClient,
+		store:                store,
+		systemArchiveTime:    systemArchiveTime,
+		keyClient:            keyClient,
+		measurementBatch:     make([]Measurement, 0, batchSize),
+		measurementBatchChan: make(chan Measurement, batchSize),
 	}
 }
 
-func (s *Service) StoreMeasurement(ctx context.Context, m Measurement) error {
-	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_MEASUREMENTS}); err != nil {
-		return err
-	}
+func (s *Service) StartMeasurementBatchStorer(interval time.Duration) cleanupper.Shutdown {
+	stop := make(chan struct{})
+	done := make(chan struct{})
+	t := time.NewTicker(interval)
 
-	if err := m.Validate(); err != nil {
-		return fmt.Errorf("validation failed for measurement: %w", err)
-	}
+	go func() {
+		log.Println("Measurement service batch storer started")
+		defer log.Println("Measurement service batch storer stopped!")
+	outer:
+		for {
+			select {
+			case <-stop:
+				if err := s.CommitBatch(false); err != nil {
+					log.Printf("error committing batch: %s\n", err.Error())
+				}
+				break outer
+			case m := <-s.measurementBatchChan:
+				s.measurementBatch = append(s.measurementBatch, m)
+				if len(s.measurementBatch) == cap(s.measurementBatch) {
+					if err := s.CommitBatch(false); err != nil {
+						log.Printf("error committing batch: %s\n", err.Error())
+					}
+				}
+			case <-t.C:
+				if err := s.CommitBatch(false); err != nil {
+					log.Printf("error committing batch: %s\n", err.Error())
+				}
+			}
+		}
+		close(done)
+	}()
 
-	return s.store.Insert(m)
-}
-
-func (s *Service) StorePipelineMessage(msg pipeline.Message) error {
-	ctx, err := auth.AuthenticateContext(context.Background(), msg.AccessToken, s.keyClient)
-	if err != nil {
-		return err
-	}
-	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_MEASUREMENTS}); err != nil {
-		return err
-	}
-
-	// TODO: get organisation from context
-
-	// Validate incoming message for completeness
-	if msg.Device == nil {
-		return ErrMissingDeviceInMeasurement
-	}
-	if len(msg.Measurements) == 0 {
-		log.Printf("[warn] got pipeline message (%v) but it has no measurements\n", msg.TracingID)
+	return func(ctx context.Context) error {
+		close(stop)
+		<-done
 		return nil
 	}
+}
 
-	for _, measurement := range msg.Measurements {
-		err := s.storePipelineMeasurement(ctx, msg, measurement)
-		if err != nil {
-			return err
+func (s *Service) CommitBatch(collect bool) error {
+	if len(s.measurementBatch) == 0 {
+		if !collect || len(s.measurementBatchChan) == 0 {
+			return nil
+		}
+		count := len(s.measurementBatchChan)
+		for i := 0; i < count; i++ {
+			s.measurementBatch = append(s.measurementBatch, <-s.measurementBatchChan)
 		}
 	}
-
+	log.Printf("Committing %d measurements\n", len(s.measurementBatch))
+	err := s.store.StoreMeasurements(context.Background(), s.measurementBatch)
+	if err != nil {
+		return fmt.Errorf("committing measurements failed: %w", err)
+	}
+	s.measurementBatch = s.measurementBatch[:0]
 	return nil
 }
 
-func (s *Service) storePipelineMeasurement(ctx context.Context, msg pipeline.Message, m pipeline.Measurement) error {
+func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
+	msg := PipelineMessage(pmsg)
+
+	// Only error when internal error and not a business error
+	ctx, err := msg.Authorize(s.keyClient)
+	if err != nil {
+		return err
+	}
+	if err := msg.Validate(); err != nil {
+		return err
+	}
+
 	dev := (*devices.Device)(msg.Device)
-	sensor, err := dev.GetSensorByExternalIDOrFallback(m.SensorExternalID)
-	if err != nil {
-		return fmt.Errorf("cannot get sensor: %w", err)
-	}
-	if sensor.ExternalID != m.SensorExternalID {
-		fmt.Printf("warning: no sensor found for external id '%s' on device id '%d' while storing pipeline measurements\n", m.SensorExternalID, msg.Device.ID)
-		m.ObservedProperty = m.SensorExternalID + "_" + m.ObservedProperty
-	}
-
-	tenantID, err := auth.GetTenant(ctx)
-	if err != nil {
-		return err
-	}
-
-	// Find or create datastream
-	ds, err := FindOrCreateDatastream(tenantID, sensor.ID, m.ObservedProperty, m.UnitOfMeasurement, s.store)
-	if err != nil {
-		return err
-	}
-
-	// TODO: Get organisation archive time
-	// Time is by default in days
-	archiveTimeDays, _ := lo.Coalesce(sensor.ArchiveTime, &s.systemArchiveTime) // msg.Organisation.ArchiveTime)
-
-	measurement := Measurement{
-		UplinkMessageID: msg.TracingID,
-
-		OrganisationID: int(msg.TenantID),
-
+	baseMeasurement := Measurement{
+		UplinkMessageID:           msg.TracingID,
+		OrganisationID:            int(msg.TenantID),
 		DeviceID:                  msg.Device.ID,
 		DeviceCode:                msg.Device.Code,
 		DeviceDescription:         msg.Device.Description,
@@ -134,40 +129,58 @@ func (s *Service) storePipelineMeasurement(ctx context.Context, msg pipeline.Mes
 		DeviceLocationDescription: msg.Device.LocationDescription,
 		DeviceProperties:          msg.Device.Properties,
 		DeviceState:               msg.Device.State,
-
-		SensorID:          sensor.ID,
-		SensorCode:        sensor.Code,
-		SensorDescription: sensor.Description,
-		SensorExternalID:  sensor.ExternalID,
-		SensorProperties:  sensor.Properties,
-		SensorBrand:       sensor.Brand,
-		SensorArchiveTime: sensor.ArchiveTime,
-		SensorIsFallback:  sensor.IsFallback,
-
-		DatastreamID:                ds.ID,
-		DatastreamDescription:       ds.Description,
-		DatastreamObservedProperty:  ds.ObservedProperty,
-		DatastreamUnitOfMeasurement: ds.UnitOfMeasurement,
-
-		MeasurementTimestamp:  time.UnixMilli(m.Timestamp),
-		MeasurementValue:      m.Value,
-		MeasurementLatitude:   msg.Device.Latitude,
-		MeasurementLongitude:  msg.Device.Longitude,
-		MeasurementAltitude:   msg.Device.Altitude,
-		MeasurementProperties: m.Properties,
-		MeasurementExpiration: time.UnixMilli(msg.ReceivedAt).Add(time.Duration(*archiveTimeDays) * 24 * time.Hour),
-
-		CreatedAt: time.Now(),
+		MeasurementLatitude:       msg.Device.Latitude,
+		MeasurementLongitude:      msg.Device.Longitude,
+		MeasurementAltitude:       msg.Device.Altitude,
+		CreatedAt:                 time.Now(),
 	}
 
-	// Measurement location is either explicitly set or falls back to device location
-	if m.Latitude != nil && m.Longitude != nil {
-		measurement.MeasurementLatitude = m.Latitude
-		measurement.MeasurementLongitude = m.Longitude
-		measurement.MeasurementAltitude = m.Altitude
+	for _, m := range msg.Measurements {
+
+		sensor, err := dev.GetSensorByExternalIDOrFallback(m.SensorExternalID)
+		if err != nil {
+			return fmt.Errorf("cannot get sensor: %w", err)
+		}
+		if sensor.ExternalID != m.SensorExternalID {
+			m.ObservedProperty = m.SensorExternalID + "_" + m.ObservedProperty
+		}
+
+		archiveTimeDays, _ := lo.Coalesce(sensor.ArchiveTime, &s.systemArchiveTime) // msg.Organisation.ArchiveTime)
+
+		ds, err := s.store.FindOrCreateDatastream(ctx, msg.TenantID, sensor.ID, m.ObservedProperty, m.UnitOfMeasurement)
+		if err != nil {
+			return err
+		}
+
+		measurement := baseMeasurement
+		measurement.SensorID = sensor.ID
+		measurement.SensorCode = sensor.Code
+		measurement.SensorDescription = sensor.Description
+		measurement.SensorExternalID = sensor.ExternalID
+		measurement.SensorProperties = sensor.Properties
+		measurement.SensorBrand = sensor.Brand
+		measurement.SensorArchiveTime = sensor.ArchiveTime
+		measurement.SensorIsFallback = sensor.IsFallback
+		measurement.DatastreamID = ds.ID
+		measurement.DatastreamDescription = ds.Description
+		measurement.DatastreamObservedProperty = ds.ObservedProperty
+		measurement.DatastreamUnitOfMeasurement = ds.UnitOfMeasurement
+		measurement.MeasurementTimestamp = time.UnixMilli(m.Timestamp)
+		measurement.MeasurementValue = m.Value
+		measurement.MeasurementProperties = m.Properties
+		measurement.MeasurementExpiration = time.UnixMilli(msg.ReceivedAt).Add(time.Duration(*archiveTimeDays) * 24 * time.Hour)
+
+		// Measurement location is either explicitly set or falls back to device location
+		if m.Latitude != nil && m.Longitude != nil {
+			measurement.MeasurementLatitude = m.Latitude
+			measurement.MeasurementLongitude = m.Longitude
+			measurement.MeasurementAltitude = m.Altitude
+		}
+
+		s.measurementBatchChan <- measurement
 	}
 
-	return s.StoreMeasurement(ctx, measurement)
+	return nil
 }
 
 // Filter contains query information for a list of measurements
@@ -190,7 +203,7 @@ func (s *Service) QueryMeasurements(ctx context.Context, f Filter, r pagination.
 	}
 	f.TenantID = []int64{tenantID}
 
-	page, err := s.store.Query(f, r)
+	page, err := s.store.Query(ctx, f, r)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +226,7 @@ func (s *Service) ListDatastreams(ctx context.Context, filter DatastreamFilter, 
 	}
 	filter.TenantID = []int64{tenantID}
 
-	return s.store.ListDatastreams(filter, r)
+	return s.store.ListDatastreams(ctx, filter, r)
 }
 
 func (s *Service) GetDatastream(ctx context.Context, id uuid.UUID) (*Datastream, error) {
@@ -225,5 +238,5 @@ func (s *Service) GetDatastream(ctx context.Context, id uuid.UUID) (*Datastream,
 		return nil, err
 	}
 
-	return s.store.GetDatastream(id, DatastreamFilter{TenantID: []int64{tenantID}})
+	return s.store.GetDatastream(ctx, id, DatastreamFilter{TenantID: []int64{tenantID}})
 }
