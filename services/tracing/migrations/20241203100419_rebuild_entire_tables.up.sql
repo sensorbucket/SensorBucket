@@ -3,14 +3,14 @@ BEGIN;
   DROP TABLE archived_ingress_dtos CASCADE;
   DROP TABLE steps CASCADE;
 
-  CREATE TABLE ingress_dtos (
-    tracing_id UUID NOT NULL,
-    payload BYTEA,
+  CREATE TABLE trace_ingress (
+    id UUID NOT NULL,
+    tenant_id BIGINT NOT NULL,
     pipeline_id UUID,
     archived_at TIMESTAMPTZ,
-
-    PRIMARY KEY(tracing_id)
+    payload BYTEA
   );
+  CREATE INDEX idx_trace_ingress ON trace_ingress(tenant_id, archived_at DESC);
 
   CREATE TABLE traces (
     id UUID NOT NULL PRIMARY KEY,
@@ -27,7 +27,7 @@ BEGIN;
     tracing_id UUID NOT NULL,
     worker_id TEXT NOT NULL,
     queue_time TIMESTAMPTZ NOT NULL,
-    device_id BIGINT NOT NULL DEFAULT 0,
+    device_id BIGINT NOT NULL DEFAULT 0
   );
   CREATE INDEX idx_trace_steps_pagination ON trace_steps(tracing_id, queue_time DESC);
 

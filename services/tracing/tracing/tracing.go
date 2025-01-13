@@ -27,6 +27,8 @@ type Service struct {
 	stmtInsertStep      *sqlx.Stmt
 	onceInsertTrace     sync.Once
 	stmtInsertTrace     *sqlx.Stmt
+	onceInsertIngress   sync.Once
+	stmtInsertIngress   *sqlx.Stmt
 	onceSetTraceError   sync.Once
 	stmtSetTraceError   *sqlx.Stmt
 	oncePeriodicCleanup sync.Once
@@ -55,9 +57,34 @@ VALUES ($1, $2, $3, $4)
 	return svc.stmtInsertTrace
 }
 
-func (svc *Service) ProcessTrace(msg processing.IngressDTO, queueTime time.Time) error {
-	log.Printf("Processing trace %s\n", msg.TracingID)
+func (svc *Service) insertTraceIngressStatement() *sqlx.Stmt {
+	svc.onceInsertIngress.Do(func() {
+		var err error
+		svc.stmtInsertIngress, err = svc.db.Preparex(`
+INSERT INTO trace_ingress (
+  id, tenant_id, pipeline_id, archived_at, payload
+)
+VALUES ($1, $2, $3, $4, $5)
+`)
+		if err != nil {
+			log.Fatalf("ERROR on InsertIngress statement preparation: %s\n", err.Error())
+		}
+	})
+	return svc.stmtInsertIngress
+}
+
+func (svc *Service) StoreTrace(msg processing.IngressDTO, queueTime time.Time) error {
 	_, err := svc.insertTraceStatement().Exec(msg.TracingID, msg.TenantID, msg.PipelineID, queueTime)
+	if err != nil {
+		return fmt.Errorf("while inserting trace: %w", err)
+	}
+	return nil
+}
+
+func (svc *Service) StoreIngress(body []byte, ingress processing.IngressDTO, queueTime time.Time) error {
+	_, err := svc.insertTraceIngressStatement().Exec(
+		ingress.TracingID, ingress.TenantID, ingress.PipelineID, queueTime, body,
+	)
 	if err != nil {
 		return fmt.Errorf("while inserting trace: %w", err)
 	}
@@ -77,8 +104,7 @@ UPDATE traces SET error = $1, error_at = $2 WHERE id = $3
 	return svc.stmtSetTraceError
 }
 
-func (svc *Service) ProcessTraceError(tracingID string, queueTime time.Time, error string) error {
-	log.Printf("Processing trace error %s\n", tracingID)
+func (svc *Service) StoreTraceError(tracingID string, queueTime time.Time, error string) error {
 	_, err := svc.setTraceErrorStatement().Exec(error, queueTime, tracingID)
 	if err != nil {
 		return fmt.Errorf("while setting error on trace: %w", err)
@@ -100,8 +126,7 @@ func (svc *Service) insertStepStatement() *sqlx.Stmt {
 	return svc.stmtInsertStep
 }
 
-func (svc *Service) ProcessTraceStep(msg pipeline.Message, queueTime time.Time) error {
-	log.Printf("Processing trace step %s\n", msg.TracingID)
+func (svc *Service) StoreTraceStep(msg pipeline.Message, queueTime time.Time) error {
 	deviceID := int64(0)
 	if msg.Device != nil {
 		deviceID = msg.Device.ID
@@ -226,21 +251,59 @@ func (svc *Service) Query(ctx context.Context, filters TraceFilter, r pagination
 }
 
 func (svc *Service) PeriodicCleanup() error {
-	svc.oncePeriodicCleanup.Do(func() {
-		var err error
-		svc.stmtInsertStep, err = svc.db.Preparex(`
-DELETE FROM pipeline_steps WHERE tracing_id IN (
-  SELECT tracing_id FROM pipeline_steps WHERE created_at < (NOW() - $1::INTERVAL)
-);
-`)
-		if err != nil {
-			log.Fatalf("ERROR on statement preparation: %s\n", err.Error())
-		}
-	})
-
-	_, err := svc.stmtPeriodicCleanup.Exec("1 day")
+	tx, err := svc.db.Beginx()
 	if err != nil {
-		return fmt.Errorf("while executing periodic cleanup: %w", err)
+		return fmt.Errorf("")
+	}
+	n, err := tx.Exec(`DELETE FROM traces WHERE created_at < (NOW() - $1::INTERVAL)`, "1 day")
+	if err != nil {
+		var rollbackErr error
+		if rbErr := tx.Rollback(); rbErr != nil {
+			rollbackErr = fmt.Errorf("while rolling back transaction: %w", rbErr)
+		}
+		err = errors.Join(err, rollbackErr)
+		return fmt.Errorf("failed to delete traces: %w", err)
+	} else {
+		n, _ := n.RowsAffected()
+		log.Printf("Cleaned %d traces\n", n)
+	}
+
+	n, err = tx.Exec(`DELETE FROM trace_steps WHERE queue_time < (NOW() - $1::INTERVAL)`, "1 day")
+	if err != nil {
+		var rollbackErr error
+		if rbErr := tx.Rollback(); rbErr != nil {
+			rollbackErr = fmt.Errorf("while rolling back transaction: %w", rbErr)
+		}
+		err = errors.Join(err, rollbackErr)
+		return fmt.Errorf("failed to delete trace steps: %w", err)
+	} else {
+		n, _ := n.RowsAffected()
+		log.Printf("Cleaned %d trace steps\n", n)
+	}
+
+	n, err = tx.Exec(`DELETE FROM trace_ingress WHERE archived_at < (NOW() - $1::INTERVAL)`, "1 day")
+	if err != nil {
+		var rollbackErr error
+		if rbErr := tx.Rollback(); rbErr != nil {
+			rollbackErr = fmt.Errorf("while rolling back transaction: %w", rbErr)
+		}
+		err = errors.Join(err, rollbackErr)
+		return fmt.Errorf("failed to delete trace ingress: %w", err)
+	} else {
+		n, _ := n.RowsAffected()
+		log.Printf("Cleaned %d trace ingresses\n", n)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("in periodic cleanu while committing transaction: %w", err)
+	}
+
+	_, err = svc.db.Exec("VACUUM traces, trace_steps, trace_ingress;")
+	if err != nil {
+		return fmt.Errorf("failed to vacuum tables: %w", err)
+	} else {
+		log.Println("Vacuumed tables")
 	}
 
 	return nil

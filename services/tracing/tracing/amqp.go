@@ -3,6 +3,7 @@ package tracing
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/rabbitmq/amqp091-go"
@@ -22,9 +23,17 @@ func ProcessIngress(svc *Service, delivery *amqp091.Delivery) error {
 
 	var msg processing.IngressDTO
 	if err := json.Unmarshal(delivery.Body, &msg); err != nil {
-		return fmt.Errorf("unmarshalling IngressDTO message from amqp delivery: %w", err)
+		log.Printf("unmarshalling IngressDTO message from amqp delivery: %s\n", err)
+	} else {
+		if err := svc.StoreTrace(msg, queueTime); err != nil {
+			log.Printf("storing trace: %s\n", err)
+		}
 	}
-	return svc.ProcessTrace(msg, queueTime)
+	if err := svc.StoreIngress(delivery.Body, msg, queueTime); err != nil {
+		log.Printf("storing ingress: %s\n", err)
+	}
+
+	return nil
 }
 
 func ProcessMessage(svc *Service, delivery *amqp091.Delivery, errorKey string) error {
@@ -41,12 +50,12 @@ func ProcessMessage(svc *Service, delivery *amqp091.Delivery, errorKey string) e
 		if err := json.Unmarshal(delivery.Body, &msg); err != nil {
 			return fmt.Errorf("unmarshalling PipelineError message from amqp delivery: %w", err)
 		}
-		return svc.ProcessTraceError(msg.ReceivedByWorker.TracingID, queueTime, msg.Error)
+		return svc.StoreTraceError(msg.ReceivedByWorker.TracingID, queueTime, msg.Error)
 	}
 
 	var msg pipeline.Message
 	if err := json.Unmarshal(delivery.Body, &msg); err != nil {
 		return fmt.Errorf("unmarshalling PipelineMessage message from amqp delivery: %w", err)
 	}
-	return svc.ProcessTraceStep(msg, queueTime)
+	return svc.StoreTraceStep(msg, queueTime)
 }
