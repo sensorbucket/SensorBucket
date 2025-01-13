@@ -2,11 +2,11 @@ package routes
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/ory/nosurf"
@@ -114,6 +114,12 @@ func (h *PipelinePageHandler) createPipeline() http.HandlerFunc {
 		}
 
 		if resp.StatusCode != http.StatusCreated {
+			responseBody, err := io.ReadAll(resp.Body)
+			if err != nil {
+				log.Printf("in createPipeline, err reading response body: %s\n", err)
+			} else {
+				log.Printf("in createPipeline, err: %s\n", string(responseBody))
+			}
 			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
@@ -234,6 +240,12 @@ func (h *PipelinePageHandler) updatePipeline(next http.Handler) http.Handler {
 
 		_, resp, err := h.coreClient.PipelinesApi.UpdatePipeline(r.Context(), pipelineId).UpdatePipelineRequest(updateDto).Execute()
 		if err != nil {
+			responseBody, err := io.ReadAll(resp.Body)
+			if err != nil {
+				log.Printf("in createPipeline, err reading response body: %s\n", err)
+			} else {
+				log.Printf("in createPipeline, err: %s\n", string(responseBody))
+			}
 			layout.SnackbarSomethingWentWrong(w)
 			return
 		}
@@ -241,6 +253,12 @@ func (h *PipelinePageHandler) updatePipeline(next http.Handler) http.Handler {
 		// TODO: API returns status created instead of found for some reason
 		if resp.StatusCode != http.StatusCreated {
 			if resp.StatusCode == http.StatusInternalServerError {
+				responseBody, err := io.ReadAll(resp.Body)
+				if err != nil {
+					log.Printf("in createPipeline, err reading response body: %s\n", err)
+				} else {
+					log.Printf("in createPipeline, err: %s\n", string(responseBody))
+				}
 				layout.SnackbarSomethingWentWrong(w)
 			} else {
 				var apierror *web.APIError
@@ -285,52 +303,19 @@ func (h *PipelinePageHandler) validatePipelineSteps(next http.Handler) http.Hand
 			return
 		}
 
-		if len(steps) != 1 {
-			layout.SnackbarSomethingWentWrong(w)
-			return
-		}
-
-		stepMap := map[string][]string{}
-		err = json.Unmarshal([]byte(steps[0]), &stepMap)
-		if err != nil {
-			layout.WithSnackbarError(w, "Invalid steps")
+		if len(steps) == 0 {
+			layout.WithSnackbarError(w, "expected single step")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		if len(stepMap) == 0 {
-			layout.WithSnackbarError(w, "No steps provided")
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
+		steps = fixStorageStep(steps)
 
-		newOrder := make([]string, len(stepMap))
-		for key, val := range stepMap {
-			if len(val) != 1 {
-				layout.WithSnackbarError(w, "Duplicate workers are not allowed")
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-
-			ix, err := strconv.Atoi(val[0])
-			if err != nil {
-				layout.WithSnackbarError(w, fmt.Sprintf("Invalid input: %s is not a number", val[0]))
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			if ix >= len(newOrder) || ix < 0 {
-				layout.WithSnackbarError(w, fmt.Sprintf("Invalid input: %d is out of bounds", ix))
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			newOrder[ix] = key
-		}
-
-		newOrder = fixStorageStep(newOrder)
-
-		allWorkers, err := h.getWorkersForSteps(r, newOrder)
+		allWorkers, err := h.getWorkersForSteps(r, steps)
 		if err != nil {
-			layout.SnackbarSomethingWentWrong(w)
+			log.Printf("failed to get workers for step: %s\n", err.Error())
+			layout.WithSnackbarError(w, "Failed to get workers for step")
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 

@@ -1,169 +1,308 @@
 package tracing
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+	"sync"
 	"time"
 
-	"github.com/samber/lo"
+	sq "github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
+	"sensorbucket.nl/sensorbucket/internal/pagination"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/pipeline"
+	"sensorbucket.nl/sensorbucket/services/core/processing"
 )
 
-type Status int
+var pq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-const (
-	Unknown Status = iota
-	Canceled
-	Pending
-	Success
-	InProgress
-	Failed
+type Service struct {
+	db *sqlx.DB
+
+	onceInsertStep    sync.Once
+	stmtInsertStep    *sqlx.Stmt
+	onceInsertTrace   sync.Once
+	stmtInsertTrace   *sqlx.Stmt
+	onceInsertIngress sync.Once
+	stmtInsertIngress *sqlx.Stmt
+	onceSetTraceError sync.Once
+	stmtSetTraceError *sqlx.Stmt
+}
+
+func Create(db *sqlx.DB) *Service {
+	return &Service{
+		db: db,
+	}
+}
+
+func (svc *Service) insertTraceStatement() *sqlx.Stmt {
+	svc.onceInsertTrace.Do(func() {
+		var err error
+		svc.stmtInsertTrace, err = svc.db.Preparex(`
+INSERT INTO traces (
+  id, tenant_id, pipeline_id, created_at
 )
-
-func (s Status) String() string {
-	switch s {
-	case Canceled:
-		return "canceled"
-	case Pending:
-		return "pending"
-	case Success:
-		return "success"
-	case InProgress:
-		return "in progress"
-	case Failed:
-		return "failed"
-	default:
-		return "unknown"
-	}
-}
-
-type Step struct {
-	TracingID      string
-	StepIndex      uint64
-	StepsRemaining uint64
-	StartTime      time.Time
-	DeviceID       int64
-	Error          *string
-}
-
-// EnrichedStep contains extra properties derived from the data stored in the database using the Step model
-type EnrichedStep struct {
-	Step
-	HighestCollectiveStatus Status
-	Status                  Status
-	Duration                time.Duration
-}
-
-type EnrichedSteps []EnrichedStep
-
-func (es EnrichedSteps) TotalStartTime() time.Time {
-	return lo.MinBy(es, func(item, min EnrichedStep) bool {
-		// A StartTime with value 0 is considered to be not set
-		return item.StartTime.UnixMilli() > 0 && item.StartTime.UnixMilli() < min.StartTime.UnixMilli()
-	}).StartTime
-}
-
-func (es EnrichedSteps) TotalStatus() Status {
-	if len(es) == 0 {
-		return Unknown
-	}
-	return es[0].HighestCollectiveStatus
-}
-
-func (es EnrichedSteps) DeviceID() int64 {
-	return lo.MaxBy(es, func(a, b EnrichedStep) bool {
-		return a.DeviceID > b.DeviceID
-	}).DeviceID
-}
-
-func (es EnrichedSteps) Exists(stepIndex uint64) bool {
-	_, ok := lo.Find(es, func(item EnrichedStep) bool {
-		return stepIndex == item.StepIndex
+VALUES ($1, $2, $3, $4)
+`)
+		if err != nil {
+			log.Fatalf("ERROR on InsertTrace statement preparation: %s\n", err.Error())
+		}
 	})
-	return ok
+	return svc.stmtInsertTrace
 }
 
-func (es EnrichedSteps) IsLastStep(step EnrichedStep) bool {
-	return es[len(es)-1] == step
-}
-
-func (es EnrichedSteps) AllSteps() EnrichedSteps {
-	if len(es) == 0 {
-		return []EnrichedStep{}
-	}
-
-	// Enriched Steps are only models from the database, some steps do not exist yet in the database, however we do
-	// want to include them in the all steps list. Using the status from the last step we can derive the state of all remaining steps
-
-	// The last step status and steps remaining determines if any steps need to be added to the step list
-	lastStep := es[len(es)-1]
-
-	remainingStatus := Pending
-	if lastStep.Status == Failed {
-		// When the last step in the list has failed all the remaining steps are canceled
-		remainingStatus = Canceled
-	}
-
-	totalSteps := int(lastStep.StepsRemaining + lastStep.StepIndex + 1)
-	indexOffset := 0
-
-	steps := lo.Times(int(lastStep.StepIndex+1)+int(lastStep.StepsRemaining), func(index int) (enrStep EnrichedStep) {
-		if index > int(lastStep.StepIndex) {
-			// We are past the last available step in the step list
-			// add any remaining (non-existent in the database) steps and derive
-			// their states from the lastStep in the list
-			return EnrichedStep{
-				Step: Step{
-					TracingID:      lastStep.TracingID,
-					StepIndex:      uint64(index),
-					StepsRemaining: uint64(totalSteps - index - 1),
-				},
-				Status: remainingStatus,
-			}
+func (svc *Service) insertTraceIngressStatement() *sqlx.Stmt {
+	svc.onceInsertIngress.Do(func() {
+		var err error
+		svc.stmtInsertIngress, err = svc.db.Preparex(`
+INSERT INTO trace_ingress (
+  id, tenant_id, pipeline_id, archived_at, payload
+)
+VALUES ($1, $2, $3, $4, $5)
+`)
+		if err != nil {
+			log.Fatalf("ERROR on InsertIngress statement preparation: %s\n", err.Error())
 		}
-
-		if !es.Exists(uint64(index)) {
-			// There is a step missing somewhere in between the steps in the list.
-			indexOffset++
-			return EnrichedStep{
-				Step: Step{
-					TracingID:      lastStep.TracingID,
-					StepIndex:      uint64(index),
-					StepsRemaining: uint64(totalSteps - index - 1),
-				},
-
-				// if a step is missing in between the other steps, it's safe to assume the step has been succesfully executed
-				// otherwise the next steps would've been canceled.
-				Status: Success,
-			}
-		}
-
-		// if the next step doesn't exist but there is a next step in the list we have to adjust the status of this step
-		// if any steps exists after this step the status has to be succesful otherwise the next steps would've been canceled
-		step := es[index-indexOffset]
-		if step.Status == InProgress && !es.IsLastStep(step) {
-			step.Status = Success
-		}
-		return step
 	})
-
-	return steps
+	return svc.stmtInsertIngress
 }
 
-func StatusStringsToStatusCodes(statusses []string) []int64 {
-	codes := []int64{}
-	for _, s := range statusses {
-		for _, c := range allPossibleCodes {
-			if c.String() == s {
-				codes = append(codes, int64(c))
-			}
-		}
+func (svc *Service) StoreTrace(msg processing.IngressDTO, queueTime time.Time) error {
+	_, err := svc.insertTraceStatement().Exec(msg.TracingID, msg.TenantID, msg.PipelineID, queueTime)
+	if err != nil {
+		return fmt.Errorf("while inserting trace: %w", err)
 	}
-	return codes
+	return nil
 }
 
-var allPossibleCodes = []Status{
-	Unknown,
-	Canceled,
-	Pending,
-	Success,
-	InProgress,
-	Failed,
+func (svc *Service) StoreIngress(body []byte, ingress processing.IngressDTO, queueTime time.Time) error {
+	_, err := svc.insertTraceIngressStatement().Exec(
+		ingress.TracingID, ingress.TenantID, ingress.PipelineID, queueTime, body,
+	)
+	if err != nil {
+		return fmt.Errorf("while inserting trace: %w", err)
+	}
+	return nil
+}
+
+func (svc *Service) setTraceErrorStatement() *sqlx.Stmt {
+	svc.onceSetTraceError.Do(func() {
+		var err error
+		svc.stmtSetTraceError, err = svc.db.Preparex(`
+UPDATE traces SET error = $1, error_at = $2 WHERE id = $3
+`)
+		if err != nil {
+			log.Fatalf("ERROR on SetTraceError statement preparation: %s\n", err.Error())
+		}
+	})
+	return svc.stmtSetTraceError
+}
+
+func (svc *Service) StoreTraceError(tracingID string, queueTime time.Time, error string) error {
+	_, err := svc.setTraceErrorStatement().Exec(error, queueTime, tracingID)
+	if err != nil {
+		return fmt.Errorf("while setting error on trace: %w", err)
+	}
+	return nil
+}
+
+func (svc *Service) insertStepStatement() *sqlx.Stmt {
+	svc.onceInsertStep.Do(func() {
+		var err error
+		svc.stmtInsertStep, err = svc.db.Preparex(
+			`INSERT INTO trace_steps (tracing_id, worker_id, queue_time, device_id)
+        VALUES ($1, $2, $3, $4)`,
+		)
+		if err != nil {
+			log.Fatalf("ERROR on InsertTraceStep statement preparation: %s\n", err.Error())
+		}
+	})
+	return svc.stmtInsertStep
+}
+
+func (svc *Service) StoreTraceStep(msg pipeline.Message, queueTime time.Time) error {
+	deviceID := int64(0)
+	if msg.Device != nil {
+		deviceID = msg.Device.ID
+	}
+
+	workerID, err := msg.CurrentStep()
+	if err != nil {
+		return err
+	}
+
+	_, err = svc.insertStepStatement().Exec(
+		msg.TracingID, workerID, queueTime, deviceID,
+	)
+	if err != nil {
+		return fmt.Errorf("while processing pipeline step: %w", err)
+	}
+	return nil
+}
+
+type TraceFilter struct {
+	Pipeline []string
+}
+
+type Trace struct {
+	ID          uuid.UUID   `json:"id"`
+	PipelineID  uuid.UUID   `json:"pipeline_id"`
+	DeviceID    int64       `json:"device_id"`
+	StartTime   time.Time   `json:"start_time"`
+	Workers     []string    `json:"workers"`
+	WorkerTimes []time.Time `json:"worker_times"`
+	Error       *string     `json:"error"`
+	ErrorAt     *time.Time  `json:"error_at"`
+}
+
+type tracePagination struct {
+	StartTime time.Time `pagination:"trace.created_at,desc"`
+	TraceID   uuid.UUID `pagination:"trace.id,desc"`
+}
+
+func (svc *Service) Query(ctx context.Context, filters TraceFilter, r pagination.Request) (*pagination.Page[Trace], error) {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
+		return nil, err
+	}
+
+	cursor, err := pagination.GetCursor[tracePagination](r)
+	if err != nil {
+		return nil, fmt.Errorf("in query traces, getting pagination cursor: %w", err)
+	}
+
+	tracesQ := pq.Select(
+		"trace.id", "trace.pipeline_id", "trace.created_at", "trace.error", "trace.error_at",
+		"steps.device_id", "steps.workers", "steps.worker_times",
+	).From("traces trace").OrderBy("trace.created_at DESC")
+
+	if filters.Pipeline != nil {
+		tracesQ = tracesQ.Where(sq.Eq{"trace.pipeline_id": filters.Pipeline})
+		fmt.Printf("filters.PipelineID: %v\n", filters.Pipeline)
+	}
+
+	stepAggregationQ := pq.Select(
+		"step.tracing_id",
+		"array_agg(step.worker_id ORDER BY step.queue_time ASC) as workers",
+		"array_agg(step.queue_time ORDER BY step.queue_time ASC) as worker_times",
+		"max(step.device_id) as device_id",
+	).From("trace_steps step").Where("trace.id = step.tracing_id").GroupBy("step.tracing_id")
+
+	tracesQ = tracesQ.JoinClause(
+		stepAggregationQ.Prefix("INNER JOIN LATERAL (").Suffix(") AS steps ON trace.id = steps.tracing_id"))
+
+	tracesQ, err = pagination.Apply(tracesQ, cursor)
+	if err != nil {
+		return nil, err
+	}
+	tracesQ = auth.ProtectedQuery(ctx, tracesQ)
+
+	query, params, err := tracesQ.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	traces := make([]Trace, 0, r.Limit)
+
+	c, err := svc.db.Conn(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("in GetTenantMember, could not get raw db conn: %w", err)
+	}
+	defer c.Close()
+	err = c.Raw(func(driverConn any) error {
+		stdlibConn, ok := driverConn.(*stdlib.Conn)
+		if !ok {
+			return errors.New("in GetHashedAPIKeyByNameAndTenantID, expected driverConnection to be of type stdlib.Conn")
+		}
+		conn := stdlibConn.Conn()
+		rows, err := conn.Query(ctx, query, params...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var trace Trace
+			if err := rows.Scan(
+				&trace.ID, &trace.PipelineID, &trace.StartTime, &trace.Error, &trace.ErrorAt,
+				&trace.DeviceID, &trace.Workers, &trace.WorkerTimes,
+				&cursor.Columns.StartTime, &cursor.Columns.TraceID,
+			); err != nil {
+				return fmt.Errorf("in query traces while scanning row: %w", err)
+			}
+			traces = append(traces, trace)
+		}
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("in query traces after rowscan: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	page := pagination.CreatePageT(traces, cursor)
+
+	return &page, nil
+}
+
+func (svc *Service) PeriodicCleanup() error {
+	tx, err := svc.db.Beginx()
+	if err != nil {
+		return fmt.Errorf("")
+	}
+	n, err := tx.Exec(`DELETE FROM traces WHERE created_at < (NOW() - $1::INTERVAL)`, "1 day")
+	if err != nil {
+		var rollbackErr error
+		if rbErr := tx.Rollback(); rbErr != nil {
+			rollbackErr = fmt.Errorf("while rolling back transaction: %w", rbErr)
+		}
+		err = errors.Join(err, rollbackErr)
+		return fmt.Errorf("failed to delete traces: %w", err)
+	} else {
+		n, _ := n.RowsAffected()
+		log.Printf("Cleaned %d traces\n", n)
+	}
+
+	n, err = tx.Exec(`DELETE FROM trace_steps WHERE queue_time < (NOW() - $1::INTERVAL)`, "1 day")
+	if err != nil {
+		var rollbackErr error
+		if rbErr := tx.Rollback(); rbErr != nil {
+			rollbackErr = fmt.Errorf("while rolling back transaction: %w", rbErr)
+		}
+		err = errors.Join(err, rollbackErr)
+		return fmt.Errorf("failed to delete trace steps: %w", err)
+	} else {
+		n, _ := n.RowsAffected()
+		log.Printf("Cleaned %d trace steps\n", n)
+	}
+
+	n, err = tx.Exec(`DELETE FROM trace_ingress WHERE archived_at < (NOW() - $1::INTERVAL)`, "1 day")
+	if err != nil {
+		var rollbackErr error
+		if rbErr := tx.Rollback(); rbErr != nil {
+			rollbackErr = fmt.Errorf("while rolling back transaction: %w", rbErr)
+		}
+		err = errors.Join(err, rollbackErr)
+		return fmt.Errorf("failed to delete trace ingress: %w", err)
+	} else {
+		n, _ := n.RowsAffected()
+		log.Printf("Cleaned %d trace ingresses\n", n)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("in periodic cleanup while committing transaction: %w", err)
+	}
+
+	_, err = svc.db.Exec("VACUUM traces, trace_steps, trace_ingress;")
+	if err != nil {
+		return fmt.Errorf("failed to vacuum tables: %w", err)
+	} else {
+		log.Println("Vacuumed tables")
+	}
+
+	return nil
 }

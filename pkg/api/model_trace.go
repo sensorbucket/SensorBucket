@@ -18,27 +18,29 @@ import (
 
 // Trace struct for Trace
 type Trace struct {
-	TracingId string `json:"tracing_id"`
+	Id string `json:"id"`
+	PipelineId string `json:"pipeline_id"`
 	// id is 0 if not defined
 	DeviceId int64 `json:"device_id"`
 	StartTime time.Time `json:"start_time"`
-	Status int32 `json:"status"`
-	StatusString string `json:"status_string"`
-	Steps []TraceStep `json:"steps"`
+	Workers []string `json:"workers"`
+	WorkerTimes []time.Time `json:"worker_times"`
+	Error *string `json:"error,omitempty"`
+	ErrorAt *time.Time `json:"error_at,omitempty"`
 }
 
 // NewTrace instantiates a new Trace object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewTrace(tracingId string, deviceId int64, startTime time.Time, status int32, statusString string, steps []TraceStep) *Trace {
+func NewTrace(id string, pipelineId string, deviceId int64, startTime time.Time, workers []string, workerTimes []time.Time) *Trace {
 	this := Trace{}
-	this.TracingId = tracingId
+	this.Id = id
+	this.PipelineId = pipelineId
 	this.DeviceId = deviceId
 	this.StartTime = startTime
-	this.Status = status
-	this.StatusString = statusString
-	this.Steps = steps
+	this.Workers = workers
+	this.WorkerTimes = workerTimes
 	return &this
 }
 
@@ -50,28 +52,52 @@ func NewTraceWithDefaults() *Trace {
 	return &this
 }
 
-// GetTracingId returns the TracingId field value
-func (o *Trace) GetTracingId() string {
+// GetId returns the Id field value
+func (o *Trace) GetId() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.TracingId
+	return o.Id
 }
 
-// GetTracingIdOk returns a tuple with the TracingId field value
+// GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
-func (o *Trace) GetTracingIdOk() (*string, bool) {
+func (o *Trace) GetIdOk() (*string, bool) {
 	if o == nil {
     return nil, false
 	}
-	return &o.TracingId, true
+	return &o.Id, true
 }
 
-// SetTracingId sets field value
-func (o *Trace) SetTracingId(v string) {
-	o.TracingId = v
+// SetId sets field value
+func (o *Trace) SetId(v string) {
+	o.Id = v
+}
+
+// GetPipelineId returns the PipelineId field value
+func (o *Trace) GetPipelineId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.PipelineId
+}
+
+// GetPipelineIdOk returns a tuple with the PipelineId field value
+// and a boolean to check if the value has been set.
+func (o *Trace) GetPipelineIdOk() (*string, bool) {
+	if o == nil {
+    return nil, false
+	}
+	return &o.PipelineId, true
+}
+
+// SetPipelineId sets field value
+func (o *Trace) SetPipelineId(v string) {
+	o.PipelineId = v
 }
 
 // GetDeviceId returns the DeviceId field value
@@ -122,82 +148,125 @@ func (o *Trace) SetStartTime(v time.Time) {
 	o.StartTime = v
 }
 
-// GetStatus returns the Status field value
-func (o *Trace) GetStatus() int32 {
+// GetWorkers returns the Workers field value
+func (o *Trace) GetWorkers() []string {
 	if o == nil {
-		var ret int32
+		var ret []string
 		return ret
 	}
 
-	return o.Status
+	return o.Workers
 }
 
-// GetStatusOk returns a tuple with the Status field value
+// GetWorkersOk returns a tuple with the Workers field value
 // and a boolean to check if the value has been set.
-func (o *Trace) GetStatusOk() (*int32, bool) {
+func (o *Trace) GetWorkersOk() ([]string, bool) {
 	if o == nil {
     return nil, false
 	}
-	return &o.Status, true
+	return o.Workers, true
 }
 
-// SetStatus sets field value
-func (o *Trace) SetStatus(v int32) {
-	o.Status = v
+// SetWorkers sets field value
+func (o *Trace) SetWorkers(v []string) {
+	o.Workers = v
 }
 
-// GetStatusString returns the StatusString field value
-func (o *Trace) GetStatusString() string {
+// GetWorkerTimes returns the WorkerTimes field value
+func (o *Trace) GetWorkerTimes() []time.Time {
 	if o == nil {
+		var ret []time.Time
+		return ret
+	}
+
+	return o.WorkerTimes
+}
+
+// GetWorkerTimesOk returns a tuple with the WorkerTimes field value
+// and a boolean to check if the value has been set.
+func (o *Trace) GetWorkerTimesOk() ([]time.Time, bool) {
+	if o == nil {
+    return nil, false
+	}
+	return o.WorkerTimes, true
+}
+
+// SetWorkerTimes sets field value
+func (o *Trace) SetWorkerTimes(v []time.Time) {
+	o.WorkerTimes = v
+}
+
+// GetError returns the Error field value if set, zero value otherwise.
+func (o *Trace) GetError() string {
+	if o == nil || isNil(o.Error) {
 		var ret string
 		return ret
 	}
-
-	return o.StatusString
+	return *o.Error
 }
 
-// GetStatusStringOk returns a tuple with the StatusString field value
+// GetErrorOk returns a tuple with the Error field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Trace) GetStatusStringOk() (*string, bool) {
-	if o == nil {
+func (o *Trace) GetErrorOk() (*string, bool) {
+	if o == nil || isNil(o.Error) {
     return nil, false
 	}
-	return &o.StatusString, true
+	return o.Error, true
 }
 
-// SetStatusString sets field value
-func (o *Trace) SetStatusString(v string) {
-	o.StatusString = v
+// HasError returns a boolean if a field has been set.
+func (o *Trace) HasError() bool {
+	if o != nil && !isNil(o.Error) {
+		return true
+	}
+
+	return false
 }
 
-// GetSteps returns the Steps field value
-func (o *Trace) GetSteps() []TraceStep {
-	if o == nil {
-		var ret []TraceStep
+// SetError gets a reference to the given string and assigns it to the Error field.
+func (o *Trace) SetError(v string) {
+	o.Error = &v
+}
+
+// GetErrorAt returns the ErrorAt field value if set, zero value otherwise.
+func (o *Trace) GetErrorAt() time.Time {
+	if o == nil || isNil(o.ErrorAt) {
+		var ret time.Time
 		return ret
 	}
-
-	return o.Steps
+	return *o.ErrorAt
 }
 
-// GetStepsOk returns a tuple with the Steps field value
+// GetErrorAtOk returns a tuple with the ErrorAt field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Trace) GetStepsOk() ([]TraceStep, bool) {
-	if o == nil {
+func (o *Trace) GetErrorAtOk() (*time.Time, bool) {
+	if o == nil || isNil(o.ErrorAt) {
     return nil, false
 	}
-	return o.Steps, true
+	return o.ErrorAt, true
 }
 
-// SetSteps sets field value
-func (o *Trace) SetSteps(v []TraceStep) {
-	o.Steps = v
+// HasErrorAt returns a boolean if a field has been set.
+func (o *Trace) HasErrorAt() bool {
+	if o != nil && !isNil(o.ErrorAt) {
+		return true
+	}
+
+	return false
+}
+
+// SetErrorAt gets a reference to the given time.Time and assigns it to the ErrorAt field.
+func (o *Trace) SetErrorAt(v time.Time) {
+	o.ErrorAt = &v
 }
 
 func (o Trace) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
 	if true {
-		toSerialize["tracing_id"] = o.TracingId
+		toSerialize["id"] = o.Id
+	}
+	if true {
+		toSerialize["pipeline_id"] = o.PipelineId
 	}
 	if true {
 		toSerialize["device_id"] = o.DeviceId
@@ -206,13 +275,16 @@ func (o Trace) MarshalJSON() ([]byte, error) {
 		toSerialize["start_time"] = o.StartTime
 	}
 	if true {
-		toSerialize["status"] = o.Status
+		toSerialize["workers"] = o.Workers
 	}
 	if true {
-		toSerialize["status_string"] = o.StatusString
+		toSerialize["worker_times"] = o.WorkerTimes
 	}
-	if true {
-		toSerialize["steps"] = o.Steps
+	if !isNil(o.Error) {
+		toSerialize["error"] = o.Error
+	}
+	if !isNil(o.ErrorAt) {
+		toSerialize["error_at"] = o.ErrorAt
 	}
 	return json.Marshal(toSerialize)
 }

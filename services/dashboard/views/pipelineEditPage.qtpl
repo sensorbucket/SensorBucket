@@ -84,6 +84,16 @@
             </div>
         </div>
     </template>
+    <div 
+        class="bg-white border rounded-md lg:col-span-3 xl:col-span-3"
+    >
+        <header class="flex border-b py-2 px-4 text-sm text-slate-700">
+          <span class="flex-1">Incoming data and processing statusses</span>
+          <button hx-get="{%s U("/traces/list?pipeline=%s&limit=%d", p.Pipeline.Id, 10) %}" hx-trigger="load, click" hx-target="next div">Refresh</button>
+        </header>
+        <div>
+        </div>
+    </div>
 </div>
 {% endfunc %}
 
@@ -107,7 +117,6 @@
                         },
                         onEnd: function(evt) {
                             ghostStyles.forEach((item) => evt.item.classList.remove(item));
-
                             reorderSortables();
                         }
                     });
@@ -165,13 +174,10 @@
 
             // Create a FormData object from the form
             const formData = new FormData(form);
-            let data = {}
+            let data = []
             for (var [key, value] of formData.entries()) { 
                 if (key == "csrf_token") continue;
-                if(!data[key]) {
-                    data[key] = [];
-                }
-                data[key].push(value);
+                data.push(key)
             }
 
             return data;

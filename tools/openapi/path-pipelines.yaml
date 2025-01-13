@@ -10,6 +10,17 @@ get:
     When multiple steps are given, pipelines containing one of the given steps will be returned.
   tags: ["Pipelines"]
   parameters:
+    - in: query
+      name: id
+      description: Filter on pipeline ID(s)
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+          example: "a59d28c8-2a0f-4e89-9f49-6942f1c04342"
     - name: inactive
       description: Only show inactive pipelines
       in: query

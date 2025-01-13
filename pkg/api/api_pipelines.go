@@ -374,10 +374,17 @@ func (a *PipelinesApiService) GetPipelineExecute(r ApiGetPipelineRequest) (*GetP
 type ApiListPipelinesRequest struct {
 	ctx context.Context
 	ApiService *PipelinesApiService
+	id *[]string
 	inactive *bool
 	step *[]string
 	cursor *string
 	limit *int32
+}
+
+// Filter on pipeline ID(s)
+func (r ApiListPipelinesRequest) Id(id []string) ApiListPipelinesRequest {
+	r.id = &id
+	return r
 }
 
 // Only show inactive pipelines
@@ -449,6 +456,17 @@ func (a *PipelinesApiService) ListPipelinesExecute(r ApiListPipelinesRequest) (*
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.id != nil {
+		t := *r.id
+		if reflect.TypeOf(t).Kind() == reflect.Slice {
+			s := reflect.ValueOf(t)
+			for i := 0; i < s.Len(); i++ {
+				localVarQueryParams.Add("id", parameterToString(s.Index(i), "multi"))
+			}
+		} else {
+			localVarQueryParams.Add("id", parameterToString(t, "multi"))
+		}
+	}
 	if r.inactive != nil {
 		localVarQueryParams.Add("inactive", parameterToString(*r.inactive, ""))
 	}

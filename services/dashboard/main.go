@@ -93,7 +93,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	router.Mount("/overview", routes.CreateOverviewPageHandler(
 		createAPIClient(EP_CORE),
 	))
-	router.Mount("/ingress", routes.CreateIngressPageHandler(
+	router.Mount("/traces", routes.CreateTracesPageHandler(
 		createAPIClient(EP_CORE),
 		createAPIClient(EP_TRACING),
 		createAPIClient(EP_WORKERS),

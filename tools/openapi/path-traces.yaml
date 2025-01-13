@@ -1,9 +1,9 @@
 get:
   x-is-paginated: true
-  operationId: ListIngresses
-  summary: List ingresses
+  operationId: ListTraces
+  summary: List traces
   description: |
-    Lists ingresses that match the provided filter.
+    Lists traces that match the provided filter.
   tags: [Tracing]
   parameters:
     - in: query
@@ -17,9 +17,24 @@ get:
         The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
       schema:
         type: integer
+    - in: query
+      name: pipeline
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+          example: "a59d28c8-2a0f-4e89-9f49-6942f1c04342"
+    - in: query
+      name: device_id
+      schema:
+        type: integer
+        format: int64
+        example: 5
+
   responses:
     "200":
-      description: Fetched ingresses
+      description: Fetched traces
       content:
         application/json:
           schema:
@@ -30,7 +45,7 @@ get:
                   data:
                     type: array
                     items:
-                      $ref: "schemas.yaml#/archivedIngress"
+                      $ref: "schemas.yaml#/trace"
     "400":
       $ref: "./responses.yaml#/400"
     "401":

@@ -17,7 +17,6 @@ model_add_tenant_member_request.go
 model_api_error.go
 model_api_key.go
 model_api_key_created.go
-model_archived_ingress.go
 model_create_api_key_request.go
 model_create_device_201_response.go
 model_create_device_request.go
@@ -44,7 +43,6 @@ model_get_sensor_200_response.go
 model_get_sensor_group_200_response.go
 model_get_worker_200_response.go
 model_get_worker_user_code_200_response.go
-model_ingress_dto.go
 model_list_api_keys_200_response.go
 model_list_api_keys_200_response_all_of.go
 model_list_datastreams_200_response.go
@@ -53,8 +51,6 @@ model_list_device_sensors_200_response.go
 model_list_device_sensors_200_response_all_of.go
 model_list_devices_200_response.go
 model_list_devices_200_response_all_of.go
-model_list_ingresses_200_response.go
-model_list_ingresses_200_response_all_of.go
 model_list_pipelines_200_response.go
 model_list_pipelines_200_response_all_of.go
 model_list_sensor_groups_200_response.go
@@ -77,7 +73,6 @@ model_sensor.go
 model_sensor_group.go
 model_tenant.go
 model_trace.go
-model_trace_step.go
 model_update_device_200_response.go
 model_update_device_request.go
 model_update_pipeline_200_response.go

@@ -23,7 +23,7 @@
             reverse_proxy httpimporter:3000
         }
         reverse_proxy /ingresses* tracing:3000
-        reverse_proxy /tracing* tracing:3000
+        reverse_proxy /traces* tracing:3000
         reverse_proxy /tenants* tenants:3000
         reverse_proxy /api-keys* tenants:3000
         reverse_proxy /workers* userworkers:3000
