@@ -23,16 +23,14 @@ var pq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 type Service struct {
 	db *sqlx.DB
 
-	onceInsertStep      sync.Once
-	stmtInsertStep      *sqlx.Stmt
-	onceInsertTrace     sync.Once
-	stmtInsertTrace     *sqlx.Stmt
-	onceInsertIngress   sync.Once
-	stmtInsertIngress   *sqlx.Stmt
-	onceSetTraceError   sync.Once
-	stmtSetTraceError   *sqlx.Stmt
-	oncePeriodicCleanup sync.Once
-	stmtPeriodicCleanup *sqlx.Stmt
+	onceInsertStep    sync.Once
+	stmtInsertStep    *sqlx.Stmt
+	onceInsertTrace   sync.Once
+	stmtInsertTrace   *sqlx.Stmt
+	onceInsertIngress sync.Once
+	stmtInsertIngress *sqlx.Stmt
+	onceSetTraceError sync.Once
+	stmtSetTraceError *sqlx.Stmt
 }
 
 func Create(db *sqlx.DB) *Service {
@@ -296,7 +294,7 @@ func (svc *Service) PeriodicCleanup() error {
 
 	err = tx.Commit()
 	if err != nil {
-		return fmt.Errorf("in periodic cleanu while committing transaction: %w", err)
+		return fmt.Errorf("in periodic cleanup while committing transaction: %w", err)
 	}
 
 	_, err = svc.db.Exec("VACUUM traces, trace_steps, trace_ingress;")
