@@ -208,17 +208,17 @@ func (ctrl *KubernetesController) workerToFunction(worker UserWorker) Function {
 				ResourceVersion: strconv.Itoa(int(worker.Revision)),
 			},
 			Spec: fissionV1.FunctionSpec{
-				Concurrency:     500,
-				RequestsPerPod:  5,
-				FunctionTimeout: 120,
-				IdleTimeout:     lo.ToPtr(900),
+				Concurrency:     env.CouldInt("K8S_FUNC_CONCURRENCY", 10),
+				RequestsPerPod:  env.CouldInt("K8S_FUNC_REQUESTS_PER_POD", 5),
+				FunctionTimeout: env.CouldInt("K8S_FUNC_TIMEOUT", 120),
+				IdleTimeout:     lo.ToPtr(env.CouldInt("K8S_FUNC_IDLE_TIMEOUT", 900)),
 				InvokeStrategy: fissionV1.InvokeStrategy{
 					StrategyType: "execution",
 					ExecutionStrategy: fissionV1.ExecutionStrategy{
 						ExecutorType:          fissionV1.ExecutorTypePoolmgr,
-						MinScale:              1,
-						MaxScale:              100,
-						SpecializationTimeout: 120,
+						MinScale:              env.CouldInt("K8S_FUNC_MIN_SCALE", 1),
+						MaxScale:              env.CouldInt("K8S_FUNC_MAX_SCALE", 100),
+						SpecializationTimeout: env.CouldInt("K8S_FUNC_SPEC_TIMEOUT", 120),
 					},
 				},
 				Environment: fissionV1.EnvironmentReference{
