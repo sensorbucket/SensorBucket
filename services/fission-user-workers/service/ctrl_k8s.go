@@ -208,17 +208,17 @@ func (ctrl *KubernetesController) workerToFunction(worker UserWorker) Function {
 				ResourceVersion: strconv.Itoa(int(worker.Revision)),
 			},
 			Spec: fissionV1.FunctionSpec{
-				Concurrency:     env.CouldInt("K8S_FUNC_CONCURRENCY", 10),
-				RequestsPerPod:  env.CouldInt("K8S_FUNC_REQUESTS_PER_POD", 5),
-				FunctionTimeout: env.CouldInt("K8S_FUNC_TIMEOUT", 120),
-				IdleTimeout:     lo.ToPtr(env.CouldInt("K8S_FUNC_IDLE_TIMEOUT", 900)),
+				Concurrency:     env.CouldInt("CTRL_K8S_FUNC_CONCURRENCY", 10),
+				RequestsPerPod:  env.CouldInt("CTRL_K8S_FUNC_REQUESTS_PER_POD", 5),
+				FunctionTimeout: env.CouldInt("CTRL_K8S_FUNC_TIMEOUT", 120),
+				IdleTimeout:     lo.ToPtr(env.CouldInt("CTRL_K8S_FUNC_IDLE_TIMEOUT", 900)),
 				InvokeStrategy: fissionV1.InvokeStrategy{
 					StrategyType: "execution",
 					ExecutionStrategy: fissionV1.ExecutionStrategy{
 						ExecutorType:          fissionV1.ExecutorTypePoolmgr,
-						MinScale:              env.CouldInt("K8S_FUNC_MIN_SCALE", 1),
-						MaxScale:              env.CouldInt("K8S_FUNC_MAX_SCALE", 100),
-						SpecializationTimeout: env.CouldInt("K8S_FUNC_SPEC_TIMEOUT", 120),
+						MinScale:              env.CouldInt("CTRL_K8S_FUNC_MIN_SCALE", 1),
+						MaxScale:              env.CouldInt("CTRL_K8S_FUNC_MAX_SCALE", 100),
+						SpecializationTimeout: env.CouldInt("CTRL_K8S_FUNC_SPEC_TIMEOUT", 120),
 					},
 				},
 				Environment: fissionV1.EnvironmentReference{
@@ -290,9 +290,9 @@ func (ctrl *KubernetesController) workerToMessageQueueTrigger(worker UserWorker)
 				},
 				MessageQueueType: "rabbitmq",
 				Topic:            worker.ID.String(),
-				MaxRetries:       3,
-				MinReplicaCount:  lo.ToPtr(int32(0)),
-				MaxReplicaCount:  lo.ToPtr(int32(10)),
+				MaxRetries:       env.CouldInt("CTRL_K8S_MQT_MAX_RETRIES", 3),
+				MinReplicaCount:  lo.ToPtr(int32(env.CouldInt("CTRL_K8S_MQT_MIN_SCALE", 1))),
+				MaxReplicaCount:  lo.ToPtr(int32(env.CouldInt("CTRL_K8S_MQT_MAX_SCALE", 3))),
 				MqtKind:          "keda",
 				Secret:           ctrl.mqtSecret,
 				Metadata: map[string]string{
