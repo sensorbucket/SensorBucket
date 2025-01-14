@@ -445,7 +445,7 @@ func (ctrl *KubernetesController) calculateFunctionChanges(ctx context.Context, 
 		current, exists := currentMap[desired.ID]
 		if !exists {
 			work.CreateFunction(desired.Resource)
-		} else if IsFunctionOutdated(current, desired) {
+		} else if diff := CompareFunctions(current, desired); diff.HasChanged {
 			updated := updateFunction(current, desired)
 			work.UpdateFunction(updated.Resource)
 		}
@@ -461,7 +461,7 @@ func (ctrl *KubernetesController) calculatePackageChanges(ctx context.Context, w
 		current, exists := currentMap[desired.ID]
 		if !exists {
 			work.CreatePackage(desired.Resource)
-		} else if IsPackageOutdated(current, desired) {
+		} else if diff := ComparePackages(current, desired); diff.HasChanged {
 			updated := updatePackage(current, desired)
 			work.UpdatePackage(updated.Resource)
 		}
@@ -477,7 +477,7 @@ func (ctrl *KubernetesController) calculateMessageQueueTriggerChanges(ctx contex
 		current, exists := currentMap[desired.ID]
 		if !exists {
 			work.CreateMessageQueueTrigger(desired.Resource)
-		} else if IsMessageQueueTriggerOutdated(current, desired) {
+		} else if diff := CompareMessageQueueTriggers(current, desired); diff.HasChanged {
 			updated := updateMessageQueueTrigger(current, desired)
 			work.UpdateMessageQueueTrigger(updated.Resource)
 		}
