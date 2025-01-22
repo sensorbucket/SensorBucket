@@ -1,7 +1,6 @@
 package tracing
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -35,7 +34,6 @@ func (t *HTTPTransport) httpGetTraces() http.HandlerFunc {
 			web.HTTPError(w, err)
 			return
 		}
-		fmt.Printf("params: %v\n", params)
 
 		page, err := t.service.Query(r.Context(), params.TraceFilter, params.Request)
 		if err != nil {

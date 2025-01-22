@@ -54,6 +54,30 @@
         }
     }
 
+    handle_path /dev/pprof/* {
+        handle_path /httpimporter* {
+            reverse_proxy httpimporter:3100
+        }
+        handle_path /tracing* {
+            reverse_proxy tracing:3100
+        }
+        handle_path /mqttingress* {
+            reverse_proxy mqttingress:3100
+        }
+        handle_path /core* {
+            reverse_proxy core:3100
+        }
+        handle_path /userworkers* {
+            reverse_proxy userworkers:3100
+        }
+        handle_path /dashboard* {
+            reverse_proxy dashboard:3100
+        }
+        handle_path /tenants* {
+            reverse_proxy tenants:3100
+        }
+    }
+
     handle_path /dev/metrics/* {
         handle_path /mqttingress* {
             reverse_proxy mqttingress:2112

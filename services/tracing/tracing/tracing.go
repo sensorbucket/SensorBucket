@@ -2,16 +2,18 @@ package tracing
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
+	"slices"
 	"sync"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+	"github.com/samber/lo"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
@@ -149,14 +151,25 @@ type TraceFilter struct {
 }
 
 type Trace struct {
-	ID          uuid.UUID   `json:"id"`
-	PipelineID  uuid.UUID   `json:"pipeline_id"`
+	ID          string      `json:"id"`
+	PipelineID  string      `json:"pipeline_id"`
 	DeviceID    int64       `json:"device_id"`
 	StartTime   time.Time   `json:"start_time"`
 	Workers     []string    `json:"workers"`
 	WorkerTimes []time.Time `json:"worker_times"`
 	Error       *string     `json:"error"`
 	ErrorAt     *time.Time  `json:"error_at"`
+}
+
+type traceModel struct {
+	ID         string
+	CreatedAt  time.Time
+	PipelineID string
+	Error      sql.NullString
+	ErrorAt    sql.NullTime
+	WorkerID   sql.NullString
+	QueueTime  sql.NullTime
+	DeviceID   sql.NullInt64
 }
 
 type tracePagination struct {
@@ -174,31 +187,26 @@ func (svc *Service) Query(ctx context.Context, filters TraceFilter, r pagination
 		return nil, fmt.Errorf("in query traces, getting pagination cursor: %w", err)
 	}
 
-	tracesQ := pq.Select(
-		"trace.id", "trace.pipeline_id", "trace.created_at", "trace.error", "trace.error_at",
-		"steps.device_id", "steps.workers", "steps.worker_times",
+	// Base query for traces that exist
+	relevantTracesQ := pq.Select(
+		"trace.id", "trace.created_at", "trace.pipeline_id", "trace.error", "trace.error_at",
 	).From("traces trace").OrderBy("trace.created_at DESC")
-
+	// Add specific pipeline filter
 	if filters.Pipeline != nil {
-		tracesQ = tracesQ.Where(sq.Eq{"trace.pipeline_id": filters.Pipeline})
-		fmt.Printf("filters.PipelineID: %v\n", filters.Pipeline)
+		relevantTracesQ = relevantTracesQ.Where(sq.Eq{"trace.pipeline_id": filters.Pipeline})
 	}
-
-	stepAggregationQ := pq.Select(
-		"step.tracing_id",
-		"array_agg(step.worker_id ORDER BY step.queue_time ASC) as workers",
-		"array_agg(step.queue_time ORDER BY step.queue_time ASC) as worker_times",
-		"max(step.device_id) as device_id",
-	).From("trace_steps step").Where("trace.id = step.tracing_id").GroupBy("step.tracing_id")
-
-	tracesQ = tracesQ.JoinClause(
-		stepAggregationQ.Prefix("INNER JOIN LATERAL (").Suffix(") AS steps ON trace.id = steps.tracing_id"))
-
-	tracesQ, err = pagination.Apply(tracesQ, cursor)
+	// Apply pagination
+	relevantTracesQ, err = pagination.Apply(relevantTracesQ, cursor)
 	if err != nil {
 		return nil, err
 	}
-	tracesQ = auth.ProtectedQuery(ctx, tracesQ)
+	// Add tenant authorization
+	relevantTracesQ = auth.ProtectedQuery(ctx, relevantTracesQ)
+
+	// CTE that to trace_steps
+	tracesQ := pq.Select(
+		"trace.id", "trace.created_at", "trace.pipeline_id", "trace.error", "trace.error_at", "step.worker_id", "step.queue_time", "step.device_id",
+	).FromSelect(relevantTracesQ, "trace").LeftJoin("trace_steps step ON step.tracing_id = trace.id").OrderBy("step.tracing_id, step.queue_time ASC")
 
 	query, params, err := tracesQ.ToSql()
 	if err != nil {
@@ -207,41 +215,56 @@ func (svc *Service) Query(ctx context.Context, filters TraceFilter, r pagination
 
 	traces := make([]Trace, 0, r.Limit)
 
-	c, err := svc.db.Conn(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("in GetTenantMember, could not get raw db conn: %w", err)
-	}
-	defer c.Close()
-	err = c.Raw(func(driverConn any) error {
-		stdlibConn, ok := driverConn.(*stdlib.Conn)
-		if !ok {
-			return errors.New("in GetHashedAPIKeyByNameAndTenantID, expected driverConnection to be of type stdlib.Conn")
-		}
-		conn := stdlibConn.Conn()
-		rows, err := conn.Query(ctx, query, params...)
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-		for rows.Next() {
-			var trace Trace
-			if err := rows.Scan(
-				&trace.ID, &trace.PipelineID, &trace.StartTime, &trace.Error, &trace.ErrorAt,
-				&trace.DeviceID, &trace.Workers, &trace.WorkerTimes,
-				&cursor.Columns.StartTime, &cursor.Columns.TraceID,
-			); err != nil {
-				return fmt.Errorf("in query traces while scanning row: %w", err)
-			}
-			traces = append(traces, trace)
-		}
-		if err := rows.Err(); err != nil {
-			return fmt.Errorf("in query traces after rowscan: %w", err)
-		}
-		return nil
-	})
+	rows, err := svc.db.Query(query, params...)
 	if err != nil {
 		return nil, err
 	}
+
+	first := true
+	var trace Trace
+	var model traceModel
+	for rows.Next() {
+		if err := rows.Scan(
+			&model.ID, &model.CreatedAt, &model.PipelineID, &model.Error, &model.ErrorAt, &model.WorkerID, &model.QueueTime, &model.DeviceID,
+		); err != nil {
+			return nil, err
+		}
+
+		if trace.ID != model.ID {
+			if !first {
+				traces = append(traces, trace)
+			}
+			first = false
+
+			trace.ID = model.ID
+			trace.StartTime = model.CreatedAt
+			trace.PipelineID = model.PipelineID
+			trace.DeviceID = model.DeviceID.Int64 // even if it is invalid, it will return 0 as default
+			trace.Workers = make([]string, 0)
+			trace.WorkerTimes = make([]time.Time, 0)
+			trace.Error = nil
+			trace.ErrorAt = nil
+
+			if model.Error.Valid {
+				trace.Error = lo.ToPtr(model.Error.String)
+			}
+			if model.ErrorAt.Valid {
+				trace.ErrorAt = lo.ToPtr(model.ErrorAt.Time)
+			}
+		}
+
+		if model.DeviceID.Valid && model.DeviceID.Int64 > trace.DeviceID {
+			trace.DeviceID = model.DeviceID.Int64
+		}
+		if model.WorkerID.Valid && model.QueueTime.Valid {
+			trace.Workers = append(trace.Workers, model.WorkerID.String)
+			trace.WorkerTimes = append(trace.WorkerTimes, model.QueueTime.Time)
+		}
+	}
+
+	slices.SortFunc(traces, func(a, b Trace) int {
+		return b.StartTime.Compare(a.StartTime)
+	})
 
 	page := pagination.CreatePageT(traces, cursor)
 
