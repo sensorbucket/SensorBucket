@@ -219,6 +219,7 @@ func (svc *Service) Query(ctx context.Context, filters TraceFilter, r pagination
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	first := true
 	var trace Trace
