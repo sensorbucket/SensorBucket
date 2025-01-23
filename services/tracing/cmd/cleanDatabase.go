@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/urfave/cli/v2"
 	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
@@ -14,7 +15,7 @@ func cmdCleanDatabase(cmd *cli.Context) error {
 	}
 
 	svc := tracing.Create(db)
-	if err := svc.PeriodicCleanup(); err != nil {
+	if err := svc.PeriodicCleanup(time.Duration(cmd.Float64("days")) * time.Hour * 24); err != nil {
 		return fmt.Errorf("could not perform database cleanup: %w", err)
 	}
 

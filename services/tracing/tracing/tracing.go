@@ -272,12 +272,12 @@ func (svc *Service) Query(ctx context.Context, filters TraceFilter, r pagination
 	return &page, nil
 }
 
-func (svc *Service) PeriodicCleanup() error {
+func (svc *Service) PeriodicCleanup(duration time.Duration) error {
 	tx, err := svc.db.Beginx()
 	if err != nil {
 		return fmt.Errorf("")
 	}
-	n, err := tx.Exec(`DELETE FROM traces WHERE created_at < (NOW() - $1::INTERVAL)`, "1 day")
+	n, err := tx.Exec(`DELETE FROM traces WHERE created_at < (NOW() - $1::INTERVAL)`, duration)
 	if err != nil {
 		var rollbackErr error
 		if rbErr := tx.Rollback(); rbErr != nil {
@@ -290,7 +290,7 @@ func (svc *Service) PeriodicCleanup() error {
 		log.Printf("Cleaned %d traces\n", n)
 	}
 
-	n, err = tx.Exec(`DELETE FROM trace_steps WHERE queue_time < (NOW() - $1::INTERVAL)`, "1 day")
+	n, err = tx.Exec(`DELETE FROM trace_steps WHERE queue_time < (NOW() - $1::INTERVAL)`, duration)
 	if err != nil {
 		var rollbackErr error
 		if rbErr := tx.Rollback(); rbErr != nil {
@@ -303,7 +303,7 @@ func (svc *Service) PeriodicCleanup() error {
 		log.Printf("Cleaned %d trace steps\n", n)
 	}
 
-	n, err = tx.Exec(`DELETE FROM trace_ingress WHERE archived_at < (NOW() - $1::INTERVAL)`, "1 day")
+	n, err = tx.Exec(`DELETE FROM trace_ingress WHERE archived_at < (NOW() - $1::INTERVAL)`, duration)
 	if err != nil {
 		var rollbackErr error
 		if rbErr := tx.Rollback(); rbErr != nil {
