@@ -12,12 +12,14 @@ import (
 type HTTPTransport struct {
 	service *Service
 	router  chi.Router
+	baseURL string
 }
 
-func CreateTransport(svc *Service) *HTTPTransport {
+func CreateTransport(svc *Service, baseURL string) *HTTPTransport {
 	t := &HTTPTransport{
 		service: svc,
 		router:  chi.NewRouter(),
+		baseURL: baseURL,
 	}
 	t.setupRoutes()
 	return t
@@ -41,7 +43,7 @@ func (t *HTTPTransport) httpGetTraces() http.HandlerFunc {
 			return
 		}
 
-		web.HTTPResponse(w, http.StatusOK, pagination.CreateResponse(r, "/api", *page))
+		web.HTTPResponse(w, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
 	}
 }
 
