@@ -1,2 +1,4 @@
 DROP TABLE measurements;
 ALTER TABLE measurements_backup RENAME TO measurements;
+alter index measurements_backup_measurement_timestamp_idx rename to measurements_measurement_timestamp_idx;
+alter index measurements_backup_pkey rename to measurements_pkey;

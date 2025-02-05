@@ -1,5 +1,16 @@
+-- Save extisting measurements, the sysadmin must recover these by performing an export and import:
+-- psql 'postgres://<user>:<password>@<host>:<port>/<database>' -c "/COPY (select * from measurements) TO '<path>/measurements.csv' WITH csv"
+-- Import using psql if less than a few million rows, otherwise use timescaledb-parallel-copy tool
+-- psql 'postgres://<user>:<password>@<host>:<port>/<database>' -c "/COPY measurements FROM '<path>/measurements.csv'"
+-- Make sure to drop the old table if recovery was succesful
 alter table measurements rename to measurements_backup;
+alter index measurements_measurement_timestamp_idx rename to measurements_backup_measurement_timestamp_idx;
+alter index measurements_pkey rename to measurements_backup_pkey;
 
+-- Unused as the table already has: device_location and measurement_location
+alter table measurements drop column coordinates;
+
+-- Recreate the table with new index and
 CREATE TABLE measurements (
 	id BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY,
 	uplink_message_id UUID NULL,
@@ -45,6 +56,7 @@ CREATE TABLE measurements (
 );
 SELECT create_hypertable('measurements', 'measurement_timestamp');
 SELECT add_dimension('measurements', 'datastream_id', number_partitions => 50);
+CREATE INDEX measurements_query_idx ON measurements(datastream_id, measurement_timestamp DESC);
 
 --
 -- Update the datastream get or create function to use a polyfilled UUIDv7 function
@@ -59,7 +71,7 @@ AS $$
   select encode(
     set_bit(
       set_bit(
-        overlay(uuid_send(gen_random_uuid()) placing
+        overlay(uuid_send(uuid_generate_v4()) placing
 	  substring(int8send((extract(epoch from clock_timestamp())*1000)::bigint) from 3)
 	  from 1 for 6),
 	52, 1),
