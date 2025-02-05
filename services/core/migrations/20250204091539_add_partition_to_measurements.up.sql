@@ -19,7 +19,6 @@ CREATE TABLE measurements (
 	device_description TEXT NOT NULL DEFAULT '',
 	measurement_timestamp TIMESTAMPTZ(0) NOT NULL,
 	measurement_value FLOAT8 NOT NULL,
-	coordinates GEOGRAPHY(point, 4326) NULL,
 	location_id BIGINT NULL,
 	device_location_description TEXT NULL,
 	measurement_location GEOGRAPHY(point, 4326) NULL,
