@@ -186,7 +186,7 @@ services:
         target: /etc/config/kratos
 
   db:
-    image: timescale/timescaledb-postgis:latest-pg12
+    image: timescale/timescaledb-ha:pg15-oss
     volumes:
       - ./tools/docker-compose/postgres.d:/docker-entrypoint-initdb.d
     ports:

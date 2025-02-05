@@ -8,7 +8,7 @@ alter index measurements_measurement_timestamp_idx rename to measurements_backup
 alter index measurements_pkey rename to measurements_backup_pkey;
 
 -- Unused as the table already has: device_location and measurement_location
-alter table measurements drop column coordinates;
+alter table measurements_backup drop column coordinates;
 
 -- Recreate the table with new index and
 CREATE TABLE measurements (
