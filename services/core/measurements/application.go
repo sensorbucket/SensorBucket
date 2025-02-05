@@ -136,7 +136,6 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 	}
 
 	for _, m := range msg.Measurements {
-
 		sensor, err := dev.GetSensorByExternalIDOrFallback(m.SensorExternalID)
 		if err != nil {
 			return fmt.Errorf("cannot get sensor: %w", err)
