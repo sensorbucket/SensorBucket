@@ -49,7 +49,7 @@ type Pipeline struct {
 
 func NewPipeline(tenantID int64, description string, steps []string) (*Pipeline, error) {
 	p := &Pipeline{
-		ID:          uuid.Must(uuid.NewRandom()).String(),
+		ID:          uuid.Must(uuid.NewV7()).String(),
 		TenantID:    tenantID,
 		Description: description,
 		Status:      PipelineActive,

@@ -30,7 +30,7 @@ func ptr[T any](v T) *T {
 func createPostgresServer(t *testing.T) *sqlx.DB {
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
-		Image: "docker.io/timescale/timescaledb-postgis:latest-pg12",
+		Image: "docker.io/timescale/timescaledb-ha:pg15-oss",
 		Cmd:   []string{"postgres", "-c", "fsync=off"},
 		Env: map[string]string{
 			"POSTGRES_PASSWORD": "password",
