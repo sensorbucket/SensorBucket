@@ -5,11 +5,13 @@ import (
 	"time"
 
 	"github.com/urfave/cli/v2"
+	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
 )
 
 func cmdCleanDatabase(cmd *cli.Context) error {
-	db, err := createDB()
+	DB_DSN := env.Must("DB_DSN")
+	db, err := createDB(DB_DSN)
 	if err != nil {
 		return fmt.Errorf("could not create database connection: %w", err)
 	}

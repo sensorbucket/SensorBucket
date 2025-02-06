@@ -28,21 +28,21 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tracing/tracing"
 )
 
-var (
-	HTTP_ADDR                        = env.Could("HTTP_ADDR", ":3000")
-	HTTP_BASE                        = env.Could("HTTP_BASE", "http://localhost:3000/api")
-	DB_DSN                           = env.Must("DB_DSN")
-	AMQP_HOST                        = env.Must("AMQP_HOST")
-	AMQP_QUEUE_TRACES                = env.Could("AMQP_QUEUE_TRACES", "tracing.traces")
-	AMQP_XCHG_PIPELINEMESSAGES       = env.Could("AMQP_XCHG_PIPELINEMESSAGES", "pipeline.messages")
-	AMQP_XCHG_PIPELINEMESSAGES_TOPIC = env.Could("AMQP_XCHG_PIPELINEMESSAGES_TOPIC", "#")
-	AMQP_QUEUE_INGRESS               = env.Could("AMQP_QUEUE_INGRESS", "traces.ingress")
-	AMQP_XCHG_INGRESS                = env.Could("AMQP_XCHG_INGRESS", "ingress")
-	AMQP_XCHG_INGRESS_TOPIC          = env.Could("AMQP_XCHG_INGRESS_TOPIC", "ingress.*")
-	AUTH_JWKS_URL                    = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
-)
-
 func cmdServe(cmd *cli.Context) error {
+	var (
+		HTTP_ADDR                        = env.Could("HTTP_ADDR", ":3000")
+		HTTP_BASE                        = env.Could("HTTP_BASE", "http://localhost:3000/api")
+		DB_DSN                           = env.Must("DB_DSN")
+		AMQP_HOST                        = env.Must("AMQP_HOST")
+		AMQP_QUEUE_TRACES                = env.Could("AMQP_QUEUE_TRACES", "tracing.traces")
+		AMQP_XCHG_PIPELINEMESSAGES       = env.Could("AMQP_XCHG_PIPELINEMESSAGES", "pipeline.messages")
+		AMQP_XCHG_PIPELINEMESSAGES_TOPIC = env.Could("AMQP_XCHG_PIPELINEMESSAGES_TOPIC", "#")
+		AMQP_QUEUE_INGRESS               = env.Could("AMQP_QUEUE_INGRESS", "traces.ingress")
+		AMQP_XCHG_INGRESS                = env.Could("AMQP_XCHG_INGRESS", "ingress")
+		AMQP_XCHG_INGRESS_TOPIC          = env.Could("AMQP_XCHG_INGRESS_TOPIC", "ingress.*")
+		AUTH_JWKS_URL                    = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
+	)
+
 	buildinfo.Print()
 	cleanup := cleanupper.Create()
 	defer func() {
@@ -61,7 +61,7 @@ func cmdServe(cmd *cli.Context) error {
 	}
 	cleanup.Add(stopProfiler)
 
-	db, err := createDB()
+	db, err := createDB(DB_DSN)
 	if err != nil {
 		return fmt.Errorf("could not create database connection: %w", err)
 	}
@@ -81,7 +81,7 @@ func cmdServe(cmd *cli.Context) error {
 	go mqConn.Start()
 
 	svc := tracing.Create(db)
-	transportHTTP := tracing.CreateTransport(svc)
+	transportHTTP := tracing.CreateTransport(svc, HTTP_BASE)
 	r.Mount("/", transportHTTP)
 	go mq.StartQueueProcessor(mqConn,
 		AMQP_QUEUE_INGRESS, AMQP_XCHG_INGRESS, AMQP_XCHG_INGRESS_TOPIC,
@@ -131,8 +131,8 @@ func cmdServe(cmd *cli.Context) error {
 	return nil
 }
 
-func createDB() (*sqlx.DB, error) {
-	db, err := sqlx.Open("pgx", DB_DSN)
+func createDB(dsn string) (*sqlx.DB, error) {
+	db, err := sqlx.Open("pgx", dsn)
 	if err != nil {
 		return nil, err
 	}

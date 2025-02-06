@@ -20,7 +20,7 @@ type IngressDTO struct {
 
 func CreateIngressDTO(accessToken string, pipeline uuid.UUID, ownerID int64, payload []byte) IngressDTO {
 	return IngressDTO{
-		TracingID:   uuid.New(),
+		TracingID:   uuid.Must(uuid.NewV7()),
 		CreatedAt:   time.Now(),
 		PipelineID:  pipeline,
 		TenantID:    ownerID,

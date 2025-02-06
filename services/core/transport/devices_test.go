@@ -36,7 +36,7 @@ import (
 func createPostgresServer(t *testing.T) (*sqlx.DB, *pgxpool.Pool) {
 	ctx := authtest.GodContext()
 	req := testcontainers.ContainerRequest{
-		Image: "docker.io/timescale/timescaledb-postgis:latest-pg12",
+		Image: "docker.io/timescale/timescaledb-ha:pg15-oss",
 		Cmd:   []string{"postgres", "-c", "fsync=off"},
 		Env: map[string]string{
 			"POSTGRES_PASSWORD": "password",

@@ -30,7 +30,7 @@ var seedFS embed.FS
 func createPostgresServer(t *testing.T) *pgxpool.Pool {
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
-		Image: "docker.io/timescale/timescaledb-postgis:latest-pg12",
+		Image: "docker.io/timescale/timescaledb-ha:pg15-oss",
 		Cmd:   []string{"postgres", "-c", "fsync=off"},
 		Env: map[string]string{
 			"POSTGRES_PASSWORD": "password",

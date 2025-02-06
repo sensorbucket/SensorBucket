@@ -61,7 +61,7 @@ type UserWorker struct {
 
 func CreateWorker(tenantID int64, name, description string, userCode []byte) (*UserWorker, error) {
 	worker := &UserWorker{
-		ID:          uuid.New(),
+		ID:          uuid.Must(uuid.NewV7()),
 		Name:        name,
 		Description: description,
 		State:       StateDisabled,
