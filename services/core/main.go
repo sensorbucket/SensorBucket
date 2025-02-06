@@ -30,6 +30,7 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	processinginfra "sensorbucket.nl/sensorbucket/services/core/processing/infra"
+	"sensorbucket.nl/sensorbucket/services/core/projects"
 	coretransport "sensorbucket.nl/sensorbucket/services/core/transport"
 )
 
@@ -109,6 +110,9 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
 	processingservice := processing.New(processingstore, processingPipelinePublisher, keyClient)
 
+	projectsStore := projects.NewPostgresStore(pool)
+	projectsService := projects.New(projectsStore)
+
 	// Setup MQ Transports
 	go mq.StartQueueProcessor(
 		amqpConn,
@@ -133,6 +137,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		deviceservice,
 		measurementservice,
 		processingservice,
+		projectsService,
 	))
 	go func() {
 		if err := httpsrv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) && err != nil {

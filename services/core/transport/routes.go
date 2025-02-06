@@ -15,6 +15,7 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
+	"sensorbucket.nl/sensorbucket/services/core/projects"
 )
 
 type MeasurementService interface {
@@ -30,6 +31,7 @@ type CoreTransport struct {
 	deviceService      *devices.Service
 	measurementService MeasurementService
 	processingService  *processing.Service
+	projectsService    *projects.Application
 }
 
 func New(
@@ -38,6 +40,7 @@ func New(
 	deviceService *devices.Service,
 	measurementService MeasurementService,
 	processingService *processing.Service,
+	projectsService *projects.Application,
 ) *CoreTransport {
 	t := &CoreTransport{
 		baseURL:            baseURL,
@@ -45,6 +48,7 @@ func New(
 		deviceService:      deviceService,
 		measurementService: measurementService,
 		processingService:  processingService,
+		projectsService:    projectsService,
 	}
 	t.routes()
 	return t
@@ -111,6 +115,10 @@ func (t *CoreTransport) routes() {
 		r.Get("/{id}", t.httpGetPipeline())
 		r.Patch("/{id}", t.httpUpdatePipeline())
 		r.Delete("/{id}", t.httpDeletePipeline())
+	})
+
+	r.Route("/projects", func(r chi.Router) {
+		r.Get("/", t.httpListProjects())
 	})
 
 	r.Get("/measurements", t.httpGetMeasurements())
