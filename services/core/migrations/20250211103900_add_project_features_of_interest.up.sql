@@ -11,7 +11,7 @@ CREATE TABLE features_of_interest (
   id BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY,
   name VARCHAR NOT NULL,
   description VARCHAR NOT NULL DEFAULT '',
-  encoding_type VARCHAR, -- Oneof: 
+  encoding_type VARCHAR, -- Oneof:
   feature_geometry GEOGRAPHY,
   tenant_id BIGINT NOT NULL,
 
@@ -20,14 +20,14 @@ CREATE TABLE features_of_interest (
 
 CREATE TABLE project_feature_of_interest (
   project_id BIGINT NOT NULL REFERENCES projects(id),
-  feature_of_interest_id BIGINT NOT NULL REFERENCES feature_of_interest(id),
+  feature_of_interest_id BIGINT NOT NULL REFERENCES features_of_interest(id),
   interested_observation_types VARCHAR[] NOT NULL
 );
 
 CREATE INDEX project_feature_of_interest_idx ON project_feature_of_interest(project_id);
 
 CREATE TABLE feature_of_interest_datastream (
-  feature_of_interest_id BIGINT REFERENCES feature_of_interest(id),
+  feature_of_interest_id BIGINT REFERENCES features_of_interest(id),
   datastream_id UUID NOT NULL REFERENCES datastreams(id),
   bound_at TIMESTAMPTZ NOT NULL,
   unbound_at TIMESTAMPTZ,
@@ -35,5 +35,6 @@ CREATE TABLE feature_of_interest_datastream (
   PRIMARY KEY(feature_of_interest_id)
 );
 
+ALTER TABLE sensors ADD COLUMN feature_of_interest_id BIGINT;
 ALTER TABLE measurements ADD COLUMN feature_of_interest_id BIGINT;
 CREATE INDEX measurements_query_by_foi ON measurements(feature_of_interest_id, datastream_observed_property, measurement_timestamp DESC);

@@ -308,7 +308,7 @@ type SelectQueryMod func(q sq.SelectBuilder) sq.SelectBuilder
 func listSensors(ctx context.Context, db DB, mods ...SelectQueryMod) ([]devices.Sensor, error) {
 	q := pq.Select(
 		"s.id", "s.brand", "s.code", "s.description", "s.external_id", "s.properties", "s.archive_time",
-		"s.device_id", "s.created_at", "s.is_fallback",
+		"s.device_id", "s.created_at", "s.is_fallback", "s.feature_of_interest_id",
 	).From("sensors s")
 	q = auth.ProtectedQuery(ctx, q)
 
@@ -328,7 +328,7 @@ func listSensors(ctx context.Context, db DB, mods ...SelectQueryMod) ([]devices.
 		s := devices.Sensor{}
 		if err := rows.Scan(
 			&s.ID, &s.Brand, &s.Code, &s.Description, &s.ExternalID, &s.Properties, &s.ArchiveTime,
-			&s.DeviceID, &s.CreatedAt, &s.IsFallback,
+			&s.DeviceID, &s.CreatedAt, &s.IsFallback, &s.FeatureOfInterestID,
 		); err != nil {
 			return nil, err
 		}
@@ -343,12 +343,16 @@ func createSensors(tx DB, sensors []*devices.Sensor) error {
 	}
 	q := pq.Insert("sensors").Columns(
 		"code", "brand", "description", "archive_time", "properties", "external_id",
-		"device_id", "created_at", "is_fallback", "tenant_id",
+		"device_id", "created_at", "is_fallback", "tenant_id", "feature_of_interest_id",
 	).Suffix("RETURNING id")
 	for _, s := range sensors {
+		featureID := sql.NullInt64{
+			Int64: s.FeatureOfInterestID,
+			Valid: s.FeatureOfInterestID > 0,
+		}
 		q = q.Values(
 			s.Code, s.Brand, s.Description, s.ArchiveTime, s.Properties, s.ExternalID,
-			s.DeviceID, s.CreatedAt, s.IsFallback, s.TenantID,
+			s.DeviceID, s.CreatedAt, s.IsFallback, s.TenantID, featureID,
 		)
 	}
 	query, params, err := q.ToSql()
@@ -370,12 +374,13 @@ func getSensor(ctx context.Context, tx DB, id int64) (*devices.Sensor, error) {
 	q := pq.Select(
 		"id", "code", "description", "brand", "archive_time", "external_id",
 		"properties", "created_at", "device_id", "is_fallback", "tenant_id",
+		"feature_of_interest_id",
 	).From("sensors").Where(sq.Eq{"id": id})
 	q = auth.ProtectedQuery(ctx, q)
 	err := q.RunWith(tx).Scan(
 		&sensor.ID, &sensor.Code, &sensor.Description, &sensor.Brand, &sensor.ArchiveTime,
 		&sensor.ExternalID, &sensor.Properties, &sensor.CreatedAt, &sensor.DeviceID, &sensor.IsFallback,
-		&sensor.TenantID,
+		&sensor.TenantID, &sensor.FeatureOfInterestID,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, devices.ErrSensorNotFound
@@ -391,16 +396,21 @@ func updateSensors(ctx context.Context, tx DB, sensors []*devices.Sensor) error 
 		return nil
 	}
 	for _, s := range sensors {
+		featureID := sql.NullInt64{
+			Int64: s.FeatureOfInterestID,
+			Valid: s.FeatureOfInterestID > 0,
+		}
 		q := pq.Update("sensors").Where(sq.Eq{"id": s.ID}).
 			SetMap(map[string]any{
-				"code":         s.Code,
-				"brand":        s.Brand,
-				"description":  s.Description,
-				"archive_time": s.ArchiveTime,
-				"properties":   s.Properties,
-				"external_id":  s.ExternalID,
-				"device_id":    s.DeviceID,
-				"is_fallback":  s.IsFallback,
+				"code":                   s.Code,
+				"brand":                  s.Brand,
+				"description":            s.Description,
+				"archive_time":           s.ArchiveTime,
+				"properties":             s.Properties,
+				"external_id":            s.ExternalID,
+				"device_id":              s.DeviceID,
+				"is_fallback":            s.IsFallback,
+				"feature_of_interest_id": featureID,
 			})
 		q = auth.ProtectedQuery(ctx, q)
 		_, err := q.RunWith(tx).Exec()

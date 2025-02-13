@@ -235,12 +235,13 @@ func (s *Service) GetSensor(ctx context.Context, id int64) (*Sensor, error) {
 }
 
 type UpdateSensorOpts struct {
-	Description *string         `json:"description"`
-	Brand       *string         `json:"brand"`
-	ArchiveTime *int            `json:"archive_time"`
-	ExternalID  *string         `json:"external_id"`
-	IsFallback  *bool           `json:"is_fallback"`
-	Properties  json.RawMessage `json:"properties"`
+	Description         *string         `json:"description"`
+	Brand               *string         `json:"brand"`
+	ArchiveTime         *int            `json:"archive_time"`
+	ExternalID          *string         `json:"external_id"`
+	IsFallback          *bool           `json:"is_fallback"`
+	Properties          json.RawMessage `json:"properties"`
+	FeatureOfInterestID *int64          `json:"feature_of_interest_id"`
 }
 
 func (s *Service) UpdateSensor(ctx context.Context, device *Device, sensor *Sensor, opt UpdateSensorOpts) error {
@@ -269,6 +270,9 @@ func (s *Service) UpdateSensor(ctx context.Context, device *Device, sensor *Sens
 	}
 	if opt.Properties != nil {
 		sensor.Properties = opt.Properties
+	}
+	if opt.FeatureOfInterestID != nil {
+		sensor.FeatureOfInterestID = *opt.FeatureOfInterestID
 	}
 
 	if err := device.UpdateSensor(sensor); err != nil {

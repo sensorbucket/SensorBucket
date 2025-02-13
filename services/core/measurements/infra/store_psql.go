@@ -377,7 +377,8 @@ func (s *MeasurementStorePSQL) GetDatastream(ctx context.Context, id uuid.UUID, 
 		panic(err)
 	}
 	err = s.databasePool.QueryRow(ctx, query, params...).Scan(
-		&ds.ID, &ds.Description, &ds.SensorID, &ds.ObservedProperty, &ds.UnitOfMeasurement, &ds.CreatedAt,
+		&ds.ID, &ds.Description, &ds.SensorID, &ds.ObservedProperty, &ds.UnitOfMeasurement,
+		&ds.CreatedAt,
 	)
 	if err != nil {
 		return nil, err

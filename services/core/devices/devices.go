@@ -76,17 +76,18 @@ type Device struct {
 }
 
 type Sensor struct {
-	ID          int64           `json:"id"`
-	Code        string          `json:"code"`
-	Description string          `json:"description"`
-	DeviceID    int64           `json:"device_id" db:"device_id"`
-	Brand       string          `json:"brand"`
-	ArchiveTime *int            `json:"archive_time" db:"archive_time"`
-	ExternalID  string          `json:"external_id" db:"external_id"`
-	IsFallback  bool            `json:"is_fallback" db:"is_fallback"`
-	Properties  json.RawMessage `json:"properties"`
-	TenantID    int64           `json:"tenant_id"`
-	CreatedAt   time.Time       `json:"created_at" db:"created_at"`
+	ID                  int64           `json:"id"`
+	Code                string          `json:"code"`
+	Description         string          `json:"description"`
+	DeviceID            int64           `json:"device_id" db:"device_id"`
+	Brand               string          `json:"brand"`
+	ArchiveTime         *int            `json:"archive_time" db:"archive_time"`
+	ExternalID          string          `json:"external_id" db:"external_id"`
+	IsFallback          bool            `json:"is_fallback" db:"is_fallback"`
+	Properties          json.RawMessage `json:"properties"`
+	FeatureOfInterestID int64           `json:"feature_of_interest_id"`
+	TenantID            int64           `json:"tenant_id"`
+	CreatedAt           time.Time       `json:"created_at" db:"created_at"`
 }
 
 type NewDeviceOpts struct {
