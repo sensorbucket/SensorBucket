@@ -1,6 +1,7 @@
 package measurements
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"time"
@@ -55,5 +56,8 @@ type Measurement struct {
 	MeasurementAltitude             *float64            `json:"measurement_altitude"`
 	MeasurementProperties           map[string]any      `json:"measurement_properties"`
 	MeasurementExpiration           time.Time           `json:"measurement_expiration"`
+	FeatureOfInterestID             sql.NullInt64       `json:"feature_of_interest_id"`
+	FeatureOfInterestName           sql.NullString      `json:"feature_of_interest_name"`
+	FeatureOfInterestDescription    sql.NullString      `json:"feature_of_interest_description"`
 	CreatedAt                       time.Time           `json:"created_at"`
 }

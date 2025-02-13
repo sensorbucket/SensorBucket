@@ -22,6 +22,8 @@ type MeasurementService interface {
 	QueryMeasurements(context.Context, measurements.Filter, pagination.Request) (*pagination.Page[measurements.Measurement], error)
 	GetDatastream(context.Context, uuid.UUID) (*measurements.Datastream, error)
 	ListDatastreams(context.Context, measurements.DatastreamFilter, pagination.Request) (*pagination.Page[measurements.Datastream], error)
+	GetFeatureOfInterest(context.Context, int64) (*measurements.FeatureOfInterest, error)
+	ListFeaturesOfInterest(ctx context.Context, filter measurements.FeatureOfInterestFilter, pageRequest pagination.Request) (*pagination.Page[measurements.FeatureOfInterest], error)
 }
 
 type CoreTransport struct {
@@ -119,6 +121,11 @@ func (t *CoreTransport) routes() {
 
 	r.Route("/projects", func(r chi.Router) {
 		r.Get("/", t.httpListProjects())
+	})
+
+	r.Route("/features-of-interest", func(r chi.Router) {
+		r.Get("/", t.httpListFeaturesOfInterest())
+		r.Get("/{id}", t.httpGetFeatureOfInterest())
 	})
 
 	r.Get("/measurements", t.httpGetMeasurements())

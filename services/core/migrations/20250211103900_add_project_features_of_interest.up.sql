@@ -7,7 +7,7 @@ CREATE TABLE projects (
   PRIMARY KEY(id)
 );
 
-CREATE TABLE feature_of_interest (
+CREATE TABLE features_of_interest (
   id BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY,
   name VARCHAR NOT NULL,
   description VARCHAR NOT NULL DEFAULT '',
@@ -28,7 +28,7 @@ CREATE INDEX project_feature_of_interest_idx ON project_feature_of_interest(proj
 
 CREATE TABLE feature_of_interest_datastream (
   feature_of_interest_id BIGINT REFERENCES feature_of_interest(id),
-  id UUID NOT NULL REFERENCES datastreams(id),
+  datastream_id UUID NOT NULL REFERENCES datastreams(id),
   bound_at TIMESTAMPTZ NOT NULL,
   unbound_at TIMESTAMPTZ,
 

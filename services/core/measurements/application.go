@@ -25,6 +25,8 @@ type Store interface {
 	GetDatastream(ctx context.Context, id uuid.UUID, filter DatastreamFilter) (*Datastream, error)
 	FindOrCreateDatastream(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*Datastream, error)
 	StoreMeasurements(context.Context, []Measurement) error
+	ListFeaturesOfInterest(context.Context, FeatureOfInterestFilter, pagination.Request) (*pagination.Page[FeatureOfInterest], error)
+	GetFeatureOfInterest(context.Context, int64, FeatureOfInterestFilter) (*FeatureOfInterest, error)
 }
 
 // Service is the measurement service which stores measurement data.
@@ -184,12 +186,13 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 
 // Filter contains query information for a list of measurements
 type Filter struct {
-	Start       time.Time `url:",required"`
-	End         time.Time `url:",required"`
-	DeviceIDs   []string
-	SensorCodes []string
-	Datastream  []string
-	TenantID    []int64
+	Start               time.Time `url:",required"`
+	End                 time.Time `url:",required"`
+	DeviceIDs           []string
+	SensorCodes         []string
+	Datastream          []string
+	TenantID            []int64
+	FeatureOfInterestID []int64
 }
 
 func (s *Service) QueryMeasurements(ctx context.Context, f Filter, r pagination.Request) (*pagination.Page[Measurement], error) {
@@ -238,4 +241,31 @@ func (s *Service) GetDatastream(ctx context.Context, id uuid.UUID) (*Datastream,
 	}
 
 	return s.store.GetDatastream(ctx, id, DatastreamFilter{TenantID: []int64{tenantID}})
+}
+
+type FeatureOfInterestFilter struct {
+	TenantID []int64
+}
+
+func (service *Service) ListFeaturesOfInterest(ctx context.Context, filter FeatureOfInterestFilter, pageRequest pagination.Request) (*pagination.Page[FeatureOfInterest], error) {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
+		return nil, err
+	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
+	filter.TenantID = []int64{tenantID}
+	return service.store.ListFeaturesOfInterest(ctx, filter, pageRequest)
+}
+
+func (service *Service) GetFeatureOfInterest(ctx context.Context, id int64) (*FeatureOfInterest, error) {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
+		return nil, err
+	}
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return service.store.GetFeatureOfInterest(ctx, id, FeatureOfInterestFilter{TenantID: []int64{tenantID}})
 }

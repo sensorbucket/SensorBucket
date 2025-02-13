@@ -70,6 +70,9 @@ func createInsertQuery(m measurements.Measurement) (string, []any, error) {
 	values["measurement_location"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.MeasurementLongitude, m.MeasurementLatitude)
 	values["measurement_altitude"] = m.MeasurementAltitude
 	values["measurement_expiration"] = m.MeasurementExpiration
+	values["feature_of_interest_id"] = m.FeatureOfInterestID
+	values["feature_of_interest_name"] = m.FeatureOfInterestName
+	values["feature_of_interest_description"] = m.FeatureOfInterestDescription
 	values["created_at"] = m.CreatedAt
 
 	return pq.Insert("measurements").SetMap(values).ToSql()
@@ -140,6 +143,9 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 		"ST_X(measurement_location::geometry) as measurement_longitude",
 		"measurement_altitude",
 		"measurement_expiration",
+		"feature_of_interest_id",
+		"feature_of_interest_name",
+		"feature_of_interest_description",
 		"created_at",
 	).
 		From("measurements")
@@ -151,6 +157,9 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 		q = q.Where("measurement_timestamp <= ?", filter.End)
 	}
 
+	if len(filter.DeviceIDs) > 0 {
+		q = q.Where(sq.Eq{"feature_of_interest_id": filter.FeatureOfInterestID})
+	}
 	if len(filter.DeviceIDs) > 0 {
 		q = q.Where(sq.Eq{"device_id": filter.DeviceIDs})
 	}
@@ -224,6 +233,9 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 			&m.MeasurementLongitude,
 			&m.MeasurementAltitude,
 			&m.MeasurementExpiration,
+			&m.FeatureOfInterestID,
+			&m.FeatureOfInterestName,
+			&m.FeatureOfInterestDescription,
 			&m.CreatedAt,
 			&cursor.Columns.MeasurementTimestamp,
 			&cursor.Columns.ID,
@@ -517,4 +529,72 @@ INSERT INTO measurements (
 	}
 
 	return nil
+}
+
+type featureOfInterestPagination struct {
+	Offset uint64
+}
+
+func (store *MeasurementStorePSQL) ListFeaturesOfInterest(ctx context.Context, filter measurements.FeatureOfInterestFilter, pageReq pagination.Request) (*pagination.Page[measurements.FeatureOfInterest], error) {
+	cursor, err := pagination.GetCursor[featureOfInterestPagination](pageReq)
+	if err != nil {
+		return nil, fmt.Errorf("while decoding cursor: %w", err)
+	}
+
+	q := pq.Select("id", "name", "description", "tenant_id").From("features_of_interest")
+	if len(filter.TenantID) > 0 {
+		q = q.Where(sq.Eq{"tenant_id": filter.TenantID})
+	}
+	q = q.Offset(cursor.Columns.Offset).Limit(cursor.Limit)
+
+	query, params, err := q.ToSql()
+	if err != nil {
+		panic(err)
+	}
+	rows, err := store.databasePool.Query(ctx, query, params...)
+	if err != nil {
+		return nil, fmt.Errorf("while querying database: %w", err)
+	}
+
+	features := make([]measurements.FeatureOfInterest, 0)
+	for rows.Next() {
+		var feature measurements.FeatureOfInterest
+		if err := rows.Scan(
+			&feature.ID, &feature.Name, &feature.Description, &feature.TenantID,
+		); err != nil {
+			return nil, fmt.Errorf("while scanning FeatureOfInterest: %w", err)
+		}
+		features = append(features, feature)
+	}
+
+	cursor.Columns.Offset += uint64(len(features))
+	page := pagination.CreatePageT(features, cursor)
+
+	return &page, nil
+}
+
+func (store *MeasurementStorePSQL) GetFeatureOfInterest(ctx context.Context, id int64, filter measurements.FeatureOfInterestFilter) (*measurements.FeatureOfInterest, error) {
+	q := pq.Select(
+		"foi.id", "foi.name", "foi.description", "foi.tenant_id",
+	).From("features_of_interest foi").Where(sq.Eq{"id": id})
+	if len(filter.TenantID) > 0 {
+		q = q.Where(sq.Eq{"tenant_id": filter.TenantID})
+	}
+
+	query, params, err := q.ToSql()
+	if err != nil {
+		panic(err)
+	}
+	row := store.databasePool.QueryRow(ctx, query, params...)
+
+	var feature measurements.FeatureOfInterest
+	if err := row.Scan(
+		&feature.ID, &feature.Name, &feature.Description, &feature.TenantID,
+	); errors.Is(err, sql.ErrNoRows) {
+		return nil, measurements.ErrFeatureOfInterestNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("", err)
+	}
+
+	return &feature, nil
 }
