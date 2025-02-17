@@ -80,7 +80,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		conn.Shutdown()
 		return nil
 	})
-
+	go conn.Start()
 	publish := conn.Publisher(AMQP_XCHG)
 	go mq.StartQueueProcessor(conn, AMQP_QUEUE, AMQP_XCHG, AMQP_TOPIC, buildProcessor(publish))
 
