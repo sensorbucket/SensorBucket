@@ -7,7 +7,9 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -80,6 +82,10 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		return err
 	}
 	logger.Info("Connector is ready")
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+	<-ctx.Done()
+	logger.Info("Connector shutting down")
 	return nil
 }
 
