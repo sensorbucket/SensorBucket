@@ -5,18 +5,15 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
-	"os"
-	"os/signal"
-	"strconv"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rabbitmq/amqp091-go"
-
 	"sensorbucket.nl/sensorbucket/internal/buildinfo"
 	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/env"
@@ -25,7 +22,9 @@ import (
 )
 
 var (
-	opsProcessed = promauto.NewCounter(prometheus.CounterOpts{
+	logger = slog.Default()
+
+	opsReceived = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "sensorbucket_fissionrmqconnect_processed",
 		Help: "total number of message queue messages received",
 	})
@@ -44,11 +43,11 @@ func main() {
 	cleanup := cleanupper.Create()
 	defer func() {
 		if err := cleanup.Execute(5 * time.Second); err != nil {
-			log.Printf("[Warn] Cleanup error(s) occured: %s\n", err)
+			logger.Warn("Cleanup error(s) occured", "error", err)
 		}
 	}()
 	if err := Run(cleanup); err != nil {
-		log.Fatalf("error occured: %s\n", err)
+		logger.Error("error occured", "error", err)
 	}
 }
 
@@ -58,29 +57,64 @@ var (
 	AMQP_TOPIC    = env.Must("TOPIC")
 	AMQP_XCHG     = env.Must("EXCHANGE")
 	HTTP_ENDPOINT = env.Must("HTTP_ENDPOINT")
-	MAX_RETRIES   = env.Could("MAX_RETRIES", "3")
+	MAX_RETRIES   = env.CouldInt("MAX_RETRIES", 3)
 	METRICS_ADDR  = env.Could("METRICS_ADDR", ":2112")
+	WORKER_COUNT  = env.CouldInt("WORKER_COUNT", mq.DefaultPrefetch())
 )
 
 func Run(cleanup cleanupper.Cleanupper) error {
-	maxRetries, err := strconv.Atoi(MAX_RETRIES)
-	if err != nil {
-		return err
-	}
-
 	stopProfiler, err := web.RunProfiler()
 	if err != nil {
-		fmt.Printf("could not setup profiler server: %s\n", err)
+		logger.Warn("could not setup profiler server", "error", err)
 	}
 	cleanup.Add(stopProfiler)
 
-	log.Printf("Consuming from queue: %s and producing to exchange: %s\n", AMQP_QUEUE, AMQP_XCHG)
+	if err := setupMetrics(cleanup); err != nil {
+		return err
+	}
+	consume, publish, err := setupMessageQueue(cleanup)
+	if err != nil {
+		return err
+	}
+	if err := startWorkers(cleanup, consume, publish); err != nil {
+		return err
+	}
+	logger.Info("Connector is ready")
+	return nil
+}
+
+func setupMetrics(cleanup cleanupper.Cleanupper) error {
+	if METRICS_ADDR == "" {
+		return nil
+	}
+	srv := &http.Server{
+		Addr:         METRICS_ADDR,
+		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  5 * time.Second,
+		Handler:      promhttp.Handler(),
+	}
+	logger.Info("Metrics server starting", "address", METRICS_ADDR)
+	go func() {
+		err := srv.ListenAndServe()
+		logger.Info("Metrics server stopped", "error", err)
+	}()
+	cleanup.Add(func(ctx context.Context) error {
+		if err := srv.Shutdown(ctx); err != nil {
+			logger.Warn("error shutting down metrics server", "error", err)
+		}
+		return nil
+	})
+	return nil
+}
+
+func setupMessageQueue(cleanup cleanupper.Cleanupper) (<-chan amqp091.Delivery, chan<- mq.PublishMessage, error) {
+	logger.Info("Establishing Message Queue connection", "queue", AMQP_QUEUE, "exchange", AMQP_XCHG)
 	conn := mq.NewConnection(AMQP_HOST)
 	cleanup.Add(func(ctx context.Context) error {
 		conn.Shutdown()
 		return nil
 	})
-	successChan := conn.Publisher(AMQP_XCHG, func(c *amqp091.Channel) error {
+	publishChan := conn.Publisher(AMQP_XCHG, func(c *amqp091.Channel) error {
 		return nil
 	})
 	consumeChan := conn.Consume(AMQP_QUEUE,
@@ -89,128 +123,95 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	)
 	go conn.Start()
 
-	connector := Connector{
-		Name:       fmt.Sprintf("%s-(%s)", os.Getenv("SOURCE_NAME"), os.Getenv("HOSTNAME")),
-		Endpoint:   HTTP_ENDPOINT,
-		MaxRetries: maxRetries,
-		Result:     successChan,
+	return consumeChan, publishChan, nil
+}
+
+func startWorkers(cleanup cleanupper.Cleanupper, consume <-chan amqp091.Delivery, publish chan<- mq.PublishMessage) error {
+	var wg sync.WaitGroup
+
+	for i := 0; i < WORKER_COUNT; i++ {
+		wg.Add(1)
+		go startWorker(i, consume, publish)
 	}
 
-	go func() {
-		for delivery := range consumeChan {
-			go connector.handleDelivery(delivery)
-		}
-	}()
-
-	if METRICS_ADDR != "" {
-		go func() {
-			srv := &http.Server{
-				Addr:         METRICS_ADDR,
-				WriteTimeout: 5 * time.Second,
-				ReadTimeout:  5 * time.Second,
-				Handler:      promhttp.Handler(),
-			}
-			log.Printf("Metrics server starting at: %s\n", METRICS_ADDR)
-			err := srv.ListenAndServe()
-			log.Printf("Metrics server stopped: %s\n", err.Error())
-		}()
-	}
-
-	log.Printf("RabbitMQ-Fission Connector is running...\n")
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
-	<-ctx.Done()
-	log.Printf("RabbitMQ-Fission interrupted, shutting down gracefully...\n")
-
+	cleanup.Add(func(ctx context.Context) error {
+		logger.Info("Stopping Workers...")
+		wg.Wait()
+		return nil
+	})
 	return nil
 }
 
-type Connector struct {
-	Name       string
-	Endpoint   string
-	MaxRetries int
-	Result     chan<- mq.PublishMessage
-}
-
-func (c *Connector) handleDelivery(delivery amqp091.Delivery) {
-	opsProcessed.Inc()
-
-	res, err := doHTTPRequest(delivery.Body, c.Endpoint, c.MaxRetries)
-	if err != nil {
-		// This is a Function Invocation error or a fatal worker error
-		// can't be a business logic error (ie device not found) such an error would be considered
-		// a succesful invocation
-		opsFails.Inc()
-		c.handleError(delivery, err)
-	} else {
-		opsSuccesful.Inc()
-		c.handleSuccess(delivery, res)
+func startWorker(id int, consume <-chan amqp091.Delivery, publish chan<- mq.PublishMessage) {
+	client := &http.Client{
+		Timeout: 10 * time.Second,
 	}
-}
-
-func (c *Connector) handleError(delivery amqp091.Delivery, err error) {
-	// The invocation failed, what to do?
-	log.Printf("Invocation error: %v. Redelivering?: %v", err.Error(), !delivery.Redelivered)
-	if !delivery.Redelivered {
-		if err := delivery.Nack(false, true); err != nil {
-			log.Printf("Error Nacking amqp delivery: %v\n", err)
+	logger = logger.With("worker_id", id, "endpoint", HTTP_ENDPOINT)
+	for incoming := range consume {
+		opsReceived.Inc()
+		if err := processIncoming(client, incoming, publish); err != nil {
+			opsFails.Inc()
+			if err := incoming.Nack(false, !incoming.Redelivered); err != nil {
+				logger.Warn("Coult not Nacknowledge delivery", "error", err)
+			}
+		} else {
+			opsSuccesful.Inc()
+			if err := incoming.Ack(false); err != nil {
+				logger.Warn("Coult not Acknowledge delivery", "error", err)
+			}
 		}
 	}
 }
 
-func (c *Connector) handleSuccess(delivery amqp091.Delivery, res *http.Response) {
-	defer res.Body.Close()
+func processIncoming(client *http.Client, incoming amqp091.Delivery, publish chan<- mq.PublishMessage) error {
+	req, err := http.NewRequest("POST", HTTP_ENDPOINT, bytes.NewReader(incoming.Body))
+	if err != nil {
+		return fmt.Errorf("could not create request for fission worker: %w", err)
+	}
+	req.Header.Set("X-AMQP-Topic", AMQP_TOPIC)
+	res, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("could not call fission worker: %w", err)
+	}
+	if res == nil {
+		return fmt.Errorf("could not call fission worker, response is nil?")
+	}
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			logger.Warn("Could not close response body", "error", err)
+		}
+	}()
+
+	// Do something based on statuscode
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		responseMessage := "<none>"
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			responseMessage = string(body)
+		}
+		logger.Warn("Fission worker returned non-ok status", "status_code", res.StatusCode, "body", responseMessage)
+	}
+
+	//
+	// Success
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		c.handleError(delivery, err)
-		return
+		return fmt.Errorf("could not read response body: %w", err)
 	}
 
 	// Get response metadata
 	topic := res.Header.Get("X-AMQP-Topic")
 	if topic == "" {
-		c.handleError(delivery, fmt.Errorf("X-AMQP-Topic header must be set after invoking: %s, but wasn't. Handling as failure", HTTP_ENDPOINT))
-		return
+		return fmt.Errorf("response is missing X-AMQP-Topic header")
 	}
 
 	// Publish to exchange
-	c.Result <- mq.PublishMessage{
+	publish <- mq.PublishMessage{
 		Topic: topic,
 		Publishing: amqp091.Publishing{
-			MessageId: delivery.MessageId,
+			MessageId: incoming.MessageId,
 			Body:      body,
 		},
 	}
-	if err := delivery.Ack(false); err != nil {
-		log.Printf("Error Acking amqp delivery: %v\n", err)
-	}
-}
-
-func doHTTPRequest(body []byte, endpoint string, retries int) (*http.Response, error) {
-	var res *http.Response
-	for retry := 0; retry < retries; retry++ {
-		req, err := http.NewRequest("POST", endpoint, bytes.NewReader(body))
-		if err != nil {
-			return nil, fmt.Errorf("error creating invocation for function: %s, error: %w", endpoint, err)
-		}
-		req.Header.Set("X-AMQP-Topic", AMQP_TOPIC)
-		res, err = http.DefaultClient.Do(req)
-		if err != nil {
-			log.Printf("Invocation for %s failed with: %v\n", endpoint, err)
-			continue
-		}
-		if res == nil {
-			continue
-		}
-		if res.StatusCode >= 200 && res.StatusCode < 300 {
-			return res, nil
-		}
-		body, _ := io.ReadAll(res.Body)
-		log.Printf("Try of invocation failed with status: %d and body:\n%s\n", res.StatusCode, string(body))
-	}
-	var statusCode int
-	if res != nil {
-		statusCode = res.StatusCode
-	}
-	return nil, fmt.Errorf("invocation of %s failed with statuscode: %d", endpoint, statusCode)
+	return nil
 }
