@@ -7,7 +7,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/env"
 )
 
-var defaultPrefetchCount int = env.CouldInt("AMQP_PREFETCH", 50)
+var defaultPrefetchCount int = env.CouldInt("AMQP_PREFETCH", 100)
 
 func DefaultPrefetch() int {
 	return defaultPrefetchCount

@@ -3,12 +3,12 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -61,7 +61,6 @@ var (
 	HTTP_ENDPOINT = env.Must("HTTP_ENDPOINT")
 	MAX_RETRIES   = env.CouldInt("MAX_RETRIES", 3)
 	METRICS_ADDR  = env.Could("METRICS_ADDR", ":2112")
-	WORKER_COUNT  = env.CouldInt("WORKER_COUNT", mq.DefaultPrefetch())
 )
 
 func Run(cleanup cleanupper.Cleanupper) error {
@@ -74,13 +73,17 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	if err := setupMetrics(cleanup); err != nil {
 		return err
 	}
-	consume, publish, err := setupMessageQueue(cleanup)
-	if err != nil {
-		return err
-	}
-	if err := startWorkers(cleanup, consume, publish); err != nil {
-		return err
-	}
+
+	logger.Info("Establishing Message Queue connection", "queue", AMQP_QUEUE, "exchange", AMQP_XCHG)
+	conn := mq.NewConnection(AMQP_HOST)
+	cleanup.Add(func(ctx context.Context) error {
+		conn.Shutdown()
+		return nil
+	})
+
+	publish := conn.Publisher(AMQP_XCHG)
+	go mq.StartQueueProcessor(conn, AMQP_QUEUE, AMQP_XCHG, AMQP_TOPIC, buildProcessor(publish))
+
 	logger.Info("Connector is ready")
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
@@ -113,63 +116,25 @@ func setupMetrics(cleanup cleanupper.Cleanupper) error {
 	return nil
 }
 
-func setupMessageQueue(cleanup cleanupper.Cleanupper) (<-chan amqp091.Delivery, chan<- mq.PublishMessage, error) {
-	logger.Info("Establishing Message Queue connection", "queue", AMQP_QUEUE, "exchange", AMQP_XCHG)
-	conn := mq.NewConnection(AMQP_HOST)
-	cleanup.Add(func(ctx context.Context) error {
-		conn.Shutdown()
-		return nil
-	})
-	publishChan := conn.Publisher(AMQP_XCHG, func(c *amqp091.Channel) error {
-		return nil
-	})
-	consumeChan := conn.Consume(AMQP_QUEUE,
-		mq.WithDefaults(),
-		mq.WithTopicBinding(AMQP_QUEUE, AMQP_XCHG, AMQP_TOPIC),
-	)
-	go conn.Start()
-
-	return consumeChan, publishChan, nil
-}
-
-func startWorkers(cleanup cleanupper.Cleanupper, consume <-chan amqp091.Delivery, publish chan<- mq.PublishMessage) error {
-	var wg sync.WaitGroup
-
-	for i := 0; i < WORKER_COUNT; i++ {
-		wg.Add(1)
-		go startWorker(i, consume, publish)
-	}
-
-	cleanup.Add(func(ctx context.Context) error {
-		logger.Info("Stopping Workers...")
-		wg.Wait()
-		return nil
-	})
-	return nil
-}
-
-func startWorker(id int, consume <-chan amqp091.Delivery, publish chan<- mq.PublishMessage) {
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-	logger = logger.With("worker_id", id, "endpoint", HTTP_ENDPOINT)
-	for incoming := range consume {
-		opsReceived.Inc()
-		if err := processIncoming(client, incoming, publish); err != nil {
-			opsFails.Inc()
-			if err := incoming.Nack(false, !incoming.Redelivered); err != nil {
-				logger.Warn("Coult not Nacknowledge delivery", "error", err)
+func buildProcessor(publish chan<- mq.PublishMessage) mq.ProcessorFuncBuilder {
+	return func() mq.ProcessorFunc {
+		client := &http.Client{
+			Timeout: 10 * time.Second,
+		}
+		return func(incoming amqp091.Delivery) error {
+			opsReceived.Inc()
+			err := processIncoming(logger, client, incoming, publish)
+			if err != nil {
+				opsFails.Inc()
+			} else {
+				opsSuccesful.Inc()
 			}
-		} else {
-			opsSuccesful.Inc()
-			if err := incoming.Ack(false); err != nil {
-				logger.Warn("Coult not Acknowledge delivery", "error", err)
-			}
+			return err
 		}
 	}
 }
 
-func processIncoming(client *http.Client, incoming amqp091.Delivery, publish chan<- mq.PublishMessage) error {
+func processIncoming(logger *slog.Logger, client *http.Client, incoming amqp091.Delivery, publish chan<- mq.PublishMessage) error {
 	req, err := http.NewRequest("POST", HTTP_ENDPOINT, bytes.NewReader(incoming.Body))
 	if err != nil {
 		return fmt.Errorf("could not create request for fission worker: %w", err)
@@ -196,6 +161,12 @@ func processIncoming(client *http.Client, incoming amqp091.Delivery, publish cha
 			responseMessage = string(body)
 		}
 		logger.Warn("Fission worker returned non-ok status", "status_code", res.StatusCode, "body", responseMessage)
+		err = fmt.Errorf("response was non-ok status: %d", res.StatusCode)
+		// Mark malformed if a bad request was made, this way it isnt requeued
+		if res.StatusCode > 399 && res.StatusCode < 500 {
+			err = errors.Join(mq.ErrMalformed, err)
+		}
+		return err
 	}
 
 	//
