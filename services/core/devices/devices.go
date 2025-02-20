@@ -50,6 +50,11 @@ var (
 		"Invalid coordinates supplied",
 		"ERR_LOCATION_INVALID_COORDINATES",
 	)
+	ErrFeatureOfInterestNotFound = web.NewError(
+		http.StatusNotFound,
+		"feature_of_interest not found",
+		"FEATURE_OF_INTEREST_NOT_FOUND",
+	)
 )
 
 type DeviceState uint8
@@ -76,18 +81,25 @@ type Device struct {
 }
 
 type Sensor struct {
-	ID                  int64           `json:"id"`
-	Code                string          `json:"code"`
-	Description         string          `json:"description"`
-	DeviceID            int64           `json:"device_id" db:"device_id"`
-	Brand               string          `json:"brand"`
-	ArchiveTime         *int            `json:"archive_time" db:"archive_time"`
-	ExternalID          string          `json:"external_id" db:"external_id"`
-	IsFallback          bool            `json:"is_fallback" db:"is_fallback"`
-	Properties          json.RawMessage `json:"properties"`
-	FeatureOfInterestID int64           `json:"feature_of_interest_id"`
-	TenantID            int64           `json:"tenant_id"`
-	CreatedAt           time.Time       `json:"created_at" db:"created_at"`
+	ID                int64              `json:"id"`
+	Code              string             `json:"code"`
+	Description       string             `json:"description"`
+	DeviceID          int64              `json:"device_id" db:"device_id"`
+	Brand             string             `json:"brand"`
+	ArchiveTime       *int               `json:"archive_time" db:"archive_time"`
+	ExternalID        string             `json:"external_id" db:"external_id"`
+	IsFallback        bool               `json:"is_fallback" db:"is_fallback"`
+	Properties        json.RawMessage    `json:"properties"`
+	FeatureOfInterest *FeatureOfInterest `json:"feature_of_interest"`
+	TenantID          int64              `json:"tenant_id"`
+	CreatedAt         time.Time          `json:"created_at" db:"created_at"`
+}
+
+type FeatureOfInterest struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	TenantID    int64  `json:"tenant_id"`
 }
 
 type NewDeviceOpts struct {

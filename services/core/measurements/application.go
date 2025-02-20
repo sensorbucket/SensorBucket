@@ -171,6 +171,16 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 		measurement.MeasurementProperties = m.Properties
 		measurement.MeasurementExpiration = time.UnixMilli(msg.ReceivedAt).Add(time.Duration(*archiveTimeDays) * 24 * time.Hour)
 
+		// Fetch FoI info
+		if sensor.FeatureOfInterest != nil {
+			measurement.FeatureOfInterestID.Int64 = sensor.FeatureOfInterest.ID
+			measurement.FeatureOfInterestID.Valid = true
+			measurement.FeatureOfInterestName.String = sensor.FeatureOfInterest.Name
+			measurement.FeatureOfInterestName.Valid = true
+			measurement.FeatureOfInterestDescription.String = sensor.FeatureOfInterest.Description
+			measurement.FeatureOfInterestDescription.Valid = true
+		}
+
 		// Measurement location is either explicitly set or falls back to device location
 		if m.Latitude != nil && m.Longitude != nil {
 			measurement.MeasurementLatitude = m.Latitude

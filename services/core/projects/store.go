@@ -89,7 +89,7 @@ func (store *PostgresqlStore) ListProjects(ctx context.Context, filter ProjectsF
 	}
 	// paginate the projects table seperately
 	projectsQ := pq.Select("id, name, description").From("projects").OrderBy("id ASC").Offset(cursor.Columns.Offset).Limit(cursor.Limit)
-	projectsQ = auth.ProtectedQuery(ctx, projectsQ)
+	projectsQ = auth.ProtectedQuery(ctx, "tenant_id", projectsQ)
 
 	q := pq.Select(`
     project.id, project.name, project.description,

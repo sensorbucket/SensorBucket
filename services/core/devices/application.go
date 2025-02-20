@@ -20,6 +20,7 @@ type DeviceStore interface {
 	Save(ctx context.Context, dev *Device) error
 	Delete(ctx context.Context, dev *Device) error
 	GetSensor(ctx context.Context, id int64) (*Sensor, error)
+	GetFeatureOfInterestByID(ctx context.Context, id int64) (*FeatureOfInterest, error)
 }
 
 type SensorGroupStore interface {
@@ -272,7 +273,11 @@ func (s *Service) UpdateSensor(ctx context.Context, device *Device, sensor *Sens
 		sensor.Properties = opt.Properties
 	}
 	if opt.FeatureOfInterestID != nil {
-		sensor.FeatureOfInterestID = *opt.FeatureOfInterestID
+		feature, err := s.store.GetFeatureOfInterestByID(ctx, *opt.FeatureOfInterestID)
+		if err != nil {
+			return err
+		}
+		sensor.FeatureOfInterest = feature
 	}
 
 	if err := device.UpdateSensor(sensor); err != nil {

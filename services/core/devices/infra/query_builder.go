@@ -106,7 +106,7 @@ func (b deviceQueryBuilder) Query(ctx context.Context, db *sqlx.DB) (*pagination
 	}
 
 	// Authorize
-	q = auth.ProtectedQuery(ctx, q)
+	q = auth.ProtectedQuery(ctx, "tenant_id", q)
 
 	// Fetch devices
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(db).Query()
@@ -152,9 +152,7 @@ func (b deviceQueryBuilder) Query(ctx context.Context, db *sqlx.DB) (*pagination
 	}
 
 	// Fetch sensors for devices
-	sensors, err := listSensors(ctx, db, func(q sq.SelectBuilder) sq.SelectBuilder {
-		return q.Where(sq.Eq{"device_id": ids})
-	})
+	sensors, err := listSensors(ctx, db, ListSensorsFilter{DeviceID: ids})
 	if err != nil {
 		return nil, err
 	}
