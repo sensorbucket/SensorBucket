@@ -174,6 +174,9 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 			measurement.FeatureOfInterestID = &sensor.FeatureOfInterest.ID
 			measurement.FeatureOfInterestName = &sensor.FeatureOfInterest.Name
 			measurement.FeatureOfInterestDescription = &sensor.FeatureOfInterest.Description
+			measurement.FeatureOfInterestEncodingType = &sensor.FeatureOfInterest.EncodingType
+			measurement.FeatureOfInterestFeature = sensor.FeatureOfInterest.Feature
+			measurement.FeatureOfInterestProperties = sensor.FeatureOfInterest.Properties
 		}
 
 		// Measurement location is either explicitly set or falls back to device location

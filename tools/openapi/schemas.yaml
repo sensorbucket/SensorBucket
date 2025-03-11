@@ -274,6 +274,12 @@ featureOfInterest:
       example: FeatureName
     description: 
       type: string
+    encoding_type:
+      type: string
+    feature:
+      type: object
+    properties:
+      type: object
 
 tenant:
   type: object
@@ -552,10 +558,18 @@ measurement:
     feature_of_interest_id:
       type: integer
       format: int64
-    feature_of_interest_name:
+      example: 1
+    feature_of_interest_name: 
       type: string
-    feature_of_interest_description:
+      example: FeatureName
+    feature_of_interest_description: 
       type: string
+    feature_of_interest_encoding_type:
+      type: string
+    feature_of_interest_feature:
+      type: object
+    feature_of_interest_properties:
+      type: object
     created_at:
       type: string
       format: date-time

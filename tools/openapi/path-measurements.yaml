@@ -29,20 +29,21 @@ get:
         format: date-time
         example: "2022-12-31T23:59:59Z"
     - in: query
-      name: device_id
-      required: false
-      schema:
-        type: string
-    - in: query
       name: datastream
       required: false
       schema:
         type: string
     - in: query
-      name: sensor_code
+      name: observed_property
       required: false
       schema:
         type: string
+    - in: query
+      name: feature_of_interest_id
+      required: false
+      schema:
+        type: integer
+        format: int64
     - in: query
       name: cursor
       description: The cursor for the current page

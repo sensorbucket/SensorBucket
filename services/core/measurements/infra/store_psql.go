@@ -88,6 +88,9 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 		"feature_of_interest_id",
 		"feature_of_interest_name",
 		"feature_of_interest_description",
+		"feature_of_interest_encoding_type",
+		"feature_of_interest_feature",
+		"feature_of_interest_properties",
 		"created_at",
 	).
 		From("measurements")
@@ -181,6 +184,9 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 			&m.FeatureOfInterestID,
 			&m.FeatureOfInterestName,
 			&m.FeatureOfInterestDescription,
+			&m.FeatureOfInterestEncodingType,
+			&m.FeatureOfInterestFeature,
+			&m.FeatureOfInterestProperties,
 			&m.CreatedAt,
 			&cursor.Columns.MeasurementTimestamp,
 			&cursor.Columns.ID,
@@ -391,6 +397,9 @@ INSERT INTO measurements (
       feature_of_interest_id,
       feature_of_interest_name,
       feature_of_interest_description,
+      feature_of_interest_encoding_type,
+      feature_of_interest_feature,
+      feature_of_interest_properties,
 			created_at
 ) VALUES (
   $1,
@@ -430,7 +439,10 @@ INSERT INTO measurements (
   $37,
   $38,
   $39,
-  $40
+  $40,
+  $41,
+  $42,
+  $43
 );
 
 `,
@@ -468,7 +480,12 @@ INSERT INTO measurements (
 			measurement.MeasurementLongitude, measurement.MeasurementLatitude,
 			measurement.MeasurementAltitude,
 			measurement.MeasurementExpiration,
-			measurement.FeatureOfInterestID, measurement.FeatureOfInterestName, measurement.FeatureOfInterestDescription,
+			measurement.FeatureOfInterestID,
+			measurement.FeatureOfInterestName,
+			measurement.FeatureOfInterestDescription,
+			measurement.FeatureOfInterestEncodingType,
+			measurement.FeatureOfInterestFeature,
+			measurement.FeatureOfInterestProperties,
 			measurement.CreatedAt,
 		)
 	}

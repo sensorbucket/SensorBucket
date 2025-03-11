@@ -18,9 +18,9 @@ type Service struct {
 type Store interface {
 	ListFeaturesOfInterest(ctx context.Context, filter FeatureOfInterestFilter, pageReq pagination.Request) (*pagination.Page[FeatureOfInterest], error)
 	GetFeatureOfInterest(ctx context.Context, id int64, filter FeatureOfInterestFilter) (*FeatureOfInterest, error)
-	CreateFeatureOfInterest(ctx context.Context, foi *FeatureOfInterest) error
 	DeleteFeatureOfInterest(ctx context.Context, id int64) error
 	UpdateFeatureOfInterest(ctx context.Context, id int64, opts UpdateFeatureOfInterestOpts) error
+	SaveFeatureOfInterest(ctx context.Context, foi *FeatureOfInterest) error
 }
 
 func NewService(store Store) *Service {
@@ -69,7 +69,10 @@ func (service *Service) CreateFeatureOfInterest(ctx context.Context, opts Create
 	if err != nil {
 		return nil, err
 	}
-	return foi, service.store.CreateFeatureOfInterest(ctx, foi)
+	if err := service.store.SaveFeatureOfInterest(ctx, foi); err != nil {
+		return nil, err
+	}
+	return foi, nil
 }
 
 func (service *Service) DeleteFeatureOfInterest(ctx context.Context, id int64) error {
@@ -86,7 +89,7 @@ type UpdateFeatureOfInterestOpts struct {
 	Name         *string
 	Description  *string
 	EncodingType *string
-	Feature      any
+	Feature      *json.RawMessage
 	Properties   *json.RawMessage
 }
 
@@ -94,8 +97,15 @@ func (service *Service) UpdateFeatureOfInterest(ctx context.Context, id int64, o
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
 		return err
 	}
-	if _, err := service.GetFeatureOfInterest(ctx, id); err != nil {
+
+	foi, err := service.GetFeatureOfInterest(ctx, id)
+	if err != nil {
 		return err
 	}
-	return service.store.UpdateFeatureOfInterest(ctx, id, opts)
+
+	if err := foi.SetFeature(*opts.EncodingType, *opts.Feature); err != nil {
+		return err
+	}
+
+	return service.store.SaveFeatureOfInterest(ctx, foi)
 }

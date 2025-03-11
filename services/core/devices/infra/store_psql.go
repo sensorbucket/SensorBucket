@@ -7,10 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"github.com/twpayne/go-geom"
+	"github.com/twpayne/go-geom/encoding/wkb"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
@@ -19,7 +22,8 @@ import (
 )
 
 var (
-	pq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	pq     = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	logger = slog.Default().With("component", "services/core/devices/infra/store_psql.go")
 
 	_ devices.DeviceStore = (*PSQLStore)(nil)
 )
@@ -105,7 +109,7 @@ type listSensorsRow struct {
 	featureOfInterestName         sql.NullString
 	featureOfInterestDescription  sql.NullString
 	featureOfInterestEncodingType sql.NullString
-	featureOfInterestFeature      sql.Null[json.RawMessage]
+	featureOfInterestFeature      sql.Null[wkb.Geom]
 	featureOfInterestProperties   sql.Null[json.RawMessage]
 	featureOfInterestTenantID     sql.NullInt64
 }
@@ -114,12 +118,22 @@ func (row *listSensorsRow) ToModel() devices.Sensor {
 	if !row.featureOfInterestID.Valid {
 		return row.sensor
 	}
+	var point *geom.Point
+	if row.featureOfInterestFeature.Valid {
+		g, ok := row.featureOfInterestFeature.V.Geom().(*geom.Point)
+		if !ok {
+			logger.Warn("listSensorsRow contains geometry that isnt a point!")
+		} else {
+			point = g
+		}
+	}
+
 	row.sensor.FeatureOfInterest = &featuresofinterest.FeatureOfInterest{
 		ID:           row.featureOfInterestID.Int64,
 		Name:         row.featureOfInterestName.String,
 		Description:  row.featureOfInterestDescription.String,
 		EncodingType: row.featureOfInterestEncodingType.String,
-		Feature:      row.featureOfInterestFeature.V,
+		Feature:      point,
 		Properties:   row.featureOfInterestProperties.V,
 		TenantID:     row.featureOfInterestTenantID.Int64,
 	}

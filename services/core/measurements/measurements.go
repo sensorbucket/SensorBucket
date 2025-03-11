@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/twpayne/go-geom"
 
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 )
@@ -58,5 +59,8 @@ type Measurement struct {
 	FeatureOfInterestID             *int64              `json:"feature_of_interest_id"`
 	FeatureOfInterestName           *string             `json:"feature_of_interest_name"`
 	FeatureOfInterestDescription    *string             `json:"feature_of_interest_description"`
+	FeatureOfInterestEncodingType   *string             `json:"feature_of_interest_encoding_type"`
+	FeatureOfInterestFeature        geom.T              `json:"feature_of_interest_feature"`
+	FeatureOfInterestProperties     json.RawMessage     `json:"feature_of_interest_properties"`
 	CreatedAt                       time.Time           `json:"created_at"`
 }

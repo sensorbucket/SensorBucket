@@ -59,7 +59,7 @@ func (transport *CoreTransport) httpCreateFeatureOfInterest() http.HandlerFunc {
 		Name         string           `json:"name"`
 		Description  *string          `json:"description"`
 		EncodingType *string          `json:"encoding_type"`
-		Feature      any              `json:"feature"`
+		Feature      *json.RawMessage `json:"feature"`
 		Properties   *json.RawMessage `json:"properties"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +92,7 @@ func (transport *CoreTransport) httpUpdateFeatureOfInterest() http.HandlerFunc {
 		Name         *string          `json:"name"`
 		Description  *string          `json:"description"`
 		EncodingType *string          `json:"encoding_type"`
-		Feature      any              `json:"feature"`
+		Feature      *json.RawMessage `json:"feature"`
 		Properties   *json.RawMessage `json:"properties"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {

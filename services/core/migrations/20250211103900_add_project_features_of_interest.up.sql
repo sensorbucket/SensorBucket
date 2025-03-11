@@ -36,9 +36,12 @@ CREATE TABLE feature_of_interest_datastream (
   PRIMARY KEY(feature_of_interest_id)
 );
 
-ALTER TABLE sensors ADD COLUMN feature_of_interest_id BIGINT;
+ALTER TABLE sensors ADD COLUMN feature_of_interest_id BIGINT REFERENCES features_of_interest(id);
 ALTER TABLE measurements 
   ADD COLUMN feature_of_interest_id BIGINT
   ADD COLUMN feature_of_interest_name TEXT
-  ADD COLUMN feature_of_interest_description TEXT;
+  ADD COLUMN feature_of_interest_description TEXT
+  ADD COLUMN feature_of_interest_encoding_type TEXT
+  ADD COLUMN feature_of_interest_feature GEOGRAPHY
+  ADD COLUMN feature_of_interest_properties JSONB;
 CREATE INDEX measurements_query_by_foi ON measurements(feature_of_interest_id, datastream_observed_property, measurement_timestamp DESC);
