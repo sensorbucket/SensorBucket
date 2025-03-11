@@ -212,10 +212,61 @@ sensor:
       type: object
       example: 
         mount_height: 15cm
+    feature_of_interest:
+      $ref: "#/featureOfInterest"
     created_at:
       type: string
       format: date-time
       example: 2023-05-17T15:00:00Z
+
+createFeatureOfInterestRequest:
+  type: object
+  required:
+   - name
+  properties:
+    name: 
+      type: string
+      example: FeatureName
+    description: 
+      type: string
+    encoding_type: 
+      type: string
+      example: application/geo+json
+    feature: 
+      type: object
+    properties: 
+      type: object
+updateFeatureOfInterestRequest:
+  type: object
+  properties:
+    name: 
+      type: string
+      example: FeatureName
+    description: 
+      type: string
+    encoding_type: 
+      type: string
+      example: application/geo+json
+    feature: 
+      type: object
+    properties: 
+      type: object
+featureOfInterest:
+  type: object
+  required:
+   - id
+   - name
+   - description
+  properties:
+    id:
+      type: integer
+      format: int64
+      example: 1
+    name: 
+      type: string
+      example: FeatureName
+    description: 
+      type: string
 
 tenant:
   type: object
@@ -230,7 +281,7 @@ tenant:
       type: integer
       format: int64
       example: 1
-    name:
+    name: 
       type: string
       example: Provincie Zeeland
     address:
@@ -491,6 +542,13 @@ measurement:
       type: string
       format: date-time
       example: "2022-01-01T00:00:00Z"
+    feature_of_interest_id:
+      type: integer
+      format: int64
+    feature_of_interest_name:
+      type: string
+    feature_of_interest_description:
+      type: string
     created_at:
       type: string
       format: date-time

@@ -13,6 +13,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
+	"sensorbucket.nl/sensorbucket/services/core/featuresofinterest"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	"sensorbucket.nl/sensorbucket/services/core/projects"
@@ -22,18 +23,17 @@ type MeasurementService interface {
 	QueryMeasurements(context.Context, measurements.Filter, pagination.Request) (*pagination.Page[measurements.Measurement], error)
 	GetDatastream(context.Context, uuid.UUID) (*measurements.Datastream, error)
 	ListDatastreams(context.Context, measurements.DatastreamFilter, pagination.Request) (*pagination.Page[measurements.Datastream], error)
-	GetFeatureOfInterest(context.Context, int64) (*measurements.FeatureOfInterest, error)
-	ListFeaturesOfInterest(ctx context.Context, filter measurements.FeatureOfInterestFilter, pageRequest pagination.Request) (*pagination.Page[measurements.FeatureOfInterest], error)
 }
 
 type CoreTransport struct {
-	baseURL            string
-	router             chi.Router
-	keySource          auth.JWKSClient
-	deviceService      *devices.Service
-	measurementService MeasurementService
-	processingService  *processing.Service
-	projectsService    *projects.Application
+	baseURL                  string
+	router                   chi.Router
+	keySource                auth.JWKSClient
+	deviceService            *devices.Service
+	measurementService       MeasurementService
+	processingService        *processing.Service
+	projectsService          *projects.Application
+	featureOfInterestService *featuresofinterest.Service
 }
 
 func New(
@@ -43,14 +43,16 @@ func New(
 	measurementService MeasurementService,
 	processingService *processing.Service,
 	projectsService *projects.Application,
+	featureOfInterestService *featuresofinterest.Service,
 ) *CoreTransport {
 	t := &CoreTransport{
-		baseURL:            baseURL,
-		keySource:          keySource,
-		deviceService:      deviceService,
-		measurementService: measurementService,
-		processingService:  processingService,
-		projectsService:    projectsService,
+		baseURL:                  baseURL,
+		keySource:                keySource,
+		deviceService:            deviceService,
+		measurementService:       measurementService,
+		processingService:        processingService,
+		projectsService:          projectsService,
+		featureOfInterestService: featureOfInterestService,
 	}
 	t.routes()
 	return t
@@ -125,7 +127,10 @@ func (t *CoreTransport) routes() {
 
 	r.Route("/features-of-interest", func(r chi.Router) {
 		r.Get("/", t.httpListFeaturesOfInterest())
+		r.Post("/", t.httpCreateFeatureOfInterest())
 		r.Get("/{id}", t.httpGetFeatureOfInterest())
+		r.Delete("/{id}", t.httpDeleteFeaturOfInterest())
+		r.Patch("/{id}", t.httpUpdateFeatureOfInterest())
 	})
 
 	r.Get("/measurements", t.httpGetMeasurements())

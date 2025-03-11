@@ -44,8 +44,8 @@ type DeviceModel struct {
 }
 
 type DevicePaginationQuery struct {
-	CreatedAt time.Time `pagination:"created_at,ASC"`
-	ID        int64     `pagination:"id,ASC"`
+	CreatedAt time.Time `pagination:"device.created_at,ASC"`
+	ID        int64     `pagination:"device.id,ASC"`
 }
 
 func (s *PSQLStore) ListInBoundingBox(ctx context.Context, filter devices.DeviceFilter, p pagination.Request) (*pagination.Page[devices.Device], error) {
@@ -123,7 +123,7 @@ func (s *PSQLStore) ListSensors(ctx context.Context, p pagination.Request) (*pag
 	}
 	sensors, err := listSensorsPaginated(ctx, s.db, &cursor)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("in ListSensors: %w", err)
 	}
 	page := pagination.CreatePageT(sensors, cursor)
 	return &page, nil
@@ -162,7 +162,7 @@ func (s *PSQLStore) updateDevice(ctx context.Context, dev *devices.Device) error
 			"location_description": dev.LocationDescription,
 			"state":                dev.State,
 		}).
-		Where("id=?", dev.ID)
+		Where(sq.Eq{"id": dev.ID})
 	q = auth.ProtectedQuery(ctx, "tenant_id", q)
 	_, err := q.PlaceholderFormat(sq.Dollar).RunWith(s.db).Exec()
 	if err != nil {
@@ -259,7 +259,7 @@ func (store *PSQLStore) GetFeatureOfInterestByID(ctx context.Context, id int64) 
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, devices.ErrFeatureOfInterestNotFound
 		}
-		return nil, err
+		return nil, fmt.Errorf("in GetFeatureOfInterestByID: %w", err)
 	}
 
 	return &feature, nil
@@ -282,12 +282,12 @@ func find(ctx context.Context, db DB, id int64) (*devices.Device, error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, devices.ErrDeviceNotFound
 		}
-		return nil, err
+		return nil, fmt.Errorf("in find: %w", err)
 	}
 
 	sensors, err := listSensors(ctx, db, ListSensorsFilter{DeviceID: []int64{dev.ID}})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("in find, listSensors: %w", err)
 	}
 	dev.Sensors = sensors
 
@@ -299,7 +299,7 @@ func listSensorsPaginated(ctx context.Context, db DB, cursor *pagination.Cursor[
 	if cursor == nil {
 		newCursor, err := pagination.GetCursor[SensorPaginationQuery](pagination.Request{})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("in listSensorsPaginated while creating empty cursor because none was given: %w", err)
 		}
 		cursor = &newCursor
 	}
@@ -362,7 +362,7 @@ func listSensors(_ context.Context, db DB, filter ListSensorsFilter) ([]devices.
 		"sensor.brand", "sensor.created_at", "sensor.is_fallback", "sensor.tenant_id",
 		"feature.id", "feature.name", "feature.description",
 	).From("sensors sensor").LeftJoin("features_of_interest feature ON sensor.feature_of_interest_id = feature.id").
-		Where(sq.Eq{"device_id": filter.DeviceID})
+		Where(sq.Eq{"sensor.device_id": filter.DeviceID})
 
 	rows, err := q.RunWith(db).Query()
 	if err != nil {
@@ -433,23 +433,23 @@ func getSensor(ctx context.Context, tx DB, id int64) (*devices.Sensor, error) {
 	q := pq.Select(
 		"sensor.id", "sensor.code", "sensor.description", "sensor.brand", "sensor.archive_time", "sensor.external_id",
 		"sensor.properties", "sensor.created_at", "sensor.device_id", "sensor.is_fallback", "sensor.tenant_id",
-		"feature_of_interest_id",
 		"feature.id", "feature.name", "feature.description",
 	).From("sensors sensor").LeftJoin("features_of_interest feature ON sensor.feature_of_interest_id = feature.id").
-		Where(sq.Eq{"id": id})
+		Where(sq.Eq{"sensor.id": id})
 	q = auth.ProtectedQuery(ctx, "sensor.tenant_id", q)
 
 	var row listSensorsRow
 	err := q.RunWith(tx).Scan(
 		&row.sensor.ID, &row.sensor.Code, &row.sensor.Description, &row.sensor.Brand, &row.sensor.ArchiveTime,
 		&row.sensor.ExternalID, &row.sensor.Properties, &row.sensor.CreatedAt, &row.sensor.DeviceID, &row.sensor.IsFallback,
-		&row.sensor.TenantID, &row.featureOfInterestID, &row.featureOfInterestName, &row.featureOfInterestDescription,
+		&row.sensor.TenantID,
+		&row.featureOfInterestID, &row.featureOfInterestName, &row.featureOfInterestDescription,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, devices.ErrSensorNotFound
 	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("in getSensor: %w", err)
 	}
 	sensor := row.ToModel()
 	return &sensor, nil

@@ -147,13 +147,14 @@ func NewDevice(tenantID int64, opts NewDeviceOpts) (*Device, error) {
 }
 
 type NewSensorOpts struct {
-	Code        string          `json:"code"`
-	Brand       string          `json:"brand"`
-	Description string          `json:"description"`
-	ExternalID  string          `json:"external_id"`
-	ArchiveTime *int            `json:"archive_time"`
-	Properties  json.RawMessage `json:"properties"`
-	IsFallback  bool            `json:"is_fallback"`
+	Code              string
+	Brand             string
+	Description       string
+	ExternalID        string
+	ArchiveTime       *int
+	FeatureOfInterest *FeatureOfInterest
+	Properties        json.RawMessage
+	IsFallback        bool
 }
 
 func NewSensor(opts NewSensorOpts) (*Sensor, error) {

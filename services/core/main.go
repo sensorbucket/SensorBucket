@@ -25,6 +25,7 @@ import (
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
+	"sensorbucket.nl/sensorbucket/services/core/featuresofinterest"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	measurementsinfra "sensorbucket.nl/sensorbucket/services/core/measurements/infra"
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
@@ -110,6 +111,9 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
 	processingservice := processing.New(processingstore, processingPipelinePublisher, keyClient)
 
+	featureOfInterestStore := featuresofinterest.NewStorePSQL(pool)
+	featureOfInterestService := featuresofinterest.NewService(featureOfInterestStore)
+
 	projectsStore := projects.NewPostgresStore(pool)
 	projectsService := projects.New(projectsStore)
 
@@ -131,14 +135,15 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	go amqpConn.Start()
 
 	// Setup HTTP Transport
-	httpsrv := createHTTPServer(coretransport.New(
+	httpsrv := createHTTPServer(cors.AllowAll().Handler(coretransport.New(
 		HTTP_BASE,
 		keyClient,
 		deviceservice,
 		measurementservice,
 		processingservice,
 		projectsService,
-	))
+		featureOfInterestService,
+	)))
 	go func() {
 		if err := httpsrv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) && err != nil {
 			fmt.Printf("HTTP Server error: %v\n", err)

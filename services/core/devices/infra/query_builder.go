@@ -26,18 +26,18 @@ type deviceQueryBuilder struct {
 
 func newDeviceQueryBuilder() deviceQueryBuilder {
 	q := sq.Select(
-		"devices.id",
-		"devices.code",
-		"devices.description",
-		"devices.tenant_id",
-		"devices.properties",
-		"devices.location_description",
-		"ST_X(devices.location::geometry) AS longitude",
-		"ST_Y(devices.location::geometry) AS latitude",
-		"devices.altitude",
-		"devices.state",
-		"devices.created_at",
-	).From("devices")
+		"device.id",
+		"device.code",
+		"device.description",
+		"device.tenant_id",
+		"device.properties",
+		"device.location_description",
+		"ST_X(device.location::geometry) AS longitude",
+		"ST_Y(device.location::geometry) AS latitude",
+		"device.altitude",
+		"device.state",
+		"device.created_at",
+	).From("devices device")
 
 	return deviceQueryBuilder{query: q}
 }
@@ -88,25 +88,25 @@ func (b deviceQueryBuilder) Query(ctx context.Context, db *sqlx.DB) (*pagination
 
 	// Apply filters
 	if b.filters.Properties != nil {
-		q = q.Where("devices.properties::jsonb @> ?::jsonb", b.filters.Properties)
+		q = q.Where("device.properties::jsonb @> ?::jsonb", b.filters.Properties)
 	}
 	if len(b.filters.Sensor) > 0 {
 		// Update query here
-		subQ, subArgs, err := sq.Select("DISTINCT sensors.device_id").From("sensors").Where(sq.Eq{"sensors.id": b.filters.Sensor}).ToSql()
+		subQ, subArgs, err := sq.Select("DISTINCT sensor.device_id").From("sensors sensor").Where(sq.Eq{"sensor.id": b.filters.Sensor}).ToSql()
 		if err != nil {
 			return nil, err
 		}
-		q = q.Where(fmt.Sprintf("devices.id in (%s)", subQ), subArgs...)
+		q = q.Where(fmt.Sprintf("device.id in (%s)", subQ), subArgs...)
 	}
 	if len(b.filters.ID) > 0 {
-		q = q.Where(sq.Eq{"devices.id": b.filters.ID})
+		q = q.Where(sq.Eq{"device.id": b.filters.ID})
 	}
 	if len(b.filters.Code) > 0 {
-		q = q.Where(sq.Eq{"devices.code": b.filters.Code})
+		q = q.Where(sq.Eq{"device.code": b.filters.Code})
 	}
 
 	// Authorize
-	q = auth.ProtectedQuery(ctx, "tenant_id", q)
+	q = auth.ProtectedQuery(ctx, "device.tenant_id", q)
 
 	// Fetch devices
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(db).Query()

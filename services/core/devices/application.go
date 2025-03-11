@@ -117,30 +117,39 @@ func (s *Service) GetDevice(ctx context.Context, id int64) (*Device, error) {
 }
 
 type NewSensorDTO struct {
-	Code        string          `json:"code"`
-	Brand       string          `json:"brand"`
-	GoalID      int64           `json:"goal_id"`
-	TypeID      int64           `json:"type_id"`
-	Description string          `json:"description"`
-	ExternalID  string          `json:"external_id"`
-	Properties  json.RawMessage `json:"properties"`
-	ArchiveTime *int            `json:"archive_time"`
-	IsFallback  bool            `json:"is_fallback"`
+	Code                string          `json:"code"`
+	Brand               string          `json:"brand"`
+	Description         string          `json:"description"`
+	ExternalID          string          `json:"external_id"`
+	FeatureOfInterestID int64           `json:"feature_of_interest_id"`
+	Properties          json.RawMessage `json:"properties"`
+	ArchiveTime         *int            `json:"archive_time"`
+	IsFallback          bool            `json:"is_fallback"`
 }
 
 func (s *Service) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error {
+	var err error
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
 		return err
 	}
 
+	var feature *FeatureOfInterest
+	if dto.FeatureOfInterestID > 0 {
+		feature, err = s.GetFeatureOfInterest(ctx, dto.FeatureOfInterestID)
+		if err != nil {
+			return err
+		}
+	}
+
 	opts := NewSensorOpts{
-		Code:        dto.Code,
-		Brand:       dto.Brand,
-		Description: dto.Description,
-		ExternalID:  dto.ExternalID,
-		Properties:  dto.Properties,
-		ArchiveTime: dto.ArchiveTime,
-		IsFallback:  dto.IsFallback,
+		Code:              dto.Code,
+		Brand:             dto.Brand,
+		Description:       dto.Description,
+		ExternalID:        dto.ExternalID,
+		Properties:        dto.Properties,
+		ArchiveTime:       dto.ArchiveTime,
+		FeatureOfInterest: feature,
+		IsFallback:        dto.IsFallback,
 	}
 	if err := dev.AddSensor(opts); err != nil {
 		return err
@@ -419,4 +428,11 @@ func (s *Service) UpdateSensorGroup(ctx context.Context, group *SensorGroup, opt
 	}
 
 	return nil
+}
+
+func (s *Service) GetFeatureOfInterest(ctx context.Context, id int64) (*FeatureOfInterest, error) {
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_PROJECTS}); err != nil {
+		return nil, err
+	}
+	return s.store.GetFeatureOfInterestByID(ctx, id)
 }

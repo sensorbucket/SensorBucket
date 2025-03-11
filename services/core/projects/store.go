@@ -94,7 +94,7 @@ func (store *PostgresqlStore) ListProjects(ctx context.Context, filter ProjectsF
 	q := pq.Select(`
     project.id, project.name, project.description,
     project_feature.interested_observation_types,
-    feature.id, feature.name, feature.description, feature.encoding_type, feature.feature_geometry
+    feature.id, feature.name, feature.description, feature.encoding_type, feature.feature
   `).FromSelect(projectsQ, "project").
 		LeftJoin("project_feature_of_interest project_feature ON project_feature.project_id = project.id").
 		LeftJoin("feature_of_interest feature ON project_feature.feature_of_interest_id = feature.id")

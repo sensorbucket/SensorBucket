@@ -1,0 +1,94 @@
+get:
+  operationId: GetFeatureOfInterest
+  summary: Get a Feature of Interest by its ID
+  description: |
+    Get the featureofinterest with the given identifier.
+  tags: ["FeaturesOfInterest"]
+  parameters: 
+    - name: id
+      description: The ID of the Feature of Interest
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+  responses:
+    '200':
+      description: Fetched Feature of Interest
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Fetched Feature of Interest
+              data:
+                $ref: 'schemas.yaml#/featureOfInterest'
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+    '404':
+      $ref: './responses.yaml#/404'
+delete:
+  operationId: DeleteFeatureOfInterest
+  summary: Delete a Feature of Interest by its ID
+  description: |
+    Delete the featureofinterest with the given identifier.
+  tags: ["FeaturesOfInterest"]
+  parameters: 
+    - name: id
+      description: The ID of the Feature of Interest
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+  responses:
+    '200':
+      description: Deleted Feature of Interest
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+    '404':
+      $ref: './responses.yaml#/404'
+patch:
+  operationId: UpdateFeatureOfInterest
+  summary: Update a Feature of Interest by its ID
+  description: |
+    Update the featureofinterest with the given identifier.
+  tags: ["FeaturesOfInterest"]
+  parameters: 
+    - name: id
+      description: The ID of the Feature of Interest
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+  requestBody: 
+    content:
+      application/json:
+        schema:
+          $ref: 'schemas.yaml#/updateFeatureOfInterestRequest'
+  responses:
+    '200':
+      description: Fetched Feature of Interest
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Fetched Feature of Interest
+              data:
+                $ref: 'schemas.yaml#/featureOfInterest'
+    '401':
+      $ref: './responses.yaml#/401'
+    '403':
+      $ref: './responses.yaml#/403'
+    '404':
+      $ref: './responses.yaml#/404'
