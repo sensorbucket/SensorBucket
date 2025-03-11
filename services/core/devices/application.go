@@ -9,6 +9,7 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/services/core/featuresofinterest"
 )
 
 type DeviceStore interface {
@@ -20,7 +21,6 @@ type DeviceStore interface {
 	Save(ctx context.Context, dev *Device) error
 	Delete(ctx context.Context, dev *Device) error
 	GetSensor(ctx context.Context, id int64) (*Sensor, error)
-	GetFeatureOfInterestByID(ctx context.Context, id int64) (*FeatureOfInterest, error)
 }
 
 type SensorGroupStore interface {
@@ -31,14 +31,16 @@ type SensorGroupStore interface {
 }
 
 type Service struct {
-	store            DeviceStore
-	sensorGroupStore SensorGroupStore
+	store                    DeviceStore
+	sensorGroupStore         SensorGroupStore
+	featureOfInterestService *featuresofinterest.Service
 }
 
-func New(store DeviceStore, sensorGroupStore SensorGroupStore) *Service {
+func New(store DeviceStore, sensorGroupStore SensorGroupStore, featureOfInterestService *featuresofinterest.Service) *Service {
 	return &Service{
-		store:            store,
-		sensorGroupStore: sensorGroupStore,
+		store:                    store,
+		sensorGroupStore:         sensorGroupStore,
+		featureOfInterestService: featureOfInterestService,
 	}
 }
 
@@ -128,29 +130,27 @@ type NewSensorDTO struct {
 }
 
 func (s *Service) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error {
-	var err error
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
 		return err
 	}
 
-	var feature *FeatureOfInterest
+	opts := NewSensorOpts{
+		Code:        dto.Code,
+		Brand:       dto.Brand,
+		Description: dto.Description,
+		ExternalID:  dto.ExternalID,
+		Properties:  dto.Properties,
+		ArchiveTime: dto.ArchiveTime,
+		IsFallback:  dto.IsFallback,
+	}
 	if dto.FeatureOfInterestID > 0 {
-		feature, err = s.GetFeatureOfInterest(ctx, dto.FeatureOfInterestID)
+		feature, err := s.featureOfInterestService.GetFeatureOfInterest(ctx, dto.FeatureOfInterestID)
 		if err != nil {
-			return err
+			return fmt.Errorf("in AddSensor: could not get feature of interest: %w", err)
 		}
+		opts.FeatureOfInterest = feature
 	}
 
-	opts := NewSensorOpts{
-		Code:              dto.Code,
-		Brand:             dto.Brand,
-		Description:       dto.Description,
-		ExternalID:        dto.ExternalID,
-		Properties:        dto.Properties,
-		ArchiveTime:       dto.ArchiveTime,
-		FeatureOfInterest: feature,
-		IsFallback:        dto.IsFallback,
-	}
 	if err := dev.AddSensor(opts); err != nil {
 		return err
 	}
@@ -282,11 +282,15 @@ func (s *Service) UpdateSensor(ctx context.Context, device *Device, sensor *Sens
 		sensor.Properties = opt.Properties
 	}
 	if opt.FeatureOfInterestID != nil {
-		feature, err := s.store.GetFeatureOfInterestByID(ctx, *opt.FeatureOfInterestID)
-		if err != nil {
-			return err
+		if *opt.FeatureOfInterestID == 0 {
+			sensor.FeatureOfInterest = nil
+		} else {
+			feature, err := s.featureOfInterestService.GetFeatureOfInterest(ctx, *opt.FeatureOfInterestID)
+			if err != nil {
+				return fmt.Errorf("in UpdateSensor: could not get feature of interest: %w", err)
+			}
+			sensor.FeatureOfInterest = feature
 		}
-		sensor.FeatureOfInterest = feature
 	}
 
 	if err := device.UpdateSensor(sensor); err != nil {
@@ -428,11 +432,4 @@ func (s *Service) UpdateSensorGroup(ctx context.Context, group *SensorGroup, opt
 	}
 
 	return nil
-}
-
-func (s *Service) GetFeatureOfInterest(ctx context.Context, id int64) (*FeatureOfInterest, error) {
-	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_PROJECTS}); err != nil {
-		return nil, err
-	}
-	return s.store.GetFeatureOfInterestByID(ctx, id)
 }

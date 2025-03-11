@@ -150,6 +150,9 @@ createSensorRequest:
       type: object
       example: 
         mount_height: 15cm
+    feature_of_interest_id:
+      type: integer
+      format: int64
     archive_time:
       type: integer
       example: 7
@@ -169,6 +172,10 @@ updateSensorRequest:
       type: object
       example: 
         mount_height: 15cm
+    feature_of_interest_id:
+      description: Set to 0 to unlink a Feature of Interest from a sensor
+      type: integer
+      format: int64
     archive_time:
       type: integer
       example: 7

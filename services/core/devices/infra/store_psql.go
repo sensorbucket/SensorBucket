@@ -3,6 +3,7 @@ package deviceinfra
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -14,6 +15,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
+	"sensorbucket.nl/sensorbucket/services/core/featuresofinterest"
 )
 
 var (
@@ -98,20 +100,28 @@ type SensorPaginationQuery struct {
 	ID        int64     `pagination:"sensor.id,ASC"`
 }
 type listSensorsRow struct {
-	sensor                       devices.Sensor
-	featureOfInterestID          sql.NullInt64
-	featureOfInterestName        sql.NullString
-	featureOfInterestDescription sql.NullString
+	sensor                        devices.Sensor
+	featureOfInterestID           sql.NullInt64
+	featureOfInterestName         sql.NullString
+	featureOfInterestDescription  sql.NullString
+	featureOfInterestEncodingType sql.NullString
+	featureOfInterestFeature      sql.Null[json.RawMessage]
+	featureOfInterestProperties   sql.Null[json.RawMessage]
+	featureOfInterestTenantID     sql.NullInt64
 }
 
 func (row *listSensorsRow) ToModel() devices.Sensor {
 	if !row.featureOfInterestID.Valid {
 		return row.sensor
 	}
-	row.sensor.FeatureOfInterest = &devices.FeatureOfInterest{
-		ID:          row.featureOfInterestID.Int64,
-		Name:        row.featureOfInterestName.String,
-		Description: row.featureOfInterestDescription.String,
+	row.sensor.FeatureOfInterest = &featuresofinterest.FeatureOfInterest{
+		ID:           row.featureOfInterestID.Int64,
+		Name:         row.featureOfInterestName.String,
+		Description:  row.featureOfInterestDescription.String,
+		EncodingType: row.featureOfInterestEncodingType.String,
+		Feature:      row.featureOfInterestFeature.V,
+		Properties:   row.featureOfInterestProperties.V,
+		TenantID:     row.featureOfInterestTenantID.Int64,
 	}
 	return row.sensor
 }
@@ -249,22 +259,6 @@ deleted_delta_loop:
 	return nil
 }
 
-func (store *PSQLStore) GetFeatureOfInterestByID(ctx context.Context, id int64) (*devices.FeatureOfInterest, error) {
-	var feature devices.FeatureOfInterest
-
-	q := pq.Select("id", "name", "description").From("features_of_interest feature").Where(sq.Eq{"id": id})
-	q = auth.ProtectedQuery(ctx, "tenant_id", q)
-	err := q.RunWith(store.db).Scan(&feature.ID, &feature.Name, &feature.Description)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, devices.ErrFeatureOfInterestNotFound
-		}
-		return nil, fmt.Errorf("in GetFeatureOfInterestByID: %w", err)
-	}
-
-	return &feature, nil
-}
-
 func find(ctx context.Context, db DB, id int64) (*devices.Device, error) {
 	var dev DeviceModel
 
@@ -307,7 +301,7 @@ func listSensorsPaginated(ctx context.Context, db DB, cursor *pagination.Cursor[
 	q := pq.Select(
 		"sensor.id", "sensor.code", "sensor.description", "sensor.device_id", "sensor.external_id", "sensor.properties", "sensor.archive_time",
 		"sensor.brand", "sensor.created_at", "sensor.is_fallback", "sensor.tenant_id",
-		"feature.id", "feature.name", "feature.description",
+		"feature.id", "feature.name", "feature.description", "feature.encoding_type", "feature.feature", "feature.properties", "feature.tenant_id",
 	).From("sensors sensor").LeftJoin("features_of_interest feature ON sensor.feature_of_interest_id = feature.id")
 	q, err = pagination.Apply(q, *cursor)
 	if err != nil {
@@ -339,6 +333,10 @@ func listSensorsPaginated(ctx context.Context, db DB, cursor *pagination.Cursor[
 			&row.featureOfInterestID,
 			&row.featureOfInterestName,
 			&row.featureOfInterestDescription,
+			&row.featureOfInterestEncodingType,
+			&row.featureOfInterestFeature,
+			&row.featureOfInterestProperties,
+			&row.featureOfInterestTenantID,
 			&cursor.Columns.CreatedAt,
 			&cursor.Columns.ID,
 		)
@@ -360,7 +358,7 @@ func listSensors(_ context.Context, db DB, filter ListSensorsFilter) ([]devices.
 	q := pq.Select(
 		"sensor.id", "sensor.code", "sensor.description", "sensor.device_id", "sensor.external_id", "sensor.properties", "sensor.archive_time",
 		"sensor.brand", "sensor.created_at", "sensor.is_fallback", "sensor.tenant_id",
-		"feature.id", "feature.name", "feature.description",
+		"feature.id", "feature.name", "feature.description", "feature.encoding_type", "feature.feature", "feature.properties", "feature.tenant_id",
 	).From("sensors sensor").LeftJoin("features_of_interest feature ON sensor.feature_of_interest_id = feature.id").
 		Where(sq.Eq{"sensor.device_id": filter.DeviceID})
 
@@ -388,6 +386,10 @@ func listSensors(_ context.Context, db DB, filter ListSensorsFilter) ([]devices.
 			&row.featureOfInterestID,
 			&row.featureOfInterestName,
 			&row.featureOfInterestDescription,
+			&row.featureOfInterestEncodingType,
+			&row.featureOfInterestFeature,
+			&row.featureOfInterestProperties,
+			&row.featureOfInterestTenantID,
 		)
 		if err != nil {
 			return nil, err
@@ -433,7 +435,7 @@ func getSensor(ctx context.Context, tx DB, id int64) (*devices.Sensor, error) {
 	q := pq.Select(
 		"sensor.id", "sensor.code", "sensor.description", "sensor.brand", "sensor.archive_time", "sensor.external_id",
 		"sensor.properties", "sensor.created_at", "sensor.device_id", "sensor.is_fallback", "sensor.tenant_id",
-		"feature.id", "feature.name", "feature.description",
+		"feature.id", "feature.name", "feature.description", "feature.encoding_type", "feature.feature", "feature.properties", "feature.tenant_id",
 	).From("sensors sensor").LeftJoin("features_of_interest feature ON sensor.feature_of_interest_id = feature.id").
 		Where(sq.Eq{"sensor.id": id})
 	q = auth.ProtectedQuery(ctx, "sensor.tenant_id", q)
@@ -443,7 +445,13 @@ func getSensor(ctx context.Context, tx DB, id int64) (*devices.Sensor, error) {
 		&row.sensor.ID, &row.sensor.Code, &row.sensor.Description, &row.sensor.Brand, &row.sensor.ArchiveTime,
 		&row.sensor.ExternalID, &row.sensor.Properties, &row.sensor.CreatedAt, &row.sensor.DeviceID, &row.sensor.IsFallback,
 		&row.sensor.TenantID,
-		&row.featureOfInterestID, &row.featureOfInterestName, &row.featureOfInterestDescription,
+		&row.featureOfInterestID,
+		&row.featureOfInterestName,
+		&row.featureOfInterestDescription,
+		&row.featureOfInterestEncodingType,
+		&row.featureOfInterestFeature,
+		&row.featureOfInterestProperties,
+		&row.featureOfInterestTenantID,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, devices.ErrSensorNotFound
@@ -461,18 +469,20 @@ func updateSensors(ctx context.Context, tx DB, sensors []*devices.Sensor) error 
 	}
 	for _, s := range sensors {
 		updateMap := map[string]any{
-			"code":         s.Code,
-			"brand":        s.Brand,
-			"description":  s.Description,
-			"archive_time": s.ArchiveTime,
-			"properties":   s.Properties,
-			"external_id":  s.ExternalID,
-			"device_id":    s.DeviceID,
-			"is_fallback":  s.IsFallback,
+			"code":                   s.Code,
+			"brand":                  s.Brand,
+			"description":            s.Description,
+			"archive_time":           s.ArchiveTime,
+			"properties":             s.Properties,
+			"external_id":            s.ExternalID,
+			"device_id":              s.DeviceID,
+			"is_fallback":            s.IsFallback,
+			"feature_of_interest_id": nil,
 		}
 		if s.FeatureOfInterest != nil {
 			updateMap["feature_of_interest_id"] = s.FeatureOfInterest.ID
 		}
+
 		q := pq.Update("sensors").Where(sq.Eq{"id": s.ID}).
 			SetMap(updateMap)
 		q = auth.ProtectedQuery(ctx, "tenant_id", q)

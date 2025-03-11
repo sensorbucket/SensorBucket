@@ -95,9 +95,12 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		return nil
 	})
 
+	featureOfInterestStore := featuresofinterest.NewStorePSQL(pool)
+	featureOfInterestService := featuresofinterest.NewService(featureOfInterestStore)
+
 	devicestore := deviceinfra.NewPSQLStore(db)
 	sensorGroupStore := deviceinfra.NewPSQLSensorGroupStore(db)
-	deviceservice := devices.New(devicestore, sensorGroupStore)
+	deviceservice := devices.New(devicestore, sensorGroupStore, featureOfInterestService)
 
 	sysArchiveTime, err := strconv.Atoi(SYS_ARCHIVE_TIME)
 	if err != nil {
@@ -110,9 +113,6 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	processingstore := processinginfra.NewPSQLStore(db)
 	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
 	processingservice := processing.New(processingstore, processingPipelinePublisher, keyClient)
-
-	featureOfInterestStore := featuresofinterest.NewStorePSQL(pool)
-	featureOfInterestService := featuresofinterest.NewService(featureOfInterestStore)
 
 	projectsStore := projects.NewPostgresStore(pool)
 	projectsService := projects.New(projectsStore)
