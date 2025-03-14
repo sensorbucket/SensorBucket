@@ -13,12 +13,12 @@ import (
 )
 
 func (transport *CoreTransport) httpListFeaturesOfInterest() http.HandlerFunc {
-	type params struct {
+	type Params struct {
 		featuresofinterest.FeatureOfInterestFilter
 		pagination.Request
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		params, err := httpfilter.Parse[params](r)
+		params, err := httpfilter.Parse[Params](r)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -56,11 +56,11 @@ func (transport *CoreTransport) httpGetFeatureOfInterest() http.HandlerFunc {
 
 func (transport *CoreTransport) httpCreateFeatureOfInterest() http.HandlerFunc {
 	type DTO struct {
-		Name         string           `json:"name"`
-		Description  *string          `json:"description"`
-		EncodingType *string          `json:"encoding_type"`
-		Feature      *json.RawMessage `json:"feature"`
-		Properties   *json.RawMessage `json:"properties"`
+		Name         string          `json:"name"`
+		Description  *string         `json:"description"`
+		EncodingType *string         `json:"encoding_type"`
+		Feature      json.RawMessage `json:"feature"`
+		Properties   json.RawMessage `json:"properties"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var dto DTO
@@ -89,11 +89,11 @@ func (transport *CoreTransport) httpCreateFeatureOfInterest() http.HandlerFunc {
 
 func (transport *CoreTransport) httpUpdateFeatureOfInterest() http.HandlerFunc {
 	type DTO struct {
-		Name         *string          `json:"name"`
-		Description  *string          `json:"description"`
-		EncodingType *string          `json:"encoding_type"`
-		Feature      *json.RawMessage `json:"feature"`
-		Properties   *json.RawMessage `json:"properties"`
+		Name         *string                      `json:"name"`
+		Description  *string                      `json:"description"`
+		EncodingType *string                      `json:"encoding_type"`
+		Feature      *featuresofinterest.Geometry `json:"feature"`
+		Properties   json.RawMessage              `json:"properties"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := chi.URLParam(r, "id")

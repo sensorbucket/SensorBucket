@@ -4,6 +4,7 @@ package coretransport
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -18,6 +19,8 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	"sensorbucket.nl/sensorbucket/services/core/projects"
 )
+
+var logger = slog.Default().With("component", "services/core/transport")
 
 type MeasurementService interface {
 	QueryMeasurements(context.Context, measurements.Filter, pagination.Request) (*pagination.Page[measurements.Measurement], error)

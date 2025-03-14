@@ -19,7 +19,6 @@ type Store interface {
 	ListFeaturesOfInterest(ctx context.Context, filter FeatureOfInterestFilter, pageReq pagination.Request) (*pagination.Page[FeatureOfInterest], error)
 	GetFeatureOfInterest(ctx context.Context, id int64, filter FeatureOfInterestFilter) (*FeatureOfInterest, error)
 	DeleteFeatureOfInterest(ctx context.Context, id int64) error
-	UpdateFeatureOfInterest(ctx context.Context, id int64, opts UpdateFeatureOfInterestOpts) error
 	SaveFeatureOfInterest(ctx context.Context, foi *FeatureOfInterest) error
 }
 
@@ -89,8 +88,8 @@ type UpdateFeatureOfInterestOpts struct {
 	Name         *string
 	Description  *string
 	EncodingType *string
-	Feature      *json.RawMessage
-	Properties   *json.RawMessage
+	Feature      *Geometry
+	Properties   json.RawMessage
 }
 
 func (service *Service) UpdateFeatureOfInterest(ctx context.Context, id int64, opts UpdateFeatureOfInterestOpts) error {
@@ -103,8 +102,17 @@ func (service *Service) UpdateFeatureOfInterest(ctx context.Context, id int64, o
 		return err
 	}
 
-	if err := foi.SetFeature(*opts.EncodingType, *opts.Feature); err != nil {
-		return err
+	if opts.Name != nil {
+		foi.Name = *opts.Name
+	}
+	if opts.Description != nil {
+		foi.Description = *opts.Description
+	}
+	if opts.Feature != nil {
+		foi.Feature = opts.Feature
+	}
+	if opts.Properties != nil {
+		foi.Properties = opts.Properties
 	}
 
 	return service.store.SaveFeatureOfInterest(ctx, foi)

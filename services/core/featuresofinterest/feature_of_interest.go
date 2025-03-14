@@ -6,25 +6,25 @@ import (
 	"strings"
 
 	"github.com/twpayne/go-geom"
-	"github.com/twpayne/go-geom/encoding/geojson"
 )
 
 type FeatureOfInterest struct {
-	ID           int64           `json:"id"`
-	Name         string          `json:"name"`
-	Description  string          `json:"description"`
-	EncodingType string          `json:"encoding_type"`
-	Feature      *geom.Point     `json:"feature"`
-	Properties   json.RawMessage `json:"properties"`
-	TenantID     int64           `json:"tenant_id"`
+	ID              int64  `json:"id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	EncodingType    string `json:"encoding_type"`
+	GeometryFeature *Geometry
+	Feature         []byte
+	Properties      json.RawMessage `json:"properties"`
+	TenantID        int64           `json:"tenant_id"`
 }
 
 type CreateFeatureOfInterestOpts struct {
 	Name         string
 	Description  *string
 	EncodingType *string
-	Feature      *json.RawMessage
-	Properties   *json.RawMessage
+	Feature      json.RawMessage
+	Properties   json.RawMessage
 	TenantID     int64
 }
 
@@ -40,41 +40,70 @@ func NewFeatureOfInterest(opts CreateFeatureOfInterestOpts) (*FeatureOfInterest,
 		foi.Description = *opts.Description
 	}
 	if opts.Properties != nil {
-		foi.Properties = *opts.Properties
+		foi.Properties = opts.Properties
 	}
-
-	if opts.EncodingType != nil && opts.Feature != nil {
-		if err := foi.SetFeature(*opts.EncodingType, *opts.Feature); err != nil {
+	if opts.Feature != nil {
+		if err := foi.SetFeature(foi.EncodingType, foi.Feature); err != nil {
 			return nil, err
 		}
-	} else if (opts.EncodingType != nil && opts.Feature == nil) || (opts.EncodingType == nil && opts.EncodingType != nil) {
-		return nil, fmt.Errorf("in NewFeatureOfInterest: both encoding type and feature must be given, not or")
 	}
 
 	return &foi, nil
 }
 
-func (foi *FeatureOfInterest) SetFeature(encoding string, feature json.RawMessage) error {
-	var g geom.T
+func (foi *FeatureOfInterest) SetFeature(encoding string, feature any) error {
+	if g, ok := feature.(geom.T); ok {
+		foi.GeometryFeature.T = g
+		foi.EncodingType = mimeGeoJSON
+	}
 
-	if strings.EqualFold(encoding, "application/geo+json") {
-		// data, ok := feature.(json.RawMessage)
-		// if !ok {
-		// 	return fmt.Errorf("expected feature with encoding 'application/geo+json' to be json.RawMessage but got: %T", feature)
-		// }
-		if err := geojson.Unmarshal(feature, &g); err != nil {
-			return fmt.Errorf("could not decode feature as geojson: %w", err)
+	switch {
+	case strings.EqualFold(mimeGeoJSON, encoding):
+		d, ok := feature.([]byte)
+		if !ok {
+			return fmt.Errorf("SetFeature expected []byte but got %T", feature)
 		}
-	} else {
-		return fmt.Errorf("unsupported feature encoding type: %s", encoding)
+		if err := foi.GeometryFeature.UnmarshalJSON(d); err != nil {
+			return err
+		}
+		return nil
+	default:
+		d, ok := feature.([]byte)
+		if !ok {
+			return fmt.Errorf("SetFeature expected []byte but got %T", feature)
+		}
+		foi.EncodingType = encoding
+		foi.Feature = d
 	}
-
-	point, ok := g.(*geom.Point)
-	if !ok {
-		return fmt.Errorf("expected feature to be a single point, but got: %T", g)
-	}
-
-	foi.Feature = point
-
 	return nil
+}
+
+type foiJSONModel struct {
+	ID           int64           `json:"id"`
+	Name         string          `json:"name"`
+	Description  string          `json:"description"`
+	EncodingType string          `json:"encoding_type"`
+	Feature      any             `json:"feature"`
+	Properties   json.RawMessage `json:"properties"`
+	TenantID     int64           `json:"tenant_id"`
+}
+
+func (foi *FeatureOfInterest) MarshalJSON() ([]byte, error) {
+	model := foiJSONModel{
+		ID:           foi.ID,
+		Name:         foi.Name,
+		Description:  foi.Description,
+		EncodingType: foi.EncodingType,
+		// Feature: ,
+		Properties: foi.Properties,
+		TenantID:   foi.TenantID,
+	}
+
+	if foi.GeometryFeature != nil {
+		model.Feature = foi.GeometryFeature
+	} else {
+		model.Feature = foi.Feature
+	}
+
+	return json.Marshal(model)
 }

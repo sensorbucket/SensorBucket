@@ -89,7 +89,7 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 		"feature_of_interest_name",
 		"feature_of_interest_description",
 		"feature_of_interest_encoding_type",
-		"feature_of_interest_feature",
+		"ST_AsBinary(feature_of_interest_feature)",
 		"feature_of_interest_properties",
 		"created_at",
 	).

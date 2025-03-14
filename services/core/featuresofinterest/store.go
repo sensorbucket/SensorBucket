@@ -6,14 +6,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/twpayne/go-geom/encoding/ewkb"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 )
 
-var pq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+var (
+	pq     = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	logger = slog.Default().With("component", "services/core/featuresofinterest")
+)
 
 var _ Store = (*StorePSQL)(nil)
 
@@ -37,7 +40,7 @@ func (store *StorePSQL) ListFeaturesOfInterest(ctx context.Context, filter Featu
 		return nil, fmt.Errorf("while decoding cursor: %w", err)
 	}
 
-	q := pq.Select("id", "name", "description", "encoding_type", "feature", "properties", "tenant_id").From("features_of_interest")
+	q := pq.Select("id", "name", "description", "encoding_type", "ST_AsBinary(feature)", "properties", "tenant_id").From("features_of_interest")
 	if len(filter.TenantID) > 0 {
 		q = q.Where(sq.Eq{"tenant_id": filter.TenantID})
 	}
@@ -54,13 +57,13 @@ func (store *StorePSQL) ListFeaturesOfInterest(ctx context.Context, filter Featu
 
 	features := make([]FeatureOfInterest, 0)
 	for rows.Next() {
-		var feature FeatureOfInterest
+		var model FeatureOfInterest
 		if err := rows.Scan(
-			&feature.ID, &feature.Name, &feature.Description, &feature.EncodingType, &feature.Feature, &feature.Properties, &feature.TenantID,
+			&model.ID, &model.Name, &model.Description, &model.EncodingType, &model.Feature, &model.Properties, &model.TenantID,
 		); err != nil {
 			return nil, fmt.Errorf("while scanning FeatureOfInterest: %w", err)
 		}
-		features = append(features, feature)
+		features = append(features, model)
 	}
 
 	cursor.Columns.Offset += uint64(len(features))
@@ -82,7 +85,7 @@ type queryMod func(sq.SelectBuilder) sq.SelectBuilder
 
 func (store *StorePSQL) getFeatureOfInterest(ctx context.Context, id int64, mods ...queryMod) (*FeatureOfInterest, error) {
 	q := pq.Select(
-		"foi.id", "foi.name", "foi.description", "foi.encoding_type", "foi.feature", "foi.properties", "foi.tenant_id",
+		"foi.id", "foi.name", "foi.description", "foi.encoding_type", "ST_AsBinary(foi.feature)", "foi.properties", "foi.tenant_id",
 	).From("features_of_interest foi").Where(sq.Eq{"foi.id": id})
 	for _, mod := range mods {
 		q = mod(q)
@@ -94,53 +97,21 @@ func (store *StorePSQL) getFeatureOfInterest(ctx context.Context, id int64, mods
 	}
 	row := store.databasePool.QueryRow(ctx, query, params...)
 
-	var feature FeatureOfInterest
+	var model FeatureOfInterest
 	if err := row.Scan(
-		&feature.ID, &feature.Name, &feature.Description, &feature.EncodingType, &feature.Feature, &feature.Properties, &feature.TenantID,
+		&model.ID, &model.Name, &model.Description, &model.EncodingType, &model.Feature, &model.Properties, &model.TenantID,
 	); errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrFeatureOfInterestNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("in GetFeatureOfInterest, while scanning row: %w", err)
 	}
 
-	return &feature, nil
+	foi := model
+	return &foi, nil
 }
 
 func (store *StorePSQL) DeleteFeatureOfInterest(ctx context.Context, id int64) error {
 	q := pq.Delete("features_of_interest").Where(sq.Eq{"id": id}).Limit(1)
-	query, params, err := q.ToSql()
-	if err != nil {
-		panic(err)
-	}
-	if _, err := store.databasePool.Exec(ctx, query, params...); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (store *StorePSQL) UpdateFeatureOfInterest(ctx context.Context, id int64, opts UpdateFeatureOfInterestOpts) error {
-	q := pq.Update("features_of_interest").Where(sq.Eq{"id": id})
-
-	if opts.Name == nil && opts.Description == nil && opts.EncodingType == nil && opts.Feature == nil && opts.Properties == nil {
-		return errors.New("in StorePSQL/UpdateFeatureOfInterest: no properties to update")
-	}
-
-	if opts.Name != nil {
-		q = q.Set("name", *opts.Name)
-	}
-	if opts.Description != nil {
-		q = q.Set("description", *opts.Description)
-	}
-	if opts.EncodingType != nil {
-		q = q.Set("encoding_type", *opts.EncodingType)
-	}
-	if opts.Feature != nil {
-		q = q.Set("feature", opts.Feature)
-	}
-	if opts.Properties != nil {
-		q = q.Set("properties", *opts.Properties)
-	}
-
 	query, params, err := q.ToSql()
 	if err != nil {
 		panic(err)
@@ -164,9 +135,9 @@ func (store *StorePSQL) SaveFeatureOfInterest(ctx context.Context, foi *FeatureO
 
 func (store *StorePSQL) insertFeatureOfInterest(ctx context.Context, foi *FeatureOfInterest) error {
 	q := pq.Insert("features_of_interest").Columns(
-		"name", "description", "encoding_type", "feature", "properties", "tenant_id",
+		"name", "description", "encoding_type", "feature_geometry", "feature", "properties", "tenant_id",
 	).Values(
-		foi.Name, foi.Description, foi.EncodingType, foi.Feature, foi.Properties, foi.TenantID,
+		foi.Name, foi.Description, foi.EncodingType, sq.Expr("ST_GeomFromWKB(?)", foi.GeometryFeature), foi.Feature, foi.Properties, foi.TenantID,
 	).Suffix(`RETURNING "id"`)
 
 	query, params, err := q.ToSql()
@@ -198,7 +169,11 @@ func (store *StorePSQL) updateFeatureOfInterest(ctx context.Context, foi *Featur
 		q = q.Set("encoding_type", foi.EncodingType)
 	}
 	if foi.Feature != model.Feature {
-		q = q.Set("feature", &ewkb.Point{Point: foi.Feature.SetSRID(4362)})
+		if foi.Feature == nil {
+			q = q.Set("feature", nil)
+		} else {
+			q = q.Set("feature", sq.Expr("ST_GeomFromEWKB(?)", foi.Feature))
+		}
 	}
 	if !bytes.Equal(foi.Properties, model.Properties) {
 		q = q.Set("properties", foi.Properties)
