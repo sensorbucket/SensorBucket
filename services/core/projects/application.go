@@ -36,7 +36,7 @@ func (app *Application) ListProjects(ctx context.Context, filter ProjectsFilter,
 	}
 	page, err := app.store.ListProjects(ctx, filter, p)
 	if err != nil {
-		return nil, fmt.Errorf("", err)
+		return nil, fmt.Errorf("failed to list projects: %w", err)
 	}
 
 	return page, nil
@@ -74,7 +74,7 @@ func (app *Application) EditProject(ctx context.Context, params EditProjectParam
 		return err
 	}
 	if err := app.store.EditProject(ctx, params); err != nil {
-		return fmt.Errorf("", err)
+		return fmt.Errorf("calling EditProject on store: %w", err)
 	}
 	return nil
 }
@@ -84,7 +84,7 @@ func (app *Application) RemoveProject(ctx context.Context, id int64) error {
 		return err
 	}
 	if err := app.store.RemoveProject(ctx, id); err != nil {
-		return fmt.Errorf("", err)
+		return fmt.Errorf("calling RemoveProject on store: %w", err)
 	}
 	return nil
 }

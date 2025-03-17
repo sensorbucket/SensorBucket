@@ -85,7 +85,7 @@ type listCursor struct {
 func (store *PostgresqlStore) ListProjects(ctx context.Context, filter ProjectsFilter, req pagination.Request) (*pagination.Page[*Project], error) {
 	cursor, err := pagination.GetCursor[listCursor](req)
 	if err != nil {
-		return nil, fmt.Errorf("", err)
+		return nil, fmt.Errorf("decoding cursor in ListProject: %w", err)
 	}
 	// paginate the projects table seperately
 	projectsQ := pq.Select("id, name, description").From("projects").OrderBy("id ASC").Offset(cursor.Columns.Offset).Limit(cursor.Limit)
@@ -106,7 +106,7 @@ func (store *PostgresqlStore) ListProjects(ctx context.Context, filter ProjectsF
 	}
 	rows, err := store.db.Query(ctx, query, params...)
 	if err != nil {
-		return nil, fmt.Errorf("", err)
+		return nil, fmt.Errorf("querying listprojects: %w", err)
 	}
 	defer rows.Close()
 
@@ -118,7 +118,7 @@ func (store *PostgresqlStore) ListProjects(ctx context.Context, filter ProjectsF
 			&row.ProjectFeatureObservationTypes,
 			&row.FeatureID, &row.FeatureName, &row.FeatureDescription, &row.FeatureEncodingType, &row.FeatureGeometry,
 		); err != nil {
-			return nil, fmt.Errorf("", err)
+			return nil, fmt.Errorf("scanning in ListProjects: %w", err)
 		}
 
 		project, ok := projectMap[row.ProjectID]

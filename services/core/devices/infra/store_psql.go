@@ -413,9 +413,10 @@ func createSensors(tx DB, sensors []*devices.Sensor) error {
 		"device_id", "created_at", "is_fallback", "tenant_id", "feature_of_interest_id",
 	).Suffix("RETURNING id")
 	for _, s := range sensors {
-		featureID := sql.NullInt64{
-			Int64: s.FeatureOfInterest.ID,
-			Valid: s.FeatureOfInterest.ID > 0,
+		var featureID sql.NullInt64
+		if s.FeatureOfInterest != nil {
+			featureID.Valid = true
+			featureID.Int64 = s.FeatureOfInterest.ID
 		}
 		q = q.Values(
 			s.Code, s.Brand, s.Description, s.ArchiveTime, s.Properties, s.ExternalID,

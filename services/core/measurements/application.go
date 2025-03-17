@@ -176,7 +176,7 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 			measurement.FeatureOfInterestDescription = &sensor.FeatureOfInterest.Description
 			measurement.FeatureOfInterestEncodingType = &sensor.FeatureOfInterest.EncodingType
 			measurement.FeatureOfInterestFeature = sensor.FeatureOfInterest.Feature
-			measurement.FeatureOfInterestProperties = sensor.FeatureOfInterest.Properties
+			measurement.FeatureOfInterestProperties = &sensor.FeatureOfInterest.Properties
 		}
 
 		// Measurement location is either explicitly set or falls back to device location
@@ -194,8 +194,8 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 
 // Filter contains query information for a list of measurements
 type Filter struct {
-	Start               time.Time `url:"start,required"`
-	End                 time.Time `url:"end,required"`
+	Start               time.Time `url:"start"`
+	End                 time.Time `url:"end"`
 	SensorCodes         []string  `url:"sensor_codes"`
 	Datastream          []string  `url:"datastream"`
 	TenantID            []int64   `url:"tenant_id"`

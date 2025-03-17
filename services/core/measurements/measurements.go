@@ -61,6 +61,6 @@ type Measurement struct {
 	FeatureOfInterestDescription    *string                      `json:"feature_of_interest_description"`
 	FeatureOfInterestEncodingType   *string                      `json:"feature_of_interest_encoding_type"`
 	FeatureOfInterestFeature        *featuresofinterest.Geometry `json:"feature_of_interest_feature"`
-	FeatureOfInterestProperties     json.RawMessage              `json:"feature_of_interest_properties"`
+	FeatureOfInterestProperties     *json.RawMessage             `json:"feature_of_interest_properties"`
 	CreatedAt                       time.Time                    `json:"created_at"`
 }

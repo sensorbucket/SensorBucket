@@ -25,7 +25,7 @@ func TestShouldCheckAuthentication(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	// Services can be nil since it shouldn't even reach them!
-	transport := coretransport.New("", nil, nil, nil, nil)
+	transport := coretransport.New("", nil, nil, nil, nil, nil, nil)
 
 	transport.ServeHTTP(res, req)
 
@@ -73,6 +73,12 @@ func TestMeasurementResponseShouldIncludeMeasurementID(t *testing.T) {
 		MeasurementAltitude:             nil,
 		MeasurementProperties:           nil,
 		MeasurementExpiration:           mustParseTime("2024-10-14T00:00:00Z"),
+		FeatureOfInterestID:             nil,
+		FeatureOfInterestName:           nil,
+		FeatureOfInterestDescription:    nil,
+		FeatureOfInterestEncodingType:   nil,
+		FeatureOfInterestFeature:        nil,
+		FeatureOfInterestProperties:     nil,
 		CreatedAt:                       mustParseTime("2024-10-07T09:23:57Z"),
 	}
 	measurementService := &MeasurementServiceMock{
@@ -84,7 +90,7 @@ func TestMeasurementResponseShouldIncludeMeasurementID(t *testing.T) {
 			}, nil
 		},
 	}
-	transport := coretransport.New("", authtest.JWKS(), nil, measurementService, nil)
+	transport := coretransport.New("", authtest.JWKS(), nil, measurementService, nil, nil, nil)
 
 	req, _ := http.NewRequest("GET", "/measurements", nil)
 	authtest.AuthenticateRequest(req)
