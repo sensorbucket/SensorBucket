@@ -201,7 +201,7 @@ func (svc *Service) Query(ctx context.Context, filters TraceFilter, r pagination
 		return nil, err
 	}
 	// Add tenant authorization
-	relevantTracesQ = auth.ProtectedQuery(ctx, relevantTracesQ)
+	relevantTracesQ = auth.ProtectedQuery(ctx, "trace.tenant_id", relevantTracesQ)
 
 	// CTE that to trace_steps
 	tracesQ := pq.Select(

@@ -9,6 +9,7 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/services/core/featuresofinterest"
 )
 
 type DeviceStore interface {
@@ -30,14 +31,16 @@ type SensorGroupStore interface {
 }
 
 type Service struct {
-	store            DeviceStore
-	sensorGroupStore SensorGroupStore
+	store                    DeviceStore
+	sensorGroupStore         SensorGroupStore
+	featureOfInterestService *featuresofinterest.Service
 }
 
-func New(store DeviceStore, sensorGroupStore SensorGroupStore) *Service {
+func New(store DeviceStore, sensorGroupStore SensorGroupStore, featureOfInterestService *featuresofinterest.Service) *Service {
 	return &Service{
-		store:            store,
-		sensorGroupStore: sensorGroupStore,
+		store:                    store,
+		sensorGroupStore:         sensorGroupStore,
+		featureOfInterestService: featureOfInterestService,
 	}
 }
 
@@ -116,15 +119,14 @@ func (s *Service) GetDevice(ctx context.Context, id int64) (*Device, error) {
 }
 
 type NewSensorDTO struct {
-	Code        string          `json:"code"`
-	Brand       string          `json:"brand"`
-	GoalID      int64           `json:"goal_id"`
-	TypeID      int64           `json:"type_id"`
-	Description string          `json:"description"`
-	ExternalID  string          `json:"external_id"`
-	Properties  json.RawMessage `json:"properties"`
-	ArchiveTime *int            `json:"archive_time"`
-	IsFallback  bool            `json:"is_fallback"`
+	Code                string          `json:"code"`
+	Brand               string          `json:"brand"`
+	Description         string          `json:"description"`
+	ExternalID          string          `json:"external_id"`
+	FeatureOfInterestID int64           `json:"feature_of_interest_id"`
+	Properties          json.RawMessage `json:"properties"`
+	ArchiveTime         *int            `json:"archive_time"`
+	IsFallback          bool            `json:"is_fallback"`
 }
 
 func (s *Service) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) error {
@@ -141,6 +143,14 @@ func (s *Service) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) 
 		ArchiveTime: dto.ArchiveTime,
 		IsFallback:  dto.IsFallback,
 	}
+	if dto.FeatureOfInterestID > 0 {
+		feature, err := s.featureOfInterestService.GetFeatureOfInterest(ctx, dto.FeatureOfInterestID)
+		if err != nil {
+			return fmt.Errorf("in AddSensor: could not get feature of interest: %w", err)
+		}
+		opts.FeatureOfInterest = feature
+	}
+
 	if err := dev.AddSensor(opts); err != nil {
 		return err
 	}
@@ -235,12 +245,13 @@ func (s *Service) GetSensor(ctx context.Context, id int64) (*Sensor, error) {
 }
 
 type UpdateSensorOpts struct {
-	Description *string         `json:"description"`
-	Brand       *string         `json:"brand"`
-	ArchiveTime *int            `json:"archive_time"`
-	ExternalID  *string         `json:"external_id"`
-	IsFallback  *bool           `json:"is_fallback"`
-	Properties  json.RawMessage `json:"properties"`
+	Description         *string         `json:"description"`
+	Brand               *string         `json:"brand"`
+	ArchiveTime         *int            `json:"archive_time"`
+	ExternalID          *string         `json:"external_id"`
+	IsFallback          *bool           `json:"is_fallback"`
+	Properties          json.RawMessage `json:"properties"`
+	FeatureOfInterestID *int64          `json:"feature_of_interest_id"`
 }
 
 func (s *Service) UpdateSensor(ctx context.Context, device *Device, sensor *Sensor, opt UpdateSensorOpts) error {
@@ -269,6 +280,17 @@ func (s *Service) UpdateSensor(ctx context.Context, device *Device, sensor *Sens
 	}
 	if opt.Properties != nil {
 		sensor.Properties = opt.Properties
+	}
+	if opt.FeatureOfInterestID != nil {
+		if *opt.FeatureOfInterestID == 0 {
+			sensor.FeatureOfInterest = nil
+		} else {
+			feature, err := s.featureOfInterestService.GetFeatureOfInterest(ctx, *opt.FeatureOfInterestID)
+			if err != nil {
+				return fmt.Errorf("in UpdateSensor: could not get feature of interest: %w", err)
+			}
+			sensor.FeatureOfInterest = feature
+		}
 	}
 
 	if err := device.UpdateSensor(sensor); err != nil {

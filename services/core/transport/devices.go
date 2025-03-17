@@ -18,7 +18,7 @@ var ErrHTTPDeviceIDInvalid = web.NewError(
 type HTTPDeviceFilters struct {
 	devices.DeviceFilter
 	pagination.Request
-	SensorGroup int64 `schema:"sensor_group"`
+	SensorGroup int64 `url:"sensor_group"`
 }
 
 func (t *CoreTransport) httpListDevices() http.HandlerFunc {

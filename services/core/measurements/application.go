@@ -169,6 +169,16 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 		measurement.MeasurementProperties = m.Properties
 		measurement.MeasurementExpiration = time.UnixMilli(msg.ReceivedAt).Add(time.Duration(*archiveTimeDays) * 24 * time.Hour)
 
+		// Fetch FoI info
+		if sensor.FeatureOfInterest != nil {
+			measurement.FeatureOfInterestID = &sensor.FeatureOfInterest.ID
+			measurement.FeatureOfInterestName = &sensor.FeatureOfInterest.Name
+			measurement.FeatureOfInterestDescription = &sensor.FeatureOfInterest.Description
+			measurement.FeatureOfInterestEncodingType = &sensor.FeatureOfInterest.EncodingType
+			measurement.FeatureOfInterestFeature = sensor.FeatureOfInterest.Feature
+			measurement.FeatureOfInterestProperties = &sensor.FeatureOfInterest.Properties
+		}
+
 		// Measurement location is either explicitly set or falls back to device location
 		if m.Latitude != nil && m.Longitude != nil {
 			measurement.MeasurementLatitude = m.Latitude
@@ -184,12 +194,13 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 
 // Filter contains query information for a list of measurements
 type Filter struct {
-	Start       time.Time `url:",required"`
-	End         time.Time `url:",required"`
-	DeviceIDs   []string
-	SensorCodes []string
-	Datastream  []string
-	TenantID    []int64
+	Start               time.Time `url:"start"`
+	End                 time.Time `url:"end"`
+	SensorCodes         []string  `url:"sensor_codes"`
+	Datastream          []string  `url:"datastream"`
+	TenantID            []int64   `url:"tenant_id"`
+	FeatureOfInterestID []int64   `url:"feature_of_interest_id"`
+	ObservedProperty    []string  `url:"observed_property"`
 }
 
 func (s *Service) QueryMeasurements(ctx context.Context, f Filter, r pagination.Request) (*pagination.Page[Measurement], error) {

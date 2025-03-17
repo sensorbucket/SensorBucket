@@ -48,6 +48,9 @@ const (
 	// User worker permissions
 	READ_USER_WORKERS  Permission = "READ_USER_WORKERS"
 	WRITE_USER_WORKERS Permission = "WRITE_USER_WORKERS"
+
+	READ_PROJECTS  Permission = "READ_PROJECTS"
+	WRITE_PROJECTS Permission = "WRITE_PROJECTS"
 )
 
 var allPermissions = Permissions{
@@ -64,6 +67,8 @@ var allPermissions = Permissions{
 	READ_TRACING,
 	READ_USER_WORKERS,
 	WRITE_USER_WORKERS,
+	READ_PROJECTS,
+	WRITE_PROJECTS,
 }
 
 func AllPermissions() Permissions {
