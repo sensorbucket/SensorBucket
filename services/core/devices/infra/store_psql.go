@@ -306,7 +306,7 @@ func listSensorsPaginated(ctx context.Context, db DB, cursor *pagination.Cursor[
 	q := pq.Select(
 		"sensor.id", "sensor.code", "sensor.description", "sensor.device_id", "sensor.external_id", "sensor.properties", "sensor.archive_time",
 		"sensor.brand", "sensor.created_at", "sensor.is_fallback", "sensor.tenant_id",
-		"feature.id", "feature.name", "feature.description", "feature.encoding_type", "feature.feature", "feature.properties", "feature.tenant_id",
+		"feature.id", "feature.name", "feature.description", "feature.encoding_type", "ST_AsBinary(feature.feature)", "feature.properties", "feature.tenant_id",
 	).From("sensors sensor").LeftJoin("features_of_interest feature ON sensor.feature_of_interest_id = feature.id")
 	q, err = pagination.Apply(q, *cursor)
 	if err != nil {
@@ -363,7 +363,7 @@ func listSensors(_ context.Context, db DB, filter ListSensorsFilter) ([]devices.
 	q := pq.Select(
 		"sensor.id", "sensor.code", "sensor.description", "sensor.device_id", "sensor.external_id", "sensor.properties", "sensor.archive_time",
 		"sensor.brand", "sensor.created_at", "sensor.is_fallback", "sensor.tenant_id",
-		"feature.id", "feature.name", "feature.description", "feature.encoding_type", "feature.feature", "feature.properties", "feature.tenant_id",
+		"feature.id", "feature.name", "feature.description", "feature.encoding_type", "ST_AsBinary(feature.feature)", "feature.properties", "feature.tenant_id",
 	).From("sensors sensor").LeftJoin("features_of_interest feature ON sensor.feature_of_interest_id = feature.id").
 		Where(sq.Eq{"sensor.device_id": filter.DeviceID})
 
@@ -440,7 +440,7 @@ func getSensor(ctx context.Context, tx DB, id int64) (*devices.Sensor, error) {
 	q := pq.Select(
 		"sensor.id", "sensor.code", "sensor.description", "sensor.brand", "sensor.archive_time", "sensor.external_id",
 		"sensor.properties", "sensor.created_at", "sensor.device_id", "sensor.is_fallback", "sensor.tenant_id",
-		"feature.id", "feature.name", "feature.description", "feature.encoding_type", "feature.feature", "feature.properties", "feature.tenant_id",
+		"feature.id", "feature.name", "feature.description", "feature.encoding_type", "ST_AsBinary(feature.feature)", "feature.properties", "feature.tenant_id",
 	).From("sensors sensor").LeftJoin("features_of_interest feature ON sensor.feature_of_interest_id = feature.id").
 		Where(sq.Eq{"sensor.id": id})
 	q = auth.ProtectedQuery(ctx, "sensor.tenant_id", q)

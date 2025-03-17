@@ -102,14 +102,11 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 		q = q.Where("measurement_timestamp <= ?", filter.End)
 	}
 
-	if len(filter.FeatureOfInterest) > 0 {
-		q = q.Where(sq.Eq{"feature_of_interest_id": filter.FeatureOfInterest})
+	if len(filter.FeatureOfInterestID) > 0 {
+		q = q.Where(sq.Eq{"feature_of_interest_id": filter.FeatureOfInterestID})
 	}
 	if len(filter.ObservedProperty) > 0 {
 		q = q.Where(sq.Eq{"datastream_observed_property": filter.ObservedProperty})
-	}
-	if len(filter.DeviceIDs) > 0 {
-		q = q.Where(sq.Eq{"device_id": filter.DeviceIDs})
 	}
 	if len(filter.SensorCodes) > 0 {
 		q = q.Where(sq.Eq{"sensor_code": filter.SensorCodes})
@@ -440,7 +437,7 @@ INSERT INTO measurements (
   $38,
   $39,
   $40,
-  $41,
+  ST_GeomFromEWKB($41),
   $42,
   $43
 );

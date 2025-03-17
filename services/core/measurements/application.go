@@ -194,14 +194,13 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 
 // Filter contains query information for a list of measurements
 type Filter struct {
-	Start             time.Time `url:",required"`
-	End               time.Time `url:",required"`
-	DeviceIDs         []string
-	SensorCodes       []string
-	Datastream        []string
-	TenantID          []int64
-	FeatureOfInterest []int64
-	ObservedProperty  []string
+	Start               time.Time `url:"start,required"`
+	End                 time.Time `url:"end,required"`
+	SensorCodes         []string  `url:"sensor_codes"`
+	Datastream          []string  `url:"datastream"`
+	TenantID            []int64   `url:"tenant_id"`
+	FeatureOfInterestID []int64   `url:"feature_of_interest_id"`
+	ObservedProperty    []string  `url:"observed_property"`
 }
 
 func (s *Service) QueryMeasurements(ctx context.Context, f Filter, r pagination.Request) (*pagination.Page[Measurement], error) {
