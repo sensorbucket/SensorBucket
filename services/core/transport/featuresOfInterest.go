@@ -56,11 +56,11 @@ func (transport *CoreTransport) httpGetFeatureOfInterest() http.HandlerFunc {
 
 func (transport *CoreTransport) httpCreateFeatureOfInterest() http.HandlerFunc {
 	type DTO struct {
-		Name         string          `json:"name"`
-		Description  *string         `json:"description"`
-		EncodingType *string         `json:"encoding_type"`
-		Feature      json.RawMessage `json:"feature"`
-		Properties   json.RawMessage `json:"properties"`
+		Name         string                       `json:"name"`
+		Description  *string                      `json:"description"`
+		EncodingType *string                      `json:"encoding_type"`
+		Feature      *featuresofinterest.Geometry `json:"feature"`
+		Properties   json.RawMessage              `json:"properties"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var dto DTO

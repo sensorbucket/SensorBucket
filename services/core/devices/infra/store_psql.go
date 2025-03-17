@@ -122,9 +122,11 @@ func (row *listSensorsRow) ToModel() devices.Sensor {
 		Name:         row.featureOfInterestName.String,
 		Description:  row.featureOfInterestDescription.String,
 		EncodingType: row.featureOfInterestEncodingType.String,
-		Feature:      &row.featureOfInterestFeature.V,
 		Properties:   row.featureOfInterestProperties.V,
 		TenantID:     row.featureOfInterestTenantID.Int64,
+	}
+	if row.featureOfInterestFeature.Valid {
+		row.sensor.FeatureOfInterest.Feature = &row.featureOfInterestFeature.V
 	}
 	return row.sensor
 }
@@ -167,7 +169,7 @@ func (s *PSQLStore) createDevice(_ context.Context, dev *devices.Device) error {
 
 func (s *PSQLStore) updateDevice(ctx context.Context, dev *devices.Device) error {
 	q := sq.Update("devices").
-		SetMap(map[string]interface{}{
+		SetMap(map[string]any{
 			"description":          dev.Description,
 			"properties":           dev.Properties,
 			"location":             sq.Expr("ST_POINT(?, ?)", dev.Longitude, dev.Latitude),

@@ -3,7 +3,6 @@ package featuresofinterest
 import (
 	"database/sql/driver"
 	"fmt"
-	"strings"
 
 	"github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/encoding/ewkb"
@@ -13,7 +12,7 @@ import (
 const mimeGeoJSON = "application/geo+json"
 
 type Geometry struct {
-	geom.T
+	T geom.T
 }
 
 func (g *Geometry) Scan(src any) error {
@@ -29,12 +28,12 @@ func (g *Geometry) Scan(src any) error {
 	return err
 }
 
-func (g *Geometry) Value() (driver.Value, error) {
-	sb := &strings.Builder{}
-	if err := ewkb.Write(sb, ewkb.NDR, g); err != nil {
-		return nil, err
+func (g Geometry) Value() (driver.Value, error) {
+	data, err := ewkb.Marshal(g.T, ewkb.NDR)
+	if err != nil {
+		return nil, fmt.Errorf("could not marshal geometry to T: %w", err)
 	}
-	return []byte(sb.String()), nil
+	return data, nil
 }
 
 func (g *Geometry) MarshalJSON() ([]byte, error) {

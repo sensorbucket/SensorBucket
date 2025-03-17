@@ -1,7 +1,6 @@
 package featuresofinterest
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"errors"
@@ -135,9 +134,9 @@ func (store *StorePSQL) SaveFeatureOfInterest(ctx context.Context, foi *FeatureO
 
 func (store *StorePSQL) insertFeatureOfInterest(ctx context.Context, foi *FeatureOfInterest) error {
 	q := pq.Insert("features_of_interest").Columns(
-		"name", "description", "encoding_type", "feature_geometry", "feature", "properties", "tenant_id",
+		"name", "description", "encoding_type", "feature", "properties", "tenant_id",
 	).Values(
-		foi.Name, foi.Description, foi.EncodingType, sq.Expr("ST_GeomFromWKB(?)", foi.GeometryFeature), foi.Feature, foi.Properties, foi.TenantID,
+		foi.Name, foi.Description, foi.EncodingType, sq.Expr("ST_GeomFromEWKB(?)", foi.Feature), foi.Properties, foi.TenantID,
 	).Suffix(`RETURNING "id"`)
 
 	query, params, err := q.ToSql()
@@ -157,34 +156,25 @@ func (store *StorePSQL) updateFeatureOfInterest(ctx context.Context, foi *Featur
 		return nil
 	}
 
-	q := pq.Update("features_of_interest").Where(sq.Eq{"id": foi.ID})
-
-	if foi.Name != model.Name {
-		q = q.Set("name", foi.Name)
+	updateMap := map[string]any{
+		"name":          foi.Name,
+		"description":   foi.Description,
+		"encoding_type": foi.EncodingType,
+		"properties":    foi.Properties,
 	}
-	if foi.Description != model.Description {
-		q = q.Set("description", foi.Description)
+	if foi.Feature != nil {
+		updateMap["feature"] = sq.Expr("ST_GeomFromEWKB(?)", *foi.Feature)
+	} else if model.Feature != nil {
+		updateMap["feature"] = nil
 	}
-	if foi.EncodingType != model.EncodingType {
-		q = q.Set("encoding_type", foi.EncodingType)
-	}
-	if foi.Feature != model.Feature {
-		if foi.Feature == nil {
-			q = q.Set("feature", nil)
-		} else {
-			q = q.Set("feature", sq.Expr("ST_GeomFromEWKB(?)", foi.Feature))
-		}
-	}
-	if !bytes.Equal(foi.Properties, model.Properties) {
-		q = q.Set("properties", foi.Properties)
-	}
+	q := pq.Update("features_of_interest").Where(sq.Eq{"id": foi.ID}).SetMap(updateMap)
 
 	query, params, err := q.ToSql()
 	if err != nil {
 		panic(err)
 	}
 	if _, err := store.databasePool.Exec(ctx, query, params...); err != nil {
-		return err
+		return fmt.Errorf("in updateFeatureOfInterest, failed to run update query: %w", err)
 	}
 	return nil
 }

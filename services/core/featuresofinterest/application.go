@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/samber/lo"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/internal/web"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
@@ -109,8 +110,14 @@ func (service *Service) UpdateFeatureOfInterest(ctx context.Context, id int64, o
 		foi.Description = *opts.Description
 	}
 	if opts.Feature != nil {
-		foi.Feature = opts.Feature
+		encoding, _ := lo.Coalesce(opts.EncodingType, &foi.EncodingType)
+		if err := foi.SetFeature(*encoding, opts.Feature); err != nil {
+			return err
+		}
+	} else {
+		foi.ClearFeature()
 	}
+
 	if opts.Properties != nil {
 		foi.Properties = opts.Properties
 	}

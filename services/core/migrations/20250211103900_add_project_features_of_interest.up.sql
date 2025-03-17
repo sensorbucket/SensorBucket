@@ -12,8 +12,7 @@ CREATE TABLE features_of_interest (
   name VARCHAR NOT NULL,
   description VARCHAR NOT NULL DEFAULT '',
   encoding_type VARCHAR, -- Oneof:
-  feature_geometry GEOMETRY,
-  feature BYTEA,
+  feature GEOMETRY,
   properties JSONB NOT NULL DEFAULT '{}'::json,
   tenant_id BIGINT NOT NULL,
 
@@ -43,7 +42,6 @@ ALTER TABLE measurements
   ADD COLUMN feature_of_interest_name TEXT
   ADD COLUMN feature_of_interest_description TEXT
   ADD COLUMN feature_of_interest_encoding_type TEXT
-  ADD COLUMN feature_of_interest_feature_geometry GEOMETRY
-  ADD COLUMN feature_of_interest_feature BYTEA
+  ADD COLUMN feature_of_interest_feature GEOMETRY
   ADD COLUMN feature_of_interest_properties JSONB;
 CREATE INDEX measurements_query_by_foi ON measurements(feature_of_interest_id, datastream_observed_property, measurement_timestamp DESC);
