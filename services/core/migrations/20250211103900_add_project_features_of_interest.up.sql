@@ -27,15 +27,6 @@ CREATE TABLE project_feature_of_interest (
 
 CREATE INDEX project_feature_of_interest_idx ON project_feature_of_interest(project_id);
 
-CREATE TABLE feature_of_interest_datastream (
-  feature_of_interest_id BIGINT REFERENCES features_of_interest(id),
-  datastream_id UUID NOT NULL REFERENCES datastreams(id),
-  bound_at TIMESTAMPTZ NOT NULL,
-  unbound_at TIMESTAMPTZ,
-
-  PRIMARY KEY(feature_of_interest_id)
-);
-
 ALTER TABLE sensors ADD COLUMN feature_of_interest_id BIGINT REFERENCES features_of_interest(id);
 ALTER TABLE measurements 
   ADD COLUMN feature_of_interest_id BIGINT,
