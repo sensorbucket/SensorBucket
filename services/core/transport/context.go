@@ -22,7 +22,7 @@ var (
 	ctxSensorKey ctxKey = "sensor"
 )
 
-func (t *CoreTransport) useDeviceResolver() middleware {
+func (transport *CoreTransport) useDeviceResolver() middleware {
 	return func(next http.Handler) http.Handler {
 		mw := func(rw http.ResponseWriter, r *http.Request) {
 			idString := chi.URLParam(r, "device_id")
@@ -32,7 +32,7 @@ func (t *CoreTransport) useDeviceResolver() middleware {
 				return
 			}
 
-			dev, err := t.deviceService.GetDevice(r.Context(), id)
+			dev, err := transport.deviceService.GetDevice(r.Context(), id)
 			if err != nil {
 				web.HTTPError(rw, err)
 				return
@@ -50,7 +50,7 @@ func (t *CoreTransport) useDeviceResolver() middleware {
 	}
 }
 
-func (t *CoreTransport) useSensorResolver() middleware {
+func (transport *CoreTransport) useSensorResolver() middleware {
 	return func(next http.Handler) http.Handler {
 		mw := func(rw http.ResponseWriter, r *http.Request) {
 			device, ok := r.Context().Value(ctxDeviceKey).(*devices.Device)
