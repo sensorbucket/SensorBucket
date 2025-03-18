@@ -43,6 +43,9 @@ func (store *StorePSQL) ListFeaturesOfInterest(ctx context.Context, filter Featu
 	if len(filter.TenantID) > 0 {
 		q = q.Where(sq.Eq{"tenant_id": filter.TenantID})
 	}
+	if filter.Properties != nil {
+		q = q.Where("properties::jsonb @> ?::jsonb", filter.Properties)
+	}
 	q = q.Offset(cursor.Columns.Offset).Limit(cursor.Limit)
 
 	query, params, err := q.ToSql()
