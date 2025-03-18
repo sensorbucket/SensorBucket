@@ -22,6 +22,8 @@ info:
 servers:
   - description: Production
     url: https://sensorbucket.nl/api
+  - description: Localhost
+    url: http://localhost:3000/api
 security:
   - CookieSession: []
   - APIKey: []
@@ -34,6 +36,7 @@ tags:
   - name: Tenants
   - name: Workers
   - name: APIKeys
+  - name: FeaturesOfInterest
 paths:
   /devices:
     get:
@@ -549,6 +552,172 @@ paths:
           $ref: '#/components/responses/401'
         '403':
           $ref: '#/components/responses/403'
+  /features-of-interest:
+    get:
+      x-is-paginated: true
+      operationId: ListFeaturesOfInterest
+      summary: List features of interest
+      description: |
+        Fetch a list of features of interest.
+      tags:
+        - FeaturesOfInterest
+      parameters:
+        - in: query
+          name: cursor
+          description: The cursor for the current page
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: |
+            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/paginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/featureOfInterest'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+    post:
+      operationId: CreateFeatureOfInterest
+      summary: Create FeatureOfInterest
+      description: |
+        Create a new FeatureOfInterest.
+      tags:
+        - FeaturesOfInterest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createFeatureOfInterestRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: created feature of interest
+                  data:
+                    $ref: '#/components/schemas/featureOfInterest'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+  /features-of-interest/{id}:
+    get:
+      operationId: GetFeatureOfInterest
+      summary: Get a Feature of Interest by its ID
+      description: |
+        Get the featureofinterest with the given identifier.
+      tags:
+        - FeaturesOfInterest
+      parameters:
+        - name: id
+          description: The ID of the Feature of Interest
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Fetched Feature of Interest
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched Feature of Interest
+                  data:
+                    $ref: '#/components/schemas/featureOfInterest'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    delete:
+      operationId: DeleteFeatureOfInterest
+      summary: Delete a Feature of Interest by its ID
+      description: |
+        Delete the featureofinterest with the given identifier.
+      tags:
+        - FeaturesOfInterest
+      parameters:
+        - name: id
+          description: The ID of the Feature of Interest
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Deleted Feature of Interest
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    patch:
+      operationId: UpdateFeatureOfInterest
+      summary: Update a Feature of Interest by its ID
+      description: |
+        Update the featureofinterest with the given identifier.
+      tags:
+        - FeaturesOfInterest
+      parameters:
+        - name: id
+          description: The ID of the Feature of Interest
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateFeatureOfInterestRequest'
+      responses:
+        '200':
+          description: Fetched Feature of Interest
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched Feature of Interest
+                  data:
+                    $ref: '#/components/schemas/featureOfInterest'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
   /sensor-groups:
     get:
       x-is-paginated: true
@@ -834,20 +1003,21 @@ paths:
             format: date-time
             example: '2022-12-31T23:59:59Z'
         - in: query
-          name: device_id
-          required: false
-          schema:
-            type: string
-        - in: query
           name: datastream
           required: false
           schema:
             type: string
         - in: query
-          name: sensor_code
+          name: observed_property
           required: false
           schema:
             type: string
+        - in: query
+          name: feature_of_interest_id
+          required: false
+          schema:
+            type: integer
+            format: int64
         - in: query
           name: cursor
           description: The cursor for the current page
@@ -1000,6 +1170,17 @@ paths:
       tags:
         - Pipelines
       parameters:
+        - in: query
+          name: id
+          description: Filter on pipeline ID(s)
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+              example: a59d28c8-2a0f-4e89-9f49-6942f1c04342
         - name: inactive
           description: Only show inactive pipelines
           in: query
@@ -1255,7 +1436,7 @@ paths:
           $ref: '#/components/responses/403'
         '404':
           description: The request failed because the requested resource could not be found or is disabled.
-  /tracing:
+  /traces:
     get:
       x-is-paginated: true
       operationId: ListTraces
@@ -1277,9 +1458,7 @@ paths:
           schema:
             type: integer
         - in: query
-          name: tracing_id
-          style: form
-          explode: true
+          name: pipeline
           schema:
             type: array
             items:
@@ -1292,21 +1471,6 @@ paths:
             type: integer
             format: int64
             example: 5
-        - in: query
-          name: status
-          schema:
-            type: integer
-            example: 2
-        - in: query
-          name: duration_greater_than
-          schema:
-            type: integer
-            example: 5
-        - in: query
-          name: duration_smaller_than
-          schema:
-            type: integer
-            example: 10
       responses:
         '200':
           description: Fetched traces
@@ -1321,47 +1485,6 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/trace'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-  /ingresses:
-    get:
-      x-is-paginated: true
-      operationId: ListIngresses
-      summary: List ingresses
-      description: |
-        Lists ingresses that match the provided filter.
-      tags:
-        - Tracing
-      parameters:
-        - in: query
-          name: cursor
-          description: The cursor for the current page
-          schema:
-            type: string
-        - in: query
-          name: limit
-          description: |
-            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Fetched ingresses
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/paginatedResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/archivedIngress'
         '400':
           $ref: '#/components/responses/400'
         '401':
@@ -1912,6 +2035,28 @@ components:
         data:
           type: array
           items: {}
+    featureOfInterest:
+      type: object
+      required:
+        - id
+        - name
+        - description
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: FeatureName
+        description:
+          type: string
+        encoding_type:
+          type: string
+        feature:
+          type: object
+        properties:
+          type: object
     sensor:
       type: object
       required:
@@ -1951,6 +2096,8 @@ components:
           type: object
           example:
             mount_height: 15cm
+        feature_of_interest:
+          $ref: '#/components/schemas/featureOfInterest'
         created_at:
           type: string
           format: date-time
@@ -2078,6 +2225,9 @@ components:
           type: object
           example:
             mount_height: 15cm
+        feature_of_interest_id:
+          type: integer
+          format: int64
         archive_time:
           type: integer
           example: 7
@@ -2097,9 +2247,45 @@ components:
           type: object
           example:
             mount_height: 15cm
+        feature_of_interest_id:
+          description: Set to 0 to unlink a Feature of Interest from a sensor
+          type: integer
+          format: int64
         archive_time:
           type: integer
           example: 7
+    createFeatureOfInterestRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: FeatureName
+        description:
+          type: string
+        encoding_type:
+          type: string
+          example: application/geo+json
+        feature:
+          type: object
+        properties:
+          type: object
+    updateFeatureOfInterestRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: FeatureName
+        description:
+          type: string
+        encoding_type:
+          type: string
+          example: application/geo+json
+        feature:
+          type: object
+        properties:
+          type: object
     sensorGroup:
       type: object
       required:
@@ -2252,6 +2438,21 @@ components:
           type: string
           format: date-time
           example: '2022-01-01T00:00:00Z'
+        feature_of_interest_id:
+          type: integer
+          format: int64
+          example: 1
+        feature_of_interest_name:
+          type: string
+          example: FeatureName
+        feature_of_interest_description:
+          type: string
+        feature_of_interest_encoding_type:
+          type: string
+        feature_of_interest_feature:
+          type: object
+        feature_of_interest_properties:
+          type: object
         created_at:
           type: string
           format: date-time
@@ -2347,42 +2548,23 @@ components:
             Used to change a pipeline from inactive to active or vice-versa. 
             Moving from active to inactive can also be achieve by `DELETE`ing the pipeline resource.
           example: active
-    trace_step:
-      type: object
-      required:
-        - status
-        - status_string
-        - duration
-        - error
-      properties:
-        start_time:
-          type: string
-          format: date-time
-        status:
-          type: integer
-          example: 2
-        status_string:
-          type: string
-          example: succes
-        duration:
-          type: number
-          format: double
-          description: Duration in seconds
-          example: 5.321
-        error:
-          type: string
     trace:
       type: object
       required:
-        - tracing_id
+        - id
+        - pipeline_id
         - device_id
         - start_time
-        - steps
-        - status
-        - status_string
+        - workers
+        - worker_times
       properties:
-        tracing_id:
+        id:
           type: string
+          format: uuid
+          example: a59d28c8-2a0f-4e89-9f49-6942f1c04342
+        pipeline_id:
+          type: string
+          format: uuid
           example: a59d28c8-2a0f-4e89-9f49-6942f1c04342
         device_id:
           type: integer
@@ -2392,16 +2574,20 @@ components:
         start_time:
           type: string
           format: date-time
-        status:
-          type: integer
-          example: 2
-        status_string:
-          type: string
-          example: succes
-        steps:
+        workers:
           type: array
           items:
-            $ref: '#/components/schemas/trace_step'
+            type: string
+        worker_times:
+          type: array
+          items:
+            type: string
+            format: date-time
+        error:
+          type: string
+        error_at:
+          type: string
+          format: date-time
     apiError:
       type: object
       properties:
@@ -2411,52 +2597,6 @@ components:
           type: string
         http_status:
           type: integer
-    ingressDTO:
-      type: object
-      required:
-        - tracing_id
-        - pipeline_id
-        - owner_id
-        - payload
-        - created_at
-      properties:
-        tracing_id:
-          type: string
-          format: uuid
-        pipeline_id:
-          type: string
-          format: uuid
-        owner_id:
-          type: integer
-          format: int64
-        payload:
-          type: string
-          format: base64
-        created_at:
-          type: string
-          format: date-time
-    archivedIngress:
-      type: object
-      required:
-        - tracing_id
-        - raw_message
-        - archived_at
-        - expires_at
-      properties:
-        tracing_id:
-          type: string
-          format: uuid
-        raw_message:
-          type: string
-          format: base64
-        archived_at:
-          type: string
-          format: date-time
-        expires_at:
-          type: string
-          format: date-time
-        ingress_dto:
-          $ref: '#/components/schemas/ingressDTO'
     userWorker:
       type: object
       required:

@@ -3,8 +3,10 @@ package featuresofinterest
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/samber/lo"
 	"log/slog"
 
 	sq "github.com/Masterminds/squirrel"
@@ -43,8 +45,11 @@ func (store *StorePSQL) ListFeaturesOfInterest(ctx context.Context, filter Featu
 	if len(filter.TenantID) > 0 {
 		q = q.Where(sq.Eq{"tenant_id": filter.TenantID})
 	}
-	if filter.Properties != nil {
-		q = q.Where("properties::jsonb @> ?::jsonb", filter.Properties)
+	if len(filter.Properties) > 0 {
+		statements := lo.Map(filter.Properties, func(property json.RawMessage, _ int) sq.Sqlizer {
+			return sq.Expr("properties::jsonb @> ?::jsonb", property)
+		})
+		q = q.Where(sq.Or(statements))
 	}
 	q = q.Offset(cursor.Columns.Offset).Limit(cursor.Limit)
 
