@@ -26,11 +26,11 @@ get:
               data:
                 $ref: 'schemas.yaml#/userWorker'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
     '404':
-      $ref: './responses.yaml#/404'
+      $ref: '../responses.yaml#/404'
 patch:
   operationId: UpdateWorker
   summary: Update worker properties
@@ -51,7 +51,19 @@ patch:
     content:
       application/json:
         schema:
-          $ref: 'schemas.yaml#/updateWorkerRequest'
+          type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            state:
+              type: string
+              enum: ["enabled", "disabled"]
+            user_code:
+              type: string
+              format: base64
+              description: base64 encoded user code
   responses:
     '200':
       description: Updated worker properties
@@ -64,8 +76,8 @@ patch:
                 type: string
                 example: Updated worker properties
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
     '404':
-      $ref: './responses.yaml#/404'
+      $ref: '../responses.yaml#/404'

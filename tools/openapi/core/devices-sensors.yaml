@@ -4,7 +4,7 @@ get:
   summary: List sensors device
   description: |
     List all sensors related to the device with the provided identifier
-  tags: ["Devices"]
+  tags: ["Core"]
   parameters: 
     - name: device_id
       description: The identifier of the device
@@ -30,7 +30,7 @@ get:
         application/json:
           schema:
             allOf:
-              - $ref: './schemas.yaml#/paginatedResponse'
+              - $ref: '../responses.yaml#/paginatedResponse'
               -  type: object
                  properties:
                    data:
@@ -38,11 +38,11 @@ get:
                      items:
                        $ref: 'schemas.yaml#/sensor'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
     '404':
-      $ref: './responses.yaml#/404'
+      $ref: '../responses.yaml#/404'
 post:
   operationId: CreateDeviceSensor
   summary: Create sensor for device
@@ -51,7 +51,7 @@ post:
 
     A device can not have sensors with either a duplicate `code` or duplicate `external_id` field.
     As this would result in conflicts while matching incoming messages to devices and sensors.
-  tags: ["Devices"]
+  tags: ["Core"]
   parameters: 
     - name: device_id
       description: The identifier of the device
@@ -63,7 +63,33 @@ post:
     content:
       application/json:
         schema:
-          $ref: 'schemas.yaml#/createSensorRequest'
+          type: object
+          required:
+            - code
+            - external_id
+          properties:
+            code:
+              type: string
+              example: S123
+            description:
+              type: string
+              example: Pressure sensor at 5 meters depth
+            external_id:
+              type: string
+              example: "5"
+            brand:
+              type: string
+              example: "sensor brand ABC"
+            properties:
+              type: object
+              example:
+                mount_height: 15cm
+            feature_of_interest_id:
+              type: integer
+              format: int64
+            archive_time:
+              type: integer
+              example: 7
   responses:
     '201':
       description: Created new sensor for device
@@ -76,8 +102,8 @@ post:
                 type: string
                 example: Created new sensor for device
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
     '404':
-      $ref: './responses.yaml#/404'
+      $ref: '../responses.yaml#/404'

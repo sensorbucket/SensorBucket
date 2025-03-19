@@ -11,7 +11,7 @@ get:
       schema:
         type: integer
         format: int64
-  tags: ["APIKeys"]
+  tags: ["Tenants"]
   responses:
     '200':
       description: Fetched API key
@@ -20,13 +20,13 @@ get:
           schema:
             $ref: "schemas.yaml#/apiKey"
     '400':
-      $ref: 'responses.yaml#/400'
+      $ref: '../responses.yaml#/400'
     '500':
-      $ref: './responses.yaml#/500'
+      $ref: '../responses.yaml#/500'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
 delete:
   tags: ['APIKeys']
   operationId: RevokeApiKey
@@ -53,10 +53,10 @@ delete:
                 type: string
                 example: "API key has been revoked"
     '400':
-      $ref: 'responses.yaml#/400'
+      $ref: '../responses.yaml#/400'
     '500':
-      $ref: './responses.yaml#/500'
+      $ref: '../responses.yaml#/500'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'

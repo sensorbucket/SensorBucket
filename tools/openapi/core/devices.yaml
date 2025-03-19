@@ -11,7 +11,7 @@ get:
      - Bounding box requires a North,East,South and West point. All devices within that box will be returned.
 
     The filters distance from location and bounding box are mutually exclusive. The location distance filter will take precedence.
-  tags: ["Devices"]
+  tags: ["Core"]
   parameters:
     - in: query
       name: properties
@@ -109,7 +109,7 @@ get:
         application/json:
           schema:
             allOf:
-              - $ref: './schemas.yaml#/paginatedResponse'
+              - $ref: '../responses.yaml#/paginatedResponse'
               - type: object
                 properties:
                   data:
@@ -117,9 +117,9 @@ get:
                     items:
                       $ref: 'schemas.yaml#/device'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
 
 post:
   operationId: CreateDevice
@@ -129,12 +129,36 @@ post:
 
     Depending on the type of device and the network it is registered on. The device might need specific properties to be set.  
     **For example:** A LoRaWAN device often requires a `dev_eui` property to be set. The system will match incoming traffic against that property.
-  tags: ["Devices"]
+  tags: ["Core"]
   requestBody: 
     content:
       application/json:
-        schema: 
-          $ref: 'schemas.yaml#/createDeviceRequest'
+        schema:
+          type: object
+          required:
+            - code
+          properties:
+            code:
+              type: string
+              example: mfm1000
+            description:
+              type: string
+              example: Grassfield pipe 24
+            latitude:
+              type: number
+              format: double
+              example: 1.2345
+            longitude:
+              type: number
+              format: double
+              example: 1.2345
+            location_description:
+              type: string
+              example: "Description of location"
+            properties:
+              type: object
+              example:
+                eui: "060708090A0B0C0D"
   responses:
     '201':
       description: Created
@@ -149,6 +173,6 @@ post:
               data:
                 $ref: 'schemas.yaml#/device'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'

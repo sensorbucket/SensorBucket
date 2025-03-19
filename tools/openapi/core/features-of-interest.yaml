@@ -4,7 +4,7 @@ get:
   summary: List features of interest
   description: |
     Fetch a list of features of interest.
-  tags: ["FeaturesOfInterest"]
+  tags: ["Core"]
   parameters:
     - in: query
       name: cursor
@@ -24,7 +24,7 @@ get:
         application/json:
           schema:
             allOf:
-              - $ref: './schemas.yaml#/paginatedResponse'
+              - $ref: '../responses.yaml#/paginatedResponse'
               - type: object
                 properties:
                   data:
@@ -32,21 +32,36 @@ get:
                     items:
                       $ref: 'schemas.yaml#/featureOfInterest'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
 
 post:
   operationId: CreateFeatureOfInterest
   summary: Create FeatureOfInterest
   description: |
     Create a new FeatureOfInterest.
-  tags: ["FeaturesOfInterest"]
+  tags: ["Core"]
   requestBody: 
     content:
       application/json:
-        schema: 
-          $ref: 'schemas.yaml#/createFeatureOfInterestRequest'
+        schema:
+          type: object
+          required:
+            - name
+          properties:
+            name:
+              type: string
+              example: FeatureName
+            description:
+              type: string
+            encoding_type:
+              type: string
+              example: application/geo+json
+            feature:
+              type: object
+            properties:
+              type: object
   responses:
     '201':
       description: Created
@@ -61,6 +76,6 @@ post:
               data:
                 $ref: 'schemas.yaml#/featureOfInterest'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'

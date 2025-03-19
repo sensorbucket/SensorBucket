@@ -29,13 +29,13 @@ delete:
                 type: string
                 example: "Member removed from tenant"
     '400':
-      $ref: './responses.yaml#/400'
+      $ref: '../responses.yaml#/400'
     '500':
-      $ref: './responses.yaml#/500'
+      $ref: '../responses.yaml#/500'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
 patch:
   tags: ['Tenants']
   operationId: UpdateTenantMember
@@ -60,7 +60,14 @@ patch:
     content:
       application/json:
         schema:
-          $ref: 'schemas.yaml#/updateTenantMemberRequest'
+          type: object
+          required:
+            - permissions
+          properties:
+            permissions:
+              type: array
+              items:
+                type: string
   responses:
     '200':
       content:
@@ -72,10 +79,10 @@ patch:
                 type: string
                 example: "Member removed from tenant"
     '400':
-      $ref: './responses.yaml#/400'
+      $ref: '../responses.yaml#/400'
     '500':
-      $ref: './responses.yaml#/500'
+      $ref: '../responses.yaml#/500'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'

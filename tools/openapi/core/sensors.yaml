@@ -4,7 +4,7 @@ get:
   summary: List sensors
   description: |
     List all sensors.
-  tags: ["Devices"]
+  tags: ["Core"]
   parameters:
     - in: query
       name: cursor
@@ -24,7 +24,7 @@ get:
         application/json:
           schema:
             allOf:
-              - $ref: './schemas.yaml#/paginatedResponse'
+              - $ref: '../responses.yaml#/paginatedResponse'
               - type: object
                 properties:
                   data:
@@ -32,6 +32,6 @@ get:
                     items:
                       $ref: "schemas.yaml#/sensor"
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'

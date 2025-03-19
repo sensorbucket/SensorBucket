@@ -2,8 +2,8 @@ get:
   operationId: GetFeatureOfInterest
   summary: Get a Feature of Interest by its ID
   description: |
-    Get the featureofinterest with the given identifier.
-  tags: ["FeaturesOfInterest"]
+    Get the Feature of Interest with the given identifier.
+  tags: ["Core"]
   parameters: 
     - name: id
       description: The ID of the Feature of Interest
@@ -26,17 +26,17 @@ get:
               data:
                 $ref: 'schemas.yaml#/featureOfInterest'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
     '404':
-      $ref: './responses.yaml#/404'
+      $ref: '../responses.yaml#/404'
 delete:
   operationId: DeleteFeatureOfInterest
   summary: Delete a Feature of Interest by its ID
   description: |
-    Delete the featureofinterest with the given identifier.
-  tags: ["FeaturesOfInterest"]
+    Delete the Feature of Interest with the given identifier.
+  tags: ["Core"]
   parameters: 
     - name: id
       description: The ID of the Feature of Interest
@@ -49,17 +49,17 @@ delete:
     '200':
       description: Deleted Feature of Interest
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
     '404':
-      $ref: './responses.yaml#/404'
+      $ref: '../responses.yaml#/404'
 patch:
   operationId: UpdateFeatureOfInterest
   summary: Update a Feature of Interest by its ID
   description: |
-    Update the featureofinterest with the given identifier.
-  tags: ["FeaturesOfInterest"]
+    Update the Feature of Interest with the given identifier.
+  tags: ["Core"]
   parameters: 
     - name: id
       description: The ID of the Feature of Interest
@@ -72,7 +72,21 @@ patch:
     content:
       application/json:
         schema:
-          $ref: 'schemas.yaml#/updateFeatureOfInterestRequest'
+          type: object
+          properties:
+            name:
+              type: string
+              example: FeatureName
+            description:
+              type: string
+            encoding_type:
+              type: string
+              example: application/geo+json
+            feature:
+              type: object
+            properties:
+              type: object
+
   responses:
     '200':
       description: Fetched Feature of Interest
@@ -87,8 +101,8 @@ patch:
               data:
                 $ref: 'schemas.yaml#/featureOfInterest'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
     '404':
-      $ref: './responses.yaml#/404'
+      $ref: '../responses.yaml#/404'

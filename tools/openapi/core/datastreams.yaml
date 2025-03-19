@@ -13,7 +13,7 @@ get:
     Another example would be a worker which processes raw incoming values into meaningful data.
     An underwater pressure sensor might supply its measurement in milli Amperes, but the worker converts it to watercolumn in meters.
     The sensor now has two datastreams. Presusre in millivolt and watercolumn in meters.
-  tags: ["Measurements"]
+  tags: ["Core"]
   parameters:
     - name: sensor
       description: only return datastreams that are produced by the given sensor identifier
@@ -44,7 +44,7 @@ get:
         application/json:
           schema:
             allOf:
-              - $ref: './schemas.yaml#/paginatedResponse'
+              - $ref: '../responses.yaml#/paginatedResponse'
               - type: object
                 properties:
                   data:
@@ -52,6 +52,6 @@ get:
                     items:
                       $ref: "schemas.yaml#/datastream"
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'

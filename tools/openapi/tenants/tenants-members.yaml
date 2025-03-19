@@ -15,7 +15,17 @@ post:
     content:
       application/json:
         schema:
-          $ref: 'schemas.yaml#/addTenantMemberRequest'
+          type: object
+          required:
+            - user_id
+            - permissions
+          properties:
+            user_id:
+              type: string
+            permissions:
+              type: array
+              items:
+                type: string
   responses:
     '201':
       description: User added to Tenant
@@ -28,10 +38,10 @@ post:
                 type: string
                 example: User added to Tenant
     '400':
-      $ref: './responses.yaml#/400'
+      $ref: '../responses.yaml#/400'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
     '404':
-      $ref: './responses.yaml#/404'
+      $ref: '../responses.yaml#/404'

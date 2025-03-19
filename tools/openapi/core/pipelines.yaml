@@ -8,7 +8,7 @@ get:
 
     Pipelines can be filtered by providing one or more `step`s. This query parameter can be repeated to include more steps.
     When multiple steps are given, pipelines containing one of the given steps will be returned.
-  tags: ["Pipelines"]
+  tags: ["Core"]
   parameters:
     - in: query
       name: id
@@ -58,7 +58,7 @@ get:
         application/json:
           schema:
             allOf:
-              - $ref: './schemas.yaml#/paginatedResponse'
+              - $ref: '../responses.yaml#/paginatedResponse'
               - type: object
                 properties:
                   data:
@@ -66,9 +66,9 @@ get:
                     items:
                       $ref: 'schemas.yaml#/pipeline'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
 
 post:
   operationId: CreatePipeline
@@ -81,12 +81,23 @@ post:
     A pipeline step is used as routing key in the Message Queue. This might be changed in future releases.
 
     **Note:** currently there are no validations in place on whether a worker for the provided step actually exists.
-  tags: ["Pipelines"]
+  tags: ["Core"]
   requestBody: 
     content: 
       application/json:
         schema:
-          $ref: 'schemas.yaml#/createPipelineRequest'
+          type: object
+          properties:
+            description:
+              type: string
+              example: Pipeline for MultiFlexMeter Groundwater devices
+            steps:
+              type: array
+              items:
+                type: string
+              example:
+                - "TTN@1.0.0"
+                - "MFMGroundwater@1.0.0"
   responses:
     '200':
       description: Created pipeline
@@ -101,6 +112,6 @@ post:
               data:
                 $ref: 'schemas.yaml#/pipeline'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'

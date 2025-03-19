@@ -1,5 +1,5 @@
 post:
-  tags: ['Uplink']
+  tags: ['HTTPIngress']
   operationId: processUplinkData
   summary: Process uplink message
   description: |
@@ -7,7 +7,7 @@ post:
 
     The request body and content-type can be anything the workers (defined by the pipeline steps) in the pipeline expect.
 
-    As this process is asynchronuous, any processing error will not be returned in the response.
+    As this process is asynchronous, any processing error will not be returned in the response.
     Only if the HTTP Importer is unable to push the message to the Message Queue, will an error be returned. 
   parameters:
     - name: pipeline_id
@@ -27,8 +27,8 @@ post:
     '201':
       description: Accepted uplink
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
     '404':
       description: The request failed because the requested resource could not be found or is disabled.

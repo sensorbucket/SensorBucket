@@ -12,7 +12,7 @@ get:
 
     Most query parameters can be repeated to get an OR combination of filters. For example, providing the `datastream` 
     parameter twice will return measurements for either datastreams.
-  tags: ["Measurements"]
+  tags: ["Core"]
   parameters:
     - in: query
       name: start
@@ -62,7 +62,7 @@ get:
         application/json:
           schema:
             allOf:
-              - $ref: './schemas.yaml#/paginatedResponse'
+              - $ref: '../responses.yaml#/paginatedResponse'
               - type: object
                 properties:
                   data:
@@ -70,7 +70,7 @@ get:
                     items:
                       $ref: "schemas.yaml#/measurement"
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
 

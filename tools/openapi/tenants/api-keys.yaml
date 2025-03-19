@@ -4,7 +4,7 @@ get:
   summary: List API Keys
   description: |
     Lists API Keys
-  tags: ["APIKeys"]
+  tags: ["Tenants"]
   parameters:
     - in: query
       name: tenant_id
@@ -30,7 +30,7 @@ get:
         application/json:
           schema:
             allOf:
-              - $ref: './schemas.yaml#/paginatedResponse'
+              - $ref: '../responses.yaml#/paginatedResponse'
               - type: object
                 properties:
                   data:
@@ -38,13 +38,13 @@ get:
                     items:
                       $ref: "schemas.yaml#/apiKey"
     '400':
-      $ref: 'responses.yaml#/400'
+      $ref: '../responses.yaml#/400'
     '500':
-      $ref: './responses.yaml#/500'
+      $ref: '../responses.yaml#/500'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
 post:
   tags: ['APIKeys']
   operationId: CreateApiKey
@@ -55,19 +55,45 @@ post:
     content:
       application/json:
         schema:
-          $ref: 'schemas.yaml#/createApiKeyRequest'
+          type: object
+          required:
+            - name
+            - tenant_id
+          properties:
+            name:
+              type: string
+              example: Device Beheerder
+            tenant_id:
+              type: integer
+              format: int64
+              example: 19
+            permissions:
+              type: array
+              items:
+                type: string
+            expiration_date:
+              type: string
+              format: date-time
+              example: 2023-05-17T15:00:00Z
+
   responses:
     '201':
       description: Created API key
       content:
         application/json:
           schema:
-            $ref: 'schemas.yaml#/apiKeyCreated'
+            type: object
+            required:
+              - api_key
+            properties:
+              api_key:
+                type: string
+                example: MjU5MzE1NDgwMjE2NTMwMTEyODo2MjY2MDdkMGViY2Q5MGRhMTRkZWE4NGY4MjEzYjRiNw
     '400':
-      $ref: 'responses.yaml#/400'
+      $ref: '../responses.yaml#/400'
     '500':
-      $ref: './responses.yaml#/500'
+      $ref: '../responses.yaml#/500'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'

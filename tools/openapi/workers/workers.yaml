@@ -34,7 +34,7 @@ get:
         application/json:
           schema:
             allOf:
-              - $ref: "./schemas.yaml#/paginatedResponse"
+              - $ref: "../responses.yaml#/paginatedResponse"
               - type: object
                 properties:
                   data:
@@ -42,11 +42,11 @@ get:
                     items:
                       $ref: "schemas.yaml#/userWorker"
     "400":
-      $ref: "./responses.yaml#/400"
+      $ref: "../responses.yaml#/400"
     "401":
-      $ref: "./responses.yaml#/401"
+      $ref: "../responses.yaml#/401"
     "403":
-      $ref: "./responses.yaml#/403"
+      $ref: "../responses.yaml#/403"
 post:
   operationId: CreateWorker
   summary: Create Worker
@@ -56,8 +56,24 @@ post:
   requestBody: 
     content:
       application/json:
-        schema: 
-          $ref: 'schemas.yaml#/createUserWorkerRequest'
+        schema:
+          type: object
+          required:
+            - name
+            - user_code
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            user_code:
+              type: string
+              format: base64
+              description: base64 encoded user code
+            state:
+              type: string
+              enum: [ "enabled", "disabled" ]
+
   responses:
     "201":
       description: Created worker

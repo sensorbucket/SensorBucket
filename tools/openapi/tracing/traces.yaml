@@ -4,7 +4,7 @@ get:
   summary: List traces
   description: |
     Lists traces that match the provided filter.
-  tags: [Tracing]
+  tags: ["Tracing"]
   parameters:
     - in: query
       name: cursor
@@ -39,7 +39,7 @@ get:
         application/json:
           schema:
             allOf:
-              - $ref: "./schemas.yaml#/paginatedResponse"
+              - $ref: "../responses.yaml#/paginatedResponse"
               - type: object
                 properties:
                   data:
@@ -47,8 +47,8 @@ get:
                     items:
                       $ref: "schemas.yaml#/trace"
     "400":
-      $ref: "./responses.yaml#/400"
+      $ref: "../responses.yaml#/400"
     "401":
-      $ref: "./responses.yaml#/401"
+      $ref: "../responses.yaml#/401"
     "403":
-      $ref: "./responses.yaml#/403"
+      $ref: "../responses.yaml#/403"

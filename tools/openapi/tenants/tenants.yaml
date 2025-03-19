@@ -14,7 +14,7 @@ get:
         format: int64
     - in: query
       name: state
-      description: Filter on soecific state of a tenant
+      description: Filter on specific state of a tenant
       schema:
         type: integer
         format: int64
@@ -42,7 +42,7 @@ get:
         application/json:
           schema:
             allOf:
-              - $ref: './schemas.yaml#/paginatedResponse'
+              - $ref: '../responses.yaml#/paginatedResponse'
               - type: object
                 properties:
                   data:
@@ -50,6 +50,6 @@ get:
                     items:
                       $ref: "schemas.yaml#/tenant"
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'

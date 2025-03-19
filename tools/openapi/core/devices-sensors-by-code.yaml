@@ -5,7 +5,7 @@ get:
     Get the sensor with the given identifier.
 
     The returned sensor will also include the full model of the sensors attached to that sensor.
-  tags: ["Devices"]
+  tags: ["Core"]
   parameters: 
     - name: device_id
       description: The identifier of the device
@@ -33,11 +33,11 @@ get:
               data:
                 $ref: 'schemas.yaml#/sensor'
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
     '404':
-      $ref: './responses.yaml#/404'
+      $ref: '../responses.yaml#/404'
 patch:
   operationId: UpdateSensor
   summary: Update sensor properties
@@ -45,7 +45,7 @@ patch:
     Update a some properties of the sensor with the given identifier.
 
     The request body should contain one or more modifiable properties of the Sensor.
-  tags: ["Devices"]
+  tags: ["Core"]
   parameters: 
     - name: device_id
       description: The identifier of the device
@@ -63,7 +63,28 @@ patch:
     content:
       application/json:
         schema:
-          $ref: 'schemas.yaml#/updateSensorRequest'
+          type: object
+          properties:
+            description:
+              type: string
+              example: Pressure sensor at 5 meters depth
+            external_id:
+              type: string
+              example: "5"
+            brand:
+              type: string
+              example: "sensor brand ABC"
+            properties:
+              type: object
+              example:
+                mount_height: 15cm
+            feature_of_interest_id:
+              description: Set to 0 to unlink a Feature of Interest from a sensor
+              type: integer
+              format: int64
+            archive_time:
+              type: integer
+              example: 7
   responses:
     '200':
       description: Updated sensor properties
@@ -76,11 +97,11 @@ patch:
                 type: string
                 example: Updated sensor properties
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
     '404':
-       $ref: './responses.yaml#/404'
+       $ref: '../responses.yaml#/404'
 delete:
   operationId: DeleteDeviceSensor
   summary: Delete sensor
@@ -88,7 +109,7 @@ delete:
     Delete a sensor from the system. 
 
     Since a sensor can only be related to one and only one device at a time, the sensor will be deleted from the system completely
-  tags: ["Devices"]
+  tags: ["Core"]
   parameters: 
     - name: device_id
       description: The identifier of the device
@@ -114,8 +135,8 @@ delete:
                 type: string
                 example: Deleted sensor from device
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
     '404':
-      $ref: './responses.yaml#/404'
+      $ref: '../responses.yaml#/404'

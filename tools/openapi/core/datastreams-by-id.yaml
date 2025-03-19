@@ -5,7 +5,7 @@ get:
     Get the datastream with the given identifier.
 
     The returned datastream will also include the full model of the sensors attached to that datastream.
-  tags: ["Measurements"]
+  tags: ["Core"]
   parameters: 
     - name: id
       description: The UUID of the datastream
@@ -41,8 +41,8 @@ get:
                     type: string
                     format: date-time
     '401':
-      $ref: './responses.yaml#/401'
+      $ref: '../responses.yaml#/401'
     '403':
-      $ref: './responses.yaml#/403'
+      $ref: '../responses.yaml#/403'
     '404':
-      $ref: './responses.yaml#/404'
+      $ref: '../responses.yaml#/404'
