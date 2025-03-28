@@ -16,12 +16,14 @@ get:
     - in: query
       name: properties
       description: Used to filter devices by its properties. This filters devices on whether their property contains the provided value. The value must be a JSON string and depending on your client should be URL Escaped
+      required: false
       schema:
         type: string
         example: '{ "eui": "1122334455667788" }'
     - in: query
       name: north
       description: Used to filter devices within a bounding box
+      required: false
       schema:
         type: number
         format: double
@@ -29,6 +31,7 @@ get:
     - in: query
       name: west
       description: Used to filter devices within a bounding box
+      required: false
       schema:
         type: number
         format: double
@@ -36,6 +39,7 @@ get:
     - in: query
       name: east
       description: Used to filter devices within a bounding box
+      required: false
       schema:
         type: number
         format: double
@@ -43,6 +47,7 @@ get:
     - in: query
       name: south
       description: Used to filter devices within a bounding box
+      required: false
       schema:
         type: number
         format: double
@@ -50,6 +55,7 @@ get:
     - in: query
       name: latitude
       description: Used to filter devices within a distance from a point
+      required: false
       schema:
         type: number
         format: double
@@ -57,6 +63,7 @@ get:
     - in: query
       name: longitude
       description: Used to filter devices within a distance from a point
+      required: false
       schema:
         type: number
         format: double
@@ -66,23 +73,27 @@ get:
       description: |
         Used to filter devices within a distance from a point. 
         The distance is given in meters.
+      required: false
       schema:
         type: integer
         example: 1000
     - in: query
       name: cursor
       description: The cursor for the current page
+      required: false
       schema:
         type: string
     - in: query
       name: limit
       description: |
         The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+      required: false
       schema:
         type: integer
     - name: id
       description: |
         Filter by Device IDs
+      required: false
       in: query
       style: form
       explode: true
@@ -94,6 +105,7 @@ get:
     - name: sensor_group
       description: |
         Filter by device group
+      required: false
       in: query
       style: form
       explode: true

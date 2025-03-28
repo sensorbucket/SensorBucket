@@ -28,15 +28,11 @@ security:
   - CookieSession: []
   - APIKey: []
 tags:
-  - name: Devices
-  - name: Pipelines
-  - name: Measurements
-  - name: Uplink
-  - name: Tracing
+  - name: Core
+  - name: HTTPIngress
   - name: Tenants
+  - name: Tracing
   - name: Workers
-  - name: APIKeys
-  - name: FeaturesOfInterest
 paths:
   /devices:
     get:
@@ -53,7 +49,7 @@ paths:
 
         The filters distance from location and bounding box are mutually exclusive. The location distance filter will take precedence.
       tags:
-        - Devices
+        - Core
       parameters:
         - in: query
           name: properties
@@ -171,12 +167,36 @@ paths:
         Depending on the type of device and the network it is registered on. The device might need specific properties to be set.  
         **For example:** A LoRaWAN device often requires a `dev_eui` property to be set. The system will match incoming traffic against that property.
       tags:
-        - Devices
+        - Core
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/createDeviceRequest'
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  example: mfm1000
+                description:
+                  type: string
+                  example: Grassfield pipe 24
+                latitude:
+                  type: number
+                  format: double
+                  example: 1.2345
+                longitude:
+                  type: number
+                  format: double
+                  example: 1.2345
+                location_description:
+                  type: string
+                  example: Description of location
+                properties:
+                  type: object
+                  example:
+                    eui: 060708090A0B0C0D
       responses:
         '201':
           description: Created
@@ -203,7 +223,7 @@ paths:
 
         The returned device will also include the full model of the sensors attached to that device.
       tags:
-        - Devices
+        - Core
       parameters:
         - name: id
           description: The numeric ID of the device
@@ -239,7 +259,7 @@ paths:
 
         The request body should contain one or more modifiable properties of the Device.
       tags:
-        - Devices
+        - Core
       parameters:
         - name: id
           description: The numeric ID of the device
@@ -252,7 +272,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/updateDeviceRequest'
+              type: object
+              properties:
+                description:
+                  type: integer
+                  example: 1
+                latitude:
+                  type: number
+                  format: double
+                  example: 1.2345
+                longitude:
+                  type: number
+                  format: double
+                  example: 1.2345
+                location_description:
+                  type: string
+                  example: Description of location
+                properties:
+                  type: object
+                  example:
+                    eui: 060708090A0B0C0D
       responses:
         '200':
           description: Updated device properties
@@ -276,7 +315,7 @@ paths:
       description: |
         Delete the device with the given identifier.
       tags:
-        - Devices
+        - Core
       parameters:
         - name: id
           description: The numeric ID of the device
@@ -310,7 +349,7 @@ paths:
       description: |
         List all sensors related to the device with the provided identifier
       tags:
-        - Devices
+        - Core
       parameters:
         - name: device_id
           description: The identifier of the device
@@ -358,7 +397,7 @@ paths:
         A device can not have sensors with either a duplicate `code` or duplicate `external_id` field.
         As this would result in conflicts while matching incoming messages to devices and sensors.
       tags:
-        - Devices
+        - Core
       parameters:
         - name: device_id
           description: The identifier of the device
@@ -370,7 +409,33 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/createSensorRequest'
+              type: object
+              required:
+                - code
+                - external_id
+              properties:
+                code:
+                  type: string
+                  example: S123
+                description:
+                  type: string
+                  example: Pressure sensor at 5 meters depth
+                external_id:
+                  type: string
+                  example: '5'
+                brand:
+                  type: string
+                  example: sensor brand ABC
+                properties:
+                  type: object
+                  example:
+                    mount_height: 15cm
+                feature_of_interest_id:
+                  type: integer
+                  format: int64
+                archive_time:
+                  type: integer
+                  example: 7
       responses:
         '201':
           description: Created new sensor for device
@@ -397,7 +462,7 @@ paths:
 
         The returned sensor will also include the full model of the sensors attached to that sensor.
       tags:
-        - Devices
+        - Core
       parameters:
         - name: device_id
           description: The identifier of the device
@@ -438,7 +503,7 @@ paths:
 
         The request body should contain one or more modifiable properties of the Sensor.
       tags:
-        - Devices
+        - Core
       parameters:
         - name: device_id
           description: The identifier of the device
@@ -456,7 +521,28 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/updateSensorRequest'
+              type: object
+              properties:
+                description:
+                  type: string
+                  example: Pressure sensor at 5 meters depth
+                external_id:
+                  type: string
+                  example: '5'
+                brand:
+                  type: string
+                  example: sensor brand ABC
+                properties:
+                  type: object
+                  example:
+                    mount_height: 15cm
+                feature_of_interest_id:
+                  description: Set to 0 to unlink a Feature of Interest from a sensor
+                  type: integer
+                  format: int64
+                archive_time:
+                  type: integer
+                  example: 7
       responses:
         '200':
           description: Updated sensor properties
@@ -482,7 +568,7 @@ paths:
 
         Since a sensor can only be related to one and only one device at a time, the sensor will be deleted from the system completely
       tags:
-        - Devices
+        - Core
       parameters:
         - name: device_id
           description: The identifier of the device
@@ -521,7 +607,7 @@ paths:
       description: |
         List all sensors.
       tags:
-        - Devices
+        - Core
       parameters:
         - in: query
           name: cursor
@@ -560,7 +646,7 @@ paths:
       description: |
         Fetch a list of features of interest.
       tags:
-        - FeaturesOfInterest
+        - Core
       parameters:
         - in: query
           name: cursor
@@ -597,12 +683,27 @@ paths:
       description: |
         Create a new FeatureOfInterest.
       tags:
-        - FeaturesOfInterest
+        - Core
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/createFeatureOfInterestRequest'
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: FeatureName
+                description:
+                  type: string
+                encoding_type:
+                  type: string
+                  example: application/geo+json
+                feature:
+                  type: object
+                properties:
+                  type: object
       responses:
         '201':
           description: Created
@@ -625,9 +726,9 @@ paths:
       operationId: GetFeatureOfInterest
       summary: Get a Feature of Interest by its ID
       description: |
-        Get the featureofinterest with the given identifier.
+        Get the Feature of Interest with the given identifier.
       tags:
-        - FeaturesOfInterest
+        - Core
       parameters:
         - name: id
           description: The ID of the Feature of Interest
@@ -659,9 +760,9 @@ paths:
       operationId: DeleteFeatureOfInterest
       summary: Delete a Feature of Interest by its ID
       description: |
-        Delete the featureofinterest with the given identifier.
+        Delete the Feature of Interest with the given identifier.
       tags:
-        - FeaturesOfInterest
+        - Core
       parameters:
         - name: id
           description: The ID of the Feature of Interest
@@ -683,9 +784,9 @@ paths:
       operationId: UpdateFeatureOfInterest
       summary: Update a Feature of Interest by its ID
       description: |
-        Update the featureofinterest with the given identifier.
+        Update the Feature of Interest with the given identifier.
       tags:
-        - FeaturesOfInterest
+        - Core
       parameters:
         - name: id
           description: The ID of the Feature of Interest
@@ -698,7 +799,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/updateFeatureOfInterestRequest'
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: FeatureName
+                description:
+                  type: string
+                encoding_type:
+                  type: string
+                  example: application/geo+json
+                feature:
+                  type: object
+                properties:
+                  type: object
       responses:
         '200':
           description: Fetched Feature of Interest
@@ -712,258 +826,6 @@ paths:
                     example: Fetched Feature of Interest
                   data:
                     $ref: '#/components/schemas/featureOfInterest'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
-  /sensor-groups:
-    get:
-      x-is-paginated: true
-      operationId: ListSensorGroups
-      summary: List sensor groups
-      description: |
-        Fetch a list of sensor groups.
-      tags:
-        - Devices
-      parameters:
-        - in: query
-          name: cursor
-          description: The cursor for the current page
-          schema:
-            type: string
-        - in: query
-          name: limit
-          description: |
-            The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/paginatedResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/sensorGroup'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-    post:
-      operationId: CreateSensorGroup
-      summary: Create sensor group
-      description: |
-        Create a new sensor group.
-      tags:
-        - Devices
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/createSensorGroupRequest'
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: created sensor group
-                  data:
-                    $ref: '#/components/schemas/sensorGroup'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-  /sensor-groups/{id}:
-    get:
-      operationId: GetSensorGroup
-      summary: Get sensor group
-      description: |
-        Get the sensor group with the given identifier.
-      tags:
-        - Devices
-      parameters:
-        - name: id
-          description: The numeric ID of the sensor group
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: Fetched sensor group
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Fetched sensor group
-                  data:
-                    $ref: '#/components/schemas/sensorGroup'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
-    patch:
-      operationId: UpdateSensorGroup
-      summary: Update sensor group
-      description: |
-        Update a some properties of the sensor group with the given identifier.
-
-        The request body should contain one or more modifiable properties of the sensor group.
-      tags:
-        - Devices
-      parameters:
-        - name: id
-          description: The numeric ID of the sensor group
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/updateSensorGroupRequest'
-      responses:
-        '200':
-          description: Updated Sensor Group properties
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Updated Sensor Group properties
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
-    delete:
-      operationId: DeleteSensorGroup
-      summary: Delete sensor group
-      description: |
-        Delete a sensor group
-      tags:
-        - Devices
-      parameters:
-        - name: id
-          description: The id of the sensor group
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Sensor group deleted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: sensor group deleted
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
-  /sensor-groups/{id}/sensors:
-    post:
-      operationId: AddSensorToSensorGroup
-      summary: Add sensor to a sensor group
-      description: |
-        Add a sensor by its ID to a sensor group by its ID
-      tags:
-        - Devices
-      parameters:
-        - name: id
-          description: The identifier of the Sensor Group
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                sensor_id:
-                  type: integer
-                  example: 5
-                  description: id of the sensor to add
-      responses:
-        '201':
-          description: Added sensor to sensor group
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Added sensor to sensor group
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
-  /sensor-groups/{id}/sensors/{sensor_id}:
-    delete:
-      operationId: DeleteSensorFromSensorGroup
-      summary: Delete sensor from sensor group
-      description: |
-        Delete a sensor from a sensor group
-      tags:
-        - Devices
-      parameters:
-        - name: id
-          description: The identifier of the sensor group
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: sensor_id
-          description: The id of the sensor
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Deleted sensor from sensor group
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Deleted sensor from sensor group
         '401':
           $ref: '#/components/responses/401'
         '403':
@@ -986,7 +848,7 @@ paths:
         Most query parameters can be repeated to get an OR combination of filters. For example, providing the `datastream` 
         parameter twice will return measurements for either datastreams.
       tags:
-        - Measurements
+        - Core
       parameters:
         - in: query
           name: start
@@ -1064,7 +926,7 @@ paths:
         An underwater pressure sensor might supply its measurement in milli Amperes, but the worker converts it to watercolumn in meters.
         The sensor now has two datastreams. Presusre in millivolt and watercolumn in meters.
       tags:
-        - Measurements
+        - Core
       parameters:
         - name: sensor
           description: only return datastreams that are produced by the given sensor identifier
@@ -1115,7 +977,7 @@ paths:
 
         The returned datastream will also include the full model of the sensors attached to that datastream.
       tags:
-        - Measurements
+        - Core
       parameters:
         - name: id
           description: The UUID of the datastream
@@ -1168,7 +1030,7 @@ paths:
         Pipelines can be filtered by providing one or more `step`s. This query parameter can be repeated to include more steps.
         When multiple steps are given, pipelines containing one of the given steps will be returned.
       tags:
-        - Pipelines
+        - Core
       parameters:
         - in: query
           name: id
@@ -1241,12 +1103,23 @@ paths:
 
         **Note:** currently there are no validations in place on whether a worker for the provided step actually exists.
       tags:
-        - Pipelines
+        - Core
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/createPipelineRequest'
+              type: object
+              properties:
+                description:
+                  type: string
+                  example: Pipeline for MultiFlexMeter Groundwater devices
+                steps:
+                  type: array
+                  items:
+                    type: string
+                  example:
+                    - TTN@1.0.0
+                    - MFMGroundwater@1.0.0
       responses:
         '200':
           description: Created pipeline
@@ -1274,7 +1147,7 @@ paths:
         This endpoint by default returns a 404 Not Found for inactive pipelines.
         To get an inactive pipeline, provide the `status=inactive` query parameter.
       tags:
-        - Pipelines
+        - Core
       parameters:
         - name: id
           description: The UUID of the pipeline
@@ -1324,7 +1197,7 @@ paths:
 
         Setting an invalid state or making an invalid state transition will result in an error.
       tags:
-        - Pipelines
+        - Core
       parameters:
         - name: id
           description: The UUID of the pipeline
@@ -1337,7 +1210,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/updatePipelineRequest'
+              type: object
+              properties:
+                description:
+                  type: string
+                  example: Pipeline for MultiFlexMeter Groundwater devices
+                steps:
+                  type: array
+                  items:
+                    type: string
+                  example:
+                    - TTN@1.0.0
+                    - MFMGroundwater@1.0.0
+                status:
+                  type: string
+                  description: |
+                    Used to change a pipeline from inactive to active or vice-versa. 
+                    Moving from active to inactive can also be achieve by `DELETE`ing the pipeline resource.
+                  example: active
       responses:
         '200':
           description: Updated pipeline
@@ -1403,7 +1293,7 @@ paths:
   /uplinks/{pipeline_id}:
     post:
       tags:
-        - Uplink
+        - HTTPIngress
       operationId: processUplinkData
       summary: Process uplink message
       description: |
@@ -1411,7 +1301,7 @@ paths:
 
         The request body and content-type can be anything the workers (defined by the pipeline steps) in the pipeline expect.
 
-        As this process is asynchronuous, any processing error will not be returned in the response.
+        As this process is asynchronous, any processing error will not be returned in the response.
         Only if the HTTP Importer is unable to push the message to the Message Queue, will an error be returned. 
       parameters:
         - name: pipeline_id
@@ -1553,7 +1443,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/createUserWorkerRequest'
+              type: object
+              required:
+                - name
+                - user_code
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                user_code:
+                  type: string
+                  format: base64
+                  description: base64 encoded user code
+                state:
+                  type: string
+                  enum:
+                    - enabled
+                    - disabled
       responses:
         '201':
           description: Created worker
@@ -1623,7 +1530,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/updateWorkerRequest'
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                state:
+                  type: string
+                  enum:
+                    - enabled
+                    - disabled
+                user_code:
+                  type: string
+                  format: base64
+                  description: base64 encoded user code
       responses:
         '200':
           description: Updated worker properties
@@ -1696,7 +1617,7 @@ paths:
             format: int64
         - in: query
           name: state
-          description: Filter on soecific state of a tenant
+          description: Filter on specific state of a tenant
           schema:
             type: integer
             format: int64
@@ -1754,7 +1675,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/addTenantMemberRequest'
+              type: object
+              required:
+                - user_id
+                - permissions
+              properties:
+                user_id:
+                  type: string
+                permissions:
+                  type: array
+                  items:
+                    type: string
       responses:
         '201':
           description: User added to Tenant
@@ -1839,7 +1770,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/updateTenantMemberRequest'
+              type: object
+              required:
+                - permissions
+              properties:
+                permissions:
+                  type: array
+                  items:
+                    type: string
       responses:
         '200':
           content:
@@ -1866,7 +1804,7 @@ paths:
       description: |
         Lists API Keys
       tags:
-        - APIKeys
+        - Tenants
       parameters:
         - in: query
           name: tenant_id
@@ -1918,14 +1856,39 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/createApiKeyRequest'
+              type: object
+              required:
+                - name
+                - tenant_id
+              properties:
+                name:
+                  type: string
+                  example: Device Beheerder
+                tenant_id:
+                  type: integer
+                  format: int64
+                  example: 19
+                permissions:
+                  type: array
+                  items:
+                    type: string
+                expiration_date:
+                  type: string
+                  format: date-time
+                  example: '2023-05-17T15:00:00Z'
       responses:
         '201':
           description: Created API key
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/apiKeyCreated'
+                type: object
+                required:
+                  - api_key
+                properties:
+                  api_key:
+                    type: string
+                    example: MjU5MzE1NDgwMjE2NTMwMTEyODo2MjY2MDdkMGViY2Q5MGRhMTRkZWE4NGY4MjEzYjRiNw
         '400':
           $ref: '#/components/responses/400'
         '401':
@@ -1949,7 +1912,7 @@ paths:
             type: integer
             format: int64
       tags:
-        - APIKeys
+        - Tenants
       responses:
         '200':
           description: Fetched API key
@@ -2156,170 +2119,6 @@ components:
         created_at:
           type: string
           format: date-time
-    createDeviceRequest:
-      type: object
-      required:
-        - code
-      properties:
-        code:
-          type: string
-          example: mfm1000
-        description:
-          type: string
-          example: Grasfield pipe 24
-        latitude:
-          type: number
-          format: double
-          example: 1.2345
-        longitude:
-          type: number
-          format: double
-          example: 1.2345
-        location_description:
-          type: string
-          example: Description of location
-        properties:
-          type: object
-          example:
-            eui: 060708090A0B0C0D
-    updateDeviceRequest:
-      type: object
-      properties:
-        description:
-          type: integer
-          example: 1
-        latitude:
-          type: number
-          format: double
-          example: 1.2345
-        longitude:
-          type: number
-          format: double
-          example: 1.2345
-        location_description:
-          type: string
-          example: Description of location
-        properties:
-          type: object
-          example:
-            eui: 060708090A0B0C0D
-    createSensorRequest:
-      type: object
-      required:
-        - code
-        - external_id
-      properties:
-        code:
-          type: string
-          example: S123
-        description:
-          type: string
-          example: Pressure sensor at 5 meters depth
-        external_id:
-          type: string
-          example: '5'
-        brand:
-          type: string
-          example: sensor brand ABC
-        properties:
-          type: object
-          example:
-            mount_height: 15cm
-        feature_of_interest_id:
-          type: integer
-          format: int64
-        archive_time:
-          type: integer
-          example: 7
-    updateSensorRequest:
-      type: object
-      properties:
-        description:
-          type: string
-          example: Pressure sensor at 5 meters depth
-        external_id:
-          type: string
-          example: '5'
-        brand:
-          type: string
-          example: sensor brand ABC
-        properties:
-          type: object
-          example:
-            mount_height: 15cm
-        feature_of_interest_id:
-          description: Set to 0 to unlink a Feature of Interest from a sensor
-          type: integer
-          format: int64
-        archive_time:
-          type: integer
-          example: 7
-    createFeatureOfInterestRequest:
-      type: object
-      required:
-        - name
-      properties:
-        name:
-          type: string
-          example: FeatureName
-        description:
-          type: string
-        encoding_type:
-          type: string
-          example: application/geo+json
-        feature:
-          type: object
-        properties:
-          type: object
-    updateFeatureOfInterestRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          example: FeatureName
-        description:
-          type: string
-        encoding_type:
-          type: string
-          example: application/geo+json
-        feature:
-          type: object
-        properties:
-          type: object
-    sensorGroup:
-      type: object
-      required:
-        - id
-        - name
-        - description
-        - sensors
-      properties:
-        id:
-          type: integer
-          format: int64
-        name:
-          type: string
-        description:
-          type: string
-        sensors:
-          type: array
-          items:
-            type: integer
-            format: int64
-    createSensorGroupRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-    updateSensorGroupRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
     measurement:
       type: object
       required:
@@ -2516,38 +2315,6 @@ components:
           type: string
           format: date-time
           example: '2022-01-01T00:00:00Z'
-    createPipelineRequest:
-      type: object
-      properties:
-        description:
-          type: string
-          example: Pipeline for Multiflexmeter Groundwater devices
-        steps:
-          type: array
-          items:
-            type: string
-          example:
-            - TTN@1.0.0
-            - MFMGroundwater@1.0.0
-    updatePipelineRequest:
-      type: object
-      properties:
-        description:
-          type: string
-          example: Pipeline for Multiflexmeter Groundwater devices
-        steps:
-          type: array
-          items:
-            type: string
-          example:
-            - TTN@1.0.0
-            - MFMGroundwater@1.0.0
-        status:
-          type: string
-          description: |
-            Used to change a pipeline from inactive to active or vice-versa. 
-            Moving from active to inactive can also be achieve by `DELETE`ing the pipeline resource.
-          example: active
     trace:
       type: object
       required:
@@ -2636,41 +2403,6 @@ components:
             - unknown
             - ready
             - error
-    createUserWorkerRequest:
-      type: object
-      required:
-        - name
-        - user_code
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        user_code:
-          type: string
-          format: base64
-          description: base64 encoded user code
-        state:
-          type: string
-          enum:
-            - enabled
-            - disabled
-    updateWorkerRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        state:
-          type: string
-          enum:
-            - enabled
-            - disabled
-        user_code:
-          type: string
-          format: base64
-          description: base64 encoded user code
     tenant:
       type: object
       required:
@@ -2700,27 +2432,6 @@ components:
           type: string
         headquarter_id:
           type: string
-    addTenantMemberRequest:
-      type: object
-      required:
-        - user_id
-        - permissions
-      properties:
-        user_id:
-          type: string
-        permissions:
-          type: array
-          items:
-            type: string
-    updateTenantMemberRequest:
-      type: object
-      required:
-        - permissions
-      properties:
-        permissions:
-          type: array
-          items:
-            type: string
     apiKey:
       type: object
       required:
@@ -2752,35 +2463,6 @@ components:
           type: string
           format: date-time
           example: '2022-05-17T15:00:00Z'
-    createApiKeyRequest:
-      type: object
-      required:
-        - name
-        - tenant_id
-      properties:
-        name:
-          type: string
-          example: Device Beheerder
-        tenant_id:
-          type: integer
-          format: int64
-          example: 19
-        permissions:
-          type: array
-          items:
-            type: string
-        expiration_date:
-          type: string
-          format: date-time
-          example: '2023-05-17T15:00:00Z'
-    apiKeyCreated:
-      type: object
-      required:
-        - api_key
-      properties:
-        api_key:
-          type: string
-          example: MjU5MzE1NDgwMjE2NTMwMTEyODo2MjY2MDdkMGViY2Q5MGRhMTRkZWE4NGY4MjEzYjRiNw
   responses:
     '400':
       description: The request failed because of a malformed or invalid request

@@ -39,6 +39,7 @@ paginatedResponse:
     data:
       type: array
       items: {}
+
 apiError:
   type: object
   properties:
