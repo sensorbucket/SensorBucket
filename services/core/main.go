@@ -135,7 +135,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	go amqpConn.Start()
 
 	// Setup HTTP Transport
-	httpsrv := createHTTPServer(cors.AllowAll().Handler(coretransport.New(
+	httpsrv := createHTTPServer(coretransport.New(
 		HTTP_BASE,
 		keyClient,
 		deviceservice,
@@ -143,7 +143,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		processingservice,
 		projectsService,
 		featureOfInterestService,
-	)))
+	))
 	go func() {
 		if err := httpsrv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) && err != nil {
 			fmt.Printf("HTTP Server error: %v\n", err)

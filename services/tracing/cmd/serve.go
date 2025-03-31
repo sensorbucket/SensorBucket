@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/rs/cors"
 	"log"
 	"net/http"
 	"os"
@@ -113,7 +114,7 @@ func cmdServe(cmd *cli.Context) error {
 		Addr:         HTTP_ADDR,
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
-		Handler:      r,
+		Handler:      cors.AllowAll().Handler(r),
 	}
 	cleanup.Add(func(ctx context.Context) error {
 		return srv.Shutdown(ctx)

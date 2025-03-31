@@ -10,11 +10,11 @@ services:
 
   dashboard:
     build:
-      context: .
-      dockerfile: services/dashboard/Dockerfile
+      context: ./services/web
+      dockerfile: ./Dockerfile
       target: dev
     volumes:
-      - .:/workspace:cached
+      - ./services/web:/workspace:cached
     environment:
     - STATIC_PATH=services/dashboard/static
     - HTTP_BASE=/dashboard

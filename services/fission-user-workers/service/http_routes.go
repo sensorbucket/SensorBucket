@@ -3,6 +3,7 @@ package userworkers
 import (
 	"context"
 	"encoding/base64"
+	"github.com/rs/cors"
 	"log"
 	"net/http"
 	"time"
@@ -33,7 +34,7 @@ func NewHTTPTransport(app *Application, baseURL, addr string, keySource auth.JWK
 		Addr:         addr,
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
-		Handler:      r,
+		Handler:      cors.AllowAll().Handler(r),
 	}
 	return &HTTPTransport{
 		server: srv,
