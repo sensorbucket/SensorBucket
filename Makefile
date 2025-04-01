@@ -104,3 +104,11 @@ oathkeeper:
 	-@mkdir -p $(CURDIR)/tools/oathkeeper
 	@docker run --rm --init -v $(CURDIR):/project redocly/cli bundle /project/tools/openapi/api.yaml > $(CURDIR)/tools/oathkeeper/bundled_openapi.yaml
 	openkeeper generate --config $(CURDIR)/tools/oathkeeper/openkeeper.toml
+
+.PHONY: webdeps
+webdeps:
+	rm -rf $(CURDIR)/services/web/src/lib/sensorbucket
+	bunx @hey-api/openapi-ts \
+		-i $(CURDIR)/tools/oathkeeper/bundled_openapi.yaml \
+		-o $(CURDIR)/services/web/src/lib/sensorbucket \
+		-c @hey-api/client-fetch -p @tanstack/svelte-query

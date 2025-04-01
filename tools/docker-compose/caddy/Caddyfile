@@ -1,14 +1,4 @@
 :80 {
-    header {
-        Access-Control-Allow-Headers *
-        Access-Control-Allow-Methods *
-        Access-Control-Allow-Origin *
-    }
-    @options {
-        method OPTIONS
-    }
-    respond @options 204
-
     log {
         output stdout
     }
@@ -119,13 +109,12 @@
     }
 
     redir / /dashboard/
-    redir /dashboard /dashboard/
     handle_path /dashboard/* {
         reverse_proxy dashboard:3000
     }
 
-    handle {
-        respond 404
+    handle_path /importer/* {
+        reverse_proxy web-importer:3000
     }
 }
 
