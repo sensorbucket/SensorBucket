@@ -9,7 +9,7 @@ import (
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 )
 
-func (t *CoreTransport) httpGetMeasurements() http.HandlerFunc {
+func (transport *CoreTransport) httpGetMeasurements() http.HandlerFunc {
 	type Params struct {
 		measurements.Filter
 		pagination.Request
@@ -26,12 +26,12 @@ func (t *CoreTransport) httpGetMeasurements() http.HandlerFunc {
 			return
 		}
 
-		page, err := t.measurementService.QueryMeasurements(r.Context(), params.Filter, params.Request)
+		page, err := transport.measurementService.QueryMeasurements(r.Context(), params.Filter, params.Request)
 		if err != nil {
 			http.Error(rw, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, transport.baseURL, *page))
 	}
 }

@@ -1,0 +1,33 @@
+userWorker:
+  type: object
+  required:
+    - id
+    - name
+    - description
+    - state
+    - language
+    - organisation
+    - revision
+    - status
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    description:
+      type: string
+    state:
+      type: string
+      enum: ["enabled", "disabled"]
+    language:
+      type: string
+      enum: ["python"]
+    tenant_id:
+      type: integer
+      format: int64
+    revision:
+      type: integer
+    status:
+      type: string
+      enum: ["unknown", "ready", "error"]

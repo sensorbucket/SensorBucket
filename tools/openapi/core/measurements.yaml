@@ -1,0 +1,76 @@
+get:
+  x-is-paginated: true
+  operationId: QueryMeasurements
+  summary: Query measurements
+  description: |
+    Query a list of measurements.
+
+    This endpoint is used to get all measurements that correspond with the given filters.
+
+    It is commonly required to get a single stream of measurements from a single sensor. This can be accomplished by 
+    finding the corresponding datastream ID and using that in the `datastream` filter. 
+
+    Most query parameters can be repeated to get an OR combination of filters. For example, providing the `datastream` 
+    parameter twice will return measurements for either datastreams.
+  tags: ["Core"]
+  parameters:
+    - in: query
+      name: start
+      required: true
+      schema:
+        type: string
+        format: date-time
+        example: "2022-01-01T00:00:00Z"
+    - in: query
+      name: end
+      required: true
+      schema:
+        type: string
+        format: date-time
+        example: "2022-12-31T23:59:59Z"
+    - in: query
+      name: datastream
+      required: false
+      schema:
+        type: string
+    - in: query
+      name: observed_property
+      required: false
+      schema:
+        type: string
+    - in: query
+      name: feature_of_interest_id
+      required: false
+      schema:
+        type: integer
+        format: int64
+    - in: query
+      name: cursor
+      description: The cursor for the current page
+      schema:
+        type: string
+    - in: query
+      name: limit
+      description: |
+        The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+      schema:
+        type: integer
+  responses:
+    '200':
+      description: Fetched measurements
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../responses.yaml#/paginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "schemas.yaml#/measurement"
+    '401':
+      $ref: '../responses.yaml#/401'
+    '403':
+      $ref: '../responses.yaml#/403'
+

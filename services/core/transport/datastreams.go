@@ -22,7 +22,7 @@ type GetDatastreamResponse struct {
 	LatestMeasurementTimestamp time.Time                `json:"latest_measurement_timestamp"`
 }
 
-func (t *CoreTransport) httpGetDatastream() http.HandlerFunc {
+func (transport *CoreTransport) httpGetDatastream() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idQ := chi.URLParam(r, "id")
 		id, err := uuid.Parse(idQ)
@@ -31,19 +31,19 @@ func (t *CoreTransport) httpGetDatastream() http.HandlerFunc {
 			return
 		}
 
-		ds, err := t.measurementService.GetDatastream(r.Context(), id)
+		ds, err := transport.measurementService.GetDatastream(r.Context(), id)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
 
-		sensor, err := t.deviceService.GetSensor(r.Context(), ds.SensorID)
+		sensor, err := transport.deviceService.GetSensor(r.Context(), ds.SensorID)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
 
-		device, err := t.deviceService.GetDevice(r.Context(), sensor.DeviceID)
+		device, err := transport.deviceService.GetDevice(r.Context(), sensor.DeviceID)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -54,7 +54,7 @@ func (t *CoreTransport) httpGetDatastream() http.HandlerFunc {
 			Sensor:     sensor,
 		}
 
-		m, err := t.measurementService.QueryMeasurements(r.Context(), measurements.Filter{
+		m, err := transport.measurementService.QueryMeasurements(r.Context(), measurements.Filter{
 			Datastream: []string{ds.ID.String()},
 		}, pagination.Request{Limit: 1})
 		if err != nil {
@@ -73,7 +73,7 @@ func (t *CoreTransport) httpGetDatastream() http.HandlerFunc {
 	}
 }
 
-func (t *CoreTransport) httpListDatastream() http.HandlerFunc {
+func (transport *CoreTransport) httpListDatastream() http.HandlerFunc {
 	type params struct {
 		measurements.DatastreamFilter
 		pagination.Request
@@ -85,11 +85,11 @@ func (t *CoreTransport) httpListDatastream() http.HandlerFunc {
 			return
 		}
 
-		page, err := t.measurementService.ListDatastreams(r.Context(), params.DatastreamFilter, params.Request)
+		page, err := transport.measurementService.ListDatastreams(r.Context(), params.DatastreamFilter, params.Request)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
-		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, transport.baseURL, *page))
 	}
 }

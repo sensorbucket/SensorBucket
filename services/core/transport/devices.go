@@ -21,7 +21,7 @@ type HTTPDeviceFilters struct {
 	SensorGroup int64 `url:"sensor_group"`
 }
 
-func (t *CoreTransport) httpListDevices() http.HandlerFunc {
+func (transport *CoreTransport) httpListDevices() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		filter, err := httpfilter.Parse[HTTPDeviceFilters](r)
 		if err != nil {
@@ -30,7 +30,7 @@ func (t *CoreTransport) httpListDevices() http.HandlerFunc {
 		}
 
 		if filter.SensorGroup != 0 {
-			sg, err := t.deviceService.GetSensorGroup(r.Context(), filter.SensorGroup)
+			sg, err := transport.deviceService.GetSensorGroup(r.Context(), filter.SensorGroup)
 			if err != nil {
 				web.HTTPError(rw, err)
 				return
@@ -42,17 +42,17 @@ func (t *CoreTransport) httpListDevices() http.HandlerFunc {
 			filter.Sensor = append(filter.Sensor, 0)
 		}
 
-		page, err := t.deviceService.ListDevices(r.Context(), filter.DeviceFilter, filter.Request)
+		page, err := transport.deviceService.ListDevices(r.Context(), filter.DeviceFilter, filter.Request)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
 
-		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, transport.baseURL, *page))
 	}
 }
 
-func (t *CoreTransport) httpGetDevice() http.HandlerFunc {
+func (transport *CoreTransport) httpGetDevice() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		device := r.Context().Value(ctxDeviceKey).(*devices.Device)
 		web.HTTPResponse(rw, http.StatusOK, &web.APIResponseAny{
@@ -62,7 +62,7 @@ func (t *CoreTransport) httpGetDevice() http.HandlerFunc {
 	}
 }
 
-func (t *CoreTransport) httpCreateDevice() http.HandlerFunc {
+func (transport *CoreTransport) httpCreateDevice() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		var req devices.NewDeviceOpts
 		if err := web.DecodeJSON(r, &req); err != nil {
@@ -70,7 +70,7 @@ func (t *CoreTransport) httpCreateDevice() http.HandlerFunc {
 			return
 		}
 
-		dev, err := t.deviceService.CreateDevice(r.Context(), req)
+		dev, err := transport.deviceService.CreateDevice(r.Context(), req)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
@@ -83,11 +83,11 @@ func (t *CoreTransport) httpCreateDevice() http.HandlerFunc {
 	}
 }
 
-func (t *CoreTransport) httpDeleteDevice() http.HandlerFunc {
+func (transport *CoreTransport) httpDeleteDevice() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		dev := r.Context().Value(ctxDeviceKey).(*devices.Device)
 
-		if err := t.deviceService.DeleteDevice(r.Context(), dev); err != nil {
+		if err := transport.deviceService.DeleteDevice(r.Context(), dev); err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
@@ -98,7 +98,7 @@ func (t *CoreTransport) httpDeleteDevice() http.HandlerFunc {
 	}
 }
 
-func (t *CoreTransport) httpUpdateDevice() http.HandlerFunc {
+func (transport *CoreTransport) httpUpdateDevice() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		dev := r.Context().Value(ctxDeviceKey).(*devices.Device)
 
@@ -108,7 +108,7 @@ func (t *CoreTransport) httpUpdateDevice() http.HandlerFunc {
 			return
 		}
 
-		if err := t.deviceService.UpdateDevice(r.Context(), dev, dto); err != nil {
+		if err := transport.deviceService.UpdateDevice(r.Context(), dev, dto); err != nil {
 			web.HTTPError(rw, err)
 			return
 		}

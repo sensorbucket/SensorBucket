@@ -17,8 +17,6 @@ const (
 	AMQP_CONNECTED
 	AMQP_RECONNECTING
 	AMQP_UNREACHABLE
-
-	AMQP_QUEUE_LEN = 10
 )
 
 type AMQPConnectionUser chan *amqp.Connection

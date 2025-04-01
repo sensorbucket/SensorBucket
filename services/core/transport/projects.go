@@ -14,7 +14,7 @@ type HTTPProjectsFilter struct {
 	pagination.Request
 }
 
-func (t *CoreTransport) httpListProjects() http.HandlerFunc {
+func (transport *CoreTransport) httpListProjects() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filter, err := httpfilter.Parse[HTTPProjectsFilter](r)
 		if err != nil {
@@ -22,12 +22,12 @@ func (t *CoreTransport) httpListProjects() http.HandlerFunc {
 			return
 		}
 
-		page, err := t.projectsService.ListProjects(r.Context(), filter.ProjectsFilter, filter.Request)
+		page, err := transport.projectsService.ListProjects(r.Context(), filter.ProjectsFilter, filter.Request)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
 		}
 
-		web.HTTPResponse(w, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
+		web.HTTPResponse(w, http.StatusOK, pagination.CreateResponse(r, transport.baseURL, *page))
 	}
 }

@@ -44,7 +44,7 @@ Methods = ["GET","POST","PATCH","PUT","DELETE","OPTION"]
 
 [Rules.APIKeysReflectAuth]
 Description = "Allows a service to call <oathkeeper>/decisions/reflect to get the jwt from an apikey"
-Domains = ["*"]
+Domains = ["http://oathkeeper"]
 Authenticators = ["APIKey"]
 Mutators = ["Hydrate", "IDToken"]
 Path = "/reflect"

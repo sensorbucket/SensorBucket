@@ -18,7 +18,7 @@ var ErrHTTPSensorIDInvalid = web.NewError(
 	"SENSOR_ID_INVALID",
 )
 
-func (t *CoreTransport) httpListDeviceSensors() http.HandlerFunc {
+func (transport *CoreTransport) httpListDeviceSensors() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		device := r.Context().Value(ctxDeviceKey).(*devices.Device)
 
@@ -29,7 +29,7 @@ func (t *CoreTransport) httpListDeviceSensors() http.HandlerFunc {
 	}
 }
 
-func (t *CoreTransport) httpAddSensor() http.HandlerFunc {
+func (transport *CoreTransport) httpAddSensor() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		dev := r.Context().Value(ctxDeviceKey).(*devices.Device)
 
@@ -39,7 +39,7 @@ func (t *CoreTransport) httpAddSensor() http.HandlerFunc {
 			return
 		}
 
-		if err := t.deviceService.AddSensor(r.Context(), dev, dto); err != nil {
+		if err := transport.deviceService.AddSensor(r.Context(), dev, dto); err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
@@ -50,12 +50,12 @@ func (t *CoreTransport) httpAddSensor() http.HandlerFunc {
 	}
 }
 
-func (t *CoreTransport) httpDeleteSensor() http.HandlerFunc {
+func (transport *CoreTransport) httpDeleteSensor() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		device := r.Context().Value(ctxDeviceKey).(*devices.Device)
 		sensor := r.Context().Value(ctxSensorKey).(*devices.Sensor)
 
-		if err := t.deviceService.DeleteSensor(r.Context(), device, sensor); err != nil {
+		if err := transport.deviceService.DeleteSensor(r.Context(), device, sensor); err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
@@ -66,23 +66,23 @@ func (t *CoreTransport) httpDeleteSensor() http.HandlerFunc {
 	}
 }
 
-func (t *CoreTransport) httpListSensors() http.HandlerFunc {
+func (transport *CoreTransport) httpListSensors() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		p, err := httpfilter.Parse[pagination.Request](r)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
-		page, err := t.deviceService.ListSensors(r.Context(), p)
+		page, err := transport.deviceService.ListSensors(r.Context(), p)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return
 		}
-		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, t.baseURL, *page))
+		web.HTTPResponse(rw, http.StatusOK, pagination.CreateResponse(r, transport.baseURL, *page))
 	}
 }
 
-func (t *CoreTransport) httpGetSensor() http.HandlerFunc {
+func (transport *CoreTransport) httpGetSensor() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		sensorCTX := r.Context().Value(ctxSensorKey)
 		if sensorCTX != nil {
@@ -102,7 +102,7 @@ func (t *CoreTransport) httpGetSensor() http.HandlerFunc {
 			web.HTTPError(w, ErrHTTPDeviceIDInvalid)
 			return
 		}
-		sensor, err := t.deviceService.GetSensor(r.Context(), sensorID)
+		sensor, err := transport.deviceService.GetSensor(r.Context(), sensorID)
 		if err != nil {
 			web.HTTPError(w, err)
 			return
@@ -114,7 +114,7 @@ func (t *CoreTransport) httpGetSensor() http.HandlerFunc {
 	}
 }
 
-func (t *CoreTransport) httpUpdateSensor() http.HandlerFunc {
+func (transport *CoreTransport) httpUpdateSensor() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dev := r.Context().Value(ctxDeviceKey).(*devices.Device)
 		sensor := r.Context().Value(ctxSensorKey).(*devices.Sensor)
@@ -125,7 +125,7 @@ func (t *CoreTransport) httpUpdateSensor() http.HandlerFunc {
 			return
 		}
 
-		if err := t.deviceService.UpdateSensor(r.Context(), dev, sensor, dto); err != nil {
+		if err := transport.deviceService.UpdateSensor(r.Context(), dev, sensor, dto); err != nil {
 			web.HTTPError(w, err)
 			return
 		}

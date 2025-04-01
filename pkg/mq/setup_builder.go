@@ -2,14 +2,12 @@ package mq
 
 import (
 	"fmt"
-	"log"
-	"os"
-	"strconv"
 
 	"github.com/rabbitmq/amqp091-go"
+	"sensorbucket.nl/sensorbucket/internal/env"
 )
 
-var defaultPrefetchCount int = 50
+var defaultPrefetchCount int = env.CouldInt("AMQP_PREFETCH", 100)
 
 func DefaultPrefetch() int {
 	return defaultPrefetchCount
@@ -65,16 +63,5 @@ func WithExchange(exchange string) SetupOption {
 			return fmt.Errorf("error declaring amqp exchange: %w", err)
 		}
 		return nil
-	}
-}
-
-func init() {
-	prefetchStr, ok := os.LookupEnv("AMQP_PREFETCH")
-	if ok {
-		prefetch, err := strconv.Atoi(prefetchStr)
-		if err != nil {
-			log.Fatalf("AMQP_PREFETCH env set but not a number: %s\n", err.Error())
-		}
-		defaultPrefetchCount = prefetch
 	}
 }

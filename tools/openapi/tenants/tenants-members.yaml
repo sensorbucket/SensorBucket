@@ -1,0 +1,47 @@
+post:
+  operationId: AddTenantMember
+  summary: Add a User to a Tenant as member
+  description: |
+    Adds a user with the specific ID to the given Tenant as a member with the given permissions
+  tags: ["Tenants"]
+  parameters: 
+    - name: tenant_id
+      description: The identifier of the tenant
+      in: path
+      required: true
+      schema:
+        type: integer
+  requestBody: 
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - user_id
+            - permissions
+          properties:
+            user_id:
+              type: string
+            permissions:
+              type: array
+              items:
+                type: string
+  responses:
+    '201':
+      description: User added to Tenant
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: User added to Tenant
+    '400':
+      $ref: '../responses.yaml#/400'
+    '401':
+      $ref: '../responses.yaml#/401'
+    '403':
+      $ref: '../responses.yaml#/403'
+    '404':
+      $ref: '../responses.yaml#/404'

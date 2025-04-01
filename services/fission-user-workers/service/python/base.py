@@ -242,7 +242,7 @@ def main():
         res.headers["X-Amqp-Topic"] = next_step
         return res
     except BaseException as e:
-        tracing_id = "NO TRACE ID"
+        tracing_id = "00000000-0000-0000-0000-000000000000"
         if original_message is not None:
             tracing_id = original_message.tracing_id
         print(f"exception occured for id: {tracing_id}:\n {e}")

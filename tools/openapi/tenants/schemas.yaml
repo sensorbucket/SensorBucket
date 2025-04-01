@@ -1,0 +1,61 @@
+apiKey:
+  type: object
+  required:
+    - id
+    - name
+    - tenant_id
+    - tenant_name
+    - created
+  properties:
+    id:
+      type: integer
+      format: int64
+      example: 1
+    name:
+      type: string
+      example: Provincie Zeeland
+    tenant_id:
+      type: integer
+      format: int64
+      example: 19
+    tenant_name:
+      type: string
+      example: Provincie Zeeland
+    expiration_date:
+      type: string
+      format: date-time
+      example: 2023-05-17T15:00:00Z
+    created:
+      type: string
+      format: date-time
+      example: 2022-05-17T15:00:00Z
+
+tenant:
+  type: object
+  required:
+    - id
+    - name
+    - address
+    - zip_code
+    - city
+  properties:
+    id:
+      type: integer
+      format: int64
+      example: 1
+    name:
+      type: string
+      example: Provincie Zeeland
+    address:
+      type: string
+      example: Zeeland
+    zip_code:
+      type: string
+      example: 4331 ZE
+    city:
+      type: string
+      example: Vlissingen
+    chamber_of_commerce_id:
+      type: string
+    headquarter_id:
+      type: string

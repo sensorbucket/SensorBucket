@@ -1,0 +1,325 @@
+device:
+  type: object
+  required:
+    - id
+    - code
+    - state
+    - description
+    - tenant_id
+    - properties
+    - sensors
+    - created_at
+  properties:
+    id:
+      type: integer
+      format: int64
+      example: 1
+    code:
+      type: string
+      example: mfm1000
+    state:
+      type: integer
+    description:
+      type: string
+      example: Grasfield pipe 24
+    tenant_id:
+      type: integer
+      format: int64
+      example: 1
+    properties:
+      type: object
+      example:
+        eui: "060708090A0B0C0D"
+    altitude:
+      type: number
+      format: double
+      example: 1.2345
+    latitude:
+      type: number
+      format: double
+      example: 1.2345
+    longitude:
+      type: number
+      format: double
+      example: 1.2345
+    location_description:
+      type: string
+      example: "Description of location"
+    sensors:
+      type: array
+      items:
+        $ref: '#/sensor'
+    created_at:
+      type: string
+      format: date-time
+
+datastream:
+  type: object
+  required:
+    - id
+    - description
+    - sensor_id
+    - observed_property
+    - unit_of_measurement
+    - created_at
+  properties:
+    id:
+      type: string
+      format: uuid
+    description:
+      type: string
+    sensor_id:
+      type: integer
+    observed_property:
+      type: string
+    unit_of_measurement:
+      type: string
+      format: ucum
+    created_at:
+      type: string
+      #format: date-time
+      example: "2022-01-01T00:00:00Z"
+
+featureOfInterest:
+  type: object
+  required:
+    - id
+    - name
+    - description
+  properties:
+    id:
+      type: integer
+      format: int64
+      example: 1
+    name:
+      type: string
+      example: FeatureName
+    description:
+      type: string
+    encoding_type:
+      type: string
+    feature:
+      type: object
+    properties:
+      type: object
+
+
+sensor:
+  type: object
+  required:
+    - id
+    - code
+    - description
+    - external_id
+    - brand
+    - properties
+    - created_at
+    - device_id
+  properties:
+    id:
+      type: integer
+      format: int64
+      example: 1
+    device_id:
+      type: integer
+      format: int64
+      example: 1
+    code:
+      type: string
+      example: S123
+    description:
+      type: string
+      example: Pressure sensor at 5 meters depth
+    external_id:
+      type: string
+      example: "5"
+    brand:
+      type: string
+      example: "SensorCompany LTD. SCL115"
+    archive_time:
+      type: integer
+      example: 7
+    properties:
+      type: object
+      example:
+        mount_height: 15cm
+    feature_of_interest:
+      $ref: "./schemas.yaml#/featureOfInterest"
+    created_at:
+      type: string
+      format: date-time
+      example: 2023-05-17T15:00:00Z
+
+pipeline:
+  type: object
+  required:
+    - id
+    - description
+    - steps
+    - status
+    - last_status_change
+  properties:
+    id:
+      type: string
+      example: 9d4a0944-c11d-42ef-880f-a97c9619c5c0
+    description:
+      type: string
+      example: Pipeline for Multiflexmeter Groundwater devices
+    steps:
+      type: array
+      items:
+        type: string
+      example:
+        - "TTN@1.0.0"
+        - "MFMGroundwater@1.0.0"
+    status:
+      type: string
+      description: either active or inactive
+      example: active
+    last_status_change:
+      type: string
+      format: date-time
+      example: 2022-01-01T00:00:00Z
+    created_at:
+      type: string
+      format: date-time
+      example: 2022-01-01T00:00:00Z
+
+
+measurement:
+  type: object
+  required:
+    - measurement_id
+    - uplink_message_id
+    - device_id
+    - device_code
+    - device_state
+    - sensor_id
+    - sensor_code
+    - sensor_external_id
+    - datastream_id
+    - datastream_observed_property
+    - datastream_unit_of_measurement
+    - measurement_timestamp
+    - measurement_value
+    - measurement_expiration
+  properties:
+    measurement_id:
+      type: integer
+      format: int64
+      example: 458412
+    uplink_message_id:
+      type: string
+      example: ca29e28e-eeb6-4662-922c-6cf6a36ccb6e
+    device_id:
+      type: integer
+      format: int64
+      example: 5
+    device_code:
+      type: string
+      example: mfm1000
+    device_description:
+      type: string
+      example: Particulate matter device
+    device_latitude:
+      type: number
+      format: double
+      example: 5.131313
+    device_longitude:
+      type: number
+      format: double
+      example: 5.131313
+    device_altitude:
+      type: number
+      format: double
+      example: 5.131313
+    device_location_description:
+      type: string
+      example: Grasfield pipe 24
+    device_properties:
+      type: object
+      example:
+        eui: "060708090A0B0C0D"
+    device_state:
+      type: integer
+      example: 0
+    sensor_id:
+      type: integer
+      format: int64
+      example: 3
+    sensor_code:
+      type: string
+      example: S123
+    sensor_description:
+      type: string
+      example: Pressure sensor at 5 meters depth
+    sensor_external_id:
+      type: string
+      example: "5"
+    sensor_properties:
+      type: object
+      example: {}
+    sensor_brand:
+      type: string
+      example: "SensorCompany Inc. SC123"
+    sensor_archive_time:
+      type: integer
+      example: 7
+    datastream_id:
+      type: string
+      format: uuid
+      example: 153205d7-bdfc-4a0b-9de5-c6fa04c665f6
+    datastream_description:
+      type: string
+      example: "Concentration of particles smaller than 2.5 micrometer"
+    datastream_observed_property:
+      type: string
+      example: "pm2.5"
+    datastream_unit_of_measurement:
+      type: string
+      example: "ug/cm3"
+    measurement_timestamp:
+      type: string
+      format: date-time
+      example: "2022-01-01T00:00:00Z"
+    measurement_value:
+      type: number
+      format: double
+      example: 3.44
+    measurement_latitude:
+      type: number
+      format: double
+      example: 3.44
+    measurement_longitude:
+      type: number
+      format: double
+      example: 3.44
+    measurement_altitude:
+      type: number
+      format: double
+      example: 3.44
+    measurement_properties:
+      type: object
+    measurement_expiration:
+      type: string
+      format: date-time
+      example: "2022-01-01T00:00:00Z"
+    feature_of_interest_id:
+      type: integer
+      format: int64
+      example: 1
+    feature_of_interest_name:
+      type: string
+      example: FeatureName
+    feature_of_interest_description:
+      type: string
+    feature_of_interest_encoding_type:
+      type: string
+    feature_of_interest_feature:
+      type: object
+    feature_of_interest_properties:
+      type: object
+    created_at:
+      type: string
+      format: date-time
+      example: 2022-01-01T00:00:00Z
