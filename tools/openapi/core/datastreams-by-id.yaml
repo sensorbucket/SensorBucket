@@ -21,12 +21,19 @@ get:
         application/json:
           schema:
             type: object
+            required:
+              - message
+              - data
             properties:
               message:
                 type: string
                 example: Fetched datastream
               data:
                 type: object
+                required:
+                  - datastream
+                  - device
+                  - sensor
                 properties:
                   datastream:
                     $ref: 'schemas.yaml#/datastream'

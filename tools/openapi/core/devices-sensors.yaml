@@ -31,12 +31,14 @@ get:
           schema:
             allOf:
               - $ref: '../responses.yaml#/paginatedResponse'
-              -  type: object
-                 properties:
-                   data:
-                     type: array
-                     items:
-                       $ref: 'schemas.yaml#/sensor'
+              - type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: 'schemas.yaml#/sensor'
     '401':
       $ref: '../responses.yaml#/401'
     '403':
@@ -97,6 +99,8 @@ post:
         application/json:
           schema:
             type: object
+            required:
+              - message
             properties:
               message:
                 type: string

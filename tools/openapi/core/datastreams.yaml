@@ -46,6 +46,8 @@ get:
             allOf:
               - $ref: '../responses.yaml#/paginatedResponse'
               - type: object
+                required:
+                  - data
                 properties:
                   data:
                     type: array

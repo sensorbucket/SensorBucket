@@ -20,13 +20,14 @@ get:
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: Fetched device
-              data:
-                $ref: 'schemas.yaml#/device'
+            allOf:
+              - $ref: '../responses.yaml#/apiResponse'
+              - type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: 'schemas.yaml#/device'
     '401':
       $ref: '../responses.yaml#/401'
     '403':
@@ -56,7 +57,7 @@ patch:
           type: object
           properties:
             description:
-              type: integer
+              type: string
               example: 1
             latitude:
               type: number
@@ -80,6 +81,8 @@ patch:
         application/json:
           schema:
             type: object
+            required:
+              - message
             properties:
               message:
                 type: string
@@ -111,6 +114,8 @@ delete:
         application/json:
           schema:
             type: object
+            required:
+              - message
             properties:
               message:
                 type: string

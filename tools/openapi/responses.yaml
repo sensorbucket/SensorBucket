@@ -40,6 +40,17 @@ paginatedResponse:
       type: array
       items: {}
 
+apiResponse:
+  type: object
+  required:
+    - message
+    - data
+  properties:
+    message:
+      type: string
+    data:
+      type: unknown
+
 apiError:
   type: object
   properties:

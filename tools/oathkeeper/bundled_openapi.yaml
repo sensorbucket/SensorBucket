@@ -54,12 +54,14 @@ paths:
         - in: query
           name: properties
           description: Used to filter devices by its properties. This filters devices on whether their property contains the provided value. The value must be a JSON string and depending on your client should be URL Escaped
+          required: false
           schema:
             type: string
             example: '{ "eui": "1122334455667788" }'
         - in: query
           name: north
           description: Used to filter devices within a bounding box
+          required: false
           schema:
             type: number
             format: double
@@ -67,6 +69,7 @@ paths:
         - in: query
           name: west
           description: Used to filter devices within a bounding box
+          required: false
           schema:
             type: number
             format: double
@@ -74,6 +77,7 @@ paths:
         - in: query
           name: east
           description: Used to filter devices within a bounding box
+          required: false
           schema:
             type: number
             format: double
@@ -81,6 +85,7 @@ paths:
         - in: query
           name: south
           description: Used to filter devices within a bounding box
+          required: false
           schema:
             type: number
             format: double
@@ -88,6 +93,7 @@ paths:
         - in: query
           name: latitude
           description: Used to filter devices within a distance from a point
+          required: false
           schema:
             type: number
             format: double
@@ -95,6 +101,7 @@ paths:
         - in: query
           name: longitude
           description: Used to filter devices within a distance from a point
+          required: false
           schema:
             type: number
             format: double
@@ -104,23 +111,27 @@ paths:
           description: |
             Used to filter devices within a distance from a point. 
             The distance is given in meters.
+          required: false
           schema:
             type: integer
             example: 1000
         - in: query
           name: cursor
           description: The cursor for the current page
+          required: false
           schema:
             type: string
         - in: query
           name: limit
           description: |
             The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+          required: false
           schema:
             type: integer
         - name: id
           description: |
             Filter by Device IDs
+          required: false
           in: query
           style: form
           explode: true
@@ -132,6 +143,7 @@ paths:
         - name: sensor_group
           description: |
             Filter by device group
+          required: false
           in: query
           style: form
           explode: true
@@ -149,6 +161,8 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/paginatedResponse'
                   - type: object
+                    required:
+                      - data
                     properties:
                       data:
                         type: array
@@ -204,6 +218,9 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
+                  - data
                 properties:
                   message:
                     type: string
@@ -238,13 +255,14 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Fetched device
-                  data:
-                    $ref: '#/components/schemas/device'
+                allOf:
+                  - $ref: '#/components/schemas/apiResponse'
+                  - type: object
+                    required:
+                      - data
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/device'
         '401':
           $ref: '#/components/responses/401'
         '403':
@@ -275,7 +293,7 @@ paths:
               type: object
               properties:
                 description:
-                  type: integer
+                  type: string
                   example: 1
                 latitude:
                   type: number
@@ -299,6 +317,8 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
                 properties:
                   message:
                     type: string
@@ -331,6 +351,8 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
                 properties:
                   message:
                     type: string
@@ -377,6 +399,8 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/paginatedResponse'
                   - type: object
+                    required:
+                      - data
                     properties:
                       data:
                         type: array
@@ -443,6 +467,8 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
                 properties:
                   message:
                     type: string
@@ -483,6 +509,9 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
+                  - data
                 properties:
                   message:
                     type: string
@@ -550,6 +579,8 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
                 properties:
                   message:
                     type: string
@@ -589,6 +620,8 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
                 properties:
                   message:
                     type: string
@@ -629,6 +662,8 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/paginatedResponse'
                   - type: object
+                    required:
+                      - data
                     properties:
                       data:
                         type: array
@@ -668,6 +703,8 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/paginatedResponse'
                   - type: object
+                    required:
+                      - data
                     properties:
                       data:
                         type: array
@@ -711,6 +748,9 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
+                  - data
                 properties:
                   message:
                     type: string
@@ -744,6 +784,9 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
+                  - data
                 properties:
                   message:
                     type: string
@@ -820,6 +863,9 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
+                  - data
                 properties:
                   message:
                     type: string
@@ -900,6 +946,8 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/paginatedResponse'
                   - type: object
+                    required:
+                      - data
                     properties:
                       data:
                         type: array
@@ -959,6 +1007,8 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/paginatedResponse'
                   - type: object
+                    required:
+                      - data
                     properties:
                       data:
                         type: array
@@ -993,12 +1043,19 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
+                  - data
                 properties:
                   message:
                     type: string
                     example: Fetched datastream
                   data:
                     type: object
+                    required:
+                      - datastream
+                      - device
+                      - sensor
                     properties:
                       datastream:
                         $ref: '#/components/schemas/datastream'
@@ -1082,6 +1139,8 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/paginatedResponse'
                   - type: object
+                    required:
+                      - data
                     properties:
                       data:
                         type: array
@@ -1127,6 +1186,9 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
+                  - data
                 properties:
                   message:
                     type: string
@@ -1176,6 +1238,9 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
+                  - data
                 properties:
                   message:
                     type: string
@@ -1235,6 +1300,9 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
+                  - data
                 properties:
                   message:
                     type: string
@@ -1276,6 +1344,8 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - message
                 properties:
                   message:
                     type: string
@@ -2119,6 +2189,16 @@ components:
         created_at:
           type: string
           format: date-time
+    apiResponse:
+      type: object
+      required:
+        - message
+        - data
+      properties:
+        message:
+          type: string
+        data:
+          type: object
     measurement:
       type: object
       required:

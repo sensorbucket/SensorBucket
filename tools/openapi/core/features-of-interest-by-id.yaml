@@ -19,6 +19,9 @@ get:
         application/json:
           schema:
             type: object
+            required:
+              - message
+              - data
             properties:
               message:
                 type: string
@@ -94,6 +97,9 @@ patch:
         application/json:
           schema:
             type: object
+            required:
+              - message
+              - data
             properties:
               message:
                 type: string

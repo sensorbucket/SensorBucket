@@ -60,6 +60,8 @@ get:
             allOf:
               - $ref: '../responses.yaml#/paginatedResponse'
               - type: object
+                required:
+                  - data
                 properties:
                   data:
                     type: array
@@ -105,6 +107,9 @@ post:
         application/json:
           schema:
             type: object
+            required:
+              - message
+              - data
             properties:
               message:
                 type: string

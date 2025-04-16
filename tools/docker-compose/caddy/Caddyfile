@@ -113,8 +113,9 @@
         reverse_proxy dashboard:3000
     }
 
-    handle_path /importer/* {
+    handle /importer/* {
         reverse_proxy web-importer:3000
     }
+
 }
 

@@ -10,6 +10,19 @@ export type PaginatedResponse = {
     data: Array<unknown>;
 };
 
+export type FeatureOfInterest = {
+    id: number;
+    name: string;
+    description: string;
+    encoding_type?: string;
+    feature?: {
+        [key: string]: unknown;
+    };
+    properties?: {
+        [key: string]: unknown;
+    };
+};
+
 export type Sensor = {
     id: number;
     device_id: number;
@@ -21,6 +34,7 @@ export type Sensor = {
     properties: {
         [key: string]: unknown;
     };
+    feature_of_interest?: FeatureOfInterest;
     created_at: string;
 };
 
@@ -41,63 +55,11 @@ export type Device = {
     created_at: string;
 };
 
-export type CreateDeviceRequest = {
-    code: string;
-    description?: string;
-    latitude?: number;
-    longitude?: number;
-    location_description?: string;
-    properties?: {
+export type ApiResponse = {
+    message: string;
+    data: {
         [key: string]: unknown;
     };
-};
-
-export type UpdateDeviceRequest = {
-    description?: number;
-    latitude?: number;
-    longitude?: number;
-    location_description?: string;
-    properties?: {
-        [key: string]: unknown;
-    };
-};
-
-export type CreateSensorRequest = {
-    code: string;
-    description?: string;
-    external_id: string;
-    brand?: string;
-    properties?: {
-        [key: string]: unknown;
-    };
-    archive_time?: number;
-};
-
-export type UpdateSensorRequest = {
-    description?: string;
-    external_id?: string;
-    brand?: string;
-    properties?: {
-        [key: string]: unknown;
-    };
-    archive_time?: number;
-};
-
-export type SensorGroup = {
-    id: number;
-    name: string;
-    description: string;
-    sensors: Array<number>;
-};
-
-export type CreateSensorGroupRequest = {
-    name?: string;
-    description?: string;
-};
-
-export type UpdateSensorGroupRequest = {
-    name?: string;
-    description?: string;
 };
 
 export type Measurement = {
@@ -136,6 +98,16 @@ export type Measurement = {
         [key: string]: unknown;
     };
     measurement_expiration: string;
+    feature_of_interest_id?: number;
+    feature_of_interest_name?: string;
+    feature_of_interest_description?: string;
+    feature_of_interest_encoding_type?: string;
+    feature_of_interest_feature?: {
+        [key: string]: unknown;
+    };
+    feature_of_interest_properties?: {
+        [key: string]: unknown;
+    };
     created_at?: string;
 };
 
@@ -160,65 +132,24 @@ export type Pipeline = {
     created_at?: string;
 };
 
-export type CreatePipelineRequest = {
-    description?: string;
-    steps?: Array<string>;
-};
-
-export type UpdatePipelineRequest = {
-    description?: string;
-    steps?: Array<string>;
-    /**
-     * Used to change a pipeline from inactive to active or vice-versa.
-     * Moving from active to inactive can also be achieve by `DELETE`ing the pipeline resource.
-     *
-     */
-    status?: string;
-};
-
-export type TraceStep = {
-    start_time?: string;
-    status: number;
-    status_string: string;
-    /**
-     * Duration in seconds
-     */
-    duration: number;
-    error: string;
-};
-
 export type Trace = {
-    tracing_id: string;
+    id: string;
+    pipeline_id: string;
     /**
      * id is 0 if not defined
      */
     device_id: number;
     start_time: string;
-    status: number;
-    status_string: string;
-    steps: Array<TraceStep>;
+    workers: Array<string>;
+    worker_times: Array<string>;
+    error?: string;
+    error_at?: string;
 };
 
 export type ApiError = {
     message?: string;
     code?: string;
     http_status?: number;
-};
-
-export type IngressDto = {
-    tracing_id: string;
-    pipeline_id: string;
-    owner_id: number;
-    payload: string;
-    created_at: string;
-};
-
-export type ArchivedIngress = {
-    tracing_id: string;
-    raw_message: string;
-    archived_at: string;
-    expires_at: string;
-    ingress_dto?: IngressDto;
 };
 
 export type UserWorker = {
@@ -232,26 +163,6 @@ export type UserWorker = {
     status: 'unknown' | 'ready' | 'error';
 };
 
-export type CreateUserWorkerRequest = {
-    name: string;
-    description?: string;
-    /**
-     * base64 encoded user code
-     */
-    user_code: string;
-    state?: 'enabled' | 'disabled';
-};
-
-export type UpdateWorkerRequest = {
-    name?: string;
-    description?: string;
-    state?: 'enabled' | 'disabled';
-    /**
-     * base64 encoded user code
-     */
-    user_code?: string;
-};
-
 export type Tenant = {
     id: number;
     name: string;
@@ -262,15 +173,6 @@ export type Tenant = {
     headquarter_id?: string;
 };
 
-export type AddTenantMemberRequest = {
-    user_id: string;
-    permissions: Array<string>;
-};
-
-export type UpdateTenantMemberRequest = {
-    permissions: Array<string>;
-};
-
 export type ApiKey = {
     id: number;
     name: string;
@@ -278,17 +180,6 @@ export type ApiKey = {
     tenant_name: string;
     expiration_date?: string;
     created: string;
-};
-
-export type CreateApiKeyRequest = {
-    name: string;
-    tenant_id: number;
-    permissions?: Array<string>;
-    expiration_date?: string;
-};
-
-export type ApiKeyCreated = {
-    api_key: string;
 };
 
 export type ListDevicesData = {
@@ -368,14 +259,23 @@ export type ListDevicesResponses = {
      * OK
      */
     200: PaginatedResponse & {
-        data?: Array<Device>;
+        data: Array<Device>;
     };
 };
 
 export type ListDevicesResponse = ListDevicesResponses[keyof ListDevicesResponses];
 
 export type CreateDeviceData = {
-    body?: CreateDeviceRequest;
+    body?: {
+        code: string;
+        description?: string;
+        latitude?: number;
+        longitude?: number;
+        location_description?: string;
+        properties?: {
+            [key: string]: unknown;
+        };
+    };
     path?: never;
     query?: never;
     url: '/devices';
@@ -397,8 +297,8 @@ export type CreateDeviceResponses = {
      * Created
      */
     201: {
-        message?: string;
-        data?: Device;
+        message: string;
+        data: Device;
     };
 };
 
@@ -436,7 +336,7 @@ export type DeleteDeviceResponses = {
      * Device deleted successfully
      */
     200: {
-        message?: string;
+        message: string;
     };
 };
 
@@ -473,16 +373,23 @@ export type GetDeviceResponses = {
     /**
      * Fetched device
      */
-    200: {
-        message?: string;
-        data?: Device;
+    200: ApiResponse & {
+        data: Device;
     };
 };
 
 export type GetDeviceResponse = GetDeviceResponses[keyof GetDeviceResponses];
 
 export type UpdateDeviceData = {
-    body?: UpdateDeviceRequest;
+    body?: {
+        description?: string;
+        latitude?: number;
+        longitude?: number;
+        location_description?: string;
+        properties?: {
+            [key: string]: unknown;
+        };
+    };
     path: {
         /**
          * The numeric ID of the device
@@ -513,7 +420,7 @@ export type UpdateDeviceResponses = {
      * Updated device properties
      */
     200: {
-        message?: string;
+        message: string;
     };
 };
 
@@ -561,14 +468,24 @@ export type ListDeviceSensorsResponses = {
      * Listed device sensors
      */
     200: PaginatedResponse & {
-        data?: Array<Sensor>;
+        data: Array<Sensor>;
     };
 };
 
 export type ListDeviceSensorsResponse = ListDeviceSensorsResponses[keyof ListDeviceSensorsResponses];
 
 export type CreateDeviceSensorData = {
-    body?: CreateSensorRequest;
+    body?: {
+        code: string;
+        description?: string;
+        external_id: string;
+        brand?: string;
+        properties?: {
+            [key: string]: unknown;
+        };
+        feature_of_interest_id?: number;
+        archive_time?: number;
+    };
     path: {
         /**
          * The identifier of the device
@@ -599,7 +516,7 @@ export type CreateDeviceSensorResponses = {
      * Created new sensor for device
      */
     201: {
-        message?: string;
+        message: string;
     };
 };
 
@@ -641,7 +558,7 @@ export type DeleteDeviceSensorResponses = {
      * Deleted sensor from device
      */
     200: {
-        message?: string;
+        message: string;
     };
 };
 
@@ -683,15 +600,27 @@ export type GetSensorResponses = {
      * Fetched sensor
      */
     200: {
-        message?: string;
-        data?: Sensor;
+        message: string;
+        data: Sensor;
     };
 };
 
 export type GetSensorResponse = GetSensorResponses[keyof GetSensorResponses];
 
 export type UpdateSensorData = {
-    body?: UpdateSensorRequest;
+    body?: {
+        description?: string;
+        external_id?: string;
+        brand?: string;
+        properties?: {
+            [key: string]: unknown;
+        };
+        /**
+         * Set to 0 to unlink a Feature of Interest from a sensor
+         */
+        feature_of_interest_id?: number;
+        archive_time?: number;
+    };
     path: {
         /**
          * The identifier of the device
@@ -726,7 +655,7 @@ export type UpdateSensorResponses = {
      * Updated sensor properties
      */
     200: {
-        message?: string;
+        message: string;
     };
 };
 
@@ -765,13 +694,13 @@ export type ListSensorsResponses = {
      * Fetched sensors
      */
     200: PaginatedResponse & {
-        data?: Array<Sensor>;
+        data: Array<Sensor>;
     };
 };
 
 export type ListSensorsResponse = ListSensorsResponses[keyof ListSensorsResponses];
 
-export type ListSensorGroupsData = {
+export type ListFeaturesOfInterestData = {
     body?: never;
     path?: never;
     query?: {
@@ -785,10 +714,10 @@ export type ListSensorGroupsData = {
          */
         limit?: number;
     };
-    url: '/sensor-groups';
+    url: '/features-of-interest';
 };
 
-export type ListSensorGroupsErrors = {
+export type ListFeaturesOfInterestErrors = {
     /**
      * The request failed because the provided credentials are invalid or missing
      */
@@ -799,25 +728,35 @@ export type ListSensorGroupsErrors = {
     403: unknown;
 };
 
-export type ListSensorGroupsResponses = {
+export type ListFeaturesOfInterestResponses = {
     /**
      * OK
      */
     200: PaginatedResponse & {
-        data?: Array<SensorGroup>;
+        data: Array<FeatureOfInterest>;
     };
 };
 
-export type ListSensorGroupsResponse = ListSensorGroupsResponses[keyof ListSensorGroupsResponses];
+export type ListFeaturesOfInterestResponse = ListFeaturesOfInterestResponses[keyof ListFeaturesOfInterestResponses];
 
-export type CreateSensorGroupData = {
-    body?: CreateSensorGroupRequest;
+export type CreateFeatureOfInterestData = {
+    body?: {
+        name: string;
+        description?: string;
+        encoding_type?: string;
+        feature?: {
+            [key: string]: unknown;
+        };
+        properties?: {
+            [key: string]: unknown;
+        };
+    };
     path?: never;
     query?: never;
-    url: '/sensor-groups';
+    url: '/features-of-interest';
 };
 
-export type CreateSensorGroupErrors = {
+export type CreateFeatureOfInterestErrors = {
     /**
      * The request failed because the provided credentials are invalid or missing
      */
@@ -828,31 +767,31 @@ export type CreateSensorGroupErrors = {
     403: unknown;
 };
 
-export type CreateSensorGroupResponses = {
+export type CreateFeatureOfInterestResponses = {
     /**
      * Created
      */
     201: {
-        message?: string;
-        data?: SensorGroup;
+        message: string;
+        data: FeatureOfInterest;
     };
 };
 
-export type CreateSensorGroupResponse = CreateSensorGroupResponses[keyof CreateSensorGroupResponses];
+export type CreateFeatureOfInterestResponse = CreateFeatureOfInterestResponses[keyof CreateFeatureOfInterestResponses];
 
-export type DeleteSensorGroupData = {
+export type DeleteFeatureOfInterestData = {
     body?: never;
     path: {
         /**
-         * The id of the sensor group
+         * The ID of the Feature of Interest
          */
         id: number;
     };
     query?: never;
-    url: '/sensor-groups/{id}';
+    url: '/features-of-interest/{id}';
 };
 
-export type DeleteSensorGroupErrors = {
+export type DeleteFeatureOfInterestErrors = {
     /**
      * The request failed because the provided credentials are invalid or missing
      */
@@ -867,30 +806,26 @@ export type DeleteSensorGroupErrors = {
     404: unknown;
 };
 
-export type DeleteSensorGroupResponses = {
+export type DeleteFeatureOfInterestResponses = {
     /**
-     * Sensor group deleted
+     * Deleted Feature of Interest
      */
-    200: {
-        message?: string;
-    };
+    200: unknown;
 };
 
-export type DeleteSensorGroupResponse = DeleteSensorGroupResponses[keyof DeleteSensorGroupResponses];
-
-export type GetSensorGroupData = {
+export type GetFeatureOfInterestData = {
     body?: never;
     path: {
         /**
-         * The numeric ID of the sensor group
+         * The ID of the Feature of Interest
          */
         id: number;
     };
     query?: never;
-    url: '/sensor-groups/{id}';
+    url: '/features-of-interest/{id}';
 };
 
-export type GetSensorGroupErrors = {
+export type GetFeatureOfInterestErrors = {
     /**
      * The request failed because the provided credentials are invalid or missing
      */
@@ -905,74 +840,41 @@ export type GetSensorGroupErrors = {
     404: unknown;
 };
 
-export type GetSensorGroupResponses = {
+export type GetFeatureOfInterestResponses = {
     /**
-     * Fetched sensor group
+     * Fetched Feature of Interest
      */
     200: {
-        message?: string;
-        data?: SensorGroup;
+        message: string;
+        data: FeatureOfInterest;
     };
 };
 
-export type GetSensorGroupResponse = GetSensorGroupResponses[keyof GetSensorGroupResponses];
+export type GetFeatureOfInterestResponse = GetFeatureOfInterestResponses[keyof GetFeatureOfInterestResponses];
 
-export type UpdateSensorGroupData = {
-    body?: UpdateSensorGroupRequest;
-    path: {
-        /**
-         * The numeric ID of the sensor group
-         */
-        id: number;
-    };
-    query?: never;
-    url: '/sensor-groups/{id}';
-};
-
-export type UpdateSensorGroupErrors = {
-    /**
-     * The request failed because the provided credentials are invalid or missing
-     */
-    401: unknown;
-    /**
-     * The request failed because the provided credentials do not have the required permissions to perform this action
-     */
-    403: unknown;
-    /**
-     * The request failed because the requested resource could not be found
-     */
-    404: unknown;
-};
-
-export type UpdateSensorGroupResponses = {
-    /**
-     * Updated Sensor Group properties
-     */
-    200: {
-        message?: string;
-    };
-};
-
-export type UpdateSensorGroupResponse = UpdateSensorGroupResponses[keyof UpdateSensorGroupResponses];
-
-export type AddSensorToSensorGroupData = {
+export type UpdateFeatureOfInterestData = {
     body?: {
-        /**
-         * id of the sensor to add
-         */
-        sensor_id?: number;
+        name?: string;
+        description?: string;
+        encoding_type?: string;
+        feature?: {
+            [key: string]: unknown;
+        };
+        properties?: {
+            [key: string]: unknown;
+        };
     };
     path: {
         /**
-         * The identifier of the Sensor Group
+         * The ID of the Feature of Interest
          */
         id: number;
     };
     query?: never;
-    url: '/sensor-groups/{id}/sensors';
+    url: '/features-of-interest/{id}';
 };
 
-export type AddSensorToSensorGroupErrors = {
+export type UpdateFeatureOfInterestErrors = {
     /**
      * The request failed because the provided credentials are invalid or missing
      */
@@ -987,58 +889,17 @@ export type AddSensorToSensorGroupErrors = {
     404: unknown;
 };
 
-export type AddSensorToSensorGroupResponses = {
+export type UpdateFeatureOfInterestResponses = {
     /**
-     * Added sensor to sensor group
-     */
-    201: {
-        message?: string;
-    };
-};
-
-export type AddSensorToSensorGroupResponse = AddSensorToSensorGroupResponses[keyof AddSensorToSensorGroupResponses];
-
-export type DeleteSensorFromSensorGroupData = {
-    body?: never;
-    path: {
-        /**
-         * The identifier of the sensor group
-         */
-        id: number;
-        /**
-         * The id of the sensor
-         */
-        sensor_id: number;
-    };
-    query?: never;
-    url: '/sensor-groups/{id}/sensors/{sensor_id}';
-};
-
-export type DeleteSensorFromSensorGroupErrors = {
-    /**
-     * The request failed because the provided credentials are invalid or missing
-     */
-    401: unknown;
-    /**
-     * The request failed because the provided credentials do not have the required permissions to perform this action
-     */
-    403: unknown;
-    /**
-     * The request failed because the requested resource could not be found
-     */
-    404: unknown;
-};
-
-export type DeleteSensorFromSensorGroupResponses = {
-    /**
-     * Deleted sensor from sensor group
+     * Fetched Feature of Interest
      */
     200: {
-        message?: string;
+        message: string;
+        data: FeatureOfInterest;
     };
 };
 
-export type DeleteSensorFromSensorGroupResponse = DeleteSensorFromSensorGroupResponses[keyof DeleteSensorFromSensorGroupResponses];
+export type UpdateFeatureOfInterestResponse = UpdateFeatureOfInterestResponses[keyof UpdateFeatureOfInterestResponses];
 
 export type QueryMeasurementsData = {
     body?: never;
@@ -1046,9 +907,9 @@ export type QueryMeasurementsData = {
     query: {
         start: string;
         end: string;
-        device_id?: string;
         datastream?: string;
-        sensor_code?: string;
+        observed_property?: string;
+        feature_of_interest_id?: number;
         /**
          * The cursor for the current page
          */
@@ -1078,7 +939,7 @@ export type QueryMeasurementsResponses = {
      * Fetched measurements
      */
     200: PaginatedResponse & {
-        data?: Array<Measurement>;
+        data: Array<Measurement>;
     };
 };
 
@@ -1121,7 +982,7 @@ export type ListDatastreamsResponses = {
      * Fetched datastreams
      */
     200: PaginatedResponse & {
-        data?: Array<Datastream>;
+        data: Array<Datastream>;
     };
 };
 
@@ -1159,11 +1020,11 @@ export type GetDatastreamResponses = {
      * Fetched datastream
      */
     200: {
-        message?: string;
-        data?: {
-            datastream?: Datastream;
-            device?: Device;
-            sensor?: Sensor;
+        message: string;
+        data: {
+            datastream: Datastream;
+            device: Device;
+            sensor: Sensor;
             latest_measurement_value?: number;
             latest_measurement_timestamp?: string;
         };
@@ -1176,6 +1037,10 @@ export type ListPipelinesData = {
     body?: never;
     path?: never;
     query?: {
+        /**
+         * Filter on pipeline ID(s)
+         */
+        id?: Array<string>;
         /**
          * Only show inactive pipelines
          */
@@ -1213,14 +1078,17 @@ export type ListPipelinesResponses = {
      * Fetched pipelines
      */
     200: PaginatedResponse & {
-        data?: Array<Pipeline>;
+        data: Array<Pipeline>;
     };
 };
 
 export type ListPipelinesResponse = ListPipelinesResponses[keyof ListPipelinesResponses];
 
 export type CreatePipelineData = {
-    body?: CreatePipelineRequest;
+    body?: {
+        description?: string;
+        steps?: Array<string>;
+    };
     path?: never;
     query?: never;
     url: '/pipelines';
@@ -1242,8 +1110,8 @@ export type CreatePipelineResponses = {
      * Created pipeline
      */
     200: {
-        message?: string;
-        data?: Pipeline;
+        message: string;
+        data: Pipeline;
     };
 };
 
@@ -1287,7 +1155,7 @@ export type DisablePipelineResponses = {
      * pipeline disabled
      */
     200: {
-        message?: string;
+        message: string;
     };
 };
 
@@ -1332,15 +1200,24 @@ export type GetPipelineResponses = {
      * Fetched pipeline
      */
     200: {
-        message?: string;
-        data?: Pipeline;
+        message: string;
+        data: Pipeline;
     };
 };
 
 export type GetPipelineResponse = GetPipelineResponses[keyof GetPipelineResponses];
 
 export type UpdatePipelineData = {
-    body?: UpdatePipelineRequest;
+    body?: {
+        description?: string;
+        steps?: Array<string>;
+        /**
+         * Used to change a pipeline from inactive to active or vice-versa.
+         * Moving from active to inactive can also be achieve by `DELETE`ing the pipeline resource.
+         *
+         */
+        status?: string;
+    };
     path: {
         /**
          * The UUID of the pipeline
@@ -1377,8 +1254,8 @@ export type UpdatePipelineResponses = {
      * Updated pipeline
      */
     200: {
-        message?: string;
-        data?: Pipeline;
+        message: string;
+        data: Pipeline;
     };
 };
 
@@ -1433,13 +1310,10 @@ export type ListTracesData = {
          *
          */
         limit?: number;
-        tracing_id?: Array<string>;
+        pipeline?: Array<string>;
         device_id?: number;
-        status?: number;
-        duration_greater_than?: number;
-        duration_smaller_than?: number;
     };
-    url: '/tracing';
+    url: '/traces';
 };
 
 export type ListTracesErrors = {
@@ -1469,51 +1343,6 @@ export type ListTracesResponses = {
 };
 
 export type ListTracesResponse = ListTracesResponses[keyof ListTracesResponses];
-
-export type ListIngressesData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * The cursor for the current page
-         */
-        cursor?: string;
-        /**
-         * The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
-         *
-         */
-        limit?: number;
-    };
-    url: '/ingresses';
-};
-
-export type ListIngressesErrors = {
-    /**
-     * The request failed because of a malformed or invalid request
-     */
-    400: ApiError;
-    /**
-     * The request failed because the provided credentials are invalid or missing
-     */
-    401: unknown;
-    /**
-     * The request failed because the provided credentials do not have the required permissions to perform this action
-     */
-    403: unknown;
-};
-
-export type ListIngressesError = ListIngressesErrors[keyof ListIngressesErrors];
-
-export type ListIngressesResponses = {
-    /**
-     * Fetched ingresses
-     */
-    200: PaginatedResponse & {
-        data?: Array<ArchivedIngress>;
-    };
-};
-
-export type ListIngressesResponse = ListIngressesResponses[keyof ListIngressesResponses];
 
 export type ListWorkersData = {
     body?: never;
@@ -1566,7 +1395,15 @@ export type ListWorkersResponses = {
 export type ListWorkersResponse = ListWorkersResponses[keyof ListWorkersResponses];
 
 export type CreateWorkerData = {
-    body?: CreateUserWorkerRequest;
+    body?: {
+        name: string;
+        description?: string;
+        /**
+         * base64 encoded user code
+         */
+        user_code: string;
+        state?: 'enabled' | 'disabled';
+    };
     path?: never;
     query?: never;
     url: '/workers';
@@ -1624,7 +1461,15 @@ export type GetWorkerResponses = {
 export type GetWorkerResponse = GetWorkerResponses[keyof GetWorkerResponses];
 
 export type UpdateWorkerData = {
-    body?: UpdateWorkerRequest;
+    body?: {
+        name?: string;
+        description?: string;
+        state?: 'enabled' | 'disabled';
+        /**
+         * base64 encoded user code
+         */
+        user_code?: string;
+    };
     path: {
         /**
          * The UUID of the worker
@@ -1712,7 +1557,7 @@ export type ListTenantsData = {
          */
         name?: number;
         /**
-         * Filter on soecific state of a tenant
+         * Filter on specific state of a tenant
          */
         state?: number;
         /**
@@ -1755,7 +1600,10 @@ export type ListTenantsResponses = {
 export type ListTenantsResponse = ListTenantsResponses[keyof ListTenantsResponses];
 
 export type AddTenantMemberData = {
-    body?: AddTenantMemberRequest;
+    body?: {
+        user_id: string;
+        permissions: Array<string>;
+    };
     path: {
         /**
          * The identifier of the tenant
@@ -1844,7 +1692,9 @@ export type RemoveTenantMemberResponses = {
 export type RemoveTenantMemberResponse = RemoveTenantMemberResponses[keyof RemoveTenantMemberResponses];
 
 export type UpdateTenantMemberData = {
-    body?: UpdateTenantMemberRequest;
+    body?: {
+        permissions: Array<string>;
+    };
     path: {
         /**
          * The identifier of the tenant
@@ -1942,7 +1792,12 @@ export type ListApiKeysResponses = {
 export type ListApiKeysResponse = ListApiKeysResponses[keyof ListApiKeysResponses];
 
 export type CreateApiKeyData = {
-    body?: CreateApiKeyRequest;
+    body?: {
+        name: string;
+        tenant_id: number;
+        permissions?: Array<string>;
+        expiration_date?: string;
+    };
     path?: never;
     query?: never;
     url: '/api-keys';
@@ -1973,7 +1828,9 @@ export type CreateApiKeyResponses = {
     /**
      * Created API key
      */
-    201: ApiKeyCreated;
+    201: {
+        api_key: string;
+    };
 };
 
 export type CreateApiKeyResponse = CreateApiKeyResponses[keyof CreateApiKeyResponses];
@@ -2065,5 +1922,5 @@ export type GetApiKeyResponses = {
 export type GetApiKeyResponse = GetApiKeyResponses[keyof GetApiKeyResponses];
 
 export type ClientOptions = {
-    baseUrl: 'https://sensorbucket.nl/api' | (string & {});
+    baseUrl: 'https://sensorbucket.nl/api' | 'http://localhost:3000/api' | (string & {});
 };
