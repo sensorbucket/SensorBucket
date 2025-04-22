@@ -1,6 +1,6 @@
 <script lang="ts">
     import type {Snippet} from "svelte";
-    import {Action, Status} from "$lib/ReconciliationDevice";
+    import {Status} from "$lib/reconciliation";
 
     interface Props {
         children?: Snippet
@@ -8,7 +8,8 @@
         class?: string
     }
     let {children, status, class: extraClasses = ''}: Props = $props();
-    let styling = $state("")
+    $inspect(status)
+    let styling = ""
     switch (status){
         case Status.InProgress:
             styling = "bg-orange-50"

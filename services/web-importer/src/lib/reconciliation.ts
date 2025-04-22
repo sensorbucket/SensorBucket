@@ -1,5 +1,5 @@
-import type {CSVDevice, CSVSensor} from "$lib/CSVParser.svelte";
-import type {Device, Sensor} from "$lib/sensorbucket";
+import type {CSVDevice, CSVSensor} from "$lib/CSVDeviceParser.js";
+import type {Device} from "$lib/sensorbucket";
 
 export enum Action {
     Unknown = 'UNKNOWN',
@@ -15,7 +15,12 @@ export enum Status {
     Failed = 'FAILED',
 }
 
-type Reconciliation<T> = Omit<T, "id"> & { id?: number, action: Action, status: Status, reconciliationError?: string }
+export type Reconciliation<T> = Omit<T, "id"> & {
+    id?: number,
+    action: Action,
+    status: Status,
+    reconciliationError?: string
+}
 export type ReconciliationSensor = Reconciliation<CSVSensor>
 export type ReconciliationDevice = Omit<Reconciliation<CSVDevice>, "sensors"> & {
     sensors: ReconciliationSensor[]

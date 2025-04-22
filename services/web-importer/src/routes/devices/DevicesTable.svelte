@@ -1,7 +1,7 @@
 <script lang="ts">
     import {writable} from "svelte/store";
-    import CellName from "./routes/CellName.svelte";
-    import CellProperties from "./routes/CellProperties.svelte";
+    import CellName from "$lib/Components/CellName.svelte";
+    import CellProperties from "$lib/Components/CellProperties.svelte";
     import {
         type ColumnDef,
         createSvelteTable,
@@ -11,10 +11,10 @@
         renderComponent,
         type TableOptions
     } from "@tanstack/svelte-table";
-    import {Action, type ReconciliationDevice} from "$lib/ReconciliationDevice";
-    import CellAction from "./routes/CellAction.svelte";
-    import DeviceTableStatusRow from "./routes/DeviceTableStatusRow.svelte";
-    import DeviceTableActionColumn from "./routes/DeviceTableActionColumn.svelte";
+    import {Action, type ReconciliationDevice} from "$lib/reconciliation";
+    import CellReconcile from "$lib/Components/CellReconcile.svelte";
+    import DeviceTableStatusRow from "./DeviceTableStatusRow.svelte";
+    import CellActionStatus from "$lib/Components/CellActionStatus.svelte";
 
     interface Props {
         rows: ReconciliationDevice[],
@@ -27,11 +27,10 @@
         {
             accessorKey: 'action',
             header: "Action",
-            cell: info => renderComponent(DeviceTableActionColumn, {action: info.getValue<Action>()})
-        },
-        {
-            accessorKey: 'status',
-            header: "Status"
+            cell: info => renderComponent(CellActionStatus, {
+                action: info.getValue<Action>(),
+                status: info.row.original.status
+            })
         },
         {
             accessorKey: 'id',
@@ -57,8 +56,10 @@
         {
             id: "actionButton",
             header: "",
-            cell: info => renderComponent(CellAction, {
-                action: info.row.original.action, onclick: () => onReconcileClicked(info.row.original)
+            cell: info => renderComponent(CellReconcile, {
+                action: info.row.original.action,
+                status: info.row.original.status,
+                onclick: () => onReconcileClicked(info.row.original)
             }),
         }
     ];
@@ -119,14 +120,15 @@
                             <tbody>
                             {#each row.original.sensors as sensor}
                                 <DeviceTableStatusRow status={sensor.status}>
-                                    <td class="px-2 pl-4"><DeviceTableActionColumn size="1rem" action={sensor.action} /></td>
-                                    <td class="px-2 pl-4">{sensor.status}</td>
+                                    <td class="px-2 pl-4">
+                                        <CellActionStatus size="1rem" action={sensor.action} status={sensor.status}/>
+                                    </td>
                                     <td class="px-2">{sensor.id}</td>
                                     <td class="px-2">{sensor.code}</td>
                                     <td class="px-2">{sensor.description}</td>
                                     <td class="px-2">{sensor.external_id}</td>
                                     <td class="px-2">
-                                        <CellProperties properties={sensor.properties}/>
+                                        <CellProperties properties={sensor.properties ?? {}}/>
                                     </td>
                                 </DeviceTableStatusRow>
                             {/each}
