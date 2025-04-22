@@ -1,0 +1,185 @@
+import {
+    Action,
+    determineDeviceReconciliation,
+    type ReconciliationDevice,
+    type ReconciliationSensor,
+    Status
+} from "$lib/reconciliation";
+import {APIService} from "./APIService";
+import type {With} from "$lib/types";
+import type {Device, FeatureOfInterest} from "$lib/sensorbucket";
+
+/**
+ * Service for handling reconciliation operations
+ */
+export class _DeviceReconciliationService {
+    /**
+     * Reconcile a device with the remote system
+     * @param device The device to reconcile
+     * @returns An optional error
+     */
+    async reconcileDevice(device: ReconciliationDevice): Promise<Error | undefined> {
+        device.status = Status.InProgress;
+
+        // IIFE to defer status / error handling
+        const error = await (async () => {
+            switch (device.action) {
+                case Action.Create: {
+                    const [id, error] = await APIService.createDevice(device);
+                    if (error !== undefined) {
+                        return error;
+                    }
+                    device.id = id;
+                    return;
+                }
+                case Action.Replace:
+                    return await APIService.updateDevice(device);
+                case Action.Delete:
+                    return await APIService.deleteDevice(device);
+                default:
+                    return;
+            }
+        })();
+
+        if (error !== undefined) {
+            device.status = Status.Failed;
+            device.reconciliationError = error.toString();
+            return error;
+        }
+
+        device.sensors.forEach(sensor => sensor.device_id = device.id);
+        device.status = Status.Success;
+
+        return;
+    }
+
+    /**
+     * Reconcile a sensor with the remote system
+     * @param sensor The sensor to reconcile
+     * @returns An optional error
+     */
+    async reconcileSensor(sensor: ReconciliationSensor): Promise<Error | undefined> {
+        sensor.status = Status.InProgress;
+
+
+        const error = await (async () => {
+            // Reconcile sensor
+            if (sensor.device_id === undefined) {
+                return new Error("Device ID is not set, cannot create sensor for unknown device");
+            }
+
+            switch (sensor.action) {
+                case Action.Create: {
+                    const [id, error] = await APIService.createSensor(sensor as With<ReconciliationSensor, {
+                        device_id: number
+                    }>);
+                    if (error !== undefined) {
+                        return error;
+                    }
+                    sensor.id = id;
+                    return;
+                }
+                case Action.Replace:
+                    return await APIService.updateSensor(sensor as With<ReconciliationSensor, { device_id: number }>);
+                case Action.Delete:
+                    return await APIService.deleteSensor(sensor as With<ReconciliationSensor, { device_id: number }>);
+                default:
+                    return;
+            }
+        })();
+
+        if (error !== undefined) {
+            sensor.status = Status.Failed;
+            sensor.reconciliationError = error.toString();
+            return error;
+        }
+
+        sensor.status = Status.Success;
+        return;
+    }
+
+    /**
+     * Reconcile a device and all its sensors
+     * @param device The device to reconcile
+     * @returns An optional error
+     */
+    async reconcile(device: ReconciliationDevice): Promise<void> {
+        if (device.action === Action.Unknown) return;
+
+        let error = await this.reconcileDevice(device);
+        if (error !== undefined) {
+            // Not going to update sensors
+            device.sensors.forEach(sensor => {
+                sensor.status = Status.Failed;
+                sensor.reconciliationError = "Parent device has a reconciliation error";
+            });
+            return;
+        }
+
+        if (device.action === Action.Delete) {
+            device.sensors.forEach(sensor => sensor.status = Status.Success);
+            return;
+        }
+
+        for (let ix = 0; ix < device.sensors.length; ix += 5) {
+            await Promise.allSettled(device.sensors.slice(ix, ix + 5).map(sensor => this.reconcileSensor(sensor)));
+        }
+    }
+
+    /**
+     * Reconcile multiple devices
+     * @param devices The devices to reconcile
+     */
+    async reconcileMany(devices: ReconciliationDevice[]): Promise<void> {
+        for (let device of devices) {
+            await this.reconcile(device);
+        }
+    }
+
+    async findFeatureOfInterest(feature_of_interest: Partial<FeatureOfInterest>) {
+        // Get if id is given
+        if (feature_of_interest.id !== undefined && feature_of_interest.id !== 0) {
+            return await APIService.getFeatureOfInterest(feature_of_interest.id)
+        } else if (feature_of_interest.id === 0) {
+            return feature_of_interest
+        }
+        // Try to find it
+        return await APIService.findFeatureOfInterest(feature_of_interest);
+    }
+
+    /**
+     * Compare local devices with remote devices and determine reconciliation actions
+     * @param devices The local devices to compare
+     * @returns The updated devices with reconciliation actions
+     */
+    async compareWithRemote(devices: ReconciliationDevice[]): Promise<ReconciliationDevice[]> {
+        if (devices.length === 0) {
+            return devices;
+        }
+
+        const remoteCodes = devices.map(device => device.code);
+        const remoteDevices = await APIService.listDevicesByCodes(remoteCodes);
+
+        for (let device of devices) {
+            for (let sensor of device.sensors) {
+                if (sensor.feature_of_interest === undefined) continue
+                const result = await this.findFeatureOfInterest(sensor.feature_of_interest)
+                if (result instanceof Error) {
+                    sensor.status = Status.Failed;
+                    sensor.action = Action.Unknown;
+                    sensor.reconciliationError = result.toString();
+                } else {
+                    sensor.feature_of_interest = result
+                }
+            }
+        }
+
+        return devices.map(device => {
+            const remote = remoteDevices.find((d: Device) => d.code === device.code);
+            return determineDeviceReconciliation(device, remote);
+        });
+    }
+}
+
+// Export a singleton instance
+export const DeviceReconciliationService = new _DeviceReconciliationService();

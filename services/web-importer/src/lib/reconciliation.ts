@@ -61,11 +61,14 @@ export function determineDeviceReconciliation(row: ReconciliationDevice, remote?
     row.id = remote.id
     row.sensors = row.sensors.map((sensor) => {
         const remoteSensor = remote.sensors.find(s => s.code === sensor.code)
-        if (remoteSensor !== undefined) {
-            sensor.action = Action.Replace
-            sensor.id = remoteSensor.id
-        } else {
+        if (remoteSensor === undefined) {
             sensor.action = Action.Create
+            return sensor
+        }
+        sensor.action = Action.Replace
+        sensor.id = remoteSensor.id
+        if (remoteSensor.feature_of_interest !== null && sensor.feature_of_interest === undefined) {
+            sensor.feature_of_interest = {id: 0, name: "UNSET"}
         }
         return sensor
     })

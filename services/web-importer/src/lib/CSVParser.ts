@@ -107,6 +107,7 @@ export class CSVParser<T = unknown> {
 
     protected parseRow(context: CSVParserContext<T>, row: string[]) {
         for (let ix = 0; ix < row.length && ix < context.columnParsers.length; ix++) {
+            if (row[ix] === undefined || row[ix].trim() === "") continue;
             context.columnParsers[ix](context, row[ix]);
         }
         return context;

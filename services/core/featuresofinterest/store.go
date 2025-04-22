@@ -118,7 +118,7 @@ func (store *StorePSQL) getFeatureOfInterest(ctx context.Context, id int64, mods
 }
 
 func (store *StorePSQL) DeleteFeatureOfInterest(ctx context.Context, id int64) error {
-	q := pq.Delete("features_of_interest").Where(sq.Eq{"id": id}).Limit(1)
+	q := pq.Delete("features_of_interest").Where(sq.Eq{"id": id})
 	query, params, err := q.ToSql()
 	if err != nil {
 		panic(err)

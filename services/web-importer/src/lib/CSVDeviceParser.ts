@@ -1,9 +1,11 @@
-import type {Device, Sensor} from "$lib/sensorbucket";
+import type {Device, FeatureOfInterest, Sensor} from "$lib/sensorbucket";
 import {CSVParser} from "$lib/CSVParser";
+import type {With} from "./types";
 
-type ContextSensor = Partial<Sensor> & {
+type ContextSensor = With<Partial<Sensor>, {
+    feature_of_interest?: Partial<FeatureOfInterest>,
     delete?: boolean
-}
+}>
 type ContextDevice = Partial<Device> & {
     sensors: ContextSensor[]
     delete?: boolean
@@ -97,6 +99,20 @@ parser.addColumn(/^sensor external_id/, (_) => (ctx, value) => {
 parser.addColumn(/^sensor properties/, (field) => (ctx, value) => {
     if (ctx.userData.sensor.properties === undefined) ctx.userData.sensor.properties = {}
     ctx.userData.sensor.properties[field.substring(18).replaceAll(" ", "__")] = value
+})
+// parser.addColumn(/^sensor feature_of_interest$/, (_) => (ctx, value) => {
+//     if (["none","null"].includes(value.trim().toLowerCase())) {
+//         ctx.userData.sensor.feature_of_interest = null
+//     }
+// })
+parser.addColumn(/^sensor feature_of_interest id$/, (_) => (ctx, value) => {
+    if (ctx.userData.sensor.feature_of_interest === undefined) ctx.userData.sensor.feature_of_interest = {}
+    ctx.userData.sensor.feature_of_interest!.id = parseInt(value)
+})
+parser.addColumn(/^sensor feature_of_interest properties/, (field) => (ctx, value) => {
+    if (ctx.userData.sensor.feature_of_interest === undefined) ctx.userData.sensor.feature_of_interest = {}
+    if (ctx.userData.sensor.feature_of_interest!.properties === undefined) ctx.userData.sensor.feature_of_interest!.properties = {}
+    ctx.userData.sensor.feature_of_interest!.properties[field.substring("sensor feature_of_interest properties ".length).replaceAll(" ", "__")] = value
 })
 parser.addColumn(/^DELETE$/, (_) => (ctx, value) => {
     if (value !== "DELETE") return

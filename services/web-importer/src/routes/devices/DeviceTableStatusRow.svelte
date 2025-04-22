@@ -8,7 +8,6 @@
         class?: string
     }
     let {children, status, class: extraClasses = ''}: Props = $props();
-    $inspect(status)
     let styling = ""
     switch (status){
         case Status.InProgress:

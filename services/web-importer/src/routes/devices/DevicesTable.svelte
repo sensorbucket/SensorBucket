@@ -127,6 +127,7 @@
                                     <td class="px-2">{sensor.code}</td>
                                     <td class="px-2">{sensor.description}</td>
                                     <td class="px-2">{sensor.external_id}</td>
+                                    <td class="px-2">{sensor.feature_of_interest?.name ?? ""}</td>
                                     <td class="px-2">
                                         <CellProperties properties={sensor.properties ?? {}}/>
                                     </td>
