@@ -28,6 +28,7 @@ func NewService(store Store) *Service {
 }
 
 type FeatureOfInterestFilter struct {
+	Name       []string          `url:"name"`
 	TenantID   []int64           `url:"tenant_id"`
 	Properties []json.RawMessage `url:"properties"`
 }

@@ -16,8 +16,10 @@ CREATE TABLE features_of_interest (
   properties JSONB NOT NULL DEFAULT '{}'::json,
   tenant_id BIGINT NOT NULL,
 
-  PRIMARY KEY(id)
+  PRIMARY KEY(id),
+  CONSTRAINT unique_name_per_tenant UNIQUE (name, tenant_id)
 );
+CREATE INDEX features_of_interest_by_name ON features_of_interest(name);
 
 CREATE TABLE project_feature_of_interest (
   project_id BIGINT NOT NULL REFERENCES projects(id),

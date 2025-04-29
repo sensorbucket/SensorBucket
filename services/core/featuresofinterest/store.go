@@ -51,6 +51,9 @@ func (store *StorePSQL) ListFeaturesOfInterest(ctx context.Context, filter Featu
 		})
 		q = q.Where(sq.Or(statements))
 	}
+	if len(filter.Name) > 0 {
+		q = q.Where(sq.Eq{"name": filter.Name})
+	}
 	q = q.Offset(cursor.Columns.Offset).Limit(cursor.Limit)
 
 	query, params, err := q.ToSql()
