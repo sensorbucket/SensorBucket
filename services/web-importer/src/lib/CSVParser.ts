@@ -119,7 +119,7 @@ export class CSVParser<T = unknown> {
         // Find the header row, this is the first row with at least 3 columns that match the columnBuilders
         const headerRow = this.findHeaderRow(csv.data);
         if (headerRow === -1) {
-            throw new Error("No header row found");
+            return new Error("No header row found");
         }
         //
         const context = new CSVParserContext<T>(csv, this.initialUserData());
@@ -131,7 +131,10 @@ export class CSVParser<T = unknown> {
                 this.parseRow(context, row);
                 this.afterRowParse?.(context);
             } catch (e) {
-                console.error(e)
+                if (e instanceof Error) {
+                    return e
+                }
+                return new Error(e as any) // ?
             }
         }
         return context.userData;

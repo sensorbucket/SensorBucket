@@ -87,6 +87,7 @@ parser.addColumn(/^device properties/, (field) => (ctx, value) => {
     if (ctx.userData.device.properties === undefined) ctx.userData.device.properties = {}
     ctx.userData.device.properties[field.substring(18).replaceAll(" ", "__")] = value
 })
+
 parser.addColumn(/^sensor code$/, (_) => (ctx, value) => {
     ctx.userData.sensor.code = value
 })
@@ -108,6 +109,10 @@ parser.addColumn(/^sensor properties/, (field) => (ctx, value) => {
 parser.addColumn(/^sensor feature_of_interest id$/, (_) => (ctx, value) => {
     if (ctx.userData.sensor.feature_of_interest === undefined) ctx.userData.sensor.feature_of_interest = {}
     ctx.userData.sensor.feature_of_interest!.id = parseInt(value)
+})
+parser.addColumn(/^sensor feature_of_interest name$/, (_) => (ctx, value) => {
+    if (ctx.userData.sensor.feature_of_interest === undefined) ctx.userData.sensor.feature_of_interest = {}
+    ctx.userData.sensor.feature_of_interest!.name = value
 })
 parser.addColumn(/^sensor feature_of_interest properties/, (field) => (ctx, value) => {
     if (ctx.userData.sensor.feature_of_interest === undefined) ctx.userData.sensor.feature_of_interest = {}

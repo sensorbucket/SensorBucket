@@ -5,14 +5,26 @@ import {APIService} from "$lib/services/APIService";
 import type {FeatureOfInterest} from "$lib/sensorbucket";
 import type {CSVFeatureOfInterest} from "$lib/CSVFeatureOfInterestParser";
 
+class FeatureOfInterestNotFoundError extends Error {
+    constructor(message: string, cause?: Error) {
+        super(message);
+        this.cause = cause;
+        this.name = "FeatureOfInterestNotFoundError";
+    }
+}
+
 class _FeatureOfInterestReconciliationService {
-    async compareWithRemote(features: Reconciliation<CSVFeatureOfInterest>[]): Promise<Reconciliation<CSVFeatureOfInterest>[]> {
+    async compareWithRemote(features: Reconciliation<CSVFeatureOfInterest>[]) {
         if (features.length === 0) {
             return features;
         }
 
         const remoteNames = features.map(feature => feature.name);
         const remotes = await APIService.listFeaturesOfInterestByName(remoteNames);
+
+        if (remotes instanceof Error) {
+            return remotes
+        }
 
         return features.map(featureOfInterest => {
             const remote = remotes.find((f: FeatureOfInterest) => f.name === featureOfInterest.name);
@@ -22,7 +34,7 @@ class _FeatureOfInterestReconciliationService {
 
             if (featureOfInterest.action === Action.Delete) {
                 if (featureOfInterest.id === undefined) {
-                    featureOfInterest.reconciliationError = "Device not found"
+                    featureOfInterest.reconciliationError = new FeatureOfInterestNotFoundError("Feature of interest not found: " + featureOfInterest.name + " (action: Delete)")
                     featureOfInterest.status = Status.Failed
                 }
                 return featureOfInterest
@@ -55,7 +67,7 @@ class _FeatureOfInterestReconciliationService {
         })()
         if (error !== undefined) {
             feature.status = Status.Failed;
-            feature.reconciliationError = error.toString();
+            feature.reconciliationError = error;
             return;
         }
         feature.status = Status.Success;

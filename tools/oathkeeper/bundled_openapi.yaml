@@ -2198,7 +2198,7 @@ components:
         message:
           type: string
         data:
-          type: object
+          type: unknown
     measurement:
       type: object
       required:

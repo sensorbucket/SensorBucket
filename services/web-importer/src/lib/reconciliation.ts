@@ -19,7 +19,7 @@ export type Reconciliation<T> = Omit<T, "id"> & {
     id?: number,
     action: Action,
     status: Status,
-    reconciliationError?: string
+    reconciliationError?: Error
 }
 export type ReconciliationSensor = Reconciliation<CSVSensor>
 export type ReconciliationDevice = Omit<Reconciliation<CSVDevice>, "sensors"> & {
@@ -46,7 +46,7 @@ export function CSVDeviceToReconciliation(device: CSVDevice): ReconciliationDevi
 
 export function determineDeviceReconciliation(row: ReconciliationDevice, remote?: Device): ReconciliationDevice {
     if (remote === undefined && row.action === Action.Delete) {
-        row.reconciliationError = "Device not found"
+        row.reconciliationError = new Error("Cannot delete device because Device was not found")
         row.status = Status.Failed
         return row
     }

@@ -57,9 +57,7 @@ export type Device = {
 
 export type ApiResponse = {
     message: string;
-    data: {
-        [key: string]: unknown;
-    };
+    data: unknown;
 };
 
 export type Measurement = {

@@ -1,7 +1,7 @@
 name: sensorbucket
 services:
   caddy:
-    image: caddy:alpine
+    image: caddy:2.10
     command: [ "caddy", "run", "--watch", "--config", "/etc/caddy/Caddyfile" ]
     ports:
       - 3000:80
@@ -26,12 +26,13 @@ services:
 
 
   web-importer:
+    user: "1000:1000"
     build:
       context: ./services/web-importer
       dockerfile: ./Dockerfile
       target: dev
     volumes:
-      - ./services/web-importer:/workspace:cached
+      - ./services/web-importer:/workspace
 
   core:
     build:
