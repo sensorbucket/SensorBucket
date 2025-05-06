@@ -46,6 +46,7 @@ nav:
   - Overview: index.md
   - Introduction: introduction.md
   - Supporting new devices: creating-workers.md
+  - Importing resources from a CSV: importer.md
   - Development:
     - Architecture: development/architecture.md
     - Data Model: development/data-model.md
