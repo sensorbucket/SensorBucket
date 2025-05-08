@@ -118,12 +118,13 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	projectsService := projects.New(projectsStore)
 
 	// Setup MQ Transports
+	storageErrorPublisher := measurementsinfra.NewStorageErrorPublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
 	go mq.StartQueueProcessor(
 		amqpConn,
 		AMQP_QUEUE_MEASUREMENTS,
 		AMQP_XCHG_PIPELINE_MESSAGES,
 		AMQP_XCHG_MEASUREMENTS_TOPIC,
-		measurements.MQMessageProcessor(measurementservice),
+		measurements.MQMessageProcessor(measurementservice, storageErrorPublisher),
 	)
 	go mq.StartQueueProcessor(
 		amqpConn,

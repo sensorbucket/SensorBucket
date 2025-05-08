@@ -10,12 +10,26 @@ import (
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
 )
 
-func MQMessageProcessor(svc *Service) mq.ProcessorFuncBuilder {
+type StorageErrorPublisher chan<- *StorageError
+
+type StorageError struct {
+	TracingID string `json:"tracing_id"`
+	Body      []byte `json:"body"`
+	Error     string `json:"error"`
+}
+
+func MQMessageProcessor(svc *Service, publisher StorageErrorPublisher) mq.ProcessorFuncBuilder {
 	return func() mq.ProcessorFunc {
 		var msg pipeline.Message
 		return func(delivery amqp091.Delivery) error {
 			if err := json.Unmarshal(delivery.Body, &msg); err != nil {
-				return fmt.Errorf("%w: could not unmarshal delivery body as Pipeline Message: %w", mq.ErrMalformed, err)
+				err = fmt.Errorf("%w: could not unmarshal delivery body as Pipeline Message: %w", mq.ErrMalformed, err)
+				publisher <- &StorageError{
+					TracingID: delivery.MessageId,
+					Body:      delivery.Body,
+					Error:     err.Error(),
+				}
+				return err
 			}
 			return svc.ProcessPipelineMessage(msg)
 		}
