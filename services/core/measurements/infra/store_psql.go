@@ -5,12 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
@@ -353,9 +351,8 @@ func (s *MeasurementStorePSQL) FindOrCreateDatastream(ctx context.Context, tenan
 }
 
 func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measurements []measurements.Measurement) error {
-	var batch pgx.Batch
 	for _, measurement := range measurements {
-		batch.Queue(`
+		_, err := s.databasePool.Exec(ctx, `
 INSERT INTO measurements (
 			uplink_message_id,
 			organisation_id,
@@ -485,17 +482,9 @@ INSERT INTO measurements (
 			measurement.FeatureOfInterestProperties,
 			measurement.CreatedAt,
 		)
-	}
-
-	batchResult := s.databasePool.SendBatch(ctx, &batch)
-	defer batchResult.Close()
-
-	for range len(measurements) {
-		_, err := batchResult.Exec()
 		if err != nil {
-			log.Printf("Batch inser resulted in an error: %s\n", err.Error())
+			logger.Error("Measurement insert failed", "error", err, "tracing_id", measurement.UplinkMessageID)
 		}
 	}
-
 	return nil
 }
