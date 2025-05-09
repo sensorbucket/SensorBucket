@@ -22,16 +22,26 @@ func MQMessageProcessor(svc *Service, publisher StorageErrorPublisher) mq.Proces
 	return func() mq.ProcessorFunc {
 		var msg pipeline.Message
 		return func(delivery amqp091.Delivery) error {
-			if err := json.Unmarshal(delivery.Body, &msg); err != nil {
-				err = fmt.Errorf("%w: could not unmarshal delivery body as Pipeline Message: %w", mq.ErrMalformed, err)
-				publisher <- &StorageError{
-					TracingID: delivery.MessageId,
-					Body:      delivery.Body,
-					Error:     err.Error(),
+			go func(msg pipeline.Message) {
+				if err := json.Unmarshal(delivery.Body, &msg); err != nil {
+					err = fmt.Errorf("%w: could not unmarshal delivery body as Pipeline Message: %w", mq.ErrMalformed, err)
+					publisher <- &StorageError{
+						TracingID: delivery.MessageId,
+						Body:      delivery.Body,
+						Error:     err.Error(),
+					}
+					return
 				}
-				return err
-			}
-			return svc.ProcessPipelineMessage(msg)
+				if err := svc.ProcessPipelineMessage(msg); err != nil {
+					publisher <- &StorageError{
+						TracingID: delivery.MessageId,
+						Body:      delivery.Body,
+						Error:     err.Error(),
+					}
+					return
+				}
+			}(msg)
+			return nil
 		}
 	}
 }

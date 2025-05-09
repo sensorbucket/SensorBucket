@@ -350,9 +350,8 @@ func (s *MeasurementStorePSQL) FindOrCreateDatastream(ctx context.Context, tenan
 	return &ds, nil
 }
 
-func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measurements []measurements.Measurement) error {
-	for _, measurement := range measurements {
-		_, err := s.databasePool.Exec(ctx, `
+func (s *MeasurementStorePSQL) StoreMeasurement(ctx context.Context, measurement measurements.Measurement) error {
+	_, err := s.databasePool.Exec(ctx, `
 INSERT INTO measurements (
 			uplink_message_id,
 			organisation_id,
@@ -440,50 +439,58 @@ INSERT INTO measurements (
 );
 
 `,
-			measurement.UplinkMessageID,
-			measurement.OrganisationID,
-			measurement.OrganisationName,
-			measurement.OrganisationAddress,
-			measurement.OrganisationZipcode,
-			measurement.OrganisationCity,
-			measurement.OrganisationChamberOfCommerceID,
-			measurement.OrganisationHeadquarterID,
-			measurement.OrganisationState,
-			measurement.OrganisationArchiveTime,
-			measurement.DeviceID,
-			measurement.DeviceCode,
-			measurement.DeviceDescription,
-			measurement.DeviceLongitude, measurement.DeviceLatitude,
-			measurement.DeviceAltitude,
-			measurement.DeviceLocationDescription,
-			measurement.DeviceState,
-			measurement.DeviceProperties,
-			measurement.SensorID,
-			measurement.SensorCode,
-			measurement.SensorDescription,
-			measurement.SensorExternalID,
-			measurement.SensorProperties,
-			measurement.SensorBrand,
-			measurement.SensorArchiveTime,
-			measurement.DatastreamID,
-			measurement.DatastreamDescription,
-			measurement.DatastreamObservedProperty,
-			measurement.DatastreamUnitOfMeasurement,
-			measurement.MeasurementTimestamp,
-			measurement.MeasurementValue,
-			measurement.MeasurementLongitude, measurement.MeasurementLatitude,
-			measurement.MeasurementAltitude,
-			measurement.MeasurementExpiration,
-			measurement.FeatureOfInterestID,
-			measurement.FeatureOfInterestName,
-			measurement.FeatureOfInterestDescription,
-			measurement.FeatureOfInterestEncodingType,
-			measurement.FeatureOfInterestFeature,
-			measurement.FeatureOfInterestProperties,
-			measurement.CreatedAt,
-		)
-		if err != nil {
-			logger.Error("Measurement insert failed", "error", err, "tracing_id", measurement.UplinkMessageID)
+		measurement.UplinkMessageID,
+		measurement.OrganisationID,
+		measurement.OrganisationName,
+		measurement.OrganisationAddress,
+		measurement.OrganisationZipcode,
+		measurement.OrganisationCity,
+		measurement.OrganisationChamberOfCommerceID,
+		measurement.OrganisationHeadquarterID,
+		measurement.OrganisationState,
+		measurement.OrganisationArchiveTime,
+		measurement.DeviceID,
+		measurement.DeviceCode,
+		measurement.DeviceDescription,
+		measurement.DeviceLongitude, measurement.DeviceLatitude,
+		measurement.DeviceAltitude,
+		measurement.DeviceLocationDescription,
+		measurement.DeviceState,
+		measurement.DeviceProperties,
+		measurement.SensorID,
+		measurement.SensorCode,
+		measurement.SensorDescription,
+		measurement.SensorExternalID,
+		measurement.SensorProperties,
+		measurement.SensorBrand,
+		measurement.SensorArchiveTime,
+		measurement.DatastreamID,
+		measurement.DatastreamDescription,
+		measurement.DatastreamObservedProperty,
+		measurement.DatastreamUnitOfMeasurement,
+		measurement.MeasurementTimestamp,
+		measurement.MeasurementValue,
+		measurement.MeasurementLongitude, measurement.MeasurementLatitude,
+		measurement.MeasurementAltitude,
+		measurement.MeasurementExpiration,
+		measurement.FeatureOfInterestID,
+		measurement.FeatureOfInterestName,
+		measurement.FeatureOfInterestDescription,
+		measurement.FeatureOfInterestEncodingType,
+		measurement.FeatureOfInterestFeature,
+		measurement.FeatureOfInterestProperties,
+		measurement.CreatedAt,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measurements []measurements.Measurement) error {
+	for _, measurement := range measurements {
+		if err := s.StoreMeasurement(ctx, measurement); err != nil {
+			logger.Error("Could not store measurement", "error", err)
 		}
 	}
 	return nil

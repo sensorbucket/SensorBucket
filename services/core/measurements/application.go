@@ -4,14 +4,13 @@ package measurements
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/samber/lo"
 
-	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/pipeline"
@@ -25,84 +24,85 @@ type Store interface {
 	GetDatastream(ctx context.Context, id uuid.UUID, filter DatastreamFilter) (*Datastream, error)
 	FindOrCreateDatastream(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*Datastream, error)
 	StoreMeasurements(context.Context, []Measurement) error
+	StoreMeasurement(context.Context, Measurement) error
 }
 
 // Service is the measurement service which stores measurement data.
 type Service struct {
-	store                Store
-	systemArchiveTime    int
-	keyClient            auth.JWKSClient
-	measurementBatchChan chan Measurement
-	measurementBatch     []Measurement
+	store             Store
+	systemArchiveTime int
+	keyClient         auth.JWKSClient
+	// measurementBatchChan chan Measurement
+	// measurementBatch     []Measurement
 }
 
 func New(store Store, systemArchiveTime, batchSize int, keyClient auth.JWKSClient) *Service {
 	return &Service{
-		store:                store,
-		systemArchiveTime:    systemArchiveTime,
-		keyClient:            keyClient,
-		measurementBatch:     make([]Measurement, 0, batchSize),
-		measurementBatchChan: make(chan Measurement, batchSize),
+		store:             store,
+		systemArchiveTime: systemArchiveTime,
+		keyClient:         keyClient,
+		// measurementBatch:     make([]Measurement, 0, batchSize),
+		// measurementBatchChan: make(chan Measurement, batchSize),
 	}
 }
 
-func (s *Service) StartMeasurementBatchStorer(interval time.Duration) cleanupper.Shutdown {
-	stop := make(chan struct{})
-	done := make(chan struct{})
-	t := time.NewTicker(interval)
-
-	go func() {
-		log.Println("Measurement service batch storer started")
-		defer log.Println("Measurement service batch storer stopped!")
-	outer:
-		for {
-			select {
-			case <-stop:
-				if err := s.CommitBatch(false); err != nil {
-					log.Printf("error committing batch: %s\n", err.Error())
-				}
-				break outer
-			case m := <-s.measurementBatchChan:
-				s.measurementBatch = append(s.measurementBatch, m)
-				if len(s.measurementBatch) == cap(s.measurementBatch) {
-					if err := s.CommitBatch(false); err != nil {
-						log.Printf("error committing batch: %s\n", err.Error())
-					}
-				}
-			case <-t.C:
-				if err := s.CommitBatch(false); err != nil {
-					log.Printf("error committing batch: %s\n", err.Error())
-				}
-			}
-		}
-		close(done)
-	}()
-
-	return func(ctx context.Context) error {
-		close(stop)
-		<-done
-		return nil
-	}
-}
-
-func (s *Service) CommitBatch(collect bool) error {
-	if len(s.measurementBatch) == 0 {
-		if !collect || len(s.measurementBatchChan) == 0 {
-			return nil
-		}
-		count := len(s.measurementBatchChan)
-		for i := 0; i < count; i++ {
-			s.measurementBatch = append(s.measurementBatch, <-s.measurementBatchChan)
-		}
-	}
-	log.Printf("Committing %d measurements\n", len(s.measurementBatch))
-	err := s.store.StoreMeasurements(context.Background(), s.measurementBatch)
-	if err != nil {
-		return fmt.Errorf("committing measurements failed: %w", err)
-	}
-	s.measurementBatch = s.measurementBatch[:0]
-	return nil
-}
+// func (s *Service) StartMeasurementBatchStorer(interval time.Duration) cleanupper.Shutdown {
+// 	stop := make(chan struct{})
+// 	done := make(chan struct{})
+// 	t := time.NewTicker(interval)
+//
+// 	go func() {
+// 		log.Println("Measurement service batch storer started")
+// 		defer log.Println("Measurement service batch storer stopped!")
+// 	outer:
+// 		for {
+// 			select {
+// 			case <-stop:
+// 				if err := s.CommitBatch(false); err != nil {
+// 					log.Printf("error committing batch: %s\n", err.Error())
+// 				}
+// 				break outer
+// 			case m := <-s.measurementBatchChan:
+// 				s.measurementBatch = append(s.measurementBatch, m)
+// 				if len(s.measurementBatch) == cap(s.measurementBatch) {
+// 					if err := s.CommitBatch(false); err != nil {
+// 						log.Printf("error committing batch: %s\n", err.Error())
+// 					}
+// 				}
+// 			case <-t.C:
+// 				if err := s.CommitBatch(false); err != nil {
+// 					log.Printf("error committing batch: %s\n", err.Error())
+// 				}
+// 			}
+// 		}
+// 		close(done)
+// 	}()
+//
+// 	return func(ctx context.Context) error {
+// 		close(stop)
+// 		<-done
+// 		return nil
+// 	}
+// }
+//
+// func (s *Service) CommitBatch(collect bool) error {
+// 	if len(s.measurementBatch) == 0 {
+// 		if !collect || len(s.measurementBatchChan) == 0 {
+// 			return nil
+// 		}
+// 		count := len(s.measurementBatchChan)
+// 		for range count {
+// 			s.measurementBatch = append(s.measurementBatch, <-s.measurementBatchChan)
+// 		}
+// 	}
+// 	log.Printf("Committing %d measurements\n", len(s.measurementBatch))
+// 	err := s.store.StoreMeasurements(context.Background(), s.measurementBatch)
+// 	if err != nil {
+// 		return fmt.Errorf("committing measurements failed: %w", err)
+// 	}
+// 	s.measurementBatch = s.measurementBatch[:0]
+// 	return nil
+// }
 
 func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 	msg := PipelineMessage(pmsg)
@@ -135,10 +135,12 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 		CreatedAt:                 time.Now(),
 	}
 
+	var errs []error
 	for _, m := range msg.Measurements {
 		sensor, err := dev.GetSensorByExternalIDOrFallback(m.SensorExternalID)
 		if err != nil {
-			return fmt.Errorf("cannot get sensor: %w", err)
+			errs = append(errs, fmt.Errorf("cannog get sensor: %w", err))
+			continue
 		}
 		if sensor.ExternalID != m.SensorExternalID {
 			m.ObservedProperty = m.SensorExternalID + "_" + m.ObservedProperty
@@ -148,7 +150,8 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 
 		ds, err := s.store.FindOrCreateDatastream(ctx, msg.TenantID, sensor.ID, m.ObservedProperty, m.UnitOfMeasurement)
 		if err != nil {
-			return err
+			errs = append(errs, fmt.Errorf("cannog get sensor: %w", err))
+			continue
 		}
 
 		measurement := baseMeasurement
@@ -186,10 +189,10 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 			measurement.MeasurementAltitude = m.Altitude
 		}
 
-		s.measurementBatchChan <- measurement
+		errs = append(errs, s.store.StoreMeasurement(ctx, measurement))
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
 
 // Filter contains query information for a list of measurements
