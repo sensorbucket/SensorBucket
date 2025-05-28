@@ -24,7 +24,6 @@ services:
       - EP_WORKERS=http://caddy/api
       - PROFILER_ADDR=:3100
 
-
   web-importer:
     user: "1000:1000"
     build:

@@ -5,12 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
@@ -352,10 +350,8 @@ func (s *MeasurementStorePSQL) FindOrCreateDatastream(ctx context.Context, tenan
 	return &ds, nil
 }
 
-func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measurements []measurements.Measurement) error {
-	var batch pgx.Batch
-	for _, measurement := range measurements {
-		batch.Queue(`
+func (s *MeasurementStorePSQL) StoreMeasurement(ctx context.Context, measurement measurements.Measurement) error {
+	_, err := s.databasePool.Exec(ctx, `
 INSERT INTO measurements (
 			uplink_message_id,
 			organisation_id,
@@ -443,59 +439,59 @@ INSERT INTO measurements (
 );
 
 `,
-			measurement.UplinkMessageID,
-			measurement.OrganisationID,
-			measurement.OrganisationName,
-			measurement.OrganisationAddress,
-			measurement.OrganisationZipcode,
-			measurement.OrganisationCity,
-			measurement.OrganisationChamberOfCommerceID,
-			measurement.OrganisationHeadquarterID,
-			measurement.OrganisationState,
-			measurement.OrganisationArchiveTime,
-			measurement.DeviceID,
-			measurement.DeviceCode,
-			measurement.DeviceDescription,
-			measurement.DeviceLongitude, measurement.DeviceLatitude,
-			measurement.DeviceAltitude,
-			measurement.DeviceLocationDescription,
-			measurement.DeviceState,
-			measurement.DeviceProperties,
-			measurement.SensorID,
-			measurement.SensorCode,
-			measurement.SensorDescription,
-			measurement.SensorExternalID,
-			measurement.SensorProperties,
-			measurement.SensorBrand,
-			measurement.SensorArchiveTime,
-			measurement.DatastreamID,
-			measurement.DatastreamDescription,
-			measurement.DatastreamObservedProperty,
-			measurement.DatastreamUnitOfMeasurement,
-			measurement.MeasurementTimestamp,
-			measurement.MeasurementValue,
-			measurement.MeasurementLongitude, measurement.MeasurementLatitude,
-			measurement.MeasurementAltitude,
-			measurement.MeasurementExpiration,
-			measurement.FeatureOfInterestID,
-			measurement.FeatureOfInterestName,
-			measurement.FeatureOfInterestDescription,
-			measurement.FeatureOfInterestEncodingType,
-			measurement.FeatureOfInterestFeature,
-			measurement.FeatureOfInterestProperties,
-			measurement.CreatedAt,
-		)
+		measurement.UplinkMessageID,
+		measurement.OrganisationID,
+		measurement.OrganisationName,
+		measurement.OrganisationAddress,
+		measurement.OrganisationZipcode,
+		measurement.OrganisationCity,
+		measurement.OrganisationChamberOfCommerceID,
+		measurement.OrganisationHeadquarterID,
+		measurement.OrganisationState,
+		measurement.OrganisationArchiveTime,
+		measurement.DeviceID,
+		measurement.DeviceCode,
+		measurement.DeviceDescription,
+		measurement.DeviceLongitude, measurement.DeviceLatitude,
+		measurement.DeviceAltitude,
+		measurement.DeviceLocationDescription,
+		measurement.DeviceState,
+		measurement.DeviceProperties,
+		measurement.SensorID,
+		measurement.SensorCode,
+		measurement.SensorDescription,
+		measurement.SensorExternalID,
+		measurement.SensorProperties,
+		measurement.SensorBrand,
+		measurement.SensorArchiveTime,
+		measurement.DatastreamID,
+		measurement.DatastreamDescription,
+		measurement.DatastreamObservedProperty,
+		measurement.DatastreamUnitOfMeasurement,
+		measurement.MeasurementTimestamp,
+		measurement.MeasurementValue,
+		measurement.MeasurementLongitude, measurement.MeasurementLatitude,
+		measurement.MeasurementAltitude,
+		measurement.MeasurementExpiration,
+		measurement.FeatureOfInterestID,
+		measurement.FeatureOfInterestName,
+		measurement.FeatureOfInterestDescription,
+		measurement.FeatureOfInterestEncodingType,
+		measurement.FeatureOfInterestFeature,
+		measurement.FeatureOfInterestProperties,
+		measurement.CreatedAt,
+	)
+	if err != nil {
+		return err
 	}
+	return nil
+}
 
-	batchResult := s.databasePool.SendBatch(ctx, &batch)
-	defer batchResult.Close()
-
-	for range len(measurements) {
-		_, err := batchResult.Exec()
-		if err != nil {
-			log.Printf("Batch inser resulted in an error: %s\n", err.Error())
+func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measurements []measurements.Measurement) error {
+	for _, measurement := range measurements {
+		if err := s.StoreMeasurement(ctx, measurement); err != nil {
+			logger.Error("Could not store measurement", "error", err)
 		}
 	}
-
 	return nil
 }

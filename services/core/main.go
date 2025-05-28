@@ -107,8 +107,9 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		return fmt.Errorf("could not convert SYS_ARCHIVE_TIME to integer: %w", err)
 	}
 	measurementstore := measurementsinfra.NewPSQL(pool)
+	storageErrorPublisher := measurementsinfra.NewStorageErrorPublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
 	measurementservice := measurements.New(measurementstore, sysArchiveTime, MEASUREMENT_BATCH_SIZE, keyClient)
-	cleanup.Add(measurementservice.StartMeasurementBatchStorer(time.Duration(MEASUREMENT_COMMIT_INTERVAL) * time.Millisecond))
+	// cleanup.Add(measurementservice.StartMeasurementBatchStorer(time.Duration(MEASUREMENT_COMMIT_INTERVAL) * time.Millisecond))
 
 	processingstore := processinginfra.NewPSQLStore(db)
 	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
@@ -123,7 +124,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		AMQP_QUEUE_MEASUREMENTS,
 		AMQP_XCHG_PIPELINE_MESSAGES,
 		AMQP_XCHG_MEASUREMENTS_TOPIC,
-		measurements.MQMessageProcessor(measurementservice),
+		measurements.MQMessageProcessor(measurementservice, storageErrorPublisher),
 	)
 	go mq.StartQueueProcessor(
 		amqpConn,
