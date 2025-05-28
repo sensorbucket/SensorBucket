@@ -41,7 +41,7 @@ func NewFeatureOfInterest(opts CreateFeatureOfInterestOpts) (*FeatureOfInterest,
 	if opts.Properties != nil {
 		foi.Properties = opts.Properties
 	} else {
-		opts.Properties = json.RawMessage("{}")
+		foi.Properties = json.RawMessage("{}")
 	}
 	if opts.Feature != nil && opts.EncodingType != nil {
 		if err := foi.SetFeature(*opts.EncodingType, opts.Feature); err != nil {
