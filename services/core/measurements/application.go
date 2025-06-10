@@ -20,9 +20,17 @@ import (
 // Store stores measurement data
 type Store interface {
 	Query(context.Context, Filter, pagination.Request) (*pagination.Page[Measurement], error)
-	ListDatastreams(context.Context, DatastreamFilter, pagination.Request) (*pagination.Page[Datastream], error)
+	ListDatastreams(
+		context.Context,
+		DatastreamFilter,
+		pagination.Request,
+	) (*pagination.Page[Datastream], error)
 	GetDatastream(ctx context.Context, id uuid.UUID, filter DatastreamFilter) (*Datastream, error)
-	FindOrCreateDatastream(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*Datastream, error)
+	FindOrCreateDatastream(
+		ctx context.Context,
+		tenantID, sensorID int64,
+		observedProperty, UnitOfMeasurement string,
+	) (*Datastream, error)
 	StoreMeasurements(context.Context, []Measurement) error
 	StoreMeasurement(context.Context, Measurement) error
 }
@@ -146,9 +154,18 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 			m.ObservedProperty = m.SensorExternalID + "_" + m.ObservedProperty
 		}
 
-		archiveTimeDays, _ := lo.Coalesce(sensor.ArchiveTime, &s.systemArchiveTime) // msg.Organisation.ArchiveTime)
+		archiveTimeDays, _ := lo.Coalesce(
+			sensor.ArchiveTime,
+			&s.systemArchiveTime,
+		) // msg.Organisation.ArchiveTime)
 
-		ds, err := s.store.FindOrCreateDatastream(ctx, msg.TenantID, sensor.ID, m.ObservedProperty, m.UnitOfMeasurement)
+		ds, err := s.store.FindOrCreateDatastream(
+			ctx,
+			msg.TenantID,
+			sensor.ID,
+			m.ObservedProperty,
+			m.UnitOfMeasurement,
+		)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("cannog get sensor: %w", err))
 			continue
@@ -170,7 +187,8 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 		measurement.MeasurementTimestamp = time.UnixMilli(m.Timestamp)
 		measurement.MeasurementValue = m.Value
 		measurement.MeasurementProperties = m.Properties
-		measurement.MeasurementExpiration = time.UnixMilli(msg.ReceivedAt).Add(time.Duration(*archiveTimeDays) * 24 * time.Hour)
+		measurement.MeasurementExpiration = time.UnixMilli(msg.ReceivedAt).
+			Add(time.Duration(*archiveTimeDays) * 24 * time.Hour)
 
 		// Fetch FoI info
 		if sensor.FeatureOfInterest != nil {
@@ -200,13 +218,18 @@ type Filter struct {
 	Start               time.Time `url:"start"`
 	End                 time.Time `url:"end"`
 	SensorCodes         []string  `url:"sensor_codes"`
+	DeviceIDs           []string  `url:"device_id"`
 	Datastream          []string  `url:"datastream"`
 	TenantID            []int64   `url:"tenant_id"`
 	FeatureOfInterestID []int64   `url:"feature_of_interest_id"`
 	ObservedProperty    []string  `url:"observed_property"`
 }
 
-func (s *Service) QueryMeasurements(ctx context.Context, f Filter, r pagination.Request) (*pagination.Page[Measurement], error) {
+func (s *Service) QueryMeasurements(
+	ctx context.Context,
+	f Filter,
+	r pagination.Request,
+) (*pagination.Page[Measurement], error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
 		return nil, err
 	}
@@ -229,7 +252,11 @@ type DatastreamFilter struct {
 	TenantID         []int64
 }
 
-func (s *Service) ListDatastreams(ctx context.Context, filter DatastreamFilter, r pagination.Request) (*pagination.Page[Datastream], error) {
+func (s *Service) ListDatastreams(
+	ctx context.Context,
+	filter DatastreamFilter,
+	r pagination.Request,
+) (*pagination.Page[Datastream], error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
 		return nil, err
 	}
