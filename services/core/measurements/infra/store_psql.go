@@ -157,6 +157,9 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 	if len(filter.SensorCodes) > 0 {
 		q = q.Where(sq.Eq{"sensor_code": filter.SensorCodes})
 	}
+	if len(filter.DeviceIDs) > 0 {
+		q = q.Where(sq.Eq{"device_id": filter.DeviceIDs})
+	}
 	if len(filter.Datastream) > 0 {
 		q = q.Where(sq.Eq{"datastream_id": filter.Datastream})
 	}

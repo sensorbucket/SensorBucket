@@ -21,9 +21,17 @@ import (
 // Store stores measurement data
 type Store interface {
 	Query(context.Context, Filter, pagination.Request) (*pagination.Page[Measurement], error)
-	ListDatastreams(context.Context, DatastreamFilter, pagination.Request) (*pagination.Page[Datastream], error)
+	ListDatastreams(
+		context.Context,
+		DatastreamFilter,
+		pagination.Request,
+	) (*pagination.Page[Datastream], error)
 	GetDatastream(ctx context.Context, id uuid.UUID, filter DatastreamFilter) (*Datastream, error)
-	FindOrCreateDatastream(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*Datastream, error)
+	FindOrCreateDatastream(
+		ctx context.Context,
+		tenantID, sensorID int64,
+		observedProperty, UnitOfMeasurement string,
+	) (*Datastream, error)
 	StoreMeasurements(context.Context, []Measurement) error
 }
 
@@ -144,9 +152,18 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 			m.ObservedProperty = m.SensorExternalID + "_" + m.ObservedProperty
 		}
 
-		archiveTimeDays, _ := lo.Coalesce(sensor.ArchiveTime, &s.systemArchiveTime) // msg.Organisation.ArchiveTime)
+		archiveTimeDays, _ := lo.Coalesce(
+			sensor.ArchiveTime,
+			&s.systemArchiveTime,
+		) // msg.Organisation.ArchiveTime)
 
-		ds, err := s.store.FindOrCreateDatastream(ctx, msg.TenantID, sensor.ID, m.ObservedProperty, m.UnitOfMeasurement)
+		ds, err := s.store.FindOrCreateDatastream(
+			ctx,
+			msg.TenantID,
+			sensor.ID,
+			m.ObservedProperty,
+			m.UnitOfMeasurement,
+		)
 		if err != nil {
 			return err
 		}
@@ -167,7 +184,8 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 		measurement.MeasurementTimestamp = time.UnixMilli(m.Timestamp)
 		measurement.MeasurementValue = m.Value
 		measurement.MeasurementProperties = m.Properties
-		measurement.MeasurementExpiration = time.UnixMilli(msg.ReceivedAt).Add(time.Duration(*archiveTimeDays) * 24 * time.Hour)
+		measurement.MeasurementExpiration = time.UnixMilli(msg.ReceivedAt).
+			Add(time.Duration(*archiveTimeDays) * 24 * time.Hour)
 
 		// Measurement location is either explicitly set or falls back to device location
 		if m.Latitude != nil && m.Longitude != nil {
@@ -184,15 +202,19 @@ func (s *Service) ProcessPipelineMessage(pmsg pipeline.Message) error {
 
 // Filter contains query information for a list of measurements
 type Filter struct {
-	Start       time.Time `url:",required"`
-	End         time.Time `url:",required"`
-	DeviceIDs   []string
-	SensorCodes []string
-	Datastream  []string
-	TenantID    []int64
+	Start               time.Time `url:"start,required"`
+	End                 time.Time `url:"end,required"`
+	DeviceIDs           []string  `url:"device_id"`
+	SensorCodes         []string  `url:"sensor_codes"`
+	Datastream          []string  `url:"datastream"`
+	TenantID            []int64   `url:"tenant_id"`
 }
 
-func (s *Service) QueryMeasurements(ctx context.Context, f Filter, r pagination.Request) (*pagination.Page[Measurement], error) {
+func (s *Service) QueryMeasurements(
+	ctx context.Context,
+	f Filter,
+	r pagination.Request,
+) (*pagination.Page[Measurement], error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
 		return nil, err
 	}
@@ -215,7 +237,11 @@ type DatastreamFilter struct {
 	TenantID         []int64
 }
 
-func (s *Service) ListDatastreams(ctx context.Context, filter DatastreamFilter, r pagination.Request) (*pagination.Page[Datastream], error) {
+func (s *Service) ListDatastreams(
+	ctx context.Context,
+	filter DatastreamFilter,
+	r pagination.Request,
+) (*pagination.Page[Datastream], error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_MEASUREMENTS}); err != nil {
 		return nil, err
 	}
