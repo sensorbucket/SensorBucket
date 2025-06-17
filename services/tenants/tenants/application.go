@@ -23,9 +23,9 @@ type TenantService struct {
 }
 
 type Filter struct {
-	Name     []string `schema:"name"`
-	State    []State  `schema:"state"`
-	IsMember bool     `schema:"is_member"`
+	Name     []string `url:"name"`
+	State    []State  `url:"state"`
+	IsMember bool     `url:"is_member"`
 }
 
 type CreateTenantDTO struct {

@@ -131,7 +131,7 @@ func (s *Service) GetAPIKey(ctx context.Context, id int64) (*HashedApiKey, error
 }
 
 type Filter struct {
-	TenantID []int64 `schema:"tenant_id"`
+	TenantID []int64 `url:"tenant_id"`
 }
 
 type ApiKeyAuthenticationDTO struct {
