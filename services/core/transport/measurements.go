@@ -22,11 +22,22 @@ func (t *CoreTransport) httpGetMeasurements() http.HandlerFunc {
 		}
 
 		if !params.Start.IsZero() && !params.End.IsZero() && params.Start.After(params.End) {
-			web.HTTPError(rw, web.NewError(http.StatusBadRequest, "Start time cannot be after end time", "ERR_BAD_REQUEST"))
+			web.HTTPError(
+				rw,
+				web.NewError(
+					http.StatusBadRequest,
+					"Start time cannot be after end time",
+					"ERR_BAD_REQUEST",
+				),
+			)
 			return
 		}
 
-		page, err := t.measurementService.QueryMeasurements(r.Context(), params.Filter, params.Request)
+		page, err := t.measurementService.QueryMeasurements(
+			r.Context(),
+			params.Filter,
+			params.Request,
+		)
 		if err != nil {
 			http.Error(rw, err.Error(), http.StatusInternalServerError)
 			return

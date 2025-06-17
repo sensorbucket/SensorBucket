@@ -87,6 +87,10 @@ func TestMeasurementResponseShouldIncludeMeasurementID(t *testing.T) {
 	transport := coretransport.New("", authtest.JWKS(), nil, measurementService, nil)
 
 	req, _ := http.NewRequest("GET", "/measurements", nil)
+	q := req.URL.Query()
+	q.Add("start", "2024-10-08T00:00:00Z")
+	q.Add("end", "2024-10-08T00:00:00Z")
+	req.URL.RawQuery = q.Encode()
 	authtest.AuthenticateRequest(req)
 	res := httptest.NewRecorder()
 
