@@ -133,6 +133,10 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 	if err != nil {
 		panic(err)
 	}
+
+	// The first param can actually be a query mode (this is PGX specific)
+	// We disable statement caching because it causes the planner to get in a CPU loop :(
+	params = append([]any{pgx.QueryExecModeSimpleProtocol}, params...)
 	rows, err := s.databasePool.Query(ctx, sqlQuery, params...)
 	if err != nil {
 		return nil, err
