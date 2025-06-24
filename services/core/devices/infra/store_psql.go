@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"log/slog"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -20,8 +19,8 @@ import (
 )
 
 var (
-	pq     = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	logger = slog.Default().With("component", "services/core/devices/infra/store_psql.go")
+	pq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	// logger = slog.Default().With("component", "services/core/devices/infra/store_psql.go")
 
 	_ devices.DeviceStore = (*PSQLStore)(nil)
 )
@@ -52,15 +51,33 @@ type DevicePaginationQuery struct {
 	ID        int64     `pagination:"device.id,ASC"`
 }
 
-func (s *PSQLStore) ListInBoundingBox(ctx context.Context, filter devices.DeviceFilter, p pagination.Request) (*pagination.Page[devices.Device], error) {
-	return newDeviceQueryBuilder().WithPagination(p).WithFilters(filter).WithinBoundingBox(filter.BoundingBoxFilter).Query(ctx, s.db)
+func (s *PSQLStore) ListInBoundingBox(
+	ctx context.Context,
+	filter devices.DeviceFilter,
+	p pagination.Request,
+) (*pagination.Page[devices.Device], error) {
+	return newDeviceQueryBuilder().WithPagination(p).
+		WithFilters(filter).
+		WithinBoundingBox(filter.BoundingBoxFilter).
+		Query(ctx, s.db)
 }
 
-func (s *PSQLStore) ListInRange(ctx context.Context, filter devices.DeviceFilter, p pagination.Request) (*pagination.Page[devices.Device], error) {
-	return newDeviceQueryBuilder().WithPagination(p).WithFilters(filter).WithinRange(filter.RangeFilter).Query(ctx, s.db)
+func (s *PSQLStore) ListInRange(
+	ctx context.Context,
+	filter devices.DeviceFilter,
+	p pagination.Request,
+) (*pagination.Page[devices.Device], error) {
+	return newDeviceQueryBuilder().WithPagination(p).
+		WithFilters(filter).
+		WithinRange(filter.RangeFilter).
+		Query(ctx, s.db)
 }
 
-func (s *PSQLStore) List(ctx context.Context, filter devices.DeviceFilter, p pagination.Request) (*pagination.Page[devices.Device], error) {
+func (s *PSQLStore) List(
+	ctx context.Context,
+	filter devices.DeviceFilter,
+	p pagination.Request,
+) (*pagination.Page[devices.Device], error) {
 	return newDeviceQueryBuilder().WithPagination(p).WithFilters(filter).Query(ctx, s.db)
 }
 
@@ -131,7 +148,10 @@ func (row *listSensorsRow) ToModel() devices.Sensor {
 	return row.sensor
 }
 
-func (s *PSQLStore) ListSensors(ctx context.Context, p pagination.Request) (*pagination.Page[devices.Sensor], error) {
+func (s *PSQLStore) ListSensors(
+	ctx context.Context,
+	p pagination.Request,
+) (*pagination.Page[devices.Sensor], error) {
 	cursor, err := pagination.GetCursor[SensorPaginationQuery](p)
 	if err != nil {
 		return nil, fmt.Errorf("list sensors, error getting pagination cursor: %w", err)
@@ -187,7 +207,11 @@ func (s *PSQLStore) updateDevice(ctx context.Context, dev *devices.Device) error
 	return nil
 }
 
-func (s *PSQLStore) updateSensors(ctx context.Context, devID int64, sensors []devices.Sensor) error {
+func (s *PSQLStore) updateSensors(
+	ctx context.Context,
+	devID int64,
+	sensors []devices.Sensor,
+) error {
 	// Replace sensors
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -293,20 +317,42 @@ func find(ctx context.Context, db DB, id int64) (*devices.Device, error) {
 	return &dev.Device, nil
 }
 
-func listSensorsPaginated(ctx context.Context, db DB, cursor *pagination.Cursor[SensorPaginationQuery]) ([]devices.Sensor, error) {
+func listSensorsPaginated(
+	ctx context.Context,
+	db DB,
+	cursor *pagination.Cursor[SensorPaginationQuery],
+) ([]devices.Sensor, error) {
 	var err error
 	if cursor == nil {
 		newCursor, err := pagination.GetCursor[SensorPaginationQuery](pagination.Request{})
 		if err != nil {
-			return nil, fmt.Errorf("in listSensorsPaginated while creating empty cursor because none was given: %w", err)
+			return nil, fmt.Errorf(
+				"in listSensorsPaginated while creating empty cursor because none was given: %w",
+				err,
+			)
 		}
 		cursor = &newCursor
 	}
 
 	q := pq.Select(
-		"sensor.id", "sensor.code", "sensor.description", "sensor.device_id", "sensor.external_id", "sensor.properties", "sensor.archive_time",
-		"sensor.brand", "sensor.created_at", "sensor.is_fallback", "sensor.tenant_id",
-		"feature.id", "feature.name", "feature.description", "feature.encoding_type", "ST_AsBinary(feature.feature)", "feature.properties", "feature.tenant_id",
+		"sensor.id",
+		"sensor.code",
+		"sensor.description",
+		"sensor.device_id",
+		"sensor.external_id",
+		"sensor.properties",
+		"sensor.archive_time",
+		"sensor.brand",
+		"sensor.created_at",
+		"sensor.is_fallback",
+		"sensor.tenant_id",
+		"feature.id",
+		"feature.name",
+		"feature.description",
+		"feature.encoding_type",
+		"ST_AsBinary(feature.feature)",
+		"feature.properties",
+		"feature.tenant_id",
 	).From("sensors sensor").LeftJoin("features_of_interest feature ON sensor.feature_of_interest_id = feature.id")
 	q, err = pagination.Apply(q, *cursor)
 	if err != nil {
@@ -361,9 +407,24 @@ func listSensors(_ context.Context, db DB, filter ListSensorsFilter) ([]devices.
 	var err error
 
 	q := pq.Select(
-		"sensor.id", "sensor.code", "sensor.description", "sensor.device_id", "sensor.external_id", "sensor.properties", "sensor.archive_time",
-		"sensor.brand", "sensor.created_at", "sensor.is_fallback", "sensor.tenant_id",
-		"feature.id", "feature.name", "feature.description", "feature.encoding_type", "ST_AsBinary(feature.feature)", "feature.properties", "feature.tenant_id",
+		"sensor.id",
+		"sensor.code",
+		"sensor.description",
+		"sensor.device_id",
+		"sensor.external_id",
+		"sensor.properties",
+		"sensor.archive_time",
+		"sensor.brand",
+		"sensor.created_at",
+		"sensor.is_fallback",
+		"sensor.tenant_id",
+		"feature.id",
+		"feature.name",
+		"feature.description",
+		"feature.encoding_type",
+		"ST_AsBinary(feature.feature)",
+		"feature.properties",
+		"feature.tenant_id",
 	).From("sensors sensor").LeftJoin("features_of_interest feature ON sensor.feature_of_interest_id = feature.id").
 		Where(sq.Eq{"sensor.device_id": filter.DeviceID})
 
@@ -439,9 +500,24 @@ func createSensors(tx DB, sensors []*devices.Sensor) error {
 
 func getSensor(ctx context.Context, tx DB, id int64) (*devices.Sensor, error) {
 	q := pq.Select(
-		"sensor.id", "sensor.code", "sensor.description", "sensor.brand", "sensor.archive_time", "sensor.external_id",
-		"sensor.properties", "sensor.created_at", "sensor.device_id", "sensor.is_fallback", "sensor.tenant_id",
-		"feature.id", "feature.name", "feature.description", "feature.encoding_type", "ST_AsBinary(feature.feature)", "feature.properties", "feature.tenant_id",
+		"sensor.id",
+		"sensor.code",
+		"sensor.description",
+		"sensor.brand",
+		"sensor.archive_time",
+		"sensor.external_id",
+		"sensor.properties",
+		"sensor.created_at",
+		"sensor.device_id",
+		"sensor.is_fallback",
+		"sensor.tenant_id",
+		"feature.id",
+		"feature.name",
+		"feature.description",
+		"feature.encoding_type",
+		"ST_AsBinary(feature.feature)",
+		"feature.properties",
+		"feature.tenant_id",
 	).From("sensors sensor").LeftJoin("features_of_interest feature ON sensor.feature_of_interest_id = feature.id").
 		Where(sq.Eq{"sensor.id": id})
 	q = auth.ProtectedQuery(ctx, "sensor.tenant_id", q)
