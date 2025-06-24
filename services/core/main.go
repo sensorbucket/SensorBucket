@@ -47,10 +47,14 @@ var (
 	AMQP_QUEUE_ERRORS            = env.Could("AMQP_QUEUE_ERRORS", "errors")
 	HTTP_ADDR                    = env.Could("HTTP_ADDR", ":3000")
 	HTTP_BASE                    = env.Could("HTTP_BASE", "http://localhost:3000/api")
-	AUTH_JWKS_URL                = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
-	SYS_ARCHIVE_TIME             = env.Could("SYS_ARCHIVE_TIME", "30")
-	MEASUREMENT_BATCH_SIZE       = env.CouldInt("MEASUREMENT_BATCH_SIZE", 1024)
-	MEASUREMENT_COMMIT_INTERVAL  = env.CouldInt("MEASUREMENT_COMMIT_INTERVAL", 1000)
+	HTTP_TIMEOUT                 = env.CouldInt("HTTP_TIMEOUT", 30)
+	AUTH_JWKS_URL                = env.Could(
+		"AUTH_JWKS_URL",
+		"http://oathkeeper:4456/.well-known/jwks.json",
+	)
+	SYS_ARCHIVE_TIME            = env.Could("SYS_ARCHIVE_TIME", "30")
+	MEASUREMENT_BATCH_SIZE      = env.CouldInt("MEASUREMENT_BATCH_SIZE", 1024)
+	MEASUREMENT_COMMIT_INTERVAL = env.CouldInt("MEASUREMENT_COMMIT_INTERVAL", 1000)
 )
 
 func main() {
@@ -107,12 +111,23 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		return fmt.Errorf("could not convert SYS_ARCHIVE_TIME to integer: %w", err)
 	}
 	measurementstore := measurementsinfra.NewPSQL(pool)
-	storageErrorPublisher := measurementsinfra.NewStorageErrorPublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
-	measurementservice := measurements.New(measurementstore, sysArchiveTime, MEASUREMENT_BATCH_SIZE, keyClient)
+	storageErrorPublisher := measurementsinfra.NewStorageErrorPublisher(
+		amqpConn,
+		AMQP_XCHG_PIPELINE_MESSAGES,
+	)
+	measurementservice := measurements.New(
+		measurementstore,
+		sysArchiveTime,
+		MEASUREMENT_BATCH_SIZE,
+		keyClient,
+	)
 	// cleanup.Add(measurementservice.StartMeasurementBatchStorer(time.Duration(MEASUREMENT_COMMIT_INTERVAL) * time.Millisecond))
 
 	processingstore := processinginfra.NewPSQLStore(db)
-	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
+	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(
+		amqpConn,
+		AMQP_XCHG_PIPELINE_MESSAGES,
+	)
 	processingservice := processing.New(processingstore, processingPipelinePublisher, keyClient)
 
 	projectsStore := projects.NewPostgresStore(pool)
@@ -174,8 +189,8 @@ func Run(cleanup cleanupper.Cleanupper) error {
 func createHTTPServer(h http.Handler) *http.Server {
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  time.Duration(HTTP_TIMEOUT) * time.Second,
+		WriteTimeout: time.Duration(HTTP_TIMEOUT) * time.Second,
 		Handler:      cors.AllowAll().Handler(h),
 	}
 	return srv
