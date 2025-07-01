@@ -190,7 +190,7 @@ func (t *OverviewRoute) deviceListPage() http.HandlerFunc {
 		if res.Links.GetNext() != "" {
 			u, err := url.Parse(res.Links.GetNext())
 			if err == nil {
-				page.DevicesNextPage = "/overview/devices/table?cursor=" + u.Query().Get("cursor")
+				page.DevicesNextPage = views.U("/overview/devices/table?cursor=%s", u.Query().Get("cursor"))
 			}
 		}
 
