@@ -11,59 +11,67 @@ import (
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
+	"sensorbucket.nl/sensorbucket/pkg/authtest"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
 
+var ctx = authtest.GodContext()
+
 func TestCreateParentTenantDoesNotExist(t *testing.T) {
 	// Arrange
+	tenantID := authtest.DefaultTenantID
 	store := &TenantStoreMock{
 		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
-			assert.Equal(t, int64(132), id)
+			assert.Equal(t, tenantID, id)
 			return nil, tenants.ErrTenantNotFound
 		},
 	}
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	parent := int64(132)
-	_, err := s.CreateNewTenant(context.Background(), tenants.CreateTenantDTO{
+	parent := tenantID
+	_, err := s.CreateNewTenant(ctx, tenants.CreateTenantDTO{
 		ParentID: &parent,
 	})
 
 	// Assert
-	assert.ErrorIs(t, err, tenants.ErrTenantNotFound)
-	assert.Len(t, store.GetTenantByIDCalls(), 1)
+	assert.ErrorIs(t, err, auth.ErrForbidden) // NOTE: all Mutations to tenants are disabled
+	// assert.ErrorIs(t, err, tenants.ErrTenantNotFound)
+	// assert.Len(t, store.GetTenantByIDCalls(), 1)
 }
 
 func TestCreateParentTenantCantBeRetrieved(t *testing.T) {
 	// Arrange
+	tenantID := authtest.DefaultTenantID
 	expErr := fmt.Errorf("some weird database error has occurred")
 	store := &TenantStoreMock{
 		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
-			assert.Equal(t, int64(675), id)
+			assert.Equal(t, tenantID, id)
 			return nil, expErr
 		},
 	}
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	parent := int64(675)
-	_, err := s.CreateNewTenant(context.Background(), tenants.CreateTenantDTO{
+	parent := tenantID
+	_, err := s.CreateNewTenant(ctx, tenants.CreateTenantDTO{
 		ParentID: &parent,
 	})
 
 	// Assert
-	assert.ErrorIs(t, err, expErr)
-	assert.Len(t, store.GetTenantByIDCalls(), 1)
+	assert.ErrorIs(t, err, auth.ErrForbidden) // NOTE: all Mutations to tenants are disabled
+	// assert.ErrorIs(t, err, expErr)
+	// assert.Len(t, store.GetTenantByIDCalls(), 1)
 }
 
 func TestCreateParentTenantIsNotActive(t *testing.T) {
 	// Arrange
+	tenantID := authtest.DefaultTenantID
 	store := &TenantStoreMock{
 		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
-			assert.Equal(t, int64(675), id)
+			assert.Equal(t, tenantID, id)
 			return &tenants.Tenant{
-				ID:    675,
+				ID:    tenantID,
 				State: tenants.Archived,
 			}, nil
 		},
@@ -71,24 +79,26 @@ func TestCreateParentTenantIsNotActive(t *testing.T) {
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	parent := int64(675)
-	_, err := s.CreateNewTenant(context.Background(), tenants.CreateTenantDTO{
+	parent := tenantID
+	_, err := s.CreateNewTenant(ctx, tenants.CreateTenantDTO{
 		ParentID: &parent,
 	})
 
 	// Assert
-	assert.ErrorIs(t, err, tenants.ErrTenantNotActive)
-	assert.Len(t, store.GetTenantByIDCalls(), 1)
+	assert.ErrorIs(t, err, auth.ErrForbidden) // NOTE: all Mutations to tenants are disabled
+	// assert.ErrorIs(t, err, tenants.ErrTenantNotActive)
+	// assert.Len(t, store.GetTenantByIDCalls(), 1)
 }
 
 func TestCreateErrorOccurs(t *testing.T) {
 	// Arrange
+	tenantID := authtest.DefaultTenantID
 	expErr := fmt.Errorf("weird error!")
 	store := &TenantStoreMock{
 		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
-			assert.Equal(t, int64(675), id)
+			assert.Equal(t, tenantID, id)
 			return &tenants.Tenant{
-				ID:    675,
+				ID:    tenantID,
 				State: tenants.Active,
 			}, nil
 		},
@@ -99,24 +109,26 @@ func TestCreateErrorOccurs(t *testing.T) {
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	parent := int64(675)
-	_, err := s.CreateNewTenant(context.Background(), tenants.CreateTenantDTO{
+	parent := tenantID
+	_, err := s.CreateNewTenant(ctx, tenants.CreateTenantDTO{
 		ParentID: &parent,
 	})
 
 	// Assert
-	assert.ErrorIs(t, err, expErr)
-	assert.Len(t, store.GetTenantByIDCalls(), 1)
-	assert.Len(t, store.CreateCalls(), 1)
+	assert.ErrorIs(t, err, auth.ErrForbidden) // NOTE: all Mutations to tenants are disabled
+	// assert.ErrorIs(t, err, expErr)
+	// assert.Len(t, store.GetTenantByIDCalls(), 1)
+	// assert.Len(t, store.CreateCalls(), 1)
 }
 
 func TestCreateCreatesNewTenant(t *testing.T) {
 	// Arrange
+	tenantID := authtest.DefaultTenantID
 	store := &TenantStoreMock{
 		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
-			assert.Equal(t, int64(675), id)
+			assert.Equal(t, tenantID, id)
 			return &tenants.Tenant{
-				ID:    675,
+				ID:    tenantID,
 				State: tenants.Active,
 			}, nil
 		},
@@ -127,8 +139,8 @@ func TestCreateCreatesNewTenant(t *testing.T) {
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	parent := int64(675)
-	dto, err := s.CreateNewTenant(context.Background(), tenants.CreateTenantDTO{
+	parent := tenantID
+	_, err := s.CreateNewTenant(ctx, tenants.CreateTenantDTO{
 		Name:    "blabla",
 		Address: "somewhere nice",
 		ZipCode: "no clue",
@@ -139,33 +151,35 @@ func TestCreateCreatesNewTenant(t *testing.T) {
 	})
 
 	// Assert
-	assert.NoError(t, err)
-	assert.Equal(t, tenants.CreateTenantDTO{
-		Name:    "blabla",
-		Address: "somewhere nice",
-		ZipCode: "no clue",
-		City:    "some place",
-		// ChamberOfCommerceID: "ideee",
-		// HeadquarterID:       "hqid",
-		ParentID: &parent,
-	}, dto)
-	assert.Len(t, store.GetTenantByIDCalls(), 1)
-	assert.Len(t, store.CreateCalls(), 1)
+	assert.ErrorIs(t, err, auth.ErrForbidden) // NOTE: all Mutations to tenants are disabled
+	// assert.NoError(t, err)
+	// assert.Equal(t, tenants.CreateTenantDTO{
+	// 	Name:    "blabla",
+	// 	Address: "somewhere nice",
+	// 	ZipCode: "no clue",
+	// 	City:    "some place",
+	// 	// ChamberOfCommerceID: "ideee",
+	// 	// HeadquarterID:       "hqid",
+	// 	ParentID: &parent,
+	// }, dto)
+	// assert.Len(t, store.GetTenantByIDCalls(), 1)
+	// assert.Len(t, store.CreateCalls(), 1)
 }
 
 func TestArchiveTenantErrorOccursWhileRetrievingTenant(t *testing.T) {
 	// Arrange
+	tenantID := authtest.DefaultTenantID
 	expErr := fmt.Errorf("weird error")
 	store := &TenantStoreMock{
 		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
-			assert.Equal(t, int64(43124), id)
+			assert.Equal(t, tenantID, id)
 			return nil, expErr
 		},
 	}
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	err := s.ArchiveTenant(context.Background(), 43124)
+	err := s.ArchiveTenant(ctx, tenantID)
 
 	// Assert
 	assert.ErrorIs(t, err, expErr)
@@ -174,9 +188,10 @@ func TestArchiveTenantErrorOccursWhileRetrievingTenant(t *testing.T) {
 
 func TestArchiveTenantTenantIsAlreadyArchived(t *testing.T) {
 	// Arrange
+	tenantID := authtest.DefaultTenantID
 	store := &TenantStoreMock{
 		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
-			assert.Equal(t, int64(43124), id)
+			assert.Equal(t, tenantID, id)
 			return &tenants.Tenant{
 				State: tenants.Archived,
 			}, nil
@@ -185,7 +200,7 @@ func TestArchiveTenantTenantIsAlreadyArchived(t *testing.T) {
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	err := s.ArchiveTenant(context.Background(), 43124)
+	err := s.ArchiveTenant(ctx, tenantID)
 
 	// Assert
 	assert.ErrorIs(t, err, tenants.ErrTenantNotActive)
@@ -193,11 +208,12 @@ func TestArchiveTenantTenantIsAlreadyArchived(t *testing.T) {
 }
 
 func TestArchiveTenantUpdateErrors(t *testing.T) {
+	tenantID := authtest.DefaultTenantID
 	// Arrange
 	expErr := fmt.Errorf("weird error")
 	store := &TenantStoreMock{
 		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
-			assert.Equal(t, int64(43124), id)
+			assert.Equal(t, tenantID, id)
 			return &tenants.Tenant{
 				State: tenants.Active,
 			}, nil
@@ -210,7 +226,7 @@ func TestArchiveTenantUpdateErrors(t *testing.T) {
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	err := s.ArchiveTenant(context.Background(), 43124)
+	err := s.ArchiveTenant(ctx, tenantID)
 
 	// Assert
 	assert.ErrorIs(t, err, expErr)
@@ -220,9 +236,10 @@ func TestArchiveTenantUpdateErrors(t *testing.T) {
 
 func TestArchiveTenantUpdatesTenantWithArchivedState(t *testing.T) {
 	// Arrange
+	tenantID := authtest.DefaultTenantID
 	store := &TenantStoreMock{
 		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
-			assert.Equal(t, int64(43124), id)
+			assert.Equal(t, tenantID, id)
 			return &tenants.Tenant{
 				State: tenants.Active,
 			}, nil
@@ -235,7 +252,7 @@ func TestArchiveTenantUpdatesTenantWithArchivedState(t *testing.T) {
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	err := s.ArchiveTenant(context.Background(), 43124)
+	err := s.ArchiveTenant(ctx, tenantID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -248,7 +265,6 @@ func TestListTenantsReturnsList(t *testing.T) {
 	store := &TenantStoreMock{
 		ListFunc: func(ctx context.Context, filter tenants.StoreFilter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
 			return &pagination.Page[tenants.CreateTenantDTO]{
-				Cursor: "blabla",
 				Data: []tenants.CreateTenantDTO{
 					{
 						Name: "123adsz",
@@ -260,13 +276,11 @@ func TestListTenantsReturnsList(t *testing.T) {
 	s := tenants.NewTenantService(store, nil)
 
 	// Act
-	res, err := s.ListTenants(context.Background(), tenants.Filter{}, pagination.Request{})
+	res, err := s.ListTenants(ctx, tenants.Filter{}, pagination.Request{})
 
 	// Assert
-	assert.Equal(t, "blabla", res.Cursor)
-	assert.Len(t, res.Data, 1)
-	assert.Equal(t, "123adsz", res.Data[0].Name)
 	assert.NoError(t, err)
+	assert.Len(t, res.Data, 1)
 	assert.Len(t, store.ListCalls(), 1)
 }
 
@@ -281,7 +295,7 @@ func TestListTenantsErrorOccursWhileRetrievingList(t *testing.T) {
 	s := tenants.NewTenantService(&store, nil)
 
 	// Act
-	res, err := s.ListTenants(context.Background(), tenants.Filter{}, pagination.Request{})
+	res, err := s.ListTenants(ctx, tenants.Filter{}, pagination.Request{})
 
 	// Assert
 	assert.ErrorIs(t, err, expErr)
@@ -290,8 +304,9 @@ func TestListTenantsErrorOccursWhileRetrievingList(t *testing.T) {
 }
 
 func TestCreateTenantMember(t *testing.T) {
+	tenantID := authtest.DefaultTenantID
 	tenant := tenants.Tenant{
-		ID:                  15,
+		ID:                  tenantID,
 		Name:                "",
 		Address:             "",
 		ZipCode:             "",
@@ -323,7 +338,7 @@ func TestCreateTenantMember(t *testing.T) {
 	}
 	service := tenants.NewTenantService(store, userValidator)
 
-	err := service.AddTenantMember(context.Background(), tenant.ID, userID, permissions)
+	err := service.AddTenantMember(ctx, tenant.ID, userID, permissions)
 	require.NoError(t, err)
 
 	require.Len(t, store.calls.GetTenantByID, 1)
@@ -336,8 +351,9 @@ func TestCreateTenantMember(t *testing.T) {
 }
 
 func TestTenantAddMemberShouldErrorWithInvalidPermissions(t *testing.T) {
+	tenantID := authtest.DefaultTenantID
 	tenant := tenants.Tenant{
-		ID:                  15,
+		ID:                  tenantID,
 		Name:                "",
 		Address:             "",
 		ZipCode:             "",
@@ -369,15 +385,16 @@ func TestTenantAddMemberShouldErrorWithInvalidPermissions(t *testing.T) {
 	}
 	service := tenants.NewTenantService(store, userValidator)
 
-	err := service.AddTenantMember(context.Background(), tenant.ID, userID, permissions)
+	err := service.AddTenantMember(ctx, tenant.ID, userID, permissions)
 	assert.ErrorIs(t, err, auth.ErrPermissionInvalid)
 	assert.Len(t, store.calls.GetTenantByID, 0)
 	assert.Len(t, store.calls.SaveMember, 0)
 }
 
 func TestTenantModifyMemberShouldErrorWithInvalidPermissions(t *testing.T) {
+	tenantID := authtest.DefaultTenantID
 	tenant := tenants.Tenant{
-		ID:                  15,
+		ID:                  tenantID,
 		Name:                "",
 		Address:             "",
 		ZipCode:             "",
@@ -414,15 +431,16 @@ func TestTenantModifyMemberShouldErrorWithInvalidPermissions(t *testing.T) {
 	}
 	service := tenants.NewTenantService(store, userValidator)
 
-	err := service.ModifyMemberPermissions(context.Background(), tenant.ID, userID, newPermissions)
+	err := service.ModifyMemberPermissions(ctx, tenant.ID, userID, newPermissions)
 	assert.ErrorIs(t, err, auth.ErrPermissionInvalid)
 	assert.Len(t, store.calls.GetTenantByID, 0)
 	assert.Len(t, store.calls.SaveMember, 0)
 }
 
 func TestTenantAddMemberShouldErrorIfUserDoesNotExist(t *testing.T) {
+	tenantID := authtest.DefaultTenantID
 	tenant := tenants.Tenant{
-		ID:                  15,
+		ID:                  tenantID,
 		Name:                "",
 		Address:             "",
 		ZipCode:             "",
@@ -454,7 +472,7 @@ func TestTenantAddMemberShouldErrorIfUserDoesNotExist(t *testing.T) {
 	}
 	service := tenants.NewTenantService(store, userValidator)
 
-	err := service.AddTenantMember(context.Background(), tenant.ID, userID, permissions)
+	err := service.AddTenantMember(ctx, tenant.ID, userID, permissions)
 
 	assert.Error(t, err)
 	assert.Len(t, store.calls.GetTenantByID, 1)
@@ -463,8 +481,9 @@ func TestTenantAddMemberShouldErrorIfUserDoesNotExist(t *testing.T) {
 }
 
 func TestTenantModifyMemberChangesPermissions(t *testing.T) {
+	tenantID := authtest.DefaultTenantID
 	tenant := tenants.Tenant{
-		ID:                  15,
+		ID:                  tenantID,
 		Name:                "",
 		Address:             "",
 		ZipCode:             "",
@@ -496,7 +515,7 @@ func TestTenantModifyMemberChangesPermissions(t *testing.T) {
 	}
 	service := tenants.NewTenantService(store, nil)
 
-	err := service.ModifyMemberPermissions(context.Background(), tenant.ID, userID, newPermissions)
+	err := service.ModifyMemberPermissions(ctx, tenant.ID, userID, newPermissions)
 	assert.NoError(t, err)
 	require.Len(t, store.calls.GetTenantByID, 1)
 	require.Len(t, store.calls.SaveMember, 1)

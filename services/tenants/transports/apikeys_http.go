@@ -133,15 +133,8 @@ func (t *APIKeysHTTPTransport) httpCreateApiKey() http.HandlerFunc {
 			params.ExpirationDate,
 		)
 		if err != nil {
-			if errors.Is(err, apikeys.ErrTenantIsNotValid) {
-				web.HTTPResponse(w, http.StatusNotFound, web.APIResponseAny{
-					Message: "Organisation does not exist or has been archived",
-				})
-				return
-			} else {
-				web.HTTPError(w, err)
-				return
-			}
+			web.HTTPError(w, err)
+			return
 		}
 		web.HTTPResponse(w, http.StatusCreated, Result{
 			ApiKey: apiKey,

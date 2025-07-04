@@ -10,33 +10,43 @@ import (
 	"sensorbucket.nl/sensorbucket/services/tenants/sessions"
 )
 
-func TestTenantActiveButUserNotMemberShouldError(t *testing.T) {
+func TestUserPrefersTenantButIsNotAMemberShouldFallbackToTenantWithMembership(t *testing.T) {
 	ctx := context.Background()
 	userID := uuid.New().String()
-	activeTenantID := int64(15)
+	preferedTenant := int64(15)
 	store := &UserPreferenceStoreMock{
 		ActiveTenantIDFunc: func(userID string) (int64, error) {
-			return activeTenantID, nil
-		},
-		IsMemberFunc: func(ctx context.Context, tenantID int64, userID string, explicit bool) (bool, error) {
-			return false, nil
+			return preferedTenant, nil
 		},
 		SetActiveTenantIDFunc: func(userID string, tenantID int64) error {
 			return nil
 		},
 	}
-	service := sessions.NewUserPreferenceService(store)
+	tenantStore := &TenantStoreMock{
+		IsMemberFunc: func(ctx context.Context, tenantID int64, userID string, explicit bool) (bool, error) {
+			return false, nil
+		},
+	}
+	service := sessions.NewUserPreferenceService(store, tenantStore)
 
+	// Act
 	tenantID, err := service.ActiveTenantID(ctx, userID)
+
+	// Assert
 	assert.ErrorIs(t, err, sessions.ErrPreferenceNotSet)
 	assert.EqualValues(t, 0, tenantID)
 	assert.Len(t, store.calls.ActiveTenantID, 1)
-	assert.Len(t, store.calls.SetActiveTenantID, 1, "expected an update to active tenant id")
-	assert.Len(t, store.calls.IsMember, 1, "expected service to validate if user is a member")
+	assert.Len(t, store.calls.SetActiveTenantID, 1, "expected an update to active tenant id to 0")
+	assert.Greater(
+		t,
+		len(tenantStore.calls.IsMember),
+		0,
+		"expected service to validate if user is a member",
+	)
 	assert.EqualValues(t, userID, store.calls.ActiveTenantID[0].UserID)
 	assert.EqualValues(t, userID, store.calls.SetActiveTenantID[0].UserID)
-	assert.EqualValues(t, userID, store.calls.IsMember[0].UserID)
-	assert.EqualValues(t, activeTenantID, store.calls.IsMember[0].TenantID)
+	assert.EqualValues(t, userID, tenantStore.calls.IsMember[0].UserID)
+	assert.EqualValues(t, preferedTenant, tenantStore.calls.IsMember[0].TenantID)
 }
 
 func TestSettingTenantWithoutMembershipShouldError(t *testing.T) {
@@ -44,14 +54,16 @@ func TestSettingTenantWithoutMembershipShouldError(t *testing.T) {
 	userID := uuid.New().String()
 	activeTenantID := int64(15)
 	store := &UserPreferenceStoreMock{
-		IsMemberFunc: func(ctx context.Context, tenantID int64, userID string, explicit bool) (bool, error) {
-			return false, nil
-		},
 		SetActiveTenantIDFunc: func(userID string, tenantID int64) error {
 			return nil
 		},
 	}
-	service := sessions.NewUserPreferenceService(store)
+	tenantStore := &TenantStoreMock{
+		IsMemberFunc: func(ctx context.Context, tenantID int64, userID string, explicit bool) (bool, error) {
+			return false, nil
+		},
+	}
+	service := sessions.NewUserPreferenceService(store, tenantStore)
 
 	err := service.SetActiveTenantIDForUser(ctx, userID, activeTenantID)
 	assert.ErrorIs(t, err, sessions.ErrUserNotAMember)
@@ -61,7 +73,7 @@ func TestSettingTenantWithoutMembershipShouldError(t *testing.T) {
 		0,
 		"should not update active tenant if user is not a member",
 	)
-	assert.Len(t, store.calls.IsMember, 1, "expected service to validate if user is a member")
-	assert.EqualValues(t, userID, store.calls.IsMember[0].UserID)
-	assert.EqualValues(t, activeTenantID, store.calls.IsMember[0].TenantID)
+	assert.Len(t, tenantStore.calls.IsMember, 1, "expected service to validate if user is a member")
+	assert.EqualValues(t, userID, tenantStore.calls.IsMember[0].UserID)
+	assert.EqualValues(t, activeTenantID, tenantStore.calls.IsMember[0].TenantID)
 }

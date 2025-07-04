@@ -82,7 +82,7 @@ var stringPermissionMap = lo.SliceToMap(allPermissions, func(item Permission) (s
 func (this Permissions) Fulfills(that Permissions) error {
 	_, missing := lo.Difference(this, that)
 	if len(missing) > 0 {
-		return fmt.Errorf("missing: %v", missing)
+		return ErrUnauthorized
 	}
 	return nil
 }

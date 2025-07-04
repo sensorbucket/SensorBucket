@@ -24,7 +24,6 @@ var (
 
 type UserPreferenceStore interface {
 	ActiveTenantID(userID string) (int64, error)
-	IsMember(ctx context.Context, tenantID int64, userID string, explicit bool) (bool, error)
 	SetActiveTenantID(userID string, tenantID int64) error
 }
 
@@ -43,39 +42,57 @@ func NewUserPreferenceService(
 	}
 }
 
+// ActiveTenantID returns the user's preferred tentant. This also validates that the user is a member, if the user
+// isn't a member its preferred tenant will be set to 0 and the ErrPreferenceNotSet error will be returned and the
+// caller is responsible for the next actions.
 func (userPreferenceService *UserPreferenceService) ActiveTenantID(
 	ctx context.Context,
 	userID string,
 ) (int64, error) {
 	tenantID, err := userPreferenceService.store.ActiveTenantID(userID)
-
-	// If the user has no preference set, set a fallback value
-	if errors.Is(err, ErrPreferenceNotSet) {
-		log.Printf("no tenant is set for user (%s), will try and set fallback tenant\n", userID)
-		err := userPreferenceService.SetActiveTenantIDForUser(ctx, userID, 0)
-		if err != nil {
-			log.Printf(
-				"Tried resetting user active tenant since the user is not a member anymore, but the update failed: %v\n",
-				err,
-			)
-		}
-	} else if err != nil {
-		return 0, err
-	}
-
-	isMember, err := userPreferenceService.store.IsMember(ctx, tenantID, userID, false)
 	if err != nil {
 		return 0, err
-	} else if !isMember {
-		err := userPreferenceService.SetActiveTenantIDForUser(ctx, userID, 0)
-		if err != nil {
+	}
+
+	isMember, err := userPreferenceService.tenantStore.IsMember(ctx, tenantID, userID, false)
+	if err != nil {
+		return 0, err
+	}
+	if !isMember {
+		log.Printf(
+			"user (%s) is not a member of preferred tenant (%d), will remove preference\n",
+			userID,
+			tenantID,
+		)
+
+		if err := userPreferenceService.store.SetActiveTenantID(userID, 0); err != nil {
 			log.Printf(
-				"Tried resetting user active tenant since the user is not a member anymore, but the update failed: %v\n",
-				err,
+				"error: User is not a member of prefered tenant anymore, but falling back to a tenant it is a member of was not possible: %s\n",
+				err.Error(),
 			)
 		}
+
 		return 0, ErrPreferenceNotSet
 	}
+
+	// If we reach here, tenantID is valid and user is a member.
+	return tenantID, nil
+}
+
+// SetUserPreferedTenantToFallback will set the user's prefered tenant to one it is a member of.
+func (service *UserPreferenceService) SetUserPreferedTenantToFallback(
+	ctx context.Context,
+	userID string,
+) (int64, error) {
+	tenantID, err := service.getFallbackTenantID(ctx, userID)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := service.SetActiveTenantIDForUser(ctx, userID, tenantID); err != nil {
+		return 0, err
+	}
+
 	return tenantID, nil
 }
 
@@ -86,7 +103,7 @@ func (service *UserPreferenceService) getFallbackTenantID(
 	tenants, err := service.tenantStore.List(
 		ctx,
 		tenants.StoreFilter{MemberID: userID, State: []tenants.State{tenants.Active}},
-		pagination.Request{},
+		pagination.Request{Limit: 1},
 	)
 	if err != nil {
 		return 0, err
@@ -115,7 +132,7 @@ func (userPreferenceService *UserPreferenceService) SetActiveTenantIDForUser(
 
 	// tenantID 0 is a special case and unsets the active tenant, therefor membership check is not required
 	if tenantID > 0 {
-		isMember, err := userPreferenceService.store.IsMember(ctx, tenantID, userID, false)
+		isMember, err := userPreferenceService.tenantStore.IsMember(ctx, tenantID, userID, false)
 		if err != nil {
 			return fmt.Errorf(
 				"in SetActiveTenantID PSQL Store, while validating user membership with tenant, error occured: %w",

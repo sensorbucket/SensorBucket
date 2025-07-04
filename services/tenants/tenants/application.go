@@ -64,6 +64,10 @@ func (s *TenantService) CreateNewTenant(
 ) (CreateTenantDTO, error) {
 	return CreateTenantDTO{}, auth.ErrForbidden
 
+	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_TENANTS}); err != nil {
+		return CreateTenantDTO{}, err
+	}
+
 	tenant := NewTenant(dto)
 	if tenant.ParentID != nil {
 		parent, err := s.tenantStore.GetTenantByID(ctx, *tenant.ParentID)
@@ -106,7 +110,9 @@ func (s *TenantService) GetTenantByID(ctx context.Context, id int64) (*Tenant, e
 // Sets a tenant's state to Archived
 // ErrTenantNotFound is returned if the tenant is not found or the state has already been set to Archived
 func (s *TenantService) ArchiveTenant(ctx context.Context, tenantID int64) error {
-	return auth.ErrForbidden
+	if err := auth.MustHaveTenantPermissions(ctx, tenantID, auth.Permissions{auth.WRITE_TENANTS}); err != nil {
+		return err
+	}
 
 	tenant, err := s.tenantStore.GetTenantByID(ctx, tenantID)
 	if err != nil {
@@ -148,7 +154,9 @@ func (s *TenantService) AddTenantMember(
 	userID string,
 	permissions auth.Permissions,
 ) error {
-	return auth.ErrForbidden
+	if err := auth.MustHaveTenantPermissions(ctx, tenantID, auth.Permissions{auth.WRITE_TENANTS}); err != nil {
+		return err
+	}
 
 	if err := auth.Permissions(permissions).Validate(); err != nil {
 		return err
@@ -186,7 +194,9 @@ func (s *TenantService) UpdateTenantMember(
 	userID string,
 	permissions auth.Permissions,
 ) error {
-	return auth.ErrForbidden
+	if err := auth.MustHaveTenantPermissions(ctx, tenantID, auth.Permissions{auth.WRITE_TENANTS}); err != nil {
+		return err
+	}
 
 	if err := auth.Permissions(permissions).Validate(); err != nil {
 		return err
@@ -213,7 +223,9 @@ func (s *TenantService) RemoveTenantMember(
 	tenantID int64,
 	userID string,
 ) error {
-	return auth.ErrForbidden
+	if err := auth.MustHaveTenantPermissions(ctx, tenantID, auth.Permissions{auth.WRITE_TENANTS}); err != nil {
+		return err
+	}
 
 	_, err := s.tenantStore.GetMember(ctx, tenantID, userID)
 	if err != nil {
@@ -229,7 +241,9 @@ func (s *TenantService) ModifyMemberPermissions(
 	userID string,
 	permissions auth.Permissions,
 ) error {
-	return auth.ErrForbidden
+	if err := auth.MustHaveTenantPermissions(ctx, tenantID, auth.Permissions{auth.WRITE_TENANTS}); err != nil {
+		return err
+	}
 
 	if err := auth.Permissions(permissions).Validate(); err != nil {
 		return err

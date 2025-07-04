@@ -1,7 +1,9 @@
 package tenantstransports
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -61,6 +63,13 @@ func (ep *OathkeeperEndpoint) setupRoutes() {
 		session.Extra["perms"] = []string{}
 
 		tID, err := ep.users.ActiveTenantID(r.Context(), session.Subject)
+		if errors.Is(err, sessions.ErrPreferenceNotSet) {
+			tID, err = ep.users.SetUserPreferedTenantToFallback(r.Context(), session.Subject)
+			if err != nil {
+				log.Printf("error falling back user's preferred tenant: %s\n", err.Error())
+				return
+			}
+		}
 		if err != nil {
 			fmt.Printf("Hydration error getting active tenant: %s\n", err)
 			return

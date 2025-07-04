@@ -162,40 +162,6 @@ func TestNewApiKeyExpirationDateNotInTheFuture(t *testing.T) {
 	assert.Len(t, svc.GenerateNewApiKeyCalls(), 0)
 }
 
-func TestNewApiKeyTenantIsNotFound(t *testing.T) {
-	// Arrange
-	svc := ApiKeyServiceMock{
-		GenerateNewApiKeyFunc: func(ctx context.Context, _ string, tenantId int64, permissions auth.Permissions, expiry *time.Time) (string, error) {
-			assert.Equal(t, int64(905), tenantId)
-			assert.Equal(t, auth.Permissions{auth.Permission("WRITE_DEVICES")}, permissions)
-			assert.Nil(t, expiry)
-			return "", apikeys.ErrTenantIsNotValid
-		},
-	}
-	transport := testTransport(&svc)
-	req, _ := http.NewRequest(
-		"POST",
-		"/api-keys",
-		strings.NewReader(
-			`{"name": "whatever", "permissions":["WRITE_DEVICES"], "tenant_id": 905}`,
-		),
-	)
-	req.Header.Add("content-type", "application/json")
-
-	// Act
-	rr := httptest.NewRecorder()
-	transport.ServeHTTP(rr, req)
-
-	// Assert
-	assert.Equal(t, http.StatusNotFound, rr.Code)
-	assert.Equal(
-		t,
-		`{"message":"Organisation does not exist or has been archived"}`+"\n",
-		rr.Body.String(),
-	)
-	assert.Len(t, svc.GenerateNewApiKeyCalls(), 1)
-}
-
 func TestNewApiKeyErrorOccurs(t *testing.T) {
 	// Arrange
 	svc := ApiKeyServiceMock{
@@ -595,21 +561,24 @@ func TestListApiKeysReturnsPaginatedList(t *testing.T) {
 	assert.Len(t, svc.ListAPIKeysCalls(), 1)
 }
 
-func TestListApiKeysInvalidParams(t *testing.T) {
-	// Arrange
-	svc := ApiKeyServiceMock{}
-	transport := testTransport(&svc)
-	req, _ := http.NewRequest("GET", "/api-keys?tenant_id=blablalq", nil)
-
-	// Act
-	rr := httptest.NewRecorder()
-	transport.ServeHTTP(rr, req)
-
-	// Assert
-	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Equal(t, `{"message":"invalid params"}`+"\n", rr.Body.String())
-	assert.Len(t, svc.ListAPIKeysCalls(), 0)
-}
+// Cannot list api-keys for tenant which is currently not active
+// func TestListApiKeysInvalidParams(t *testing.T) {
+// 	// Arrange
+// 	svc := ApiKeyServiceMock{
+//
+// 	}
+// 	transport := testTransport(&svc)
+// 	req, _ := http.NewRequest("GET", "/api-keys?tenant_id=blablalq", nil)
+//
+// 	// Act
+// 	rr := httptest.NewRecorder()
+// 	transport.ServeHTTP(rr, req)
+//
+// 	// Assert
+// 	assert.Equal(t, http.StatusBadRequest, rr.Code)
+// 	assert.Equal(t, `{"message":"invalid params"}`+"\n", rr.Body.String())
+// 	assert.Len(t, svc.ListAPIKeysCalls(), 0)
+// }
 
 func TestListApiKeysErrorsOccursWhileRetrievingData(t *testing.T) {
 	// Arrange

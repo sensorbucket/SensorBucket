@@ -5,6 +5,7 @@ package apikeys
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,11 +20,6 @@ import (
 )
 
 var (
-	ErrTenantIsNotValid = web.NewError(
-		http.StatusNotFound,
-		"API Key not found",
-		"ERR_KEY_NOT_FOUND",
-	)
 	ErrKeyNotFound = web.NewError(
 		http.StatusNotFound,
 		"API Key not found",
@@ -34,7 +30,7 @@ var (
 		"API Key was sent using invalid encoding",
 		"ERR_API_KEY_MALFORMED",
 	)
-	ErrKeyNameTenantIDCombinationNotUnique = web.NewError(
+	ErrDuplicateKeyName = web.NewError(
 		http.StatusBadRequest,
 		"API Key with name already exists for this tenant",
 		"API_KEY_NAME_TENANT_COMBO_NOT_UNIQUE",
@@ -95,23 +91,17 @@ func (s *Service) GenerateNewApiKey(
 	if err := permissions.Validate(); err != nil {
 		return "", fmt.Errorf("%w: %w", ErrPermissionsInvalid, err)
 	}
-	tenant, err := s.tenantStore.GetTenantByID(ctx, tenantId)
-	if err != nil {
-		return "", err
-	}
-	if tenant.State != tenants.Active {
-		return "", ErrTenantIsNotValid
-	}
-	existing, err := s.apiKeyStore.GetHashedAPIKeyByNameAndTenantID(ctx, name, tenantId)
-	if err != nil && err != ErrKeyNotFound {
+	_, err := s.apiKeyStore.GetHashedAPIKeyByNameAndTenantID(ctx, name, tenantId)
+	if errors.Is(err, ErrKeyNotFound) {
+	} else if err != nil {
 		return "", fmt.Errorf(
 			"in GenerateNewApiKey, could not check for existing key due to err: %w",
 			err,
 		)
+	} else {
+		return "", ErrDuplicateKeyName
 	}
-	if existing.ID > 0 {
-		return "", ErrKeyNameTenantIDCombinationNotUnique
-	}
+
 	newApiKey, err := newApiKey(name, expirationDate)
 	if err != nil {
 		return "", err
@@ -120,7 +110,7 @@ func (s *Service) GenerateNewApiKey(
 	if err != nil {
 		return "", err
 	}
-	err = s.apiKeyStore.AddApiKey(ctx, tenant.ID, permissions, hashed)
+	err = s.apiKeyStore.AddApiKey(ctx, tenantId, permissions, hashed)
 	if err != nil {
 		return "", err
 	}
@@ -170,7 +160,10 @@ func (s *Service) AuthenticateApiKey(
 }
 
 // GetAPIKey returns an api key by ID and removes the secret hash
-func (s *Service) GetAPIKey(ctx context.Context, id int64) (*HashedApiKey, error) {
+func (s *Service) GetAPIKey(
+	ctx context.Context,
+	id int64,
+) (*HashedApiKey, error) {
 	tenantID, err := auth.GetTenant(ctx)
 	if err != nil {
 		return nil, err
@@ -187,7 +180,7 @@ func (s *Service) GetAPIKey(ctx context.Context, id int64) (*HashedApiKey, error
 	}
 	if hashed.IsExpired() {
 		log.Println("[Info] detected expired API key, deleting")
-		if err := s.RevokeApiKey(ctx, id); err != nil {
+		if err := s.apiKeyStore.DeleteApiKey(ctx, id); err != nil {
 			log.Printf("[Warning] couldn't cleanup expired API key: '%s'\n", err)
 		}
 		return nil, ErrKeyNotFound
