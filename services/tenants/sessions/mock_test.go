@@ -4,6 +4,7 @@
 package sessions_test
 
 import (
+	"context"
 	"sensorbucket.nl/sensorbucket/services/tenants/sessions"
 	"sync"
 )
@@ -21,7 +22,7 @@ var _ sessions.UserPreferenceStore = &UserPreferenceStoreMock{}
 //			ActiveTenantIDFunc: func(userID string) (int64, error) {
 //				panic("mock out the ActiveTenantID method")
 //			},
-//			IsMemberFunc: func(tenantID int64, userID string, explicit bool) (bool, error) {
+//			IsMemberFunc: func(ctx context.Context, tenantID int64, userID string, explicit bool) (bool, error) {
 //				panic("mock out the IsMember method")
 //			},
 //			SetActiveTenantIDFunc: func(userID string, tenantID int64) error {
@@ -38,7 +39,7 @@ type UserPreferenceStoreMock struct {
 	ActiveTenantIDFunc func(userID string) (int64, error)
 
 	// IsMemberFunc mocks the IsMember method.
-	IsMemberFunc func(tenantID int64, userID string, explicit bool) (bool, error)
+	IsMemberFunc func(ctx context.Context, tenantID int64, userID string, explicit bool) (bool, error)
 
 	// SetActiveTenantIDFunc mocks the SetActiveTenantID method.
 	SetActiveTenantIDFunc func(userID string, tenantID int64) error
@@ -52,6 +53,8 @@ type UserPreferenceStoreMock struct {
 		}
 		// IsMember holds details about calls to the IsMember method.
 		IsMember []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// TenantID is the tenantID argument value.
 			TenantID int64
 			// UserID is the userID argument value.
@@ -105,15 +108,17 @@ func (mock *UserPreferenceStoreMock) ActiveTenantIDCalls() []struct {
 }
 
 // IsMember calls IsMemberFunc.
-func (mock *UserPreferenceStoreMock) IsMember(tenantID int64, userID string, explicit bool) (bool, error) {
+func (mock *UserPreferenceStoreMock) IsMember(ctx context.Context, tenantID int64, userID string, explicit bool) (bool, error) {
 	if mock.IsMemberFunc == nil {
 		panic("UserPreferenceStoreMock.IsMemberFunc: method is nil but UserPreferenceStore.IsMember was just called")
 	}
 	callInfo := struct {
+		Ctx      context.Context
 		TenantID int64
 		UserID   string
 		Explicit bool
 	}{
+		Ctx:      ctx,
 		TenantID: tenantID,
 		UserID:   userID,
 		Explicit: explicit,
@@ -121,7 +126,7 @@ func (mock *UserPreferenceStoreMock) IsMember(tenantID int64, userID string, exp
 	mock.lockIsMember.Lock()
 	mock.calls.IsMember = append(mock.calls.IsMember, callInfo)
 	mock.lockIsMember.Unlock()
-	return mock.IsMemberFunc(tenantID, userID, explicit)
+	return mock.IsMemberFunc(ctx, tenantID, userID, explicit)
 }
 
 // IsMemberCalls gets all the calls that were made to IsMember.
@@ -129,11 +134,13 @@ func (mock *UserPreferenceStoreMock) IsMember(tenantID int64, userID string, exp
 //
 //	len(mockedUserPreferenceStore.IsMemberCalls())
 func (mock *UserPreferenceStoreMock) IsMemberCalls() []struct {
+	Ctx      context.Context
 	TenantID int64
 	UserID   string
 	Explicit bool
 } {
 	var calls []struct {
+		Ctx      context.Context
 		TenantID int64
 		UserID   string
 		Explicit bool

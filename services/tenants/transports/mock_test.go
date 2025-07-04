@@ -33,7 +33,7 @@ var _ tenantstransports.ApiKeyService = &ApiKeyServiceMock{}
 //			GetAPIKeyFunc: func(ctx context.Context, id int64) (*apikeys.HashedApiKey, error) {
 //				panic("mock out the GetAPIKey method")
 //			},
-//			ListAPIKeysFunc: func(ctx context.Context, filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
+//			ListAPIKeysFunc: func(ctx context.Context, filter apikeys.APIKeyFilter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
 //				panic("mock out the ListAPIKeys method")
 //			},
 //			RevokeApiKeyFunc: func(ctx context.Context, id int64) error {
@@ -56,7 +56,7 @@ type ApiKeyServiceMock struct {
 	GetAPIKeyFunc func(ctx context.Context, id int64) (*apikeys.HashedApiKey, error)
 
 	// ListAPIKeysFunc mocks the ListAPIKeys method.
-	ListAPIKeysFunc func(ctx context.Context, filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
+	ListAPIKeysFunc func(ctx context.Context, filter apikeys.APIKeyFilter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
 
 	// RevokeApiKeyFunc mocks the RevokeApiKey method.
 	RevokeApiKeyFunc func(ctx context.Context, id int64) error
@@ -95,7 +95,7 @@ type ApiKeyServiceMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Filter is the filter argument value.
-			Filter apikeys.Filter
+			Filter apikeys.APIKeyFilter
 			// P is the p argument value.
 			P pagination.Request
 		}
@@ -235,13 +235,13 @@ func (mock *ApiKeyServiceMock) GetAPIKeyCalls() []struct {
 }
 
 // ListAPIKeys calls ListAPIKeysFunc.
-func (mock *ApiKeyServiceMock) ListAPIKeys(ctx context.Context, filter apikeys.Filter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
+func (mock *ApiKeyServiceMock) ListAPIKeys(ctx context.Context, filter apikeys.APIKeyFilter, p pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
 	if mock.ListAPIKeysFunc == nil {
 		panic("ApiKeyServiceMock.ListAPIKeysFunc: method is nil but ApiKeyService.ListAPIKeys was just called")
 	}
 	callInfo := struct {
 		Ctx    context.Context
-		Filter apikeys.Filter
+		Filter apikeys.APIKeyFilter
 		P      pagination.Request
 	}{
 		Ctx:    ctx,
@@ -260,12 +260,12 @@ func (mock *ApiKeyServiceMock) ListAPIKeys(ctx context.Context, filter apikeys.F
 //	len(mockedApiKeyService.ListAPIKeysCalls())
 func (mock *ApiKeyServiceMock) ListAPIKeysCalls() []struct {
 	Ctx    context.Context
-	Filter apikeys.Filter
+	Filter apikeys.APIKeyFilter
 	P      pagination.Request
 } {
 	var calls []struct {
 		Ctx    context.Context
-		Filter apikeys.Filter
+		Filter apikeys.APIKeyFilter
 		P      pagination.Request
 	}
 	mock.lockListAPIKeys.RLock()

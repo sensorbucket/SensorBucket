@@ -17,7 +17,10 @@ type OathkeeperEndpoint struct {
 	users         *sessions.UserPreferenceService
 }
 
-func NewOathkeeperEndpoint(users *sessions.UserPreferenceService, tenant *tenants.TenantService) *OathkeeperEndpoint {
+func NewOathkeeperEndpoint(
+	users *sessions.UserPreferenceService,
+	tenant *tenants.TenantService,
+) *OathkeeperEndpoint {
 	ep := &OathkeeperEndpoint{
 		router:        chi.NewRouter(),
 		tenantService: tenant,
@@ -62,6 +65,7 @@ func (ep *OathkeeperEndpoint) setupRoutes() {
 			fmt.Printf("Hydration error getting active tenant: %s\n", err)
 			return
 		}
+
 		permissions, err := ep.tenantService.GetMemberPermissions(r.Context(), tID, session.Subject)
 		if err != nil {
 			fmt.Printf("Hydration error getting member permissions: %s\n", err)

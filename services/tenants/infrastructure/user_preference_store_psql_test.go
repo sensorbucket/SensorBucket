@@ -84,7 +84,7 @@ func TestUserPreferedTenantStorePSQL(t *testing.T) {
 	store := tenantsinfra.NewTenantsStorePSQL(db)
 
 	t.Run("User should be member of tenant", func(t *testing.T) {
-		isMember, err := store.IsMember(tenantID, userID, false)
+		isMember, err := store.IsMember(ctx, tenantID, userID, false)
 		assert.NoError(t, err)
 		assert.Equal(t, true, isMember)
 	})

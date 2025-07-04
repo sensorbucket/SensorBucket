@@ -26,14 +26,18 @@ type APIKeysPageHandler struct {
 	tenants *tenants.TenantService
 }
 
-func SetupAPIKeyRoutes(apiKeys *apikeys.Service, tenants *tenants.TenantService) *APIKeysPageHandler {
+func SetupAPIKeyRoutes(
+	apiKeys *apikeys.Service,
+	tenants *tenants.TenantService,
+) *APIKeysPageHandler {
 	handler := &APIKeysPageHandler{
 		router:  chi.NewRouter(),
 		apiKeys: apiKeys,
 		tenants: tenants,
 	}
 	handler.router.With(flash_messages.ExtractFlashMessage).Get("/", handler.apiKeysListPage())
-	handler.router.With(flash_messages.ExtractFlashMessage).Get("/create", handler.createAPIKeyView())
+	handler.router.With(flash_messages.ExtractFlashMessage).
+		Get("/create", handler.createAPIKeyView())
 	handler.router.Get("/table", handler.apiKeysGetTableRows())
 	handler.router.Post("/create", handler.createAPIKey())
 
@@ -64,7 +68,7 @@ func (h *APIKeysPageHandler) apiKeysGetTableRows() http.HandlerFunc {
 		}
 		apiKeyPage, err := h.apiKeys.ListAPIKeys(
 			r.Context(),
-			apikeys.Filter{
+			apikeys.APIKeyFilter{
 				TenantID: tenantIDS,
 			},
 			pagination.Request{
@@ -132,7 +136,11 @@ func (h *APIKeysPageHandler) apiKeysListPage() http.HandlerFunc {
 		if err != nil {
 			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
 				log.Printf("list api key result api unexpected status code: %s\n", err)
-				flash_messages.AddErrorFlashMessageToPage(r, &page.FlashMessagesContainer, *apiErr.Message)
+				flash_messages.AddErrorFlashMessageToPage(
+					r,
+					&page.FlashMessagesContainer,
+					*apiErr.Message,
+				)
 			} else {
 				log.Printf("list api key result api error: %s\n", err)
 				flash_messages.AddErrorFlashMessageToPage(r, &page.FlashMessagesContainer, "An unexpected error occurred in the API")
@@ -165,6 +173,7 @@ func (h *APIKeysPageHandler) revokeAPIKey() http.HandlerFunc {
 		if r.Method == http.MethodGet {
 			key, err := h.apiKeys.GetAPIKey(r.Context(), apiKeyID)
 			if err != nil {
+				log.Printf("could fulfill revoke api key form request: %s\n", err.Error())
 				flash_messages.AddErrorFlashMessage(w, r, "Could not get requested API Key")
 				w.Header().Set("HX-Redirect", "/tenants/api-keys")
 				http.Redirect(w, r, views.U("/api-keys"), http.StatusSeeOther)
@@ -172,6 +181,7 @@ func (h *APIKeysPageHandler) revokeAPIKey() http.HandlerFunc {
 			}
 			tenant, err := h.tenants.GetTenantByID(r.Context(), key.TenantID)
 			if err != nil {
+				log.Printf("could fulfill revoke api key form request: %s\n", err.Error())
 				flash_messages.AddErrorFlashMessage(w, r, "Could not get requested API Key")
 				w.Header().Set("HX-Redirect", "/tenants/api-keys")
 				http.Redirect(w, r, views.U("/api-keys"), http.StatusSeeOther)
@@ -262,10 +272,13 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 		}
 
 		// Add the API key as a flash message
-		flash_messages.AddWarningFlashMessage(w, r,
+		flash_messages.AddWarningFlashMessage(
+			w,
+			r,
 			"This is your API key. Please copy your API key immediately as it will not be shown again.",
 			apiKey,
-			true)
+			true,
+		)
 
 		// Redirect to overview page so that it may be shown
 		http.Redirect(w, r, "/tenants/api-keys", http.StatusSeeOther)
@@ -275,10 +288,17 @@ func (h *APIKeysPageHandler) createAPIKey() http.HandlerFunc {
 func (h *APIKeysPageHandler) createAPIKeyView() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Retrieve the tenants for the select box in the create view
-		tenantsPage, err := h.tenants.ListTenants(r.Context(), tenants.Filter{State: []tenants.State{tenants.Active}}, pagination.Request{})
+		tenantsPage, err := h.tenants.ListTenants(
+			r.Context(),
+			tenants.Filter{State: []tenants.State{tenants.Active}},
+			pagination.Request{},
+		)
 		if err != nil {
 			if apiErr, ok := flash_messages.IsAPIError(err); ok && apiErr.Message != nil {
-				log.Printf("list api key result for create view api unexpected status code: %s\n", err)
+				log.Printf(
+					"list api key result for create view api unexpected status code: %s\n",
+					err,
+				)
 				flash_messages.AddErrorFlashMessage(w, r, *apiErr.Message)
 			} else {
 				log.Printf("list api key result for create view api error: %s\n", err)
@@ -318,29 +338,41 @@ func toViewPermissions() (map[views.OrderedMapKey][]views.APIKeysPermission, err
 	for _, p := range allPermissions {
 		authAsStrSlice = append(authAsStrSlice, p.String())
 	}
-	viewAsSlice := lo.Map(lo.Flatten(lo.Values(categorized)), func(view views.APIKeysPermission, index int) string {
-		return view.Name
-	})
+	viewAsSlice := lo.Map(
+		lo.Flatten(lo.Values(categorized)),
+		func(view views.APIKeysPermission, index int) string {
+			return view.Name
+		},
+	)
 
 	// Check if there is any difference between the frontend's definition and the auth package definition
 	missingInView, missingInAuth := lo.Difference(authAsStrSlice, viewAsSlice)
 	if len(missingInAuth) > 0 {
 		// Auth package is the single point of truth, if there are permissions missing the frontend package might have
 		// outdated permission which the user should not be able to set
-		return nil, fmt.Errorf("view permissions contains invalid permissions (%d invalid permissions)", len(missingInAuth))
+		return nil, fmt.Errorf(
+			"view permissions contains invalid permissions (%d invalid permissions)",
+			len(missingInAuth),
+		)
 	}
 	if len(missingInView) > 0 {
 		// Frontend might not be updated with latest permissions, simply log a warning since we can still show the missing permissions
 		// just without a category and description
-		log.Printf("[Warning] some permissions are missing in create view (%d missing permissions)\n", len(missingInView))
+		log.Printf(
+			"[Warning] some permissions are missing in create view (%d missing permissions)\n",
+			len(missingInView),
+		)
 	}
 	if len(missingInView) > 0 {
-		categorized[views.OrderedMapKey{Index: len(categorized), Value: " Other"}] = lo.Map(missingInView, func(val string, index int) views.APIKeysPermission {
-			return views.APIKeysPermission{
-				Name:        val,
-				Description: "-",
-			}
-		})
+		categorized[views.OrderedMapKey{Index: len(categorized), Value: " Other"}] = lo.Map(
+			missingInView,
+			func(val string, index int) views.APIKeysPermission {
+				return views.APIKeysPermission{
+					Name:        val,
+					Description: "-",
+				}
+			},
+		)
 	}
 	return categorized, nil
 }

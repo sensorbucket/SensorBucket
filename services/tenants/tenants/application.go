@@ -13,8 +13,16 @@ import (
 )
 
 var (
-	ErrUserNotValidated = web.NewError(http.StatusBadRequest, "Could not validate provided user ID", "ERR_USER_NOT_VALIDATED")
-	ErrSessionInvalid   = web.NewError(http.StatusBadRequest, "Invalid authentication session", "ERR_SESSION_INVALID")
+	ErrUserNotValidated = web.NewError(
+		http.StatusBadRequest,
+		"Could not validate provided user ID",
+		"ERR_USER_NOT_VALIDATED",
+	)
+	ErrSessionInvalid = web.NewError(
+		http.StatusBadRequest,
+		"Invalid authentication session",
+		"ERR_SESSION_INVALID",
+	)
 )
 
 type TenantService struct {
@@ -50,10 +58,15 @@ func NewTenantService(tenantStore TenantStore, userValidator UserValidator) *Ten
 
 // Creates a new tenant, if a parent tenant is given it must be found and have an active state,
 // otherwise ErrParentTenantNotFound is returned
-func (s *TenantService) CreateNewTenant(ctx context.Context, dto CreateTenantDTO) (CreateTenantDTO, error) {
+func (s *TenantService) CreateNewTenant(
+	ctx context.Context,
+	dto CreateTenantDTO,
+) (CreateTenantDTO, error) {
+	return CreateTenantDTO{}, auth.ErrForbidden
+
 	tenant := NewTenant(dto)
 	if tenant.ParentID != nil {
-		parent, err := s.tenantStore.GetTenantByID(*tenant.ParentID)
+		parent, err := s.tenantStore.GetTenantByID(ctx, *tenant.ParentID)
 		if err != nil {
 			return CreateTenantDTO{}, err
 		}
@@ -61,7 +74,7 @@ func (s *TenantService) CreateNewTenant(ctx context.Context, dto CreateTenantDTO
 			return CreateTenantDTO{}, ErrTenantNotActive
 		}
 	}
-	err := s.tenantStore.Create(&tenant)
+	err := s.tenantStore.Create(ctx, &tenant)
 	if err != nil {
 		return CreateTenantDTO{}, err
 	}
@@ -70,7 +83,20 @@ func (s *TenantService) CreateNewTenant(ctx context.Context, dto CreateTenantDTO
 }
 
 func (s *TenantService) GetTenantByID(ctx context.Context, id int64) (*Tenant, error) {
-	tenant, err := s.tenantStore.GetTenantByID(id)
+	userID, err := auth.GetUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	isMember, err := s.tenantStore.IsMember(ctx, id, userID, false)
+	if err != nil {
+		return nil, err
+	}
+	if !isMember {
+		return nil, ErrTenantNotFound
+	}
+
+	tenant, err := s.tenantStore.GetTenantByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +106,9 @@ func (s *TenantService) GetTenantByID(ctx context.Context, id int64) (*Tenant, e
 // Sets a tenant's state to Archived
 // ErrTenantNotFound is returned if the tenant is not found or the state has already been set to Archived
 func (s *TenantService) ArchiveTenant(ctx context.Context, tenantID int64) error {
-	tenant, err := s.tenantStore.GetTenantByID(tenantID)
+	return auth.ErrForbidden
+
+	tenant, err := s.tenantStore.GetTenantByID(ctx, tenantID)
 	if err != nil {
 		return err
 	}
@@ -88,7 +116,7 @@ func (s *TenantService) ArchiveTenant(ctx context.Context, tenantID int64) error
 		return ErrTenantNotActive
 	}
 	tenant.State = Archived
-	return s.tenantStore.Update(tenant)
+	return s.tenantStore.Update(ctx, tenant)
 }
 
 type StoreFilter struct {
@@ -97,31 +125,41 @@ type StoreFilter struct {
 	Name     []string
 }
 
-func (s *TenantService) ListTenants(ctx context.Context, filter Filter, p pagination.Request) (*pagination.Page[CreateTenantDTO], error) {
+func (s *TenantService) ListTenants(
+	ctx context.Context,
+	filter Filter,
+	p pagination.Request,
+) (*pagination.Page[CreateTenantDTO], error) {
 	var storeFilter StoreFilter
 	storeFilter.State = filter.State
 	storeFilter.Name = filter.Name
-	if filter.IsMember {
-		userID, err := auth.GetUser(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("%w: must be authenticated as a user to use the 'IsMember' filter", ErrSessionInvalid)
-		}
-		storeFilter.MemberID = userID
+
+	userID, err := auth.GetUser(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return s.tenantStore.List(storeFilter, p)
+	storeFilter.MemberID = userID
+	return s.tenantStore.List(ctx, storeFilter, p)
 }
 
-func (s *TenantService) AddTenantMember(ctx context.Context, tenantID int64, userID string, permissions auth.Permissions) error {
+func (s *TenantService) AddTenantMember(
+	ctx context.Context,
+	tenantID int64,
+	userID string,
+	permissions auth.Permissions,
+) error {
+	return auth.ErrForbidden
+
 	if err := auth.Permissions(permissions).Validate(); err != nil {
 		return err
 	}
-	t, err := s.tenantStore.GetTenantByID(tenantID)
+	t, err := s.tenantStore.GetTenantByID(ctx, tenantID)
 	if err != nil {
 		return err
 	}
 
 	// Validate that we get a NotFound error so that we know the user is not yet a member
-	_, err = s.tenantStore.GetMember(t.ID, userID)
+	_, err = s.tenantStore.GetMember(ctx, t.ID, userID)
 	if err == nil {
 		return ErrAlreadyMember
 	} else if !errors.Is(err, ErrTenantMemberNotFound) {
@@ -135,18 +173,25 @@ func (s *TenantService) AddTenantMember(ctx context.Context, tenantID int64, use
 
 	member := newMember(userID)
 	member.Permissions = permissions
-	if err := s.tenantStore.SaveMember(t.ID, &member); err != nil {
+	if err := s.tenantStore.SaveMember(ctx, t.ID, &member); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *TenantService) UpdateTenantMember(ctx context.Context, tenantID int64, userID string, permissions auth.Permissions) error {
+func (s *TenantService) UpdateTenantMember(
+	ctx context.Context,
+	tenantID int64,
+	userID string,
+	permissions auth.Permissions,
+) error {
+	return auth.ErrForbidden
+
 	if err := auth.Permissions(permissions).Validate(); err != nil {
 		return err
 	}
-	member, err := s.tenantStore.GetMember(tenantID, userID)
+	member, err := s.tenantStore.GetMember(ctx, tenantID, userID)
 	if err != nil {
 		return fmt.Errorf("in UpdateTenantMember, could not get Tenant Member: %w", err)
 	}
@@ -156,49 +201,67 @@ func (s *TenantService) UpdateTenantMember(ctx context.Context, tenantID int64, 
 	}
 
 	member.Permissions = permissions
-	if err := s.tenantStore.SaveMember(tenantID, member); err != nil {
+	if err := s.tenantStore.SaveMember(ctx, tenantID, member); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *TenantService) RemoveTenantMember(ctx context.Context, tenantID int64, userID string) error {
-	_, err := s.tenantStore.GetMember(tenantID, userID)
+func (s *TenantService) RemoveTenantMember(
+	ctx context.Context,
+	tenantID int64,
+	userID string,
+) error {
+	return auth.ErrForbidden
+
+	_, err := s.tenantStore.GetMember(ctx, tenantID, userID)
 	if err != nil {
 		return err
 	}
 
-	return s.tenantStore.RemoveMember(tenantID, userID)
+	return s.tenantStore.RemoveMember(ctx, tenantID, userID)
 }
 
-func (s *TenantService) ModifyMemberPermissions(ctx context.Context, tenantID int64, userID string, permissions auth.Permissions) error {
+func (s *TenantService) ModifyMemberPermissions(
+	ctx context.Context,
+	tenantID int64,
+	userID string,
+	permissions auth.Permissions,
+) error {
+	return auth.ErrForbidden
+
 	if err := auth.Permissions(permissions).Validate(); err != nil {
 		return err
 	}
-	_, err := s.tenantStore.GetTenantByID(tenantID)
+	_, err := s.tenantStore.GetTenantByID(ctx, tenantID)
 	if err != nil {
 		return err
 	}
 	//if tenant.State != tenants.Active {
 	//	return ErrTenantNotActive
 	//}
-	member, err := s.tenantStore.GetMember(tenantID, userID)
+	member, err := s.tenantStore.GetMember(ctx, tenantID, userID)
 	if err != nil {
 		return err
 	}
 	member.Permissions = permissions
-	if err := s.tenantStore.SaveMember(tenantID, member); err != nil {
+	if err := s.tenantStore.SaveMember(ctx, tenantID, member); err != nil {
 		return err
 	}
 	return nil
 }
 
-// GetMemberPermissions returns the total permission set a user has for this tenant,
+// GetMemberPermissions DOES NOT CHECK AUTHORIZATION IN CONTEXT! Since this method is used to figure out authorization.
+// returns the total permission set a user has for this tenant,
 // this also inherits permissions from parent tenants where the user is a member of
 // Returns an error if the user is not a member
-func (s *TenantService) GetMemberPermissions(ctx context.Context, tenantID int64, userID string) (auth.Permissions, error) {
-	isMember, err := s.tenantStore.IsMember(tenantID, userID, false)
+func (s *TenantService) GetMemberPermissions(
+	ctx context.Context,
+	tenantID int64,
+	userID string,
+) (auth.Permissions, error) {
+	isMember, err := s.tenantStore.IsMember(ctx, tenantID, userID, false)
 	if err != nil {
 		return nil, fmt.Errorf("in GetMemberPermissions: %w", err)
 	}
@@ -206,7 +269,7 @@ func (s *TenantService) GetMemberPermissions(ctx context.Context, tenantID int64
 		return nil, fmt.Errorf("in GetMemberPermissions: %w", ErrTenantMemberNotFound)
 	}
 
-	permissions, err := s.tenantStore.GetImplicitMemberPermissions(tenantID, userID)
+	permissions, err := s.tenantStore.GetImplicitMemberPermissions(ctx, tenantID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("in GetMemberPermissions, failed to get member: %w", err)
 	}
@@ -214,7 +277,7 @@ func (s *TenantService) GetMemberPermissions(ctx context.Context, tenantID int64
 }
 
 func (s *TenantService) GetUserTenants(ctx context.Context, userID string) ([]Tenant, error) {
-	tenants, err := s.tenantStore.GetUserTenants(userID)
+	tenants, err := s.tenantStore.GetUserTenants(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("in GetUserTenants, failed to GetUserTenants: %w", err)
 	}
@@ -222,16 +285,24 @@ func (s *TenantService) GetUserTenants(ctx context.Context, userID string) ([]Te
 }
 
 type TenantStore interface {
-	Create(*Tenant) error
-	Update(*Tenant) error
-	GetTenantByID(id int64) (*Tenant, error)
-	GetMember(tenantID int64, userID string) (*Member, error)
-	GetImplicitMemberPermissions(tenantID int64, userID string) (auth.Permissions, error)
-	SaveMember(tenantID int64, member *Member) error
-	RemoveMember(tenantID int64, userID string) error
-	List(StoreFilter, pagination.Request) (*pagination.Page[CreateTenantDTO], error)
-	GetUserTenants(userID string) ([]Tenant, error)
-	IsMember(tenantID int64, userID string, explicit bool) (bool, error)
+	Create(ctx context.Context, tenant *Tenant) error
+	Update(ctx context.Context, tenant *Tenant) error
+	GetTenantByID(ctx context.Context, id int64) (*Tenant, error)
+	GetMember(ctx context.Context, tenantID int64, userID string) (*Member, error)
+	GetImplicitMemberPermissions(
+		ctx context.Context,
+		tenantID int64,
+		userID string,
+	) (auth.Permissions, error)
+	SaveMember(ctx context.Context, tenantID int64, member *Member) error
+	RemoveMember(ctx context.Context, tenantID int64, userID string) error
+	List(
+		ctx context.Context,
+		filter StoreFilter,
+		req pagination.Request,
+	) (*pagination.Page[CreateTenantDTO], error)
+	GetUserTenants(ctx context.Context, userID string) ([]Tenant, error)
+	IsMember(ctx context.Context, tenantID int64, userID string, explicit bool) (bool, error)
 }
 
 type UserValidator interface {

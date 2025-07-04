@@ -19,10 +19,26 @@ import (
 )
 
 var (
-	ErrTenantIsNotValid                    = web.NewError(http.StatusNotFound, "API Key not found", "ERR_KEY_NOT_FOUND")
-	ErrKeyNotFound                         = web.NewError(http.StatusNotFound, "API Key not found", "ERR_API_KEY_NOT_FOUND")
-	ErrInvalidEncoding                     = web.NewError(http.StatusNotFound, "API Key was sent using invalid encoding", "ERR_API_KEY_MALFORMED")
-	ErrKeyNameTenantIDCombinationNotUnique = web.NewError(http.StatusBadRequest, "API Key with name already exists for this tenant", "API_KEY_NAME_TENANT_COMBO_NOT_UNIQUE")
+	ErrTenantIsNotValid = web.NewError(
+		http.StatusNotFound,
+		"API Key not found",
+		"ERR_KEY_NOT_FOUND",
+	)
+	ErrKeyNotFound = web.NewError(
+		http.StatusNotFound,
+		"API Key not found",
+		"ERR_API_KEY_NOT_FOUND",
+	)
+	ErrInvalidEncoding = web.NewError(
+		http.StatusNotFound,
+		"API Key was sent using invalid encoding",
+		"ERR_API_KEY_MALFORMED",
+	)
+	ErrKeyNameTenantIDCombinationNotUnique = web.NewError(
+		http.StatusBadRequest,
+		"API Key with name already exists for this tenant",
+		"API_KEY_NAME_TENANT_COMBO_NOT_UNIQUE",
+	)
 )
 
 func NewAPIKeyService(tenantStore TenantStore, apiKeyStore ApiKeyStore) *Service {
@@ -32,32 +48,66 @@ func NewAPIKeyService(tenantStore TenantStore, apiKeyStore ApiKeyStore) *Service
 	}
 }
 
-func (s *Service) ListAPIKeys(ctx context.Context, filter Filter, p pagination.Request) (*pagination.Page[ApiKeyDTO], error) {
-	return s.apiKeyStore.List(filter, p)
+func (s *Service) ListAPIKeys(
+	ctx context.Context,
+	filter APIKeyFilter,
+	p pagination.Request,
+) (*pagination.Page[ApiKeyDTO], error) {
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	filter.TenantID = []int64{tenantID}
+
+	return s.apiKeyStore.List(ctx, filter, p)
 }
 
 // Revokes an API key, returns ErrKeyNotFound if the given key was not found in the apiKeyStore
 func (s *Service) RevokeApiKey(ctx context.Context, apiKeyId int64) error {
-	return s.apiKeyStore.DeleteApiKey(apiKeyId)
+	key, err := s.GetAPIKey(ctx, apiKeyId)
+	if err != nil {
+		return fmt.Errorf("could not revoke api key: %w", err)
+	}
+
+	err = auth.MustHaveTenantPermissions(ctx, key.TenantID, auth.Permissions{auth.WRITE_API_KEYS})
+	if err != nil {
+		return err
+	}
+
+	return s.apiKeyStore.DeleteApiKey(ctx, apiKeyId)
 }
 
 // Creates a new API key for the given tenant and with the given expiration date.
 // Returns the api key as: 'apiKeyId:apiKey' encoded to a base64 string.
 // Fails if the tenant is not active
-func (s *Service) GenerateNewApiKey(ctx context.Context, name string, tenantId int64, permissions auth.Permissions, expirationDate *time.Time) (string, error) {
+func (s *Service) GenerateNewApiKey(
+	ctx context.Context,
+	name string,
+	tenantId int64,
+	permissions auth.Permissions,
+	expirationDate *time.Time,
+) (string, error) {
+	if err := auth.MustHaveTenantPermissions(ctx, tenantId, auth.Permissions{auth.WRITE_API_KEYS}); err != nil {
+		return "", err
+	}
+
 	if err := permissions.Validate(); err != nil {
 		return "", fmt.Errorf("%w: %w", ErrPermissionsInvalid, err)
 	}
-	tenant, err := s.tenantStore.GetTenantByID(tenantId)
+	tenant, err := s.tenantStore.GetTenantByID(ctx, tenantId)
 	if err != nil {
 		return "", err
 	}
 	if tenant.State != tenants.Active {
 		return "", ErrTenantIsNotValid
 	}
-	existing, err := s.apiKeyStore.GetHashedAPIKeyByNameAndTenantID(name, tenantId)
+	existing, err := s.apiKeyStore.GetHashedAPIKeyByNameAndTenantID(ctx, name, tenantId)
 	if err != nil && err != ErrKeyNotFound {
-		return "", fmt.Errorf("in GenerateNewApiKey, could not check for existing key due to err: %w", err)
+		return "", fmt.Errorf(
+			"in GenerateNewApiKey, could not check for existing key due to err: %w",
+			err,
+		)
 	}
 	if existing.ID > 0 {
 		return "", ErrKeyNameTenantIDCombinationNotUnique
@@ -70,23 +120,30 @@ func (s *Service) GenerateNewApiKey(ctx context.Context, name string, tenantId i
 	if err != nil {
 		return "", err
 	}
-	err = s.apiKeyStore.AddApiKey(tenant.ID, permissions, hashed)
+	err = s.apiKeyStore.AddApiKey(ctx, tenant.ID, permissions, hashed)
 	if err != nil {
 		return "", err
 	}
 	apiKey := base64.StdEncoding.WithPadding(base64.NoPadding).EncodeToString(
-		[]byte(fmt.Sprintf("%d:%s", newApiKey.ID, newApiKey.Secret)))
+		fmt.Appendf(nil, "%d:%s", newApiKey.ID, newApiKey.Secret))
 	return apiKey, nil
 }
 
 // Authenticates a given API key. Input must be 'apiKeyId:apiKey' encoded to a base64 string
 // API key is valid if it is the correct api key id and api key combination and if the attached tenant is active
-func (s *Service) AuthenticateApiKey(ctx context.Context, base64IdAndKeyCombination string) (ApiKeyAuthenticationDTO, error) {
+func (s *Service) AuthenticateApiKey(
+	ctx context.Context,
+	base64IdAndKeyCombination string,
+) (ApiKeyAuthenticationDTO, error) {
 	apiKeyId, apiKey, err := apiKeyAndIdFromBase64(base64IdAndKeyCombination)
 	if err != nil {
 		return ApiKeyAuthenticationDTO{}, ErrInvalidEncoding
 	}
-	hashed, err := s.apiKeyStore.GetHashedApiKeyById(apiKeyId, []tenants.State{tenants.Active})
+	hashed, err := s.apiKeyStore.GetHashedApiKeyById(
+		ctx,
+		apiKeyId,
+		APIKeyFilter{State: []tenants.State{tenants.Active}},
+	)
 	if err != nil {
 		return ApiKeyAuthenticationDTO{}, err
 	}
@@ -114,7 +171,17 @@ func (s *Service) AuthenticateApiKey(ctx context.Context, base64IdAndKeyCombinat
 
 // GetAPIKey returns an api key by ID and removes the secret hash
 func (s *Service) GetAPIKey(ctx context.Context, id int64) (*HashedApiKey, error) {
-	hashed, err := s.apiKeyStore.GetHashedApiKeyById(id, []tenants.State{tenants.Active})
+	tenantID, err := auth.GetTenant(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	filter := APIKeyFilter{
+		TenantID: []int64{tenantID},
+		State:    []tenants.State{tenants.Active},
+	}
+
+	hashed, err := s.apiKeyStore.GetHashedApiKeyById(ctx, id, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -128,10 +195,6 @@ func (s *Service) GetAPIKey(ctx context.Context, id int64) (*HashedApiKey, error
 	// Remove hash
 	hashed.SecretHash = ""
 	return &hashed, nil
-}
-
-type Filter struct {
-	TenantID []int64 `url:"tenant_id"`
 }
 
 type ApiKeyAuthenticationDTO struct {
@@ -176,14 +239,36 @@ type Service struct {
 	apiKeyStore ApiKeyStore
 }
 
+type APIKeyFilter struct {
+	TenantID []int64
+	State    []tenants.State `url:"state"`
+}
+
 type ApiKeyStore interface {
-	AddApiKey(tenantID int64, permissions auth.Permissions, hashedApiKey HashedApiKey) error
-	DeleteApiKey(id int64) error
-	GetHashedApiKeyById(id int64, stateFilter []tenants.State) (HashedApiKey, error)
-	GetHashedAPIKeyByNameAndTenantID(name string, tenantID int64) (HashedApiKey, error)
-	List(Filter, pagination.Request) (*pagination.Page[ApiKeyDTO], error)
+	AddApiKey(
+		ctx context.Context,
+		tenantID int64,
+		permissions auth.Permissions,
+		hashedApiKey HashedApiKey,
+	) error
+	DeleteApiKey(ctx context.Context, id int64) error
+	GetHashedApiKeyById(
+		ctx context.Context,
+		id int64,
+		filter APIKeyFilter,
+	) (HashedApiKey, error)
+	GetHashedAPIKeyByNameAndTenantID(
+		ctx context.Context,
+		name string,
+		tenantID int64,
+	) (HashedApiKey, error)
+	List(
+		ctx context.Context,
+		filter APIKeyFilter,
+		req pagination.Request,
+	) (*pagination.Page[ApiKeyDTO], error)
 }
 
 type TenantStore interface {
-	GetTenantByID(id int64) (*tenants.Tenant, error)
+	GetTenantByID(ctx context.Context, id int64) (*tenants.Tenant, error)
 }

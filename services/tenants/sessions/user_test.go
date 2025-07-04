@@ -18,7 +18,7 @@ func TestTenantActiveButUserNotMemberShouldError(t *testing.T) {
 		ActiveTenantIDFunc: func(userID string) (int64, error) {
 			return activeTenantID, nil
 		},
-		IsMemberFunc: func(tenantID int64, userID string, explicit bool) (bool, error) {
+		IsMemberFunc: func(ctx context.Context, tenantID int64, userID string, explicit bool) (bool, error) {
 			return false, nil
 		},
 		SetActiveTenantIDFunc: func(userID string, tenantID int64) error {
@@ -44,7 +44,7 @@ func TestSettingTenantWithoutMembershipShouldError(t *testing.T) {
 	userID := uuid.New().String()
 	activeTenantID := int64(15)
 	store := &UserPreferenceStoreMock{
-		IsMemberFunc: func(tenantID int64, userID string, explicit bool) (bool, error) {
+		IsMemberFunc: func(ctx context.Context, tenantID int64, userID string, explicit bool) (bool, error) {
 			return false, nil
 		},
 		SetActiveTenantIDFunc: func(userID string, tenantID int64) error {
@@ -55,7 +55,12 @@ func TestSettingTenantWithoutMembershipShouldError(t *testing.T) {
 
 	err := service.SetActiveTenantIDForUser(ctx, userID, activeTenantID)
 	assert.ErrorIs(t, err, sessions.ErrUserNotAMember)
-	assert.Len(t, store.calls.SetActiveTenantID, 0, "should not update active tenant if user is not a member")
+	assert.Len(
+		t,
+		store.calls.SetActiveTenantID,
+		0,
+		"should not update active tenant if user is not a member",
+	)
 	assert.Len(t, store.calls.IsMember, 1, "expected service to validate if user is a member")
 	assert.EqualValues(t, userID, store.calls.IsMember[0].UserID)
 	assert.EqualValues(t, activeTenantID, store.calls.IsMember[0].TenantID)

@@ -42,7 +42,11 @@ func (transport *CoreTransport) httpListDevices() http.HandlerFunc {
 			filter.Sensor = append(filter.Sensor, 0)
 		}
 
-		page, err := transport.deviceService.ListDevices(r.Context(), filter.DeviceFilter, filter.Request)
+		page, err := transport.deviceService.ListDevices(
+			r.Context(),
+			filter.DeviceFilter,
+			filter.Request,
+		)
 		if err != nil {
 			web.HTTPError(rw, err)
 			return

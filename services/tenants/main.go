@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/rs/cors"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/rs/cors"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -20,6 +21,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/pkg/healthchecker"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
 	tenantsinfra "sensorbucket.nl/sensorbucket/services/tenants/infrastructure"
@@ -97,19 +99,22 @@ func runAPI(errC chan<- error, db *sqlx.DB) (func(context.Context) error, error)
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
+	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
+	authMW := auth.Authenticate(jwks)
+
 	// Setup Tenants service
 	tenantStore := tenantsinfra.NewTenantsStorePSQL(db)
 	kratosAdmin := tenantsinfra.NewKratosUserValidator(KRATOS_ADMIN_API)
 	tenantSVC := tenants.NewTenantService(tenantStore, kratosAdmin)
-	_ = tenantstransports.NewTenantsHTTP(r, tenantSVC, HTTP_API_BASE)
+	_ = tenantstransports.NewTenantsHTTP(r.With(authMW), tenantSVC, HTTP_API_BASE)
 
 	// Setup API keys service
 	apiKeyStore := tenantsinfra.NewAPIKeyStorePSQL(db)
 	apiKeySVC := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
-	_ = tenantstransports.NewAPIKeysHTTP(r, apiKeySVC, HTTP_API_BASE)
+	_ = tenantstransports.NewAPIKeysHTTP(r.With(authMW), apiKeySVC, HTTP_API_BASE)
 
 	// Setup oathkeeper endpoint
-	userPreferences := sessions.NewUserPreferenceService(tenantStore)
+	userPreferences := sessions.NewUserPreferenceService(tenantStore, tenantStore)
 	oathkeeperTransport := tenantstransports.NewOathkeeperEndpoint(userPreferences, tenantSVC)
 	r.Mount("/oathkeeper", oathkeeperTransport)
 
@@ -136,7 +141,7 @@ func runWebUI(errC chan<- error, db *sqlx.DB) (func(context.Context) error, erro
 	tenantStore := tenantsinfra.NewTenantsStorePSQL(db)
 	kratosAdmin := tenantsinfra.NewKratosUserValidator(KRATOS_ADMIN_API)
 	tenantSvc := tenants.NewTenantService(tenantStore, kratosAdmin)
-	userPreferences := sessions.NewUserPreferenceService(tenantStore)
+	userPreferences := sessions.NewUserPreferenceService(tenantStore, tenantStore)
 	apiKeyStore := tenantsinfra.NewAPIKeyStorePSQL(db)
 	apiKeySvc := apikeys.NewAPIKeyService(tenantStore, apiKeyStore)
 

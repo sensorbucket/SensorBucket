@@ -1,6 +1,7 @@
 package tenantsinfra_test
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"testing"
@@ -16,6 +17,8 @@ import (
 	tenantsinfra "sensorbucket.nl/sensorbucket/services/tenants/infrastructure"
 	"sensorbucket.nl/sensorbucket/services/tenants/tenants"
 )
+
+var ctx = context.Background()
 
 type tenant struct {
 	id       int64
@@ -101,11 +104,11 @@ func TestTenantSeedingFunctionality(t *testing.T) {
 	}
 	hierarchy.create(t, db, 1)
 
-	tenant, err := store.GetTenantByID(hierarchy.id)
+	tenant, err := store.GetTenantByID(ctx, hierarchy.id)
 	assert.NoError(t, err)
 	assert.NotNil(t, tenant)
 
-	page, err := store.List(tenants.StoreFilter{}, pagination.Request{})
+	page, err := store.List(ctx, tenants.StoreFilter{}, pagination.Request{})
 	assert.NoError(t, err)
 	assert.Len(t, page.Data, 6)
 }
@@ -155,6 +158,7 @@ func TestGetTenantHierarchy(t *testing.T) {
 
 	t.Run("", func(t *testing.T) {
 		tenantList, err := store.GetTenantHierarchyChildren(
+			ctx,
 			[]int64{hierarchy.children[2].id},
 		)
 		assert.NoError(t, err)
@@ -167,6 +171,7 @@ func TestGetTenantHierarchy(t *testing.T) {
 
 	t.Run("", func(t *testing.T) {
 		tenantList, err := store.GetTenantHierarchyChildren(
+			ctx,
 			[]int64{hierarchy.children[2].children[0].id},
 		)
 		assert.NoError(t, err)
@@ -179,6 +184,7 @@ func TestGetTenantHierarchy(t *testing.T) {
 
 	t.Run("multiple ids to start", func(t *testing.T) {
 		tenantList, err := store.GetTenantHierarchyChildren(
+			ctx,
 			[]int64{
 				hierarchy.children[0].id,
 				hierarchy.children[2].id,
@@ -196,6 +202,7 @@ func TestGetTenantHierarchy(t *testing.T) {
 
 	t.Run("multiple ids in same chain", func(t *testing.T) {
 		tenantList, err := store.GetTenantHierarchyChildren(
+			ctx,
 			[]int64{
 				hierarchy.children[2].id,
 				hierarchy.children[2].children[0].id,
@@ -211,6 +218,7 @@ func TestGetTenantHierarchy(t *testing.T) {
 
 	t.Run("root should return all tenants", func(t *testing.T) {
 		tenantList, err := store.GetTenantHierarchyChildren(
+			ctx,
 			[]int64{hierarchy.id},
 		)
 		assert.NoError(t, err)
@@ -259,24 +267,24 @@ func TestIsMember(t *testing.T) {
 	hierarchy.create(t, db, 1)
 
 	t.Run("explicit member", func(t *testing.T) {
-		member, err := store.IsMember(hierarchy.children[0].children[0].id, userID, false)
+		member, err := store.IsMember(ctx, hierarchy.children[0].children[0].id, userID, false)
 		require.NoError(t, err)
 		assert.True(t, member)
 	})
 
 	t.Run("implicit member", func(t *testing.T) {
-		member, err := store.IsMember(hierarchy.children[2].children[0].id, userID, false)
+		member, err := store.IsMember(ctx, hierarchy.children[2].children[0].id, userID, false)
 		require.NoError(t, err)
 		assert.True(t, member)
 	})
 
 	t.Run("not a member", func(t *testing.T) {
-		member, err := store.IsMember(hierarchy.children[0].id, userID, false)
+		member, err := store.IsMember(ctx, hierarchy.children[0].id, userID, false)
 		require.NoError(t, err)
 		assert.False(t, member)
 	})
 	t.Run("not a member", func(t *testing.T) {
-		member, err := store.IsMember(hierarchy.children[1].id, userID, false)
+		member, err := store.IsMember(ctx, hierarchy.children[1].id, userID, false)
 		require.NoError(t, err)
 		assert.False(t, member)
 	})
@@ -327,12 +335,12 @@ func TestGetUserTenants(t *testing.T) {
 	hierarchy.create(t, db, 1)
 
 	t.Run("existing user", func(t *testing.T) {
-		tenantList, err := store.GetUserTenants(userID)
+		tenantList, err := store.GetUserTenants(ctx, userID)
 		assert.NoError(t, err)
 		assert.Len(t, tenantList, 4)
 	})
 	t.Run("non existing user", func(t *testing.T) {
-		tenantList, err := store.GetUserTenants("00000000-0000-0000-0000-000000000000")
+		tenantList, err := store.GetUserTenants(ctx, "00000000-0000-0000-0000-000000000000")
 		assert.NoError(t, err)
 		assert.Len(t, tenantList, 0)
 	})
@@ -375,17 +383,25 @@ func TestGetPermissions(t *testing.T) {
 	isolatedTenant.create(t, db, 10)
 
 	t.Run("Get explicit permissions (no parent tenant)", func(t *testing.T) {
-		permissions, err := store.GetImplicitMemberPermissions(hierarchy.id, userID)
+		permissions, err := store.GetImplicitMemberPermissions(ctx, hierarchy.id, userID)
 		assert.NoError(t, err)
 		assert.ElementsMatch(t, auth.Permissions{auth.WRITE_DEVICES}, permissions)
 	})
 	t.Run("Get permissions and inherit parent tenant permissions", func(t *testing.T) {
-		permissions, err := store.GetImplicitMemberPermissions(hierarchy.children[0].id, userID)
+		permissions, err := store.GetImplicitMemberPermissions(
+			ctx,
+			hierarchy.children[0].id,
+			userID,
+		)
 		assert.NoError(t, err)
-		assert.ElementsMatch(t, auth.Permissions{auth.WRITE_DEVICES, auth.READ_DEVICES}, permissions)
+		assert.ElementsMatch(
+			t,
+			auth.Permissions{auth.WRITE_DEVICES, auth.READ_DEVICES},
+			permissions,
+		)
 	})
 	t.Run("Get isolated tenant permissions", func(t *testing.T) {
-		permissions, err := store.GetImplicitMemberPermissions(isolatedTenant.id, userID)
+		permissions, err := store.GetImplicitMemberPermissions(ctx, isolatedTenant.id, userID)
 		assert.NoError(t, err)
 		assert.ElementsMatch(t, auth.Permissions{auth.WRITE_API_KEYS}, permissions)
 	})

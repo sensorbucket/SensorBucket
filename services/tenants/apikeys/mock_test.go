@@ -4,6 +4,7 @@
 package apikeys_test
 
 import (
+	"context"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
@@ -21,19 +22,19 @@ var _ apikeys.ApiKeyStore = &ApiKeyStoreMock{}
 //
 //		// make and configure a mocked apikeys.ApiKeyStore
 //		mockedApiKeyStore := &ApiKeyStoreMock{
-//			AddApiKeyFunc: func(tenantID int64, permissions auth.Permissions, hashedApiKey apikeys.HashedApiKey) error {
+//			AddApiKeyFunc: func(ctx context.Context, tenantID int64, permissions auth.Permissions, hashedApiKey apikeys.HashedApiKey) error {
 //				panic("mock out the AddApiKey method")
 //			},
-//			DeleteApiKeyFunc: func(id int64) error {
+//			DeleteApiKeyFunc: func(ctx context.Context, id int64) error {
 //				panic("mock out the DeleteApiKey method")
 //			},
-//			GetHashedAPIKeyByNameAndTenantIDFunc: func(name string, tenantID int64) (apikeys.HashedApiKey, error) {
+//			GetHashedAPIKeyByNameAndTenantIDFunc: func(ctx context.Context, name string, tenantID int64) (apikeys.HashedApiKey, error) {
 //				panic("mock out the GetHashedAPIKeyByNameAndTenantID method")
 //			},
-//			GetHashedApiKeyByIdFunc: func(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
+//			GetHashedApiKeyByIdFunc: func(ctx context.Context, id int64, filter apikeys.APIKeyFilter) (apikeys.HashedApiKey, error) {
 //				panic("mock out the GetHashedApiKeyById method")
 //			},
-//			ListFunc: func(filter apikeys.Filter, request pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
+//			ListFunc: func(ctx context.Context, filter apikeys.APIKeyFilter, req pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
 //				panic("mock out the List method")
 //			},
 //		}
@@ -44,24 +45,26 @@ var _ apikeys.ApiKeyStore = &ApiKeyStoreMock{}
 //	}
 type ApiKeyStoreMock struct {
 	// AddApiKeyFunc mocks the AddApiKey method.
-	AddApiKeyFunc func(tenantID int64, permissions auth.Permissions, hashedApiKey apikeys.HashedApiKey) error
+	AddApiKeyFunc func(ctx context.Context, tenantID int64, permissions auth.Permissions, hashedApiKey apikeys.HashedApiKey) error
 
 	// DeleteApiKeyFunc mocks the DeleteApiKey method.
-	DeleteApiKeyFunc func(id int64) error
+	DeleteApiKeyFunc func(ctx context.Context, id int64) error
 
 	// GetHashedAPIKeyByNameAndTenantIDFunc mocks the GetHashedAPIKeyByNameAndTenantID method.
-	GetHashedAPIKeyByNameAndTenantIDFunc func(name string, tenantID int64) (apikeys.HashedApiKey, error)
+	GetHashedAPIKeyByNameAndTenantIDFunc func(ctx context.Context, name string, tenantID int64) (apikeys.HashedApiKey, error)
 
 	// GetHashedApiKeyByIdFunc mocks the GetHashedApiKeyById method.
-	GetHashedApiKeyByIdFunc func(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error)
+	GetHashedApiKeyByIdFunc func(ctx context.Context, id int64, filter apikeys.APIKeyFilter) (apikeys.HashedApiKey, error)
 
 	// ListFunc mocks the List method.
-	ListFunc func(filter apikeys.Filter, request pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
+	ListFunc func(ctx context.Context, filter apikeys.APIKeyFilter, req pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// AddApiKey holds details about calls to the AddApiKey method.
 		AddApiKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// TenantID is the tenantID argument value.
 			TenantID int64
 			// Permissions is the permissions argument value.
@@ -71,11 +74,15 @@ type ApiKeyStoreMock struct {
 		}
 		// DeleteApiKey holds details about calls to the DeleteApiKey method.
 		DeleteApiKey []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// ID is the id argument value.
 			ID int64
 		}
 		// GetHashedAPIKeyByNameAndTenantID holds details about calls to the GetHashedAPIKeyByNameAndTenantID method.
 		GetHashedAPIKeyByNameAndTenantID []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// Name is the name argument value.
 			Name string
 			// TenantID is the tenantID argument value.
@@ -83,17 +90,21 @@ type ApiKeyStoreMock struct {
 		}
 		// GetHashedApiKeyById holds details about calls to the GetHashedApiKeyById method.
 		GetHashedApiKeyById []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// ID is the id argument value.
 			ID int64
-			// StateFilter is the stateFilter argument value.
-			StateFilter []tenants.State
+			// Filter is the filter argument value.
+			Filter apikeys.APIKeyFilter
 		}
 		// List holds details about calls to the List method.
 		List []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// Filter is the filter argument value.
-			Filter apikeys.Filter
-			// Request is the request argument value.
-			Request pagination.Request
+			Filter apikeys.APIKeyFilter
+			// Req is the req argument value.
+			Req pagination.Request
 		}
 	}
 	lockAddApiKey                        sync.RWMutex
@@ -104,15 +115,17 @@ type ApiKeyStoreMock struct {
 }
 
 // AddApiKey calls AddApiKeyFunc.
-func (mock *ApiKeyStoreMock) AddApiKey(tenantID int64, permissions auth.Permissions, hashedApiKey apikeys.HashedApiKey) error {
+func (mock *ApiKeyStoreMock) AddApiKey(ctx context.Context, tenantID int64, permissions auth.Permissions, hashedApiKey apikeys.HashedApiKey) error {
 	if mock.AddApiKeyFunc == nil {
 		panic("ApiKeyStoreMock.AddApiKeyFunc: method is nil but ApiKeyStore.AddApiKey was just called")
 	}
 	callInfo := struct {
+		Ctx          context.Context
 		TenantID     int64
 		Permissions  auth.Permissions
 		HashedApiKey apikeys.HashedApiKey
 	}{
+		Ctx:          ctx,
 		TenantID:     tenantID,
 		Permissions:  permissions,
 		HashedApiKey: hashedApiKey,
@@ -120,7 +133,7 @@ func (mock *ApiKeyStoreMock) AddApiKey(tenantID int64, permissions auth.Permissi
 	mock.lockAddApiKey.Lock()
 	mock.calls.AddApiKey = append(mock.calls.AddApiKey, callInfo)
 	mock.lockAddApiKey.Unlock()
-	return mock.AddApiKeyFunc(tenantID, permissions, hashedApiKey)
+	return mock.AddApiKeyFunc(ctx, tenantID, permissions, hashedApiKey)
 }
 
 // AddApiKeyCalls gets all the calls that were made to AddApiKey.
@@ -128,11 +141,13 @@ func (mock *ApiKeyStoreMock) AddApiKey(tenantID int64, permissions auth.Permissi
 //
 //	len(mockedApiKeyStore.AddApiKeyCalls())
 func (mock *ApiKeyStoreMock) AddApiKeyCalls() []struct {
+	Ctx          context.Context
 	TenantID     int64
 	Permissions  auth.Permissions
 	HashedApiKey apikeys.HashedApiKey
 } {
 	var calls []struct {
+		Ctx          context.Context
 		TenantID     int64
 		Permissions  auth.Permissions
 		HashedApiKey apikeys.HashedApiKey
@@ -144,19 +159,21 @@ func (mock *ApiKeyStoreMock) AddApiKeyCalls() []struct {
 }
 
 // DeleteApiKey calls DeleteApiKeyFunc.
-func (mock *ApiKeyStoreMock) DeleteApiKey(id int64) error {
+func (mock *ApiKeyStoreMock) DeleteApiKey(ctx context.Context, id int64) error {
 	if mock.DeleteApiKeyFunc == nil {
 		panic("ApiKeyStoreMock.DeleteApiKeyFunc: method is nil but ApiKeyStore.DeleteApiKey was just called")
 	}
 	callInfo := struct {
-		ID int64
+		Ctx context.Context
+		ID  int64
 	}{
-		ID: id,
+		Ctx: ctx,
+		ID:  id,
 	}
 	mock.lockDeleteApiKey.Lock()
 	mock.calls.DeleteApiKey = append(mock.calls.DeleteApiKey, callInfo)
 	mock.lockDeleteApiKey.Unlock()
-	return mock.DeleteApiKeyFunc(id)
+	return mock.DeleteApiKeyFunc(ctx, id)
 }
 
 // DeleteApiKeyCalls gets all the calls that were made to DeleteApiKey.
@@ -164,10 +181,12 @@ func (mock *ApiKeyStoreMock) DeleteApiKey(id int64) error {
 //
 //	len(mockedApiKeyStore.DeleteApiKeyCalls())
 func (mock *ApiKeyStoreMock) DeleteApiKeyCalls() []struct {
-	ID int64
+	Ctx context.Context
+	ID  int64
 } {
 	var calls []struct {
-		ID int64
+		Ctx context.Context
+		ID  int64
 	}
 	mock.lockDeleteApiKey.RLock()
 	calls = mock.calls.DeleteApiKey
@@ -176,21 +195,23 @@ func (mock *ApiKeyStoreMock) DeleteApiKeyCalls() []struct {
 }
 
 // GetHashedAPIKeyByNameAndTenantID calls GetHashedAPIKeyByNameAndTenantIDFunc.
-func (mock *ApiKeyStoreMock) GetHashedAPIKeyByNameAndTenantID(name string, tenantID int64) (apikeys.HashedApiKey, error) {
+func (mock *ApiKeyStoreMock) GetHashedAPIKeyByNameAndTenantID(ctx context.Context, name string, tenantID int64) (apikeys.HashedApiKey, error) {
 	if mock.GetHashedAPIKeyByNameAndTenantIDFunc == nil {
 		panic("ApiKeyStoreMock.GetHashedAPIKeyByNameAndTenantIDFunc: method is nil but ApiKeyStore.GetHashedAPIKeyByNameAndTenantID was just called")
 	}
 	callInfo := struct {
+		Ctx      context.Context
 		Name     string
 		TenantID int64
 	}{
+		Ctx:      ctx,
 		Name:     name,
 		TenantID: tenantID,
 	}
 	mock.lockGetHashedAPIKeyByNameAndTenantID.Lock()
 	mock.calls.GetHashedAPIKeyByNameAndTenantID = append(mock.calls.GetHashedAPIKeyByNameAndTenantID, callInfo)
 	mock.lockGetHashedAPIKeyByNameAndTenantID.Unlock()
-	return mock.GetHashedAPIKeyByNameAndTenantIDFunc(name, tenantID)
+	return mock.GetHashedAPIKeyByNameAndTenantIDFunc(ctx, name, tenantID)
 }
 
 // GetHashedAPIKeyByNameAndTenantIDCalls gets all the calls that were made to GetHashedAPIKeyByNameAndTenantID.
@@ -198,10 +219,12 @@ func (mock *ApiKeyStoreMock) GetHashedAPIKeyByNameAndTenantID(name string, tenan
 //
 //	len(mockedApiKeyStore.GetHashedAPIKeyByNameAndTenantIDCalls())
 func (mock *ApiKeyStoreMock) GetHashedAPIKeyByNameAndTenantIDCalls() []struct {
+	Ctx      context.Context
 	Name     string
 	TenantID int64
 } {
 	var calls []struct {
+		Ctx      context.Context
 		Name     string
 		TenantID int64
 	}
@@ -212,21 +235,23 @@ func (mock *ApiKeyStoreMock) GetHashedAPIKeyByNameAndTenantIDCalls() []struct {
 }
 
 // GetHashedApiKeyById calls GetHashedApiKeyByIdFunc.
-func (mock *ApiKeyStoreMock) GetHashedApiKeyById(id int64, stateFilter []tenants.State) (apikeys.HashedApiKey, error) {
+func (mock *ApiKeyStoreMock) GetHashedApiKeyById(ctx context.Context, id int64, filter apikeys.APIKeyFilter) (apikeys.HashedApiKey, error) {
 	if mock.GetHashedApiKeyByIdFunc == nil {
 		panic("ApiKeyStoreMock.GetHashedApiKeyByIdFunc: method is nil but ApiKeyStore.GetHashedApiKeyById was just called")
 	}
 	callInfo := struct {
-		ID          int64
-		StateFilter []tenants.State
+		Ctx    context.Context
+		ID     int64
+		Filter apikeys.APIKeyFilter
 	}{
-		ID:          id,
-		StateFilter: stateFilter,
+		Ctx:    ctx,
+		ID:     id,
+		Filter: filter,
 	}
 	mock.lockGetHashedApiKeyById.Lock()
 	mock.calls.GetHashedApiKeyById = append(mock.calls.GetHashedApiKeyById, callInfo)
 	mock.lockGetHashedApiKeyById.Unlock()
-	return mock.GetHashedApiKeyByIdFunc(id, stateFilter)
+	return mock.GetHashedApiKeyByIdFunc(ctx, id, filter)
 }
 
 // GetHashedApiKeyByIdCalls gets all the calls that were made to GetHashedApiKeyById.
@@ -234,12 +259,14 @@ func (mock *ApiKeyStoreMock) GetHashedApiKeyById(id int64, stateFilter []tenants
 //
 //	len(mockedApiKeyStore.GetHashedApiKeyByIdCalls())
 func (mock *ApiKeyStoreMock) GetHashedApiKeyByIdCalls() []struct {
-	ID          int64
-	StateFilter []tenants.State
+	Ctx    context.Context
+	ID     int64
+	Filter apikeys.APIKeyFilter
 } {
 	var calls []struct {
-		ID          int64
-		StateFilter []tenants.State
+		Ctx    context.Context
+		ID     int64
+		Filter apikeys.APIKeyFilter
 	}
 	mock.lockGetHashedApiKeyById.RLock()
 	calls = mock.calls.GetHashedApiKeyById
@@ -248,21 +275,23 @@ func (mock *ApiKeyStoreMock) GetHashedApiKeyByIdCalls() []struct {
 }
 
 // List calls ListFunc.
-func (mock *ApiKeyStoreMock) List(filter apikeys.Filter, request pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
+func (mock *ApiKeyStoreMock) List(ctx context.Context, filter apikeys.APIKeyFilter, req pagination.Request) (*pagination.Page[apikeys.ApiKeyDTO], error) {
 	if mock.ListFunc == nil {
 		panic("ApiKeyStoreMock.ListFunc: method is nil but ApiKeyStore.List was just called")
 	}
 	callInfo := struct {
-		Filter  apikeys.Filter
-		Request pagination.Request
+		Ctx    context.Context
+		Filter apikeys.APIKeyFilter
+		Req    pagination.Request
 	}{
-		Filter:  filter,
-		Request: request,
+		Ctx:    ctx,
+		Filter: filter,
+		Req:    req,
 	}
 	mock.lockList.Lock()
 	mock.calls.List = append(mock.calls.List, callInfo)
 	mock.lockList.Unlock()
-	return mock.ListFunc(filter, request)
+	return mock.ListFunc(ctx, filter, req)
 }
 
 // ListCalls gets all the calls that were made to List.
@@ -270,12 +299,14 @@ func (mock *ApiKeyStoreMock) List(filter apikeys.Filter, request pagination.Requ
 //
 //	len(mockedApiKeyStore.ListCalls())
 func (mock *ApiKeyStoreMock) ListCalls() []struct {
-	Filter  apikeys.Filter
-	Request pagination.Request
+	Ctx    context.Context
+	Filter apikeys.APIKeyFilter
+	Req    pagination.Request
 } {
 	var calls []struct {
-		Filter  apikeys.Filter
-		Request pagination.Request
+		Ctx    context.Context
+		Filter apikeys.APIKeyFilter
+		Req    pagination.Request
 	}
 	mock.lockList.RLock()
 	calls = mock.calls.List
@@ -293,7 +324,7 @@ var _ apikeys.TenantStore = &TenantStoreMock{}
 //
 //		// make and configure a mocked apikeys.TenantStore
 //		mockedTenantStore := &TenantStoreMock{
-//			GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+//			GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 //				panic("mock out the GetTenantByID method")
 //			},
 //		}
@@ -304,12 +335,14 @@ var _ apikeys.TenantStore = &TenantStoreMock{}
 //	}
 type TenantStoreMock struct {
 	// GetTenantByIDFunc mocks the GetTenantByID method.
-	GetTenantByIDFunc func(id int64) (*tenants.Tenant, error)
+	GetTenantByIDFunc func(ctx context.Context, id int64) (*tenants.Tenant, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetTenantByID holds details about calls to the GetTenantByID method.
 		GetTenantByID []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// ID is the id argument value.
 			ID int64
 		}
@@ -318,19 +351,21 @@ type TenantStoreMock struct {
 }
 
 // GetTenantByID calls GetTenantByIDFunc.
-func (mock *TenantStoreMock) GetTenantByID(id int64) (*tenants.Tenant, error) {
+func (mock *TenantStoreMock) GetTenantByID(ctx context.Context, id int64) (*tenants.Tenant, error) {
 	if mock.GetTenantByIDFunc == nil {
 		panic("TenantStoreMock.GetTenantByIDFunc: method is nil but TenantStore.GetTenantByID was just called")
 	}
 	callInfo := struct {
-		ID int64
+		Ctx context.Context
+		ID  int64
 	}{
-		ID: id,
+		Ctx: ctx,
+		ID:  id,
 	}
 	mock.lockGetTenantByID.Lock()
 	mock.calls.GetTenantByID = append(mock.calls.GetTenantByID, callInfo)
 	mock.lockGetTenantByID.Unlock()
-	return mock.GetTenantByIDFunc(id)
+	return mock.GetTenantByIDFunc(ctx, id)
 }
 
 // GetTenantByIDCalls gets all the calls that were made to GetTenantByID.
@@ -338,10 +373,12 @@ func (mock *TenantStoreMock) GetTenantByID(id int64) (*tenants.Tenant, error) {
 //
 //	len(mockedTenantStore.GetTenantByIDCalls())
 func (mock *TenantStoreMock) GetTenantByIDCalls() []struct {
-	ID int64
+	Ctx context.Context
+	ID  int64
 } {
 	var calls []struct {
-		ID int64
+		Ctx context.Context
+		ID  int64
 	}
 	mock.lockGetTenantByID.RLock()
 	calls = mock.calls.GetTenantByID

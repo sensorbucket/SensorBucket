@@ -114,7 +114,9 @@ func Authenticate(keyClient JWKSClient) func(http.Handler) http.Handler {
 
 			tokenStr, ok := StripBearer(authStr)
 			if !ok {
-				log.Printf("[Error] authentication failed err because the Authorization header is malformed\n")
+				log.Printf(
+					"[Error] authentication failed err because the Authorization header is malformed\n",
+				)
 				web.HTTPError(w, ErrAuthHeaderInvalidFormat)
 				return
 			}
@@ -131,7 +133,11 @@ func Authenticate(keyClient JWKSClient) func(http.Handler) http.Handler {
 	}
 }
 
-func AuthenticateContext(ctx context.Context, tokenStr string, keyClient JWKSClient) (context.Context, error) {
+func AuthenticateContext(
+	ctx context.Context,
+	tokenStr string,
+	keyClient JWKSClient,
+) (context.Context, error) {
 	// Retrieve the JWT and ensure it was signed by us
 	c := claims{}
 	token, err := jwt.ParseWithClaims(tokenStr, &c, validateJWTFunc(keyClient))
@@ -173,7 +179,11 @@ func validateJWTFunc(jwksClient JWKSClient) func(token *jwt.Token) (any, error) 
 		}
 		key := keys[0]
 		if key.Algorithm != token.Method.Alg() {
-			return nil, fmt.Errorf("key alg differs from token alg: %s vs %s", key.Algorithm, token.Method.Alg())
+			return nil, fmt.Errorf(
+				"key alg differs from token alg: %s vs %s",
+				key.Algorithm,
+				token.Method.Alg(),
+			)
 		}
 		return key.Public().Key, nil
 	}

@@ -41,10 +41,13 @@ func New(
 	ui.router.Use(middleware.Logger)
 	jwks := auth.NewJWKSHttpClient(jwksURL)
 	authMW := auth.Authenticate(jwks)
+	protect := auth.Protect()
 	ui.router.Handle("/static/*", serveStatic())
 	ui.router.Mount("/auth", routes.SetupKratosRoutes())
-	ui.router.With(authMW).Mount("/api-keys", routes.SetupAPIKeyRoutes(apiKeys, tenantsService))
-	ui.router.With(authMW).Mount("/switch", routes.SetupTenantSwitchingRoutes(tenantsService, userPreferences))
+	ui.router.With(authMW, protect).
+		Mount("/api-keys", routes.SetupAPIKeyRoutes(apiKeys, tenantsService))
+	ui.router.With(authMW, protect).
+		Mount("/switch", routes.SetupTenantSwitchingRoutes(tenantsService, userPreferences))
 
 	return ui, nil
 }

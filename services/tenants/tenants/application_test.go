@@ -17,7 +17,7 @@ import (
 func TestCreateParentTenantDoesNotExist(t *testing.T) {
 	// Arrange
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(132), id)
 			return nil, tenants.ErrTenantNotFound
 		},
@@ -39,7 +39,7 @@ func TestCreateParentTenantCantBeRetrieved(t *testing.T) {
 	// Arrange
 	expErr := fmt.Errorf("some weird database error has occurred")
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(675), id)
 			return nil, expErr
 		},
@@ -60,7 +60,7 @@ func TestCreateParentTenantCantBeRetrieved(t *testing.T) {
 func TestCreateParentTenantIsNotActive(t *testing.T) {
 	// Arrange
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(675), id)
 			return &tenants.Tenant{
 				ID:    675,
@@ -85,14 +85,14 @@ func TestCreateErrorOccurs(t *testing.T) {
 	// Arrange
 	expErr := fmt.Errorf("weird error!")
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(675), id)
 			return &tenants.Tenant{
 				ID:    675,
 				State: tenants.Active,
 			}, nil
 		},
-		CreateFunc: func(tenant *tenants.Tenant) error {
+		CreateFunc: func(ctx context.Context, tenant *tenants.Tenant) error {
 			return expErr
 		},
 	}
@@ -113,14 +113,14 @@ func TestCreateErrorOccurs(t *testing.T) {
 func TestCreateCreatesNewTenant(t *testing.T) {
 	// Arrange
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(675), id)
 			return &tenants.Tenant{
 				ID:    675,
 				State: tenants.Active,
 			}, nil
 		},
-		CreateFunc: func(tenant *tenants.Tenant) error {
+		CreateFunc: func(ctx context.Context, tenant *tenants.Tenant) error {
 			return nil
 		},
 	}
@@ -157,7 +157,7 @@ func TestArchiveTenantErrorOccursWhileRetrievingTenant(t *testing.T) {
 	// Arrange
 	expErr := fmt.Errorf("weird error")
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(43124), id)
 			return nil, expErr
 		},
@@ -175,7 +175,7 @@ func TestArchiveTenantErrorOccursWhileRetrievingTenant(t *testing.T) {
 func TestArchiveTenantTenantIsAlreadyArchived(t *testing.T) {
 	// Arrange
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(43124), id)
 			return &tenants.Tenant{
 				State: tenants.Archived,
@@ -196,13 +196,13 @@ func TestArchiveTenantUpdateErrors(t *testing.T) {
 	// Arrange
 	expErr := fmt.Errorf("weird error")
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(43124), id)
 			return &tenants.Tenant{
 				State: tenants.Active,
 			}, nil
 		},
-		UpdateFunc: func(tenant *tenants.Tenant) error {
+		UpdateFunc: func(ctx context.Context, tenant *tenants.Tenant) error {
 			assert.Equal(t, tenants.Archived, tenant.State)
 			return expErr
 		},
@@ -221,13 +221,13 @@ func TestArchiveTenantUpdateErrors(t *testing.T) {
 func TestArchiveTenantUpdatesTenantWithArchivedState(t *testing.T) {
 	// Arrange
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			assert.Equal(t, int64(43124), id)
 			return &tenants.Tenant{
 				State: tenants.Active,
 			}, nil
 		},
-		UpdateFunc: func(tenant *tenants.Tenant) error {
+		UpdateFunc: func(ctx context.Context, tenant *tenants.Tenant) error {
 			assert.Equal(t, tenants.Archived, tenant.State)
 			return nil
 		},
@@ -246,7 +246,7 @@ func TestArchiveTenantUpdatesTenantWithArchivedState(t *testing.T) {
 func TestListTenantsReturnsList(t *testing.T) {
 	// Arrange
 	store := &TenantStoreMock{
-		ListFunc: func(filter tenants.StoreFilter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
+		ListFunc: func(ctx context.Context, filter tenants.StoreFilter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
 			return &pagination.Page[tenants.CreateTenantDTO]{
 				Cursor: "blabla",
 				Data: []tenants.CreateTenantDTO{
@@ -274,7 +274,7 @@ func TestListTenantsErrorOccursWhileRetrievingList(t *testing.T) {
 	// Arrange
 	expErr := fmt.Errorf("weird error")
 	store := TenantStoreMock{
-		ListFunc: func(filter tenants.StoreFilter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
+		ListFunc: func(ctx context.Context, filter tenants.StoreFilter, request pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
 			return nil, expErr
 		},
 	}
@@ -306,13 +306,13 @@ func TestCreateTenantMember(t *testing.T) {
 	userID := "123123"
 	permissions := auth.Permissions{auth.WRITE_DEVICES, auth.READ_DEVICES}
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			return &tenant, nil
 		},
-		SaveMemberFunc: func(tenantID int64, member *tenants.Member) error {
+		SaveMemberFunc: func(ctx context.Context, tenantID int64, member *tenants.Member) error {
 			return nil
 		},
-		GetMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
+		GetMemberFunc: func(ctx context.Context, tenantID int64, userID string) (*tenants.Member, error) {
 			return nil, tenants.ErrTenantMemberNotFound
 		},
 	}
@@ -352,13 +352,13 @@ func TestTenantAddMemberShouldErrorWithInvalidPermissions(t *testing.T) {
 	userID := "123123"
 	permissions := auth.Permissions{auth.WRITE_DEVICES, auth.Permission("1283719823")}
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			return &tenant, nil
 		},
-		SaveMemberFunc: func(tenantID int64, member *tenants.Member) error {
+		SaveMemberFunc: func(ctx context.Context, tenantID int64, member *tenants.Member) error {
 			return nil
 		},
-		GetMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
+		GetMemberFunc: func(ctx context.Context, tenantID int64, userID string) (*tenants.Member, error) {
 			return nil, tenants.ErrTenantMemberNotFound
 		},
 	}
@@ -397,13 +397,13 @@ func TestTenantModifyMemberShouldErrorWithInvalidPermissions(t *testing.T) {
 		Permissions: origPermissions,
 	}
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			return &tenant, nil
 		},
-		GetMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
+		GetMemberFunc: func(ctx context.Context, tenantID int64, userID string) (*tenants.Member, error) {
 			return &member, nil
 		},
-		SaveMemberFunc: func(tenantID int64, member *tenants.Member) error {
+		SaveMemberFunc: func(ctx context.Context, tenantID int64, member *tenants.Member) error {
 			return nil
 		},
 	}
@@ -437,13 +437,13 @@ func TestTenantAddMemberShouldErrorIfUserDoesNotExist(t *testing.T) {
 	userID := "123123"
 	permissions := auth.Permissions{auth.WRITE_DEVICES}
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			return &tenant, nil
 		},
-		SaveMemberFunc: func(tenantID int64, member *tenants.Member) error {
+		SaveMemberFunc: func(ctx context.Context, tenantID int64, member *tenants.Member) error {
 			return nil
 		},
-		GetMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
+		GetMemberFunc: func(ctx context.Context, tenantID int64, userID string) (*tenants.Member, error) {
 			return nil, tenants.ErrTenantMemberNotFound
 		},
 	}
@@ -484,13 +484,13 @@ func TestTenantModifyMemberChangesPermissions(t *testing.T) {
 		Permissions: origPermissions,
 	}
 	store := &TenantStoreMock{
-		GetTenantByIDFunc: func(id int64) (*tenants.Tenant, error) {
+		GetTenantByIDFunc: func(ctx context.Context, id int64) (*tenants.Tenant, error) {
 			return &tenant, nil
 		},
-		GetMemberFunc: func(tenantID int64, userID string) (*tenants.Member, error) {
+		GetMemberFunc: func(ctx context.Context, tenantID int64, userID string) (*tenants.Member, error) {
 			return &member, nil
 		},
-		SaveMemberFunc: func(tenantID int64, member *tenants.Member) error {
+		SaveMemberFunc: func(ctx context.Context, tenantID int64, member *tenants.Member) error {
 			return nil
 		},
 	}
