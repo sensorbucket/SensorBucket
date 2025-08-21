@@ -603,3 +603,49 @@ func (s *PSQLStore) Save(ctx context.Context, dev *devices.Device) error {
 
 	return nil
 }
+
+func (store *PSQLStore) UpdateSensor(
+	ctx context.Context,
+	id int64,
+	opts devices.UpdateSensorOpts,
+) error {
+	q := pq.Update("sensors").Where(sq.Eq{"id": id})
+
+	if opts.Description != nil {
+		q = q.Set("description", *opts.Description)
+	}
+	if opts.Brand != nil {
+		q = q.Set("description", *opts.Description)
+	}
+	if opts.ArchiveTime != nil {
+		if *opts.ArchiveTime == 0 {
+			q = q.Set("archive_time", nil)
+		} else {
+			q = q.Set("archive_time", *opts.ArchiveTime)
+		}
+	}
+	if opts.ExternalID != nil {
+		q = q.Set("external_id", *opts.ExternalID)
+	}
+	if opts.IsFallback != nil {
+		q = q.Set("is_fallback", *opts.IsFallback)
+	}
+	if opts.Properties != nil {
+		q = q.Set("properties", opts.Properties)
+	}
+	if opts.FeatureOfInterestID != nil {
+		if *opts.FeatureOfInterestID == 0 {
+			q = q.Set("feature_of_interest_id", nil)
+		} else {
+			q = q.Set("feature_of_interest_id", *opts.FeatureOfInterestID)
+		}
+	}
+
+	q = auth.ProtectedQuery(ctx, "tenant_id", q)
+	_, err := q.RunWith(store.db).Exec()
+	if err != nil {
+		return fmt.Errorf("in UpdateSensor, Query error: %w", err)
+	}
+
+	return nil
+}

@@ -14,11 +14,16 @@ import (
 
 type DeviceStore interface {
 	List(context.Context, DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
-	ListInBoundingBox(context.Context, DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
+	ListInBoundingBox(
+		context.Context,
+		DeviceFilter,
+		pagination.Request,
+	) (*pagination.Page[Device], error)
 	ListInRange(context.Context, DeviceFilter, pagination.Request) (*pagination.Page[Device], error)
 	ListSensors(context.Context, pagination.Request) (*pagination.Page[Sensor], error)
 	Find(ctx context.Context, id int64) (*Device, error)
 	Save(ctx context.Context, dev *Device) error
+	UpdateSensor(ctx context.Context, id int64, opts UpdateSensorOpts) error
 	Delete(ctx context.Context, dev *Device) error
 	GetSensor(ctx context.Context, id int64) (*Sensor, error)
 }
@@ -36,7 +41,11 @@ type Service struct {
 	featureOfInterestService *featuresofinterest.Service
 }
 
-func New(store DeviceStore, sensorGroupStore SensorGroupStore, featureOfInterestService *featuresofinterest.Service) *Service {
+func New(
+	store DeviceStore,
+	sensorGroupStore SensorGroupStore,
+	featureOfInterestService *featuresofinterest.Service,
+) *Service {
 	return &Service{
 		store:                    store,
 		sensorGroupStore:         sensorGroupStore,
@@ -73,7 +82,11 @@ func (f DeviceFilter) HasRange() bool {
 	return f.Latitude != nil && f.Longitude != nil && f.Distance != nil
 }
 
-func (s *Service) ListDevices(ctx context.Context, filter DeviceFilter, p pagination.Request) (*pagination.Page[Device], error) {
+func (s *Service) ListDevices(
+	ctx context.Context,
+	filter DeviceFilter,
+	p pagination.Request,
+) (*pagination.Page[Device], error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
 		return nil, err
 	}
@@ -144,7 +157,10 @@ func (s *Service) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) 
 		IsFallback:  dto.IsFallback,
 	}
 	if dto.FeatureOfInterestID > 0 {
-		feature, err := s.featureOfInterestService.GetFeatureOfInterest(ctx, dto.FeatureOfInterestID)
+		feature, err := s.featureOfInterestService.GetFeatureOfInterest(
+			ctx,
+			dto.FeatureOfInterestID,
+		)
 		if err != nil {
 			return fmt.Errorf("in AddSensor: could not get feature of interest: %w", err)
 		}
@@ -228,7 +244,10 @@ func (s *Service) DeleteDevice(ctx context.Context, dev *Device) error {
 	return nil
 }
 
-func (s *Service) ListSensors(ctx context.Context, p pagination.Request) (*pagination.Page[Sensor], error) {
+func (s *Service) ListSensors(
+	ctx context.Context,
+	p pagination.Request,
+) (*pagination.Page[Sensor], error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
 		return nil, err
 	}
@@ -254,57 +273,42 @@ type UpdateSensorOpts struct {
 	FeatureOfInterestID *int64          `json:"feature_of_interest_id"`
 }
 
-func (s *Service) UpdateSensor(ctx context.Context, device *Device, sensor *Sensor, opt UpdateSensorOpts) error {
+func (s *Service) UpdateSensor(
+	ctx context.Context,
+	device *Device,
+	sensor *Sensor,
+	opt UpdateSensorOpts,
+) error {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
 		return err
-	}
-
-	if opt.Description != nil {
-		sensor.Description = *opt.Description
-	}
-	if opt.Brand != nil {
-		sensor.Brand = *opt.Brand
-	}
-	if opt.ArchiveTime != nil {
-		if *opt.ArchiveTime == 0 {
-			sensor.ArchiveTime = nil
-		} else {
-			sensor.ArchiveTime = opt.ArchiveTime
-		}
-	}
-	if opt.ExternalID != nil {
-		sensor.ExternalID = *opt.ExternalID
-	}
-	if opt.IsFallback != nil {
-		sensor.IsFallback = *opt.IsFallback
-	}
-	if opt.Properties != nil {
-		sensor.Properties = opt.Properties
-	}
-	if opt.FeatureOfInterestID != nil {
-		if *opt.FeatureOfInterestID == 0 {
-			sensor.FeatureOfInterest = nil
-		} else {
-			feature, err := s.featureOfInterestService.GetFeatureOfInterest(ctx, *opt.FeatureOfInterestID)
-			if err != nil {
-				return fmt.Errorf("in UpdateSensor: could not get feature of interest: %w", err)
-			}
-			sensor.FeatureOfInterest = feature
-		}
 	}
 
 	if err := device.UpdateSensor(sensor); err != nil {
 		return err
 	}
 
-	if err := s.store.Save(ctx, device); err != nil {
+	// Ensure that the FoI exists
+	if opt.FeatureOfInterestID != nil && *opt.FeatureOfInterestID > 0 {
+		_, err := s.featureOfInterestService.GetFeatureOfInterest(
+			ctx,
+			*opt.FeatureOfInterestID,
+		)
+		if err != nil {
+			return fmt.Errorf("in UpdateSensor: could not get feature of interest: %w", err)
+		}
+	}
+
+	if err := s.store.UpdateSensor(ctx, sensor.ID, opt); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *Service) CreateSensorGroup(ctx context.Context, name, description string) (*SensorGroup, error) {
+func (s *Service) CreateSensorGroup(
+	ctx context.Context,
+	name, description string,
+) (*SensorGroup, error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
 		return nil, err
 	}
@@ -323,7 +327,10 @@ func (s *Service) CreateSensorGroup(ctx context.Context, name, description strin
 	return group, nil
 }
 
-func (s *Service) ListSensorGroups(ctx context.Context, p pagination.Request) (*pagination.Page[SensorGroup], error) {
+func (s *Service) ListSensorGroups(
+	ctx context.Context,
+	p pagination.Request,
+) (*pagination.Page[SensorGroup], error) {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.READ_DEVICES}); err != nil {
 		return nil, err
 	}
@@ -410,7 +417,11 @@ type UpdateSensorGroupOpts struct {
 	Description *string `json:"description"`
 }
 
-func (s *Service) UpdateSensorGroup(ctx context.Context, group *SensorGroup, opts UpdateSensorGroupOpts) error {
+func (s *Service) UpdateSensorGroup(
+	ctx context.Context,
+	group *SensorGroup,
+	opts UpdateSensorGroupOpts,
+) error {
 	if err := auth.MustHavePermissions(ctx, auth.Permissions{auth.WRITE_DEVICES}); err != nil {
 		return err
 	}
