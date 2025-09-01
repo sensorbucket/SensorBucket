@@ -20,7 +20,7 @@ func TestAddSensorToDevice(t *testing.T) {
 			State:       devices.DeviceEnabled,
 		})
 		require.NoError(t, err)
-		err = device.AddSensor(devices.NewSensorOpts{
+		_, err = device.AddSensor(devices.NewSensorOpts{
 			Code:        "existing",
 			Description: "",
 			ExternalID:  "existing",
@@ -88,7 +88,7 @@ func TestAddSensorToDevice(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			device := setupDevice()
-			err := device.AddSensor(tC.sensor)
+			_, err := device.AddSensor(tC.sensor)
 			if tC.expectedErr != nil {
 				assert.Error(t, err)
 				assert.ErrorIs(t, err, tC.expectedErr)
@@ -115,7 +115,7 @@ func TestDeviceShouldProvideSensorByEIDOrFallback(t *testing.T) {
 		Code:       "test_fallback_sensor",
 		IsFallback: true,
 	}
-	err = dev.AddSensor(opt)
+	_, err = dev.AddSensor(opt)
 	assert.NoError(t, err)
 
 	// Fetch fallback
@@ -129,7 +129,7 @@ func TestDeviceShouldProvideSensorByEIDOrFallback(t *testing.T) {
 		Code:       "test_sensor",
 		ExternalID: "sensor_eid",
 	}
-	err = dev.AddSensor(opt)
+	_, err = dev.AddSensor(opt)
 	assert.NoError(t, err)
 
 	// Fetch fallback

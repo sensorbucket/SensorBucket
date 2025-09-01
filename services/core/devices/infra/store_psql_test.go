@@ -96,14 +96,54 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 		readDev, err := store.Find(ctx, dev.ID)
 		assert.NoError(t, err)
 		assert.Equal(t, dev.ID, readDev.ID, "store.Save(insert) and store.Find result in changes")
-		assert.Equal(t, dev.Latitude, readDev.Latitude, "store.Save(insert) and store.Find result in changes")
-		assert.Equal(t, dev.Longitude, readDev.Longitude, "store.Save(insert) and store.Find result in changes")
-		assert.Equal(t, dev.Altitude, readDev.Altitude, "store.Save(insert) and store.Find result in changes")
-		assert.Equal(t, dev.LocationDescription, readDev.LocationDescription, "store.Save(insert) and store.Find result in changes")
-		assert.Equal(t, dev.State, readDev.State, "store.Save(insert) and store.Find result in changes")
-		assert.Equal(t, dev.Description, readDev.Description, "store.Save(insert) and store.Find result in changes")
-		assert.Equal(t, dev.TenantID, readDev.TenantID, "store.Save(insert) and store.Find result in changes")
-		assert.Equal(t, dev.Properties, readDev.Properties, "store.Save(insert) and store.Find result in changes")
+		assert.Equal(
+			t,
+			dev.Latitude,
+			readDev.Latitude,
+			"store.Save(insert) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.Longitude,
+			readDev.Longitude,
+			"store.Save(insert) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.Altitude,
+			readDev.Altitude,
+			"store.Save(insert) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.LocationDescription,
+			readDev.LocationDescription,
+			"store.Save(insert) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.State,
+			readDev.State,
+			"store.Save(insert) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.Description,
+			readDev.Description,
+			"store.Save(insert) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.TenantID,
+			readDev.TenantID,
+			"store.Save(insert) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.Properties,
+			readDev.Properties,
+			"store.Save(insert) and store.Find result in changes",
+		)
 	})
 
 	t.Run("listing created device", func(t *testing.T) {
@@ -115,7 +155,12 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 		assert.Equal(t, dev.Latitude, devs[0].Latitude, "store.List results in changes")
 		assert.Equal(t, dev.Longitude, devs[0].Longitude, "store.List results in changes")
 		assert.Equal(t, dev.Altitude, devs[0].Altitude, "store.List results in changes")
-		assert.Equal(t, dev.LocationDescription, devs[0].LocationDescription, "store.List results in changes")
+		assert.Equal(
+			t,
+			dev.LocationDescription,
+			devs[0].LocationDescription,
+			"store.List results in changes",
+		)
 		assert.Equal(t, dev.State, devs[0].State, "store.List results in changes")
 		assert.Equal(t, dev.Description, devs[0].Description, "store.List results in changes")
 		assert.Equal(t, dev.TenantID, devs[0].TenantID, "store.List results in changes")
@@ -136,14 +181,54 @@ func TestShouldCreateAndFetchDevice(t *testing.T) {
 		readDev, err := store.Find(ctx, dev.ID)
 		assert.NoError(t, err)
 		assert.Equal(t, dev.ID, readDev.ID, "store.Save(update) and store.Find result in changes")
-		assert.Equal(t, dev.Latitude, readDev.Latitude, "store.Save(update) and store.Find result in changes")
-		assert.Equal(t, dev.Longitude, readDev.Longitude, "store.Save(update) and store.Find result in changes")
-		assert.Equal(t, dev.Altitude, readDev.Altitude, "store.Save(update) and store.Find result in changes")
-		assert.Equal(t, dev.LocationDescription, readDev.LocationDescription, "store.Save(update) and store.Find result in changes")
-		assert.Equal(t, dev.State, readDev.State, "store.Save(update) and store.Find result in changes")
-		assert.Equal(t, dev.Description, readDev.Description, "store.Save(update) and store.Find result in changes")
-		assert.Equal(t, dev.TenantID, readDev.TenantID, "store.Save(update) and store.Find result in changes")
-		assert.Equal(t, dev.Properties, readDev.Properties, "store.Save(update) and store.Find result in changes")
+		assert.Equal(
+			t,
+			dev.Latitude,
+			readDev.Latitude,
+			"store.Save(update) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.Longitude,
+			readDev.Longitude,
+			"store.Save(update) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.Altitude,
+			readDev.Altitude,
+			"store.Save(update) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.LocationDescription,
+			readDev.LocationDescription,
+			"store.Save(update) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.State,
+			readDev.State,
+			"store.Save(update) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.Description,
+			readDev.Description,
+			"store.Save(update) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.TenantID,
+			readDev.TenantID,
+			"store.Save(update) and store.Find result in changes",
+		)
+		assert.Equal(
+			t,
+			dev.Properties,
+			readDev.Properties,
+			"store.Save(update) and store.Find result in changes",
+		)
 	})
 }
 
@@ -178,7 +263,7 @@ func TestShouldAddSensor(t *testing.T) {
 
 	t.Run("should add sensor", func(t *testing.T) {
 		// Add sensor
-		err = dev.AddSensor(s1)
+		_, err := dev.AddSensor(s1)
 		require.NoError(t, err)
 		require.Len(t, dev.Sensors, 1)
 		err = store.Save(ctx, dev)

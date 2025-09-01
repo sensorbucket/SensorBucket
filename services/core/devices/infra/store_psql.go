@@ -604,6 +604,31 @@ func (s *PSQLStore) Save(ctx context.Context, dev *devices.Device) error {
 	return nil
 }
 
+func (store *PSQLStore) AddSensor(
+	ctx context.Context,
+	dev *devices.Device,
+	s *devices.Sensor,
+) error {
+	var featureID sql.NullInt64
+	if s.FeatureOfInterest != nil {
+		featureID.Valid = true
+		featureID.Int64 = s.FeatureOfInterest.ID
+	}
+
+	err := pq.Insert("sensors").Columns(
+		"code", "brand", "description", "archive_time", "properties", "external_id",
+		"device_id", "created_at", "is_fallback", "tenant_id", "feature_of_interest_id",
+	).Values(
+		s.Code, s.Brand, s.Description, s.ArchiveTime, s.Properties, s.ExternalID,
+		s.DeviceID, s.CreatedAt, s.IsFallback, s.TenantID, featureID,
+	).Suffix("RETURNING id").RunWith(store.db).ScanContext(ctx, &s.ID)
+	if err != nil {
+		return fmt.Errorf("AddSensor Query: %w", err)
+	}
+
+	return nil
+}
+
 func (store *PSQLStore) UpdateSensor(
 	ctx context.Context,
 	id int64,

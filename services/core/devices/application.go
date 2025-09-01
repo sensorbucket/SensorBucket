@@ -23,6 +23,7 @@ type DeviceStore interface {
 	ListSensors(context.Context, pagination.Request) (*pagination.Page[Sensor], error)
 	Find(ctx context.Context, id int64) (*Device, error)
 	Save(ctx context.Context, dev *Device) error
+	AddSensor(ctx context.Context, dev *Device, sensor *Sensor) error
 	UpdateSensor(ctx context.Context, id int64, opts UpdateSensorOpts) error
 	Delete(ctx context.Context, dev *Device) error
 	GetSensor(ctx context.Context, id int64) (*Sensor, error)
@@ -167,10 +168,11 @@ func (s *Service) AddSensor(ctx context.Context, dev *Device, dto NewSensorDTO) 
 		opts.FeatureOfInterest = feature
 	}
 
-	if err := dev.AddSensor(opts); err != nil {
+	sensor, err := dev.AddSensor(opts)
+	if err != nil {
 		return err
 	}
-	if err := s.store.Save(ctx, dev); err != nil {
+	if err := s.store.AddSensor(ctx, dev, sensor); err != nil {
 		return err
 	}
 	return nil
