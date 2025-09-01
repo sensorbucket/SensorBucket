@@ -9,10 +9,54 @@
   content:
     application/json:
       schema:
-        $ref: 'schemas.yaml#/apiError'
+        $ref: '#/apiError'
 '500':
   description: The request failed because of an unexpected server error
   content:
     application/json:
       schema:
-        $ref: 'schemas.yaml#/apiError'
+        $ref: '#/apiError'
+
+paginatedResponse:
+  type: object
+  required:
+    - links
+    - page_size
+    - total_count
+    - data
+  properties:
+    links:
+      type: object
+      properties:
+        previous:
+          type: string
+        next:
+          type: string
+    page_size:
+      type: integer
+    total_count:
+      type: integer
+    data:
+      type: array
+      items: {}
+
+apiResponse:
+  type: object
+  required:
+    - message
+    - data
+  properties:
+    message:
+      type: string
+    data:
+      type: unknown
+
+apiError:
+  type: object
+  properties:
+    message:
+      type: string
+    code:
+      type: string
+    http_status:
+      type: integer

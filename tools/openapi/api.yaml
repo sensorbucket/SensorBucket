@@ -22,55 +22,53 @@ info:
 servers:
   - description: Production
     url: 'https://sensorbucket.nl/api'
+  - description: Localhost
+    url: 'http://localhost:3000/api'
 paths: 
   /devices:
-    $ref: 'path-devices.yaml'
+    $ref: 'core/devices.yaml'
   /devices/{id}:
-    $ref: 'path-devices-by-id.yaml'
+    $ref: 'core/devices-by-id.yaml'
   /devices/{device_id}/sensors:
-    $ref: 'path-devices-by-sensors.yaml'
+    $ref: 'core/devices-sensors.yaml'
   /devices/{device_id}/sensors/{sensor_code}:
-    $ref: 'path-devices-by-sensors-id.yaml'
+    $ref: 'core/devices-sensors-by-code.yaml'
   /sensors:
-    $ref: 'path-sensors.yaml'
-  /sensor-groups:
-    $ref: 'path-sensorgroups.yaml'
-  /sensor-groups/{id}:
-    $ref: 'path-sensorgroups-by-id.yaml'
-  /sensor-groups/{id}/sensors:
-    $ref: 'path-sensorgroups-by-sensors.yaml'
-  /sensor-groups/{id}/sensors/{sensor_id}:
-    $ref: 'path-sensorgroups-by-sensors-id.yaml'
+    $ref: 'core/sensors.yaml'
+  /features-of-interest:
+    $ref: 'core/features-of-interest.yaml'
+  /features-of-interest/{id}:
+    $ref: 'core/features-of-interest-by-id.yaml'
   /measurements:
-    $ref: 'path-measurements.yaml'
+    $ref: 'core/measurements.yaml'
   /datastreams:
-    $ref: 'path-datastreams.yaml'
+    $ref: 'core/datastreams.yaml'
   /datastreams/{id}:
-    $ref: 'path-datastreams-by-id.yaml'
+    $ref: 'core/datastreams-by-id.yaml'
   /pipelines:
-    $ref: 'path-pipelines.yaml'
+    $ref: 'core/pipelines.yaml'
   /pipelines/{id}:
-    $ref: 'path-pipelines-by-id.yaml'
+    $ref: 'core/pipelines-by-id.yaml'
   /uplinks/{pipeline_id}:
-    $ref: 'path-uplinks-by-pipeline.yaml'
+    $ref: 'httpingress/uplink.yaml'
   /traces:
-    $ref: 'path-traces.yaml'
+    $ref: 'tracing/traces.yaml'
   /workers:
-    $ref: 'path-workers.yaml'
+    $ref: 'workers/workers.yaml'
   /workers/{id}:
-    $ref: 'path-workers-by-id.yaml'
+    $ref: 'workers/workers-by-id.yaml'
   /workers/{id}/usercode:
-    $ref: 'path-workers-usercode.yaml'
+    $ref: 'workers/workers-usercode.yaml'
   /tenants:
-    $ref: 'path-tenants.yaml'
+    $ref: 'tenants/tenants.yaml'
   /tenants/{tenant_id}/members:
-    $ref: 'path-tenants-members.yaml'
+    $ref: 'tenants/tenants-members.yaml'
   /tenants/{tenant_id}/members/{user_id}:
-    $ref: 'path-tenants-members-by-user.yaml'
+    $ref: 'tenants/tenants-members-by-id.yaml'
   /api-keys:
-    $ref: 'path-api-keys.yaml'
+    $ref: 'tenants/api-keys.yaml'
   /api-keys/{api_key_id}:
-    $ref: 'path-api-keys-by-id.yaml'
+    $ref: 'tenants/api-keys-by-id.yaml'
 components:
   securitySchemes:
     CookieSession:
@@ -91,11 +89,8 @@ security:
   - CookieSession: []
   - APIKey: []
 tags:
-  - name: Devices
-  - name: Pipelines
-  - name: Measurements
-  - name: Uplink
-  - name: Tracing
+  - name: Core
+  - name: HTTPIngress
   - name: Tenants
+  - name: Tracing
   - name: Workers
-  - name: APIKeys

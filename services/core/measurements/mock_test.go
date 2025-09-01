@@ -33,6 +33,9 @@ var _ measurements.Store = &StoreMock{}
 //			QueryFunc: func(contextMoqParam context.Context, filter measurements.Filter, request pagination.Request) (*pagination.Page[measurements.Measurement], error) {
 //				panic("mock out the Query method")
 //			},
+//			StoreMeasurementFunc: func(contextMoqParam context.Context, measurement measurements.Measurement) error {
+//				panic("mock out the StoreMeasurement method")
+//			},
 //			StoreMeasurementsFunc: func(contextMoqParam context.Context, measurementsMoqParam []measurements.Measurement) error {
 //				panic("mock out the StoreMeasurements method")
 //			},
@@ -54,6 +57,9 @@ type StoreMock struct {
 
 	// QueryFunc mocks the Query method.
 	QueryFunc func(contextMoqParam context.Context, filter measurements.Filter, request pagination.Request) (*pagination.Page[measurements.Measurement], error)
+
+	// StoreMeasurementFunc mocks the StoreMeasurement method.
+	StoreMeasurementFunc func(contextMoqParam context.Context, measurement measurements.Measurement) error
 
 	// StoreMeasurementsFunc mocks the StoreMeasurements method.
 	StoreMeasurementsFunc func(contextMoqParam context.Context, measurementsMoqParam []measurements.Measurement) error
@@ -100,6 +106,13 @@ type StoreMock struct {
 			// Request is the request argument value.
 			Request pagination.Request
 		}
+		// StoreMeasurement holds details about calls to the StoreMeasurement method.
+		StoreMeasurement []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// Measurement is the measurement argument value.
+			Measurement measurements.Measurement
+		}
 		// StoreMeasurements holds details about calls to the StoreMeasurements method.
 		StoreMeasurements []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
@@ -112,6 +125,7 @@ type StoreMock struct {
 	lockGetDatastream          sync.RWMutex
 	lockListDatastreams        sync.RWMutex
 	lockQuery                  sync.RWMutex
+	lockStoreMeasurement       sync.RWMutex
 	lockStoreMeasurements      sync.RWMutex
 }
 
@@ -280,6 +294,42 @@ func (mock *StoreMock) QueryCalls() []struct {
 	mock.lockQuery.RLock()
 	calls = mock.calls.Query
 	mock.lockQuery.RUnlock()
+	return calls
+}
+
+// StoreMeasurement calls StoreMeasurementFunc.
+func (mock *StoreMock) StoreMeasurement(contextMoqParam context.Context, measurement measurements.Measurement) error {
+	if mock.StoreMeasurementFunc == nil {
+		panic("StoreMock.StoreMeasurementFunc: method is nil but Store.StoreMeasurement was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam context.Context
+		Measurement     measurements.Measurement
+	}{
+		ContextMoqParam: contextMoqParam,
+		Measurement:     measurement,
+	}
+	mock.lockStoreMeasurement.Lock()
+	mock.calls.StoreMeasurement = append(mock.calls.StoreMeasurement, callInfo)
+	mock.lockStoreMeasurement.Unlock()
+	return mock.StoreMeasurementFunc(contextMoqParam, measurement)
+}
+
+// StoreMeasurementCalls gets all the calls that were made to StoreMeasurement.
+// Check the length with:
+//
+//	len(mockedStore.StoreMeasurementCalls())
+func (mock *StoreMock) StoreMeasurementCalls() []struct {
+	ContextMoqParam context.Context
+	Measurement     measurements.Measurement
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+		Measurement     measurements.Measurement
+	}
+	mock.lockStoreMeasurement.RLock()
+	calls = mock.calls.StoreMeasurement
+	mock.lockStoreMeasurement.RUnlock()
 	return calls
 }
 

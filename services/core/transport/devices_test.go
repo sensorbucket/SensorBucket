@@ -112,7 +112,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	// Create devices services
 	deviceStore := deviceinfra.NewPSQLStore(db)
 	sensorGroupStore := deviceinfra.NewPSQLSensorGroupStore(db)
-	s.devices = devices.New(deviceStore, sensorGroupStore)
+	s.devices = devices.New(deviceStore, sensorGroupStore, nil)
 
 	// Create measurements service
 	measurementStore := measurementsinfra.NewPSQL(pool)
@@ -123,7 +123,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.processing = processing.New(processingStore, nil, nil)
 
 	// Create transport
-	s.transport = coretransport.New(baseURL, authtest.JWKS(), s.devices, s.measurements, s.processing)
+	s.transport = coretransport.New(baseURL, authtest.JWKS(), s.devices, s.measurements, s.processing, nil, nil)
 
 	// Create three groups
 	ctx := authtest.GodContext()

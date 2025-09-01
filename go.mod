@@ -19,6 +19,7 @@ require (
 	github.com/gorilla/websocket v1.5.1
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/jmoiron/sqlx v1.3.5
+	github.com/lmittmann/tint v1.0.7
 	github.com/mochi-mqtt/server/v2 v2.6.6
 	github.com/ory/client-go v1.5.1
 	github.com/ory/nosurf v1.2.7
@@ -30,6 +31,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.29.1
 	github.com/twpayne/go-geom v1.5.7
+	github.com/urfave/cli/v2 v2.27.5
 	github.com/valyala/quicktemplate v1.7.0
 	go.opentelemetry.io/otel v1.32.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.54.0
@@ -128,7 +130,6 @@ require (
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/ulikunitz/xz v0.5.9 // indirect
-	github.com/urfave/cli/v2 v2.27.5 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect

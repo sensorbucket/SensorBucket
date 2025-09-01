@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -31,61 +30,6 @@ func NewPSQL(databasePool *pgxpool.Pool) *MeasurementStorePSQL {
 	return &MeasurementStorePSQL{
 		databasePool: databasePool,
 	}
-}
-
-func createInsertQuery(m measurements.Measurement) (string, []any, error) {
-	values := map[string]any{}
-
-	values["uplink_message_id"] = m.UplinkMessageID
-	values["organisation_id"] = m.OrganisationID
-	values["organisation_name"] = m.OrganisationName
-	values["organisation_address"] = m.OrganisationAddress
-	values["organisation_zipcode"] = m.OrganisationZipcode
-	values["organisation_city"] = m.OrganisationCity
-	values["organisation_chamber_of_commerce_id"] = m.OrganisationChamberOfCommerceID
-	values["organisation_headquarter_id"] = m.OrganisationHeadquarterID
-	values["organisation_state"] = m.OrganisationState
-	values["organisation_archive_time"] = m.OrganisationArchiveTime
-	values["device_id"] = m.DeviceID
-	values["device_code"] = m.DeviceCode
-	values["device_description"] = m.DeviceDescription
-	values["device_location"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.DeviceLongitude, m.DeviceLatitude)
-	values["device_altitude"] = m.DeviceAltitude
-	values["device_location_description"] = m.DeviceLocationDescription
-	values["device_state"] = m.DeviceState
-	values["device_properties"] = m.DeviceProperties
-	values["sensor_id"] = m.SensorID
-	values["sensor_code"] = m.SensorCode
-	values["sensor_description"] = m.SensorDescription
-	values["sensor_external_id"] = m.SensorExternalID
-	values["sensor_properties"] = m.SensorProperties
-	values["sensor_brand"] = m.SensorBrand
-	values["sensor_archive_time"] = m.SensorArchiveTime
-	values["datastream_id"] = m.DatastreamID
-	values["datastream_description"] = m.DatastreamDescription
-	values["datastream_observed_property"] = m.DatastreamObservedProperty
-	values["datastream_unit_of_measurement"] = m.DatastreamUnitOfMeasurement
-	values["measurement_timestamp"] = m.MeasurementTimestamp
-	values["measurement_value"] = m.MeasurementValue
-	values["measurement_location"] = sq.Expr("ST_SETSRID(ST_POINT(?,?),4326)", m.MeasurementLongitude, m.MeasurementLatitude)
-	values["measurement_altitude"] = m.MeasurementAltitude
-	values["measurement_expiration"] = m.MeasurementExpiration
-	values["created_at"] = m.CreatedAt
-
-	return pq.Insert("measurements").SetMap(values).ToSql()
-}
-
-func (s *MeasurementStorePSQL) Insert(ctx context.Context, m measurements.Measurement) error {
-	query, params, err := createInsertQuery(m)
-	if err != nil {
-		return fmt.Errorf("could not generate query: %w", err)
-	}
-
-	_, err = s.databasePool.Exec(ctx, query, params...)
-	if err != nil {
-		return fmt.Errorf("could not insert new measurement: %w", err)
-	}
-	return nil
 }
 
 // Query returns measurements from the database
@@ -140,6 +84,12 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 		"ST_X(measurement_location::geometry) as measurement_longitude",
 		"measurement_altitude",
 		"measurement_expiration",
+		"feature_of_interest_id",
+		"feature_of_interest_name",
+		"feature_of_interest_description",
+		"feature_of_interest_encoding_type",
+		"ST_AsBinary(feature_of_interest_feature)",
+		"feature_of_interest_properties",
 		"created_at",
 	).
 		From("measurements")
@@ -151,8 +101,11 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 		q = q.Where("measurement_timestamp <= ?", filter.End)
 	}
 
-	if len(filter.DeviceIDs) > 0 {
-		q = q.Where(sq.Eq{"device_id": filter.DeviceIDs})
+	if len(filter.FeatureOfInterestID) > 0 {
+		q = q.Where(sq.Eq{"feature_of_interest_id": filter.FeatureOfInterestID})
+	}
+	if len(filter.ObservedProperty) > 0 {
+		q = q.Where(sq.Eq{"datastream_observed_property": filter.ObservedProperty})
 	}
 	if len(filter.SensorCodes) > 0 {
 		q = q.Where(sq.Eq{"sensor_code": filter.SensorCodes})
@@ -231,6 +184,12 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 			&m.MeasurementLongitude,
 			&m.MeasurementAltitude,
 			&m.MeasurementExpiration,
+			&m.FeatureOfInterestID,
+			&m.FeatureOfInterestName,
+			&m.FeatureOfInterestDescription,
+			&m.FeatureOfInterestEncodingType,
+			&m.FeatureOfInterestFeature,
+			&m.FeatureOfInterestProperties,
 			&m.CreatedAt,
 			&cursor.Columns.MeasurementTimestamp,
 			&cursor.Columns.ID,
@@ -247,8 +206,10 @@ func (s *MeasurementStorePSQL) Query(ctx context.Context, filter measurements.Fi
 
 func (s *MeasurementStorePSQL) FindDatastream(ctx context.Context, tenantID, sensorID int64, obs string) (*measurements.Datastream, error) {
 	var ds measurements.Datastream
-	query, params, err := pq.Select("id", "description", "sensor_id", "observed_property", "unit_of_measurement",
-		"created_at", "tenant_id").From("datastreams").Where(sq.Eq{
+	query, params, err := pq.Select(
+		"id", "description", "sensor_id", "observed_property", "unit_of_measurement",
+		"created_at", "tenant_id",
+	).From("datastreams").Where(sq.Eq{
 		"sensor_id":         sensorID,
 		"observed_property": obs,
 		"tenant_id":         tenantID,
@@ -372,7 +333,8 @@ func (s *MeasurementStorePSQL) GetDatastream(ctx context.Context, id uuid.UUID, 
 		panic(err)
 	}
 	err = s.databasePool.QueryRow(ctx, query, params...).Scan(
-		&ds.ID, &ds.Description, &ds.SensorID, &ds.ObservedProperty, &ds.UnitOfMeasurement, &ds.CreatedAt,
+		&ds.ID, &ds.Description, &ds.SensorID, &ds.ObservedProperty, &ds.UnitOfMeasurement,
+		&ds.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -396,10 +358,8 @@ func (s *MeasurementStorePSQL) FindOrCreateDatastream(ctx context.Context, tenan
 	return &ds, nil
 }
 
-func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measurements []measurements.Measurement) error {
-	var batch pgx.Batch
-	for _, measurement := range measurements {
-		batch.Queue(`
+func (s *MeasurementStorePSQL) StoreMeasurement(ctx context.Context, measurement measurements.Measurement) error {
+	_, err := s.databasePool.Exec(ctx, `
 INSERT INTO measurements (
 			uplink_message_id,
 			organisation_id,
@@ -435,6 +395,12 @@ INSERT INTO measurements (
 			measurement_location,
 			measurement_altitude,
 			measurement_expiration,
+      feature_of_interest_id,
+      feature_of_interest_name,
+      feature_of_interest_description,
+      feature_of_interest_encoding_type,
+      feature_of_interest_feature,
+      feature_of_interest_properties,
 			created_at
 ) VALUES (
   $1,
@@ -471,57 +437,69 @@ INSERT INTO measurements (
   ST_SETSRID(ST_POINT($33,$34),4326),
   $35,
   $36,
-  $37
+  $37,
+  $38,
+  $39,
+  $40,
+  ST_GeomFromEWKB($41),
+  $42,
+  $43
 );
 
 `,
-			measurement.UplinkMessageID,
-			measurement.OrganisationID,
-			measurement.OrganisationName,
-			measurement.OrganisationAddress,
-			measurement.OrganisationZipcode,
-			measurement.OrganisationCity,
-			measurement.OrganisationChamberOfCommerceID,
-			measurement.OrganisationHeadquarterID,
-			measurement.OrganisationState,
-			measurement.OrganisationArchiveTime,
-			measurement.DeviceID,
-			measurement.DeviceCode,
-			measurement.DeviceDescription,
-			measurement.DeviceLongitude, measurement.DeviceLatitude,
-			measurement.DeviceAltitude,
-			measurement.DeviceLocationDescription,
-			measurement.DeviceState,
-			measurement.DeviceProperties,
-			measurement.SensorID,
-			measurement.SensorCode,
-			measurement.SensorDescription,
-			measurement.SensorExternalID,
-			measurement.SensorProperties,
-			measurement.SensorBrand,
-			measurement.SensorArchiveTime,
-			measurement.DatastreamID,
-			measurement.DatastreamDescription,
-			measurement.DatastreamObservedProperty,
-			measurement.DatastreamUnitOfMeasurement,
-			measurement.MeasurementTimestamp,
-			measurement.MeasurementValue,
-			measurement.MeasurementLongitude, measurement.MeasurementLatitude,
-			measurement.MeasurementAltitude,
-			measurement.MeasurementExpiration,
-			measurement.CreatedAt,
-		)
+		measurement.UplinkMessageID,
+		measurement.OrganisationID,
+		measurement.OrganisationName,
+		measurement.OrganisationAddress,
+		measurement.OrganisationZipcode,
+		measurement.OrganisationCity,
+		measurement.OrganisationChamberOfCommerceID,
+		measurement.OrganisationHeadquarterID,
+		measurement.OrganisationState,
+		measurement.OrganisationArchiveTime,
+		measurement.DeviceID,
+		measurement.DeviceCode,
+		measurement.DeviceDescription,
+		measurement.DeviceLongitude, measurement.DeviceLatitude,
+		measurement.DeviceAltitude,
+		measurement.DeviceLocationDescription,
+		measurement.DeviceState,
+		measurement.DeviceProperties,
+		measurement.SensorID,
+		measurement.SensorCode,
+		measurement.SensorDescription,
+		measurement.SensorExternalID,
+		measurement.SensorProperties,
+		measurement.SensorBrand,
+		measurement.SensorArchiveTime,
+		measurement.DatastreamID,
+		measurement.DatastreamDescription,
+		measurement.DatastreamObservedProperty,
+		measurement.DatastreamUnitOfMeasurement,
+		measurement.MeasurementTimestamp,
+		measurement.MeasurementValue,
+		measurement.MeasurementLongitude, measurement.MeasurementLatitude,
+		measurement.MeasurementAltitude,
+		measurement.MeasurementExpiration,
+		measurement.FeatureOfInterestID,
+		measurement.FeatureOfInterestName,
+		measurement.FeatureOfInterestDescription,
+		measurement.FeatureOfInterestEncodingType,
+		measurement.FeatureOfInterestFeature,
+		measurement.FeatureOfInterestProperties,
+		measurement.CreatedAt,
+	)
+	if err != nil {
+		return err
 	}
+	return nil
+}
 
-	batchResult := s.databasePool.SendBatch(ctx, &batch)
-	defer batchResult.Close()
-
-	for range len(measurements) {
-		_, err := batchResult.Exec()
-		if err != nil {
-			log.Printf("Batch inser resulted in an error: %s\n", err.Error())
+func (s *MeasurementStorePSQL) StoreMeasurements(ctx context.Context, measurements []measurements.Measurement) error {
+	for _, measurement := range measurements {
+		if err := s.StoreMeasurement(ctx, measurement); err != nil {
+			logger.Error("Could not store measurement", "error", err)
 		}
 	}
-
 	return nil
 }

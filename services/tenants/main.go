@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/rs/cors"
 	"log"
 	"net/http"
 	"os"
@@ -117,7 +118,7 @@ func runAPI(errC chan<- error, db *sqlx.DB) (func(context.Context) error, error)
 		Addr:         HTTP_API_ADDR,
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
-		Handler:      r,
+		Handler:      cors.AllowAll().Handler(r),
 	}
 
 	go func() {

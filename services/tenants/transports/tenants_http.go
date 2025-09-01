@@ -79,8 +79,8 @@ func (t *TenantsHTTPTransport) httpCreateTenant() http.HandlerFunc {
 
 func (t *TenantsHTTPTransport) httpGetTenants() http.HandlerFunc {
 	type Params struct {
-		tenants.Filter     `schema:",squash"`
-		pagination.Request `schema:",squash"`
+		tenants.Filter     `url:",squash"`
+		pagination.Request `url:",squash"`
 	}
 	return func(rw http.ResponseWriter, r *http.Request) {
 		params, err := httpfilter.Parse[Params](r)

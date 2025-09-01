@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/services/core/featuresofinterest"
 )
 
 var (
@@ -50,6 +51,11 @@ var (
 		"Invalid coordinates supplied",
 		"ERR_LOCATION_INVALID_COORDINATES",
 	)
+	ErrFeatureOfInterestNotFound = web.NewError(
+		http.StatusNotFound,
+		"feature_of_interest not found",
+		"FEATURE_OF_INTEREST_NOT_FOUND",
+	)
 )
 
 type DeviceState uint8
@@ -76,17 +82,18 @@ type Device struct {
 }
 
 type Sensor struct {
-	ID          int64           `json:"id"`
-	Code        string          `json:"code"`
-	Description string          `json:"description"`
-	DeviceID    int64           `json:"device_id" db:"device_id"`
-	Brand       string          `json:"brand"`
-	ArchiveTime *int            `json:"archive_time" db:"archive_time"`
-	ExternalID  string          `json:"external_id" db:"external_id"`
-	IsFallback  bool            `json:"is_fallback" db:"is_fallback"`
-	Properties  json.RawMessage `json:"properties"`
-	TenantID    int64           `json:"tenant_id"`
-	CreatedAt   time.Time       `json:"created_at" db:"created_at"`
+	ID                int64                                 `json:"id"`
+	Code              string                                `json:"code"`
+	Description       string                                `json:"description"`
+	DeviceID          int64                                 `json:"device_id" db:"device_id"`
+	Brand             string                                `json:"brand"`
+	ArchiveTime       *int                                  `json:"archive_time" db:"archive_time"`
+	ExternalID        string                                `json:"external_id" db:"external_id"`
+	IsFallback        bool                                  `json:"is_fallback" db:"is_fallback"`
+	Properties        json.RawMessage                       `json:"properties"`
+	FeatureOfInterest *featuresofinterest.FeatureOfInterest `json:"feature_of_interest"`
+	TenantID          int64                                 `json:"tenant_id"`
+	CreatedAt         time.Time                             `json:"created_at" db:"created_at"`
 }
 
 type NewDeviceOpts struct {
@@ -134,24 +141,26 @@ func NewDevice(tenantID int64, opts NewDeviceOpts) (*Device, error) {
 }
 
 type NewSensorOpts struct {
-	Code        string          `json:"code"`
-	Brand       string          `json:"brand"`
-	Description string          `json:"description"`
-	ExternalID  string          `json:"external_id"`
-	ArchiveTime *int            `json:"archive_time"`
-	Properties  json.RawMessage `json:"properties"`
-	IsFallback  bool            `json:"is_fallback"`
+	Code              string
+	Brand             string
+	Description       string
+	ExternalID        string
+	ArchiveTime       *int
+	FeatureOfInterest *featuresofinterest.FeatureOfInterest
+	Properties        json.RawMessage
+	IsFallback        bool
 }
 
 func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 	sensor := Sensor{
-		Brand:       opts.Brand,
-		Description: opts.Description,
-		ExternalID:  opts.ExternalID,
-		Properties:  []byte("{}"),
-		ArchiveTime: opts.ArchiveTime,
-		CreatedAt:   time.Now(),
-		IsFallback:  opts.IsFallback,
+		Brand:             opts.Brand,
+		Description:       opts.Description,
+		ExternalID:        opts.ExternalID,
+		Properties:        []byte("{}"),
+		ArchiveTime:       opts.ArchiveTime,
+		CreatedAt:         time.Now(),
+		FeatureOfInterest: opts.FeatureOfInterest,
+		IsFallback:        opts.IsFallback,
 	}
 
 	if !R_CODE.MatchString(opts.Code) {

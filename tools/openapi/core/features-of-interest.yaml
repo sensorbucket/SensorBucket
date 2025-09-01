@@ -1,0 +1,86 @@
+get:
+  x-is-paginated: true
+  operationId: ListFeaturesOfInterest
+  summary: List features of interest
+  description: |
+    Fetch a list of features of interest.
+  tags: ["Core"]
+  parameters:
+    - in: query
+      name: cursor
+      description: The cursor for the current page
+      schema:
+        type: string
+    - in: query
+      name: limit
+      description: |
+        The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+      schema:
+        type: integer
+  responses:
+    '200':
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../responses.yaml#/paginatedResponse'
+              - type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: 'schemas.yaml#/featureOfInterest'
+    '401':
+      $ref: '../responses.yaml#/401'
+    '403':
+      $ref: '../responses.yaml#/403'
+
+post:
+  operationId: CreateFeatureOfInterest
+  summary: Create FeatureOfInterest
+  description: |
+    Create a new FeatureOfInterest.
+  tags: ["Core"]
+  requestBody: 
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - name
+          properties:
+            name:
+              type: string
+              example: FeatureName
+            description:
+              type: string
+            encoding_type:
+              type: string
+              example: application/geo+json
+            feature:
+              type: object
+            properties:
+              type: object
+  responses:
+    '201':
+      description: Created
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+              - data
+            properties:
+              message:
+                type: string
+                example: created feature of interest
+              data:
+                $ref: 'schemas.yaml#/featureOfInterest'
+    '401':
+      $ref: '../responses.yaml#/401'
+    '403':
+      $ref: '../responses.yaml#/403'

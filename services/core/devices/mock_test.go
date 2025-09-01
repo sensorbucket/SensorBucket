@@ -44,6 +44,9 @@ var _ devices.DeviceStore = &DeviceStoreMock{}
 //			SaveFunc: func(ctx context.Context, dev *devices.Device) error {
 //				panic("mock out the Save method")
 //			},
+//			UpdateSensorFunc: func(ctx context.Context, id int64, opts devices.UpdateSensorOpts) error {
+//				panic("mock out the UpdateSensor method")
+//			},
 //		}
 //
 //		// use mockedDeviceStore in code that requires devices.DeviceStore
@@ -74,6 +77,9 @@ type DeviceStoreMock struct {
 
 	// SaveFunc mocks the Save method.
 	SaveFunc func(ctx context.Context, dev *devices.Device) error
+
+	// UpdateSensorFunc mocks the UpdateSensor method.
+	UpdateSensorFunc func(ctx context.Context, id int64, opts devices.UpdateSensorOpts) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -139,6 +145,15 @@ type DeviceStoreMock struct {
 			// Dev is the dev argument value.
 			Dev *devices.Device
 		}
+		// UpdateSensor holds details about calls to the UpdateSensor method.
+		UpdateSensor []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID int64
+			// Opts is the opts argument value.
+			Opts devices.UpdateSensorOpts
+		}
 	}
 	lockDelete            sync.RWMutex
 	lockFind              sync.RWMutex
@@ -148,6 +163,7 @@ type DeviceStoreMock struct {
 	lockListInRange       sync.RWMutex
 	lockListSensors       sync.RWMutex
 	lockSave              sync.RWMutex
+	lockUpdateSensor      sync.RWMutex
 }
 
 // Delete calls DeleteFunc.
@@ -447,6 +463,46 @@ func (mock *DeviceStoreMock) SaveCalls() []struct {
 	mock.lockSave.RLock()
 	calls = mock.calls.Save
 	mock.lockSave.RUnlock()
+	return calls
+}
+
+// UpdateSensor calls UpdateSensorFunc.
+func (mock *DeviceStoreMock) UpdateSensor(ctx context.Context, id int64, opts devices.UpdateSensorOpts) error {
+	if mock.UpdateSensorFunc == nil {
+		panic("DeviceStoreMock.UpdateSensorFunc: method is nil but DeviceStore.UpdateSensor was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		ID   int64
+		Opts devices.UpdateSensorOpts
+	}{
+		Ctx:  ctx,
+		ID:   id,
+		Opts: opts,
+	}
+	mock.lockUpdateSensor.Lock()
+	mock.calls.UpdateSensor = append(mock.calls.UpdateSensor, callInfo)
+	mock.lockUpdateSensor.Unlock()
+	return mock.UpdateSensorFunc(ctx, id, opts)
+}
+
+// UpdateSensorCalls gets all the calls that were made to UpdateSensor.
+// Check the length with:
+//
+//	len(mockedDeviceStore.UpdateSensorCalls())
+func (mock *DeviceStoreMock) UpdateSensorCalls() []struct {
+	Ctx  context.Context
+	ID   int64
+	Opts devices.UpdateSensorOpts
+} {
+	var calls []struct {
+		Ctx  context.Context
+		ID   int64
+		Opts devices.UpdateSensorOpts
+	}
+	mock.lockUpdateSensor.RLock()
+	calls = mock.calls.UpdateSensor
+	mock.lockUpdateSensor.RUnlock()
 	return calls
 }
 

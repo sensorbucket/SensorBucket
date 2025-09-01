@@ -135,6 +135,7 @@ func TestShouldErrorIfNoDeviceOrNoSensor(t *testing.T) {
 				FindOrCreateDatastreamFunc: func(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
 					return &measurements.Datastream{}, nil
 				},
+				StoreMeasurementFunc: func(contextMoqParam context.Context, measurement measurements.Measurement) error { return nil },
 			}
 			svc := measurements.New(store, 0, 1, authtest.JWKS())
 
@@ -190,19 +191,18 @@ func TestShouldCopyOverDefaultFields(t *testing.T) {
 		FindOrCreateDatastreamFunc: func(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
 			return &ds, nil
 		},
-		StoreMeasurementsFunc: func(ctx context.Context, measurementsMoqParam []measurements.Measurement) error { return nil },
+		StoreMeasurementFunc: func(contextMoqParam context.Context, measurement measurements.Measurement) error { return nil },
 	}
 	svc := measurements.New(store, 0, 1, authtest.JWKS())
 
 	// Act
 	err = svc.ProcessPipelineMessage(msg)
 	require.NoError(t, err)
-	assert.NoError(t, svc.CommitBatch(true))
+	// assert.NoError(t, svc.CommitBatch(true))
 
 	// Assert
-	require.Len(t, store.calls.StoreMeasurements, 1, "StoreMeasurements should've been called")
-	require.Len(t, store.calls.StoreMeasurements[0].MeasurementsMoqParam, 1, "StoreMeasurements should've been supplied a measurements")
-	measurement := store.calls.StoreMeasurements[0].MeasurementsMoqParam[0]
+	require.Len(t, store.calls.StoreMeasurement, 1, "StoreMeasurements should've been called")
+	measurement := store.calls.StoreMeasurement[0].Measurement
 	assert.Equal(t, msg.TracingID, measurement.UplinkMessageID)
 	// assert.Equal(t, OrganisationName, measurement.OrganisationName)
 	// assert.Equal(t, OrganisationAddress, measurement.OrganisationAddress)
@@ -327,7 +327,7 @@ func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
 				FindOrCreateDatastreamFunc: func(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
 					return &ds, nil
 				},
-				StoreMeasurementsFunc: func(ctx context.Context, measurementsMoqParam []measurements.Measurement) error { return nil },
+				StoreMeasurementFunc: func(contextMoqParam context.Context, measurement measurements.Measurement) error { return nil },
 			}
 			svc := measurements.New(store, 0, 1, authtest.JWKS())
 
@@ -335,12 +335,11 @@ func TestShouldChooseMeasurementLocationOverDeviceLocation(t *testing.T) {
 			require.NoError(t,
 				svc.ProcessPipelineMessage(msg),
 			)
-			assert.NoError(t, svc.CommitBatch(true))
+			// assert.NoError(t, svc.CommitBatch(true))
 
 			// Assert
-			require.Len(t, store.calls.StoreMeasurements, 1, "StoreMeasurements should've been called")
-			require.Len(t, store.calls.StoreMeasurements[0].MeasurementsMoqParam, 1, "StoreMeasurements should've been supplied a measurements")
-			measurement := store.calls.StoreMeasurements[0].MeasurementsMoqParam[0]
+			require.Len(t, store.calls.StoreMeasurement, 1, "StoreMeasurements should've been called")
+			measurement := store.calls.StoreMeasurement[0].Measurement
 			assert.Equal(t, tC.ExpectedLatitude, measurement.MeasurementLatitude)
 			assert.Equal(t, tC.ExpectedLongitude, measurement.MeasurementLongitude)
 			assert.Equal(t, tC.ExpectedAltitude, measurement.MeasurementAltitude)
@@ -408,19 +407,18 @@ func TestShouldSetExpirationDate(t *testing.T) {
 			FindOrCreateDatastreamFunc: func(ctx context.Context, tenantID, sensorID int64, observedProperty, UnitOfMeasurement string) (*measurements.Datastream, error) {
 				return &ds, nil
 			},
-			StoreMeasurementsFunc: func(ctx context.Context, measurementsMoqParam []measurements.Measurement) error { return nil },
+			StoreMeasurementFunc: func(contextMoqParam context.Context, measurement measurements.Measurement) error { return nil },
 		}
 		svc := measurements.New(store, sysArchiveTime, 1, authtest.JWKS())
 
 		// Act
 		err = svc.ProcessPipelineMessage(msg)
 		require.NoError(t, err)
-		assert.NoError(t, svc.CommitBatch(true))
+		// assert.NoError(t, svc.CommitBatch(true))
 
 		// Assert
-		require.Len(t, store.calls.StoreMeasurements, 1, "StoreMeasurements should've been called")
-		require.Len(t, store.calls.StoreMeasurements[0].MeasurementsMoqParam, 1, "StoreMeasurements should've been supplied a measurements")
-		measurement := store.calls.StoreMeasurements[0].MeasurementsMoqParam[0]
+		require.Len(t, store.calls.StoreMeasurement, 1, "StoreMeasurements should've been called")
+		measurement := store.calls.StoreMeasurement[0].Measurement
 		// Check if the difference in seconds is 0, otherwise there might be a subsecond difference
 		// due to parsing
 		assert.Equal(t,

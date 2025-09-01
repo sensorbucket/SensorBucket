@@ -25,11 +25,13 @@ import (
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
 	deviceinfra "sensorbucket.nl/sensorbucket/services/core/devices/infra"
+	"sensorbucket.nl/sensorbucket/services/core/featuresofinterest"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	measurementsinfra "sensorbucket.nl/sensorbucket/services/core/measurements/infra"
 	"sensorbucket.nl/sensorbucket/services/core/migrations"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
 	processinginfra "sensorbucket.nl/sensorbucket/services/core/processing/infra"
+	"sensorbucket.nl/sensorbucket/services/core/projects"
 	coretransport "sensorbucket.nl/sensorbucket/services/core/transport"
 )
 
@@ -45,10 +47,14 @@ var (
 	AMQP_QUEUE_ERRORS            = env.Could("AMQP_QUEUE_ERRORS", "errors")
 	HTTP_ADDR                    = env.Could("HTTP_ADDR", ":3000")
 	HTTP_BASE                    = env.Could("HTTP_BASE", "http://localhost:3000/api")
-	AUTH_JWKS_URL                = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
-	SYS_ARCHIVE_TIME             = env.Could("SYS_ARCHIVE_TIME", "30")
-	MEASUREMENT_BATCH_SIZE       = env.CouldInt("MEASUREMENT_BATCH_SIZE", 1024)
-	MEASUREMENT_COMMIT_INTERVAL  = env.CouldInt("MEASUREMENT_COMMIT_INTERVAL", 1000)
+	HTTP_TIMEOUT                 = env.CouldInt("HTTP_TIMEOUT", 30)
+	AUTH_JWKS_URL                = env.Could(
+		"AUTH_JWKS_URL",
+		"http://oathkeeper:4456/.well-known/jwks.json",
+	)
+	SYS_ARCHIVE_TIME            = env.Could("SYS_ARCHIVE_TIME", "30")
+	MEASUREMENT_BATCH_SIZE      = env.CouldInt("MEASUREMENT_BATCH_SIZE", 1024)
+	MEASUREMENT_COMMIT_INTERVAL = env.CouldInt("MEASUREMENT_COMMIT_INTERVAL", 1000)
 )
 
 func main() {
@@ -93,21 +99,39 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		return nil
 	})
 
+	featureOfInterestStore := featuresofinterest.NewStorePSQL(pool)
+	featureOfInterestService := featuresofinterest.NewService(featureOfInterestStore)
+
 	devicestore := deviceinfra.NewPSQLStore(db)
 	sensorGroupStore := deviceinfra.NewPSQLSensorGroupStore(db)
-	deviceservice := devices.New(devicestore, sensorGroupStore)
+	deviceservice := devices.New(devicestore, sensorGroupStore, featureOfInterestService)
 
 	sysArchiveTime, err := strconv.Atoi(SYS_ARCHIVE_TIME)
 	if err != nil {
 		return fmt.Errorf("could not convert SYS_ARCHIVE_TIME to integer: %w", err)
 	}
 	measurementstore := measurementsinfra.NewPSQL(pool)
-	measurementservice := measurements.New(measurementstore, sysArchiveTime, MEASUREMENT_BATCH_SIZE, keyClient)
-	cleanup.Add(measurementservice.StartMeasurementBatchStorer(time.Duration(MEASUREMENT_COMMIT_INTERVAL) * time.Millisecond))
+	storageErrorPublisher := measurementsinfra.NewStorageErrorPublisher(
+		amqpConn,
+		AMQP_XCHG_PIPELINE_MESSAGES,
+	)
+	measurementservice := measurements.New(
+		measurementstore,
+		sysArchiveTime,
+		MEASUREMENT_BATCH_SIZE,
+		keyClient,
+	)
+	// cleanup.Add(measurementservice.StartMeasurementBatchStorer(time.Duration(MEASUREMENT_COMMIT_INTERVAL) * time.Millisecond))
 
 	processingstore := processinginfra.NewPSQLStore(db)
-	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(amqpConn, AMQP_XCHG_PIPELINE_MESSAGES)
+	processingPipelinePublisher := processinginfra.NewPipelineMessagePublisher(
+		amqpConn,
+		AMQP_XCHG_PIPELINE_MESSAGES,
+	)
 	processingservice := processing.New(processingstore, processingPipelinePublisher, keyClient)
+
+	projectsStore := projects.NewPostgresStore(pool)
+	projectsService := projects.New(projectsStore)
 
 	// Setup MQ Transports
 	go mq.StartQueueProcessor(
@@ -115,7 +139,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		AMQP_QUEUE_MEASUREMENTS,
 		AMQP_XCHG_PIPELINE_MESSAGES,
 		AMQP_XCHG_MEASUREMENTS_TOPIC,
-		measurements.MQMessageProcessor(measurementservice),
+		measurements.MQMessageProcessor(measurementservice, storageErrorPublisher),
 	)
 	go mq.StartQueueProcessor(
 		amqpConn,
@@ -133,6 +157,8 @@ func Run(cleanup cleanupper.Cleanupper) error {
 		deviceservice,
 		measurementservice,
 		processingservice,
+		projectsService,
+		featureOfInterestService,
 	))
 	go func() {
 		if err := httpsrv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) && err != nil {
@@ -163,8 +189,8 @@ func Run(cleanup cleanupper.Cleanupper) error {
 func createHTTPServer(h http.Handler) *http.Server {
 	srv := &http.Server{
 		Addr:         HTTP_ADDR,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  time.Duration(HTTP_TIMEOUT) * time.Second,
+		WriteTimeout: time.Duration(HTTP_TIMEOUT) * time.Second,
 		Handler:      cors.AllowAll().Handler(h),
 	}
 	return srv

@@ -1,8 +1,8 @@
 name: sensorbucket
 services:
   caddy:
-    image: caddy:alpine
-    command: ["caddy", "run", "--watch", "--config", "/etc/caddy/Caddyfile"]
+    image: caddy:2.10
+    command: [ "caddy", "run", "--watch", "--config", "/etc/caddy/Caddyfile" ]
     ports:
       - 3000:80
     volumes:
@@ -11,18 +11,27 @@ services:
   dashboard:
     build:
       context: .
-      dockerfile: services/dashboard/Dockerfile
+      dockerfile: ./services/dashboard/Dockerfile
       target: dev
     volumes:
-      - .:/workspace:cached
+      - ./:/workspace:cached
     environment:
-    - STATIC_PATH=services/dashboard/static
-    - HTTP_BASE=/dashboard
-    - HEALTH_ADDR=:3030
-    - EP_CORE=http://caddy/api
-    - EP_TRACING=http://caddy/api
-    - EP_WORKERS=http://caddy/api
-    - PROFILER_ADDR=:3100
+      - STATIC_PATH=services/dashboard/static
+      - HTTP_BASE=/dashboard
+      - HEALTH_ADDR=:3030
+      - EP_CORE=http://caddy/api
+      - EP_TRACING=http://caddy/api
+      - EP_WORKERS=http://caddy/api
+      - PROFILER_ADDR=:3100
+
+  web-importer:
+    user: "1000:1000"
+    build:
+      context: ./services/web-importer
+      dockerfile: ./Dockerfile
+      target: dev
+    volumes:
+      - ./services/web-importer:/workspace
 
   core:
     build:
@@ -32,13 +41,13 @@ services:
     volumes:
       - .:/workspace:cached
     environment:
-    - APP_NAME=core
-    - APP_TYPE=service
-    - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/sensorbucket?sslmode=disable
-    - HTTP_ADDR=:3000
-    - AMQP_HOST=amqp://guest:guest@mq:5672/
-    - PROFILER_ADDR=:3100
-    - HEALTH_ADDR=:3030
+      - APP_NAME=core
+      - APP_TYPE=service
+      - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/sensorbucket?sslmode=disable
+      - HTTP_ADDR=:3000
+      - AMQP_HOST=amqp://guest:guest@mq:5672/
+      - PROFILER_ADDR=:3100
+      - HEALTH_ADDR=:3030
 
   tracing:
     build:
@@ -48,17 +57,17 @@ services:
     volumes:
       - .:/workspace:cached
     environment:
-    - APP_NAME=tracing
-    - APP_TYPE=service
-    - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/tracing?sslmode=disable
-    - AMQP_HOST=amqp://guest:guest@mq:5672/
-    - AMQP_QUEUE_PIPELINEMESSAGES=pipeline.messages
-    - AMQP_QUEUE_ERRORS=errors
-    - AMQP_QUEUE_INGRESS=archive-ingress
-    - AMQP_XCHG_INGRESS=ingress
-    - AMQP_XCHG_INGRESS_TOPIC=ingress.#
-    - PROFILER_ADDR=:3100
-    - HEALTH_ADDR=:3030
+      - APP_NAME=tracing
+      - APP_TYPE=service
+      - DB_DSN=postgresql://sensorbucket:sensorbucket@db:5432/tracing?sslmode=disable
+      - AMQP_HOST=amqp://guest:guest@mq:5672/
+      - AMQP_QUEUE_PIPELINEMESSAGES=pipeline.messages
+      - AMQP_QUEUE_ERRORS=errors
+      - AMQP_QUEUE_INGRESS=archive-ingress
+      - AMQP_XCHG_INGRESS=ingress
+      - AMQP_XCHG_INGRESS_TOPIC=ingress.#
+      - PROFILER_ADDR=:3100
+      - HEALTH_ADDR=:3030
 
   tenants:
     build:
@@ -77,7 +86,7 @@ services:
       - HEALTH_ADDR=:3030
 
   userworkers:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
       target: dev
@@ -98,12 +107,12 @@ services:
         #- CTRL_K8S_MQT_IMAGE=
         #- CTRL_K8S_MQT_SECRET=
         #- CTRL_K8S_PULL_SECRET=
-        #- CTRL_DOCKER_WORKERS_EP="http://caddy/api/workers"
+      #- CTRL_DOCKER_WORKERS_EP="http://caddy/api/workers"
       - CTRL_DOCKER_WORKER_IMAGE=sensorbucket/docker-worker:latest
         #- CTRL_DOCKER_AMQP_HOST=
         #- CTRL_DOCKER_AMQP_XCHG=
         #- CTRL_DOCKER_ENDPOINT_DEVICES=
-        #- CTRL_DOCKER_WORKER_NET=
+      #- CTRL_DOCKER_WORKER_NET=
   # This container should only build, the userworkers service will start containers of this
   # image for every created worker
   userworkers_dockerworker:
@@ -112,24 +121,24 @@ services:
       context: ./services/fission-user-workers/service/dockerworker
       dockerfile: Dockerfile
     entrypoint: sleep 1
-                  
-            
+
+
   httpimporter:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
       target: dev
     volumes:
       - .:/workspace:cached
     environment:
-    - APP_NAME=httpimporter
-    - APP_TYPE=service
-    - HTTP_ADDR=:3000
-    - AMQP_HOST=amqp://guest:guest@mq:5672/
-    - AMQP_XCHG=ingress
-    - AMQP_XCHG_TOPIC=ingress.httpimporter
-    - PROFILER_ADDR=:3100
-    - HEALTH_ADDR=:3030
+      - APP_NAME=httpimporter
+      - APP_TYPE=service
+      - HTTP_ADDR=:3000
+      - AMQP_HOST=amqp://guest:guest@mq:5672/
+      - AMQP_XCHG=ingress
+      - AMQP_XCHG_TOPIC=ingress.httpimporter
+      - PROFILER_ADDR=:3100
+      - HEALTH_ADDR=:3030
 
   mqttingress:
     build:
@@ -141,15 +150,15 @@ services:
     volumes:
       - .:/workspace:cached
     environment:
-    - APP_NAME=mqtt-ingress
-    - APP_TYPE=service
-    - "APIKEY_TRADE_URL=http://oathkeeper:4456/decisions/"
-    - AMQP_HOST=amqp://guest:guest@mq:5672/
-    - AMQP_XCHG=ingress
-    - AMQP_XCHG_TOPIC=ingress.mqtt
-    - PROFILER_ADDR=:3100
-    - METRICS_ADDR=:2112
-    - HEALTH_ADDR=:3030
+      - APP_NAME=mqtt-ingress
+      - APP_TYPE=service
+      - "APIKEY_TRADE_URL=http://oathkeeper:4456/decisions/"
+      - AMQP_HOST=amqp://guest:guest@mq:5672/
+      - AMQP_XCHG=ingress
+      - AMQP_XCHG_TOPIC=ingress.mqtt
+      - PROFILER_ADDR=:3100
+      - METRICS_ADDR=:2112
+      - HEALTH_ADDR=:3030
 
   oathkeeper:
     image: oryd/oathkeeper:v0.40.6
@@ -161,7 +170,7 @@ services:
   # Use own build of ory kratos since latest ory kratos does not contain latest changes which we need
   # for certain Kratos features
   kratos-migrate:
-    image:  ghcr.io/sensorbucket/oryd/kratos:latest
+    image: ghcr.io/sensorbucket/oryd/kratos:latest
     environment:
       - DSN=postgres://sensorbucket:sensorbucket@db:5432/kratos?sslmode=disable
     volumes:
@@ -192,9 +201,9 @@ services:
     ports:
       - 35432:5432
     environment:
-    - POSTGRES_USER=sensorbucket
-    - POSTGRES_PASSWORD=sensorbucket
-    - POSTGRES_DB=sensorbucket
+      - POSTGRES_USER=sensorbucket
+      - POSTGRES_PASSWORD=sensorbucket
+      - POSTGRES_DB=sensorbucket
   dbweb:
     image: dockette/adminer:pgsql
 

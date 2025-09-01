@@ -109,13 +109,16 @@
     }
 
     redir / /dashboard/
-    redir /dashboard /dashboard/
     handle_path /dashboard/* {
         reverse_proxy dashboard:3000
     }
 
-    handle {
-        respond 404
+    handle /importer {
+      reverse_proxy web-importer:5173
     }
+    handle /importer/* {
+      reverse_proxy web-importer:5173
+    }
+
 }
 

@@ -1,0 +1,39 @@
+get:
+  x-is-paginated: true
+  operationId: ListSensors
+  summary: List sensors
+  description: |
+    List all sensors.
+  tags: ["Core"]
+  parameters:
+    - in: query
+      name: cursor
+      description: The cursor for the current page
+      schema:
+        type: string
+    - in: query
+      name: limit
+      description: |
+        The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+      schema:
+        type: integer
+  responses:
+    '200':
+      description: Fetched sensors
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../responses.yaml#/paginatedResponse'
+              - type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "schemas.yaml#/sensor"
+    '401':
+      $ref: '../responses.yaml#/401'
+    '403':
+      $ref: '../responses.yaml#/403'

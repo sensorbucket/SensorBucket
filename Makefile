@@ -89,18 +89,25 @@ golib: golib-clean
 USER_EMAIL ?= a@pollex.nl
 USER_SCHEMA ?= default
 usercreate: 
-	echo '{"schema_id":"$(USER_SCHEMA)", "traits": {"email":"$(USER_EMAIL)"}}' | http post 127.0.0.1:4434/admin/identities | jq -r .id
+	@echo '{"schema_id":"$(USER_SCHEMA)", "traits": {"email":"$(USER_EMAIL)"}}' | http post 127.0.0.1:4434/admin/identities | jq -r .id
 
 userfind: 
-	http get 127.0.0.1:4434/admin/identities\?credentials_identifier=$(USER_EMAIL) | jq -r .[0].id
+	@http get 127.0.0.1:4434/admin/identities\?credentials_identifier=$(USER_EMAIL) | jq -r .[0].id
 
 USER_ID = 
 EXPIRES_IN ?= 5m
 userrecover:
-	echo '{"identity_id":"$(USER_ID)","expires_in":"$(EXPIRES_IN)"}' | http post 127.0.0.1:4434/admin/recovery/code
-
+	@echo '{"identity_id":"$(USER_ID)","expires_in":"$(EXPIRES_IN)"}' | http post 127.0.0.1:4434/admin/recovery/code
 
 oathkeeper:
 	-@mkdir -p $(CURDIR)/tools/oathkeeper
 	@docker run --rm --init -v $(CURDIR):/project redocly/cli bundle /project/tools/openapi/api.yaml > $(CURDIR)/tools/oathkeeper/bundled_openapi.yaml
 	openkeeper generate --config $(CURDIR)/tools/oathkeeper/openkeeper.toml
+
+.PHONY: webdeps
+webdeps: oathkeeper
+	rm -rf $(CURDIR)/services/web-importer/src/lib/sensorbucket
+	bunx @hey-api/openapi-ts \
+		-i $(CURDIR)/tools/oathkeeper/bundled_openapi.yaml \
+		-o $(CURDIR)/services/web-importer/src/lib/sensorbucket \
+		-c @hey-api/client-fetch -p @tanstack/svelte-query

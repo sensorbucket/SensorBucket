@@ -44,7 +44,7 @@ func TestServiceDeviceUpdates(t *testing.T) {
 		return nil
 	}}
 
-	svc := devices.New(store, nil)
+	svc := devices.New(store, nil, nil)
 
 	err := svc.UpdateDevice(authtest.GodContext(), &originalDevice, updateDTO)
 	assert.NoError(t, err)
@@ -73,7 +73,7 @@ func TestServiceCreateDevice(t *testing.T) {
 		storedDev = dev
 		return nil
 	}}
-	svc := devices.New(store, nil)
+	svc := devices.New(store, nil, nil)
 
 	_, err := svc.CreateDevice(authtest.GodContext(), newDTO)
 	assert.NoError(t, err)
@@ -113,7 +113,7 @@ func TestServiceShouldAddSensor(t *testing.T) {
 			return nil
 		},
 	}
-	svc := devices.New(store, nil)
+	svc := devices.New(store, nil, nil)
 
 	// Act
 	err := svc.AddSensor(authtest.GodContext(), &dev, sensorDTO)
@@ -161,7 +161,7 @@ func TestServiceShouldAddSensorToSensorGroup(t *testing.T) {
 			return nil
 		},
 	}
-	svc := devices.New(deviceStore, sensorGroupStore)
+	svc := devices.New(deviceStore, sensorGroupStore, nil)
 
 	// Act
 	err := svc.AddSensorToSensorGroup(authtest.GodContext(), sensorGroupID, sensorID)
@@ -202,7 +202,7 @@ func TestServiceShouldDeleteSensorFromSensorGroup(t *testing.T) {
 			return nil
 		},
 	}
-	svc := devices.New(deviceStore, sensorGroupStore)
+	svc := devices.New(deviceStore, sensorGroupStore, nil)
 
 	// Act
 	err := svc.DeleteSensorFromSensorGroup(authtest.GodContext(), sensorGroupID, sensorID)
@@ -236,7 +236,7 @@ func TestServiceShouldDeleteSensorGroup(t *testing.T) {
 			return nil
 		},
 	}
-	svc := devices.New(deviceStore, sensorGroupStore)
+	svc := devices.New(deviceStore, sensorGroupStore, nil)
 
 	// Act
 	err := svc.DeleteSensorGroup(authtest.GodContext(), sensorGroup)
@@ -266,7 +266,7 @@ func TestServiceShouldUpdateSensorGroup(t *testing.T) {
 			return nil
 		},
 	}
-	svc := devices.New(deviceStore, sensorGroupStore)
+	svc := devices.New(deviceStore, sensorGroupStore, nil)
 	dto := devices.UpdateSensorGroupOpts{
 		Name: &updatedName,
 	}

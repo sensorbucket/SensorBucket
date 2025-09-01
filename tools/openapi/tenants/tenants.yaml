@@ -1,0 +1,55 @@
+get:
+  x-is-paginated: true
+  operationId: ListTenants
+  summary: Retrieves tenants
+  description: |
+    Lists Tenants
+  tags: ["Tenants"]
+  parameters:
+    - in: query
+      name: name
+      description: Filter on specific name of a tenant
+      schema:
+        type: integer
+        format: int64
+    - in: query
+      name: state
+      description: Filter on specific state of a tenant
+      schema:
+        type: integer
+        format: int64
+        example: 1
+    - in: query
+      name: is_member
+      description: Only show tenants that this user is a member of
+      schema:
+        type: boolean
+    - in: query
+      name: cursor
+      description: The cursor for the current page
+      schema:
+        type: string
+    - in: query
+      name: limit
+      description: |
+        The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+      schema:
+        type: integer
+  responses:
+    '200':
+      description: Fetched Tenants
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../responses.yaml#/paginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "schemas.yaml#/tenant"
+    '401':
+      $ref: '../responses.yaml#/401'
+    '403':
+      $ref: '../responses.yaml#/403'

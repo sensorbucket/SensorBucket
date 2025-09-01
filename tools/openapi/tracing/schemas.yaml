@@ -1,0 +1,40 @@
+trace:
+  type: object
+  required:
+    - id
+    - pipeline_id
+    - device_id
+    - start_time
+    - workers
+    - worker_times
+  properties:
+    id:
+      type: string
+      format: uuid
+      example: "a59d28c8-2a0f-4e89-9f49-6942f1c04342"
+    pipeline_id:
+      type: string
+      format: uuid
+      example: "a59d28c8-2a0f-4e89-9f49-6942f1c04342"
+    device_id:
+      type: integer
+      format: int64
+      example: 37
+      description: id is 0 if not defined
+    start_time:
+      type: string
+      format: date-time
+    workers:
+      type: array
+      items:
+        type: string
+    worker_times:
+      type: array
+      items:
+        type: string
+        format: date-time
+    error:
+      type: string
+    error_at:
+      type: string
+      format: date-time

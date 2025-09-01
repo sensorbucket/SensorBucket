@@ -13,23 +13,37 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
+	"sensorbucket.nl/sensorbucket/services/core/featuresofinterest"
 	"sensorbucket.nl/sensorbucket/services/core/measurements"
 	"sensorbucket.nl/sensorbucket/services/core/processing"
+	"sensorbucket.nl/sensorbucket/services/core/projects"
 )
 
+// var logger = slog.Default().With("component", "services/core/transport")
+
 type MeasurementService interface {
-	QueryMeasurements(context.Context, measurements.Filter, pagination.Request) (*pagination.Page[measurements.Measurement], error)
+	QueryMeasurements(
+		context.Context,
+		measurements.Filter,
+		pagination.Request,
+	) (*pagination.Page[measurements.Measurement], error)
 	GetDatastream(context.Context, uuid.UUID) (*measurements.Datastream, error)
-	ListDatastreams(context.Context, measurements.DatastreamFilter, pagination.Request) (*pagination.Page[measurements.Datastream], error)
+	ListDatastreams(
+		context.Context,
+		measurements.DatastreamFilter,
+		pagination.Request,
+	) (*pagination.Page[measurements.Datastream], error)
 }
 
 type CoreTransport struct {
-	baseURL            string
-	router             chi.Router
-	keySource          auth.JWKSClient
-	deviceService      *devices.Service
-	measurementService MeasurementService
-	processingService  *processing.Service
+	baseURL                  string
+	router                   chi.Router
+	keySource                auth.JWKSClient
+	deviceService            *devices.Service
+	measurementService       MeasurementService
+	processingService        *processing.Service
+	projectsService          *projects.Application
+	featureOfInterestService *featuresofinterest.Service
 }
 
 func New(
@@ -38,80 +52,96 @@ func New(
 	deviceService *devices.Service,
 	measurementService MeasurementService,
 	processingService *processing.Service,
+	projectsService *projects.Application,
+	featureOfInterestService *featuresofinterest.Service,
 ) *CoreTransport {
 	t := &CoreTransport{
-		baseURL:            baseURL,
-		keySource:          keySource,
-		deviceService:      deviceService,
-		measurementService: measurementService,
-		processingService:  processingService,
+		baseURL:                  baseURL,
+		keySource:                keySource,
+		deviceService:            deviceService,
+		measurementService:       measurementService,
+		processingService:        processingService,
+		projectsService:          projectsService,
+		featureOfInterestService: featureOfInterestService,
 	}
 	t.routes()
 	return t
 }
 
-func (t CoreTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	t.router.ServeHTTP(w, r)
+func (transport CoreTransport) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	transport.router.ServeHTTP(w, r)
 }
 
-func (t *CoreTransport) routes() {
+func (transport *CoreTransport) routes() {
 	r := chi.NewRouter()
-	t.router = r
+	transport.router = r
 
 	r.Use(
 		chimw.Logger,
-		auth.Authenticate(t.keySource),
+		auth.Authenticate(transport.keySource),
 		auth.Protect(),
 	)
 
-	r.Get("/devices", t.httpListDevices())
-	r.Post("/devices", t.httpCreateDevice())
+	r.Get("/devices", transport.httpListDevices())
+	r.Post("/devices", transport.httpCreateDevice())
 	r.Route("/devices/{device_id}", func(r chi.Router) {
-		r.Use(t.useDeviceResolver())
-		r.Get("/", t.httpGetDevice())
-		r.Patch("/", t.httpUpdateDevice())
-		r.Delete("/", t.httpDeleteDevice())
+		r.Use(transport.useDeviceResolver())
+		r.Get("/", transport.httpGetDevice())
+		r.Patch("/", transport.httpUpdateDevice())
+		r.Delete("/", transport.httpDeleteDevice())
 
 		r.Route("/sensors", func(r chi.Router) {
-			r.Get("/", t.httpListDeviceSensors())
-			r.Post("/", t.httpAddSensor())
+			r.Get("/", transport.httpListDeviceSensors())
+			r.Post("/", transport.httpAddSensor())
 			r.Route("/{sensor_code}", func(r chi.Router) {
-				r.Use(t.useSensorResolver())
-				r.Get("/", t.httpGetSensor())
-				r.Delete("/", t.httpDeleteSensor())
-				r.Patch("/", t.httpUpdateSensor())
+				r.Use(transport.useSensorResolver())
+				r.Get("/", transport.httpGetSensor())
+				r.Delete("/", transport.httpDeleteSensor())
+				r.Patch("/", transport.httpUpdateSensor())
 			})
 		})
 	})
 
-	r.Get("/sensors", t.httpListSensors())
+	r.Get("/sensors", transport.httpListSensors())
 	r.Route("/sensors/{sensor_id}", func(r chi.Router) {
-		r.Get("/", t.httpGetSensor())
+		r.Get("/", transport.httpGetSensor())
 	})
 	r.Route("/sensor-groups", func(r chi.Router) {
-		r.Post("/", t.httpCreateSensorGroup())
-		r.Get("/", t.httpListSensorGroups())
+		r.Post("/", transport.httpCreateSensorGroup())
+		r.Get("/", transport.httpListSensorGroups())
 		r.Route("/{id}", func(r chi.Router) {
-			r.Get("/", t.httpGetSensorGroup())
-			r.Delete("/", t.httpDeleteSensorGroup())
-			r.Patch("/", t.httpUpdateSensorGroup())
-			r.Post("/sensors", t.httpAddSensorToSensorGroup())
-			r.Delete("/sensors/{sid}", t.httpDeleteSensorFromSensorGroup())
+			r.Get("/", transport.httpGetSensorGroup())
+			r.Delete("/", transport.httpDeleteSensorGroup())
+			r.Patch("/", transport.httpUpdateSensorGroup())
+			r.Post("/sensors", transport.httpAddSensorToSensorGroup())
+			r.Delete("/sensors/{sid}", transport.httpDeleteSensorFromSensorGroup())
 		})
 	})
 
 	r.Route("/datastreams", func(r chi.Router) {
-		r.Get("/", t.httpListDatastream())
-		r.Get("/{id}", t.httpGetDatastream())
+		r.Get("/", transport.httpListDatastream())
+		r.Get("/{id}", transport.httpGetDatastream())
 	})
 
 	r.Route("/pipelines", func(r chi.Router) {
-		r.Post("/", t.httpCreatePipeline())
-		r.Get("/", t.httpListPipelines())
-		r.Get("/{id}", t.httpGetPipeline())
-		r.Patch("/{id}", t.httpUpdatePipeline())
-		r.Delete("/{id}", t.httpDeletePipeline())
+		r.Post("/", transport.httpCreatePipeline())
+		r.Get("/", transport.httpListPipelines())
+		r.Get("/{id}", transport.httpGetPipeline())
+		r.Patch("/{id}", transport.httpUpdatePipeline())
+		r.Delete("/{id}", transport.httpDeletePipeline())
 	})
 
-	r.Get("/measurements", t.httpGetMeasurements())
+	r.Route("/projects", func(r chi.Router) {
+		r.Get("/", transport.httpListProjects())
+	})
+
+	r.Route("/features-of-interest", func(r chi.Router) {
+		r.Get("/", transport.httpListFeaturesOfInterest())
+		r.Post("/", transport.httpCreateFeatureOfInterest())
+		r.Get("/{id}", transport.httpGetFeatureOfInterest())
+		r.Delete("/{id}", transport.httpDeleteFeaturOfInterest())
+		r.Patch("/{id}", transport.httpUpdateFeatureOfInterest())
+	})
+
+	r.Get("/measurements", transport.httpGetMeasurements())
 }

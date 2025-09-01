@@ -1,0 +1,122 @@
+get:
+  x-is-paginated: true
+  operationId: ListPipelines
+  summary: List pipelines
+  description: |
+    List pipelines. By default only `state=active` pipelines are returned.
+    By providing the query parameter `inactive` only the inactive pipelines will be returned.
+
+    Pipelines can be filtered by providing one or more `step`s. This query parameter can be repeated to include more steps.
+    When multiple steps are given, pipelines containing one of the given steps will be returned.
+  tags: ["Core"]
+  parameters:
+    - in: query
+      name: id
+      description: Filter on pipeline ID(s)
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+          example: "a59d28c8-2a0f-4e89-9f49-6942f1c04342"
+    - name: inactive
+      description: Only show inactive pipelines
+      in: query
+      required: false
+      schema:
+          type: boolean
+    - name: step
+      description: Only show pipelines that include at least one of these steps
+      in: query
+      required: false
+      style: form
+      explode: true
+      schema:
+          type: array
+          items:
+            type: string
+      example:
+        - 'thethingsnetwork'
+        - 'multiflexmeter'
+    - in: query
+      name: cursor
+      description: The cursor for the current page
+      schema:
+        type: string
+    - in: query
+      name: limit
+      description: |
+        The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
+      schema:
+        type: integer
+  responses:
+    '200':
+      description: Fetched pipelines
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../responses.yaml#/paginatedResponse'
+              - type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: 'schemas.yaml#/pipeline'
+    '401':
+      $ref: '../responses.yaml#/401'
+    '403':
+      $ref: '../responses.yaml#/403'
+
+post:
+  operationId: CreatePipeline
+  summary: Create pipeline
+  description: |
+    Create a new pipeline. 
+
+    A pipeline determines which workers, in which order the incoming data will be processed by.
+
+    A pipeline step is used as routing key in the Message Queue. This might be changed in future releases.
+
+    **Note:** currently there are no validations in place on whether a worker for the provided step actually exists.
+  tags: ["Core"]
+  requestBody: 
+    content: 
+      application/json:
+        schema:
+          type: object
+          properties:
+            description:
+              type: string
+              example: Pipeline for MultiFlexMeter Groundwater devices
+            steps:
+              type: array
+              items:
+                type: string
+              example:
+                - "TTN@1.0.0"
+                - "MFMGroundwater@1.0.0"
+  responses:
+    '200':
+      description: Created pipeline
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+              - data
+            properties:
+              message:
+                type: string
+                example: Created pipeline
+              data:
+                $ref: 'schemas.yaml#/pipeline'
+    '401':
+      $ref: '../responses.yaml#/401'
+    '403':
+      $ref: '../responses.yaml#/403'

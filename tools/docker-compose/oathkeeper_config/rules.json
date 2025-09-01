@@ -28,7 +28,7 @@
     {
         "id": "auth",
         "match": {
-            "url": "http://<127.0.0.1|localhost>:3000/<tenants/auth|((tenants/switch|tenants/api-keys|dashboard|api)(/.*)?)>",
+            "url": "http://<127.0.0.1|localhost>:3000/<tenants/auth|((tenants/switch|tenants/api-keys|dashboard|importer|api)(/.*)?)>",
             "methods": [
                 "GET",
                 "POST",
