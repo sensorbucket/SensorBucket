@@ -29,7 +29,7 @@ type CreateFeatureOfInterestOpts struct {
 
 func NewFeatureOfInterest(opts CreateFeatureOfInterestOpts) (*FeatureOfInterest, error) {
 	if opts.Name == "" || opts.TenantID == 0 {
-		return nil, fmt.Errorf("In NewFeatureOfInterest: missing required Name or TenantID")
+		return nil, fmt.Errorf("in NewFeatureOfInterest: missing required Name or TenantID")
 	}
 
 	var foi FeatureOfInterest

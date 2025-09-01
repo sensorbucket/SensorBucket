@@ -57,7 +57,12 @@ func (c *AMQPConnection) Start() {
 		c.usersLock.Unlock()
 		if c.connection != nil {
 			c.state = AMQP_DISCONNECTED
-			c.connection.Close()
+			if err := c.connection.Close(); err != nil {
+				log.Printf(
+					"AMQPConnection close returned an error but we're treating this as closed anyways: %s\n",
+					err.Error(),
+				)
+			}
 		}
 		log.Println("AMQPConnection stopped")
 	}()
@@ -109,7 +114,12 @@ func (c *AMQPConnection) Start() {
 
 		// Disconnected, so close to be sure
 		log.Printf("AMQPConnection disconnected\n")
-		c.connection.Close()
+		if err := c.connection.Close(); err != nil {
+			log.Printf(
+				"AMQPConnection close returned an error but we're treating this as closed anyways: %s\n",
+				err.Error(),
+			)
+		}
 	}
 }
 

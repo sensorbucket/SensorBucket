@@ -85,7 +85,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	if err != nil {
 		return fmt.Errorf("could not create database connection: %w", err)
 	}
-	pool, err, stopPool := createPGXPool(ctx)
+	pool, stopPool, err := createPGXPool(ctx)
 	if err != nil {
 		return fmt.Errorf("could not create database connection: %w", err)
 	}
@@ -211,21 +211,21 @@ func createDB() (*sqlx.DB, error) {
 	return db, nil
 }
 
-func createPGXPool(ctx context.Context) (*pgxpool.Pool, error, cleanupper.Shutdown) {
+func createPGXPool(ctx context.Context) (*pgxpool.Pool, cleanupper.Shutdown, error) {
 	pgxConfig, err := pgxpool.ParseConfig(DB_DSN)
 	if err != nil {
-		return nil, fmt.Errorf("parsing db dsn: %w", err), cleanupper.Noop
+		return nil, cleanupper.Noop, fmt.Errorf("parsing db dsn: %w", err)
 	}
 	// pgxConfig.AfterConnect = func(ctx context.Context, c *pgx.Conn) error {
 	// 	return nil
 	// }
 	pool, err := pgxpool.NewWithConfig(ctx, pgxConfig)
 	if err != nil {
-		return nil, fmt.Errorf("creating pgxpool: %w", err), cleanupper.Noop
+		return nil, cleanupper.Noop, fmt.Errorf("creating pgxpool: %w", err)
 	}
 
-	return pool, nil, func(ctx context.Context) error {
+	return pool, func(ctx context.Context) error {
 		pool.Close()
 		return nil
-	}
+	}, nil
 }
