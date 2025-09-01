@@ -175,23 +175,23 @@ func NewSensor(opts NewSensorOpts) (*Sensor, error) {
 	return &sensor, nil
 }
 
-func (d *Device) AddSensor(opts NewSensorOpts) error {
+func (d *Device) AddSensor(opts NewSensorOpts) (*Sensor,error) {
 	// Check if sensor external ID already exists
 	for _, existing := range d.Sensors {
 		if existing.ExternalID == opts.ExternalID {
-			return ErrDuplicateSensorExternalID
+			return nil, ErrDuplicateSensorExternalID
 		}
 		if existing.Code == opts.Code {
-			return ErrDuplicateSensorCode
+			return nil, ErrDuplicateSensorCode
 		}
 		if opts.IsFallback && existing.IsFallback {
-			return ErrDuplicateFallbackSensor
+			return nil, ErrDuplicateFallbackSensor
 		}
 	}
 
 	sensor, err := NewSensor(opts)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	sensor.TenantID = d.TenantID
 	sensor.DeviceID = d.ID
@@ -199,7 +199,7 @@ func (d *Device) AddSensor(opts NewSensorOpts) error {
 	// Append sensor
 	d.Sensors = append(d.Sensors, *sensor)
 
-	return nil
+	return sensor, nil
 }
 
 // Get the sensor with a specific code from the device

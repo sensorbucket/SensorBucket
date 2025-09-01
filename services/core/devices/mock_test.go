@@ -20,6 +20,9 @@ var _ devices.DeviceStore = &DeviceStoreMock{}
 //
 //		// make and configure a mocked devices.DeviceStore
 //		mockedDeviceStore := &DeviceStoreMock{
+//			AddSensorFunc: func(ctx context.Context, dev *devices.Device, sensor *devices.Sensor) error {
+//				panic("mock out the AddSensor method")
+//			},
 //			DeleteFunc: func(ctx context.Context, dev *devices.Device) error {
 //				panic("mock out the Delete method")
 //			},
@@ -54,6 +57,9 @@ var _ devices.DeviceStore = &DeviceStoreMock{}
 //
 //	}
 type DeviceStoreMock struct {
+	// AddSensorFunc mocks the AddSensor method.
+	AddSensorFunc func(ctx context.Context, dev *devices.Device, sensor *devices.Sensor) error
+
 	// DeleteFunc mocks the Delete method.
 	DeleteFunc func(ctx context.Context, dev *devices.Device) error
 
@@ -83,6 +89,15 @@ type DeviceStoreMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AddSensor holds details about calls to the AddSensor method.
+		AddSensor []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Dev is the dev argument value.
+			Dev *devices.Device
+			// Sensor is the sensor argument value.
+			Sensor *devices.Sensor
+		}
 		// Delete holds details about calls to the Delete method.
 		Delete []struct {
 			// Ctx is the ctx argument value.
@@ -155,6 +170,7 @@ type DeviceStoreMock struct {
 			Opts devices.UpdateSensorOpts
 		}
 	}
+	lockAddSensor         sync.RWMutex
 	lockDelete            sync.RWMutex
 	lockFind              sync.RWMutex
 	lockGetSensor         sync.RWMutex
@@ -164,6 +180,46 @@ type DeviceStoreMock struct {
 	lockListSensors       sync.RWMutex
 	lockSave              sync.RWMutex
 	lockUpdateSensor      sync.RWMutex
+}
+
+// AddSensor calls AddSensorFunc.
+func (mock *DeviceStoreMock) AddSensor(ctx context.Context, dev *devices.Device, sensor *devices.Sensor) error {
+	if mock.AddSensorFunc == nil {
+		panic("DeviceStoreMock.AddSensorFunc: method is nil but DeviceStore.AddSensor was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Dev    *devices.Device
+		Sensor *devices.Sensor
+	}{
+		Ctx:    ctx,
+		Dev:    dev,
+		Sensor: sensor,
+	}
+	mock.lockAddSensor.Lock()
+	mock.calls.AddSensor = append(mock.calls.AddSensor, callInfo)
+	mock.lockAddSensor.Unlock()
+	return mock.AddSensorFunc(ctx, dev, sensor)
+}
+
+// AddSensorCalls gets all the calls that were made to AddSensor.
+// Check the length with:
+//
+//	len(mockedDeviceStore.AddSensorCalls())
+func (mock *DeviceStoreMock) AddSensorCalls() []struct {
+	Ctx    context.Context
+	Dev    *devices.Device
+	Sensor *devices.Sensor
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Dev    *devices.Device
+		Sensor *devices.Sensor
+	}
+	mock.lockAddSensor.RLock()
+	calls = mock.calls.AddSensor
+	mock.lockAddSensor.RUnlock()
+	return calls
 }
 
 // Delete calls DeleteFunc.
