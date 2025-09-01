@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	pgt "github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/stdlib"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
 	"sensorbucket.nl/sensorbucket/internal/pagination"

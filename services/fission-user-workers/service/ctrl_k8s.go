@@ -156,7 +156,7 @@ func (ctrl *KubernetesController) DeleteWanderingResources(ctx context.Context) 
 
 	wanderingFunctions, err := ctrl.findWanderingFunctions(ctx)
 	if err != nil {
-		return fmt.Errorf("error finding wandering Functions: %w\n", err)
+		return fmt.Errorf("error finding wandering Functions: %w", err)
 	}
 	for _, fn := range wanderingFunctions {
 		work.DeleteFunction(fn.Name)
@@ -164,7 +164,7 @@ func (ctrl *KubernetesController) DeleteWanderingResources(ctx context.Context) 
 
 	wanderingPackages, err := ctrl.findWanderingPackages(ctx)
 	if err != nil {
-		return fmt.Errorf("error finding wandering Packages: %w\n", err)
+		return fmt.Errorf("error finding wandering Packages: %w", err)
 	}
 	for _, pkg := range wanderingPackages {
 		work.DeletePackage(pkg.Name)
@@ -172,14 +172,14 @@ func (ctrl *KubernetesController) DeleteWanderingResources(ctx context.Context) 
 
 	wanderingMessageQueueTriggers, err := ctrl.findWanderingMessageQueueTriggers(ctx)
 	if err != nil {
-		return fmt.Errorf("error finding wandering MessageQueueTriggers: %w\n", err)
+		return fmt.Errorf("error finding wandering MessageQueueTriggers: %w", err)
 	}
 	for _, mqt := range wanderingMessageQueueTriggers {
 		work.DeleteMessageQueueTrigger(mqt.Name)
 	}
 
 	if err := work.Apply(ctx); err != nil {
-		return fmt.Errorf("error applying work: %w\n", err)
+		return fmt.Errorf("error applying work: %w", err)
 	}
 	return nil
 }

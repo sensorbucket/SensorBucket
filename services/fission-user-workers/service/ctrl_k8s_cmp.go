@@ -26,13 +26,13 @@ func CompareFunctions(current, desired Function) ResourceDiff {
 	}
 
 	// Compare ObjectMeta
-	if current.Resource.ObjectMeta.Name != desired.Resource.ObjectMeta.Name {
+	if current.Resource.Name != desired.Resource.Name {
 		diff.Changes = append(diff.Changes, "Name changed")
 	}
-	if current.Resource.ObjectMeta.Namespace != desired.Resource.ObjectMeta.Namespace {
+	if current.Resource.Namespace != desired.Resource.Namespace {
 		diff.Changes = append(diff.Changes, "Namespace changed")
 	}
-	if !compareLabels(current.Resource.ObjectMeta.Labels, desired.Resource.ObjectMeta.Labels) {
+	if !compareLabels(current.Resource.Labels, desired.Resource.Labels) {
 		diff.Changes = append(diff.Changes, "Labels changed")
 	}
 
@@ -139,13 +139,13 @@ func CompareMessageQueueTriggers(current, desired MessageQueueTrigger) ResourceD
 	}
 
 	// Compare ObjectMeta
-	if current.Resource.ObjectMeta.Name != desired.Resource.ObjectMeta.Name {
+	if current.Resource.Name != desired.Resource.Name {
 		diff.Changes = append(diff.Changes, "Name changed")
 	}
-	if current.Resource.ObjectMeta.Namespace != desired.Resource.ObjectMeta.Namespace {
+	if current.Resource.Namespace != desired.Resource.Namespace {
 		diff.Changes = append(diff.Changes, "Namespace changed")
 	}
-	if !compareLabels(current.Resource.ObjectMeta.Labels, desired.Resource.ObjectMeta.Labels) {
+	if !compareLabels(current.Resource.Labels, desired.Resource.Labels) {
 		diff.Changes = append(diff.Changes, "Labels changed")
 	}
 
@@ -282,13 +282,13 @@ func ComparePackages(current, desired Package) ResourceDiff {
 	}
 
 	// Compare ObjectMeta
-	if current.Resource.ObjectMeta.Name != desired.Resource.ObjectMeta.Name {
+	if current.Resource.Name != desired.Resource.Name {
 		diff.Changes = append(diff.Changes, "Name changed")
 	}
-	if current.Resource.ObjectMeta.Namespace != desired.Resource.ObjectMeta.Namespace {
+	if current.Resource.Namespace != desired.Resource.Namespace {
 		diff.Changes = append(diff.Changes, "Namespace changed")
 	}
-	if !compareLabels(current.Resource.ObjectMeta.Labels, desired.Resource.ObjectMeta.Labels) {
+	if !compareLabels(current.Resource.Labels, desired.Resource.Labels) {
 		diff.Changes = append(diff.Changes, "Labels changed")
 	}
 

@@ -11,6 +11,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/fxamacker/cbor/v2"
+	"github.com/samber/lo"
 )
 
 const (
@@ -89,10 +90,6 @@ type Cursor[T any] struct {
 func CreatePageT[T1 any, T2 any](data []T1, cursor Cursor[T2]) Page[T1] {
 	var cursorString string
 
-	// TODO: Small bug, at this point the data has already been Limited and the data will always be equal to the Limit or smaller
-	// this means that a cursor will be made if the set is exactly equal to the limit but in reality, there is no more data
-	// meaning a new cursor is sent that won't result in any data
-	// https://github.com/sensorbucket/SensorBucket/issues/82
 	if len(data) >= int(cursor.Limit) {
 		cursorString = EncodeCursor(cursor)
 	}
@@ -137,24 +134,54 @@ func multiColumnCompare(columns []whereCol) sq.Sqlizer {
 	if len(columns) == 0 {
 		return nil
 	}
-	clause := sq.Or{}
-	for i := 0; i < len(columns); i++ {
-		and := sq.And{}
-		for j := 0; j <= i; j++ {
-			col := columns[j]
-			if j == i {
-				if col.order == "ASC" {
-					and = append(and, sq.Gt{col.column: col.value})
-				} else {
-					and = append(and, sq.Lt{col.column: col.value})
-				}
-				continue
-			}
-			and = append(and, sq.Eq{col.column: col.value})
-		}
-		clause = append(clause, and)
+
+	// Determine the comparison operator based on the first column's order.
+	// This function assumes all columns in the cursor are sorted in the same direction (all ASC or all DESC).
+	// If mixed orders are present, the simple tuple comparison `(col1, col2) OP (val1, val2)` is semantically incorrect.
+	op := ""
+	switch columns[0].order {
+	case "ASC":
+		op = ">"
+	case "DESC":
+		op = "<"
+	default:
+		// This panic indicates an internal inconsistency: `whereCol.order` should only be "ASC" or "DESC".
+		panic(
+			fmt.Sprintf(
+				"multiColumnCompare: invalid order type %q encountered for column %q. Expected 'ASC' or 'DESC'.",
+				columns[0].order,
+				columns[0].column,
+			),
+		)
 	}
-	return clause
+
+	// Validate that all columns have the same sorting order.
+	// This is a strict requirement for the simple tuple comparison syntax used here.
+	for i := 1; i < len(columns); i++ {
+		if columns[i].order != columns[0].order {
+			// This panic indicates a misconfiguration in the pagination tags or an invalid cursor.
+			// Mixed ASC/DESC orders require a more complex WHERE clause (e.g., `(A > X) OR (A = X AND B < Y)`).
+			panic(
+				"multiColumnCompare: mixed ASC/DESC orders detected in pagination columns. This function supports only consistent ordering for tuple comparison.",
+			)
+		}
+	}
+
+	placeholders := make([]string, len(columns))
+	for i := range columns {
+		placeholders[i] = "?"
+	}
+	columnNames := lo.Map(columns, func(col whereCol, _ int) string { return col.column })
+	columnValues := lo.Map(columns, func(col whereCol, _ int) any { return col.value })
+
+	return sq.Expr(
+		fmt.Sprintf(
+			"(%s) %s (%s)",
+			strings.Join(columnNames, ", "),
+			op,
+			strings.Join(placeholders, ","),
+		),
+		columnValues...)
 }
 
 func columnAlias(name string) string {
@@ -166,11 +193,6 @@ func columnAlias(name string) string {
 	return "paginated_" + name
 }
 
-func ApplyNoLimit[T any](q sq.SelectBuilder, c Cursor[T]) (sq.SelectBuilder, error) {
-	c.Limit = 0
-	return Apply(q, c)
-}
-
 func Apply[T any](q sq.SelectBuilder, c Cursor[T]) (sq.SelectBuilder, error) {
 	if c.Limit > 0 {
 		q = q.Limit(c.Limit)
@@ -178,7 +200,7 @@ func Apply[T any](q sq.SelectBuilder, c Cursor[T]) (sq.SelectBuilder, error) {
 	rt := reflect.TypeOf(c.Columns)
 	rv := reflect.ValueOf(c.Columns)
 	columns := []whereCol{}
-	for ix := 0; ix < rt.NumField(); ix++ {
+	for ix := range rt.NumField() {
 		rf := rt.Field(ix)
 		if !rf.IsExported() {
 			continue
@@ -191,12 +213,20 @@ func Apply[T any](q sq.SelectBuilder, c Cursor[T]) (sq.SelectBuilder, error) {
 
 		tagParts := strings.Split(tag, ",")
 		if len(tagParts) != 2 {
-			return q, fmt.Errorf("invalid pagination tag on struct %s, for field %s", rt.Name(), rf.Name)
+			return q, fmt.Errorf(
+				"invalid pagination tag on struct %s, for field %s",
+				rt.Name(),
+				rf.Name,
+			)
 		}
 
 		column, order := tagParts[0], strings.ToUpper(tagParts[1])
 		if order != "ASC" && order != "DESC" {
-			return q, fmt.Errorf("invalid order in pagination tag on struct %s, for field %s", rt.Name(), rf.Name)
+			return q, fmt.Errorf(
+				"invalid order in pagination tag on struct %s, for field %s",
+				rt.Name(),
+				rf.Name,
+			)
 		}
 		q = q.OrderBy(column + " " + order).Column(column + " AS " + columnAlias(column))
 

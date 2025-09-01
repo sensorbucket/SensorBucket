@@ -2,11 +2,13 @@ package deviceinfra
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 
+	"sensorbucket.nl/sensorbucket/internal/dbutils"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/core/devices"
@@ -75,7 +77,10 @@ func (b deviceQueryBuilder) WithinRange(r devices.RangeFilter) deviceQueryBuilde
 	return b
 }
 
-func (b deviceQueryBuilder) Query(ctx context.Context, db *sqlx.DB) (*pagination.Page[devices.Device], error) {
+func (b deviceQueryBuilder) Query(
+	ctx context.Context,
+	db *sqlx.DB,
+) (*pagination.Page[devices.Device], error) {
 	if b.err != nil {
 		return nil, b.err
 	}
@@ -92,7 +97,10 @@ func (b deviceQueryBuilder) Query(ctx context.Context, db *sqlx.DB) (*pagination
 	}
 	if len(b.filters.Sensor) > 0 {
 		// Update query here
-		subQ, subArgs, err := sq.Select("DISTINCT sensor.device_id").From("sensors sensor").Where(sq.Eq{"sensor.id": b.filters.Sensor}).ToSql()
+		subQ, subArgs, err := sq.Select("DISTINCT sensor.device_id").
+			From("sensors sensor").
+			Where(sq.Eq{"sensor.id": b.filters.Sensor}).
+			ToSql()
 		if err != nil {
 			return nil, err
 		}
@@ -113,30 +121,31 @@ func (b deviceQueryBuilder) Query(ctx context.Context, db *sqlx.DB) (*pagination
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	deviceModels := []DeviceModel{}
-	for rows.Next() {
-		var model DeviceModel
-		err := rows.Scan(
-			&model.ID,
-			&model.Code,
-			&model.Description,
-			&model.TenantID,
-			&model.Properties,
-			&model.LocationDescription,
-			&model.Longitude,
-			&model.Latitude,
-			&model.Altitude,
-			&model.State,
-			&model.CreatedAt,
-			&b.cursor.Columns.CreatedAt,
-			&b.cursor.Columns.ID,
-		)
-		if err != nil {
-			return nil, err
-		}
-		deviceModels = append(deviceModels, model)
+	deviceModels, err := dbutils.CollectRows(
+		rows,
+		func(row *sql.Rows) (DeviceModel, error) {
+			var model DeviceModel
+			err := rows.Scan(
+				&model.ID,
+				&model.Code,
+				&model.Description,
+				&model.TenantID,
+				&model.Properties,
+				&model.LocationDescription,
+				&model.Longitude,
+				&model.Latitude,
+				&model.Altitude,
+				&model.State,
+				&model.CreatedAt,
+				&b.cursor.Columns.CreatedAt,
+				&b.cursor.Columns.ID,
+			)
+			return model, err
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("devices query builder collecting rows: %w", err)
 	}
 
 	ids := make([]int64, len(deviceModels))

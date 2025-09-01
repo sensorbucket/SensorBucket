@@ -3,5 +3,12 @@ version: "2"
 linters:
   enable:
     - sqlclosecheck
+  settings:
+    errcheck:
+      exclude-functions:
+        - fmt.Fprintf
+        - (io.ReadCloser).Close
+        - (*sql.Rows).Close
+        - (*sqlx.Rows).Close
 run:
   timeout: 30m

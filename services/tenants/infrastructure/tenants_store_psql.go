@@ -2,6 +2,7 @@ package tenantsinfra
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
+	"sensorbucket.nl/sensorbucket/internal/dbutils"
 	"sensorbucket.nl/sensorbucket/internal/pagination"
 	"sensorbucket.nl/sensorbucket/pkg/auth"
 	"sensorbucket.nl/sensorbucket/services/tenants/apikeys"
@@ -42,17 +44,17 @@ type tenantsQueryPage struct {
 }
 
 func (ts *PSQLTenantStore) GetTenantByID(id int64) (*tenants.Tenant, error) {
-	tenant := tenants.Tenant{}
 	q := sq.Select(
-		"id, name, address, zip_code, city, chamber_of_commerce_id, headquarter_id, archive_time, state, logo, parent_tenant_id").
+		"id, name, address, zip_code, city, chamber_of_commerce_id, headquarter_id, archive_time, state, logo, parent_tenant_id",
+	).
 		From("tenants").Where(sq.Eq{"id": id})
 	rows, err := q.PlaceholderFormat(sq.Dollar).RunWith(ts.db).Query()
 	if err != nil {
 		return nil, fmt.Errorf("could not create GetTenantByID query: %w", err)
 	}
-	defer rows.Close()
 
-	if rows.Next() {
+	tenant, err := dbutils.CollectOneRow(rows, func(row *sql.Rows) (tenants.Tenant, error) {
+		var tenant tenants.Tenant
 		err = rows.Scan(
 			&tenant.ID,
 			&tenant.Name,
@@ -66,15 +68,24 @@ func (ts *PSQLTenantStore) GetTenantByID(id int64) (*tenants.Tenant, error) {
 			&tenant.Logo,
 			&tenant.ParentID)
 		if err != nil {
-			return nil, fmt.Errorf("in GetTenantByID, could not scan row: %w", err)
+			return tenant, fmt.Errorf("in GetTenantByID, could not scan row: %w", err)
 		}
-	} else {
+		return tenant, nil
+	})
+
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, tenants.ErrTenantNotFound
+	} else if err != nil {
+		return nil, err
 	}
+
 	return &tenant, nil
 }
 
-func (ts *PSQLTenantStore) List(filter tenants.StoreFilter, r pagination.Request) (*pagination.Page[tenants.CreateTenantDTO], error) {
+func (ts *PSQLTenantStore) List(
+	filter tenants.StoreFilter,
+	r pagination.Request,
+) (*pagination.Page[tenants.CreateTenantDTO], error) {
 	var err error
 
 	// Pagination
@@ -102,9 +113,16 @@ func (ts *PSQLTenantStore) List(filter tenants.StoreFilter, r pagination.Request
 	}
 	if filter.MemberID != "" {
 		// Calculate tenant hierarchy
-		anchor := sq.Select("t.*").From("tenant_members m").Where(sq.Eq{"user_id": filter.MemberID}).LeftJoin("tenants t ON m.tenant_id = t.id")
-		recursive := sq.Select("t.*").From("tenants t").InnerJoin("children c ON t.parent_tenant_id = c.id")
-		cte := anchor.SuffixExpr(sq.ConcatExpr(" UNION ", recursive)).Prefix("WITH RECURSIVE children AS (").Suffix(")")
+		anchor := sq.Select("t.*").
+			From("tenant_members m").
+			Where(sq.Eq{"user_id": filter.MemberID}).
+			LeftJoin("tenants t ON m.tenant_id = t.id")
+		recursive := sq.Select("t.*").
+			From("tenants t").
+			InnerJoin("children c ON t.parent_tenant_id = c.id")
+		cte := anchor.SuffixExpr(sq.ConcatExpr(" UNION ", recursive)).
+			Prefix("WITH RECURSIVE children AS (").
+			Suffix(")")
 		q = q.From("children").PrefixExpr(cte)
 	}
 	q, err = pagination.Apply(q, cursor)
@@ -224,20 +242,29 @@ func (ts *PSQLTenantStore) Update(tenant *tenants.Tenant) error {
 	return nil
 }
 
-func (store *PSQLTenantStore) GetTenantHierarchyChildren(startingTenantIDs []int64) ([]tenants.Tenant, error) {
+func (store *PSQLTenantStore) GetTenantHierarchyChildren(
+	startingTenantIDs []int64,
+) ([]tenants.Tenant, error) {
 	anchor := sq.Select("t.*").From("tenants t").Where(sq.Eq{"t.id": startingTenantIDs})
 	return getTenantHierarchy(store.db, anchor)
 }
 
 func (store *PSQLTenantStore) GetUserTenants(userID string) ([]tenants.Tenant, error) {
-	anchor := sq.Select("t.*").From("tenant_members m").Where(sq.Eq{"user_id": userID}).LeftJoin("tenants t ON m.tenant_id = t.id")
+	anchor := sq.Select("t.*").
+		From("tenant_members m").
+		Where(sq.Eq{"user_id": userID}).
+		LeftJoin("tenants t ON m.tenant_id = t.id")
 	return getTenantHierarchy(store.db, anchor)
 }
 
 // getTenantHierarchy anchor point is a select query that must return at least an id and pare
 func getTenantHierarchy(db *sqlx.DB, anchor sq.SelectBuilder) ([]tenants.Tenant, error) {
-	recursive := sq.Select("t.*").From("tenants t").InnerJoin("children c ON t.parent_tenant_id = c.id")
-	cte := anchor.SuffixExpr(sq.ConcatExpr(" UNION ", recursive)).Prefix("WITH RECURSIVE children AS (").Suffix(")")
+	recursive := sq.Select("t.*").
+		From("tenants t").
+		InnerJoin("children c ON t.parent_tenant_id = c.id")
+	cte := anchor.SuffixExpr(sq.ConcatExpr(" UNION ", recursive)).
+		Prefix("WITH RECURSIVE children AS (").
+		Suffix(")")
 	q := sq.Select(
 		"id",
 		"name",
@@ -299,10 +326,15 @@ func (store *PSQLTenantStore) GetMember(tenantID int64, userID string) (*tenants
 	err = c.Raw(func(driverConn any) error {
 		stdlibConn, ok := driverConn.(*stdlib.Conn)
 		if !ok {
-			return errors.New("in GetTenantMember, expected driverConnection to be of type stdlib.Conn")
+			return errors.New(
+				"in GetTenantMember, expected driverConnection to be of type stdlib.Conn",
+			)
 		}
 		conn := stdlibConn.Conn()
-		query, params, err := pq.Select("tenant_id", "user_id", "permissions").From("tenant_members").Where(sq.Eq{"tenant_id": tenantID, "user_id": userID}).ToSql()
+		query, params, err := pq.Select("tenant_id", "user_id", "permissions").
+			From("tenant_members").
+			Where(sq.Eq{"tenant_id": tenantID, "user_id": userID}).
+			ToSql()
 		if err != nil {
 			return fmt.Errorf("in GetTenantMember, could not build sql query: %w", err)
 		}
@@ -327,7 +359,9 @@ func (store *PSQLTenantStore) GetMember(tenantID int64, userID string) (*tenants
 func (store *PSQLTenantStore) IsMember(tenantID int64, userID string, explicit bool) (bool, error) {
 	var count int64
 	if explicit {
-		q := sq.Select("count(*)").From("tenant_members m").Where(sq.Eq{"user_id": userID, "tenant_id": tenantID})
+		q := sq.Select("count(*)").
+			From("tenant_members m").
+			Where(sq.Eq{"user_id": userID, "tenant_id": tenantID})
 		err := q.PlaceholderFormat(sq.Dollar).RunWith(store.db).Scan(&count)
 		if err != nil {
 			return false, fmt.Errorf("in IsMember PSQLStore: %w", err)
@@ -339,10 +373,14 @@ func (store *PSQLTenantStore) IsMember(tenantID int64, userID string, explicit b
 	// inner join to tenant_members and count rows
 	// if count > 0, then atleast one tenant in this chain has an explicit membership
 
-	anchor := sq.Select("t.id", "t.parent_tenant_id").From("tenants t").Where(sq.Eq{"t.id": tenantID})
+	anchor := sq.Select("t.id", "t.parent_tenant_id").
+		From("tenants t").
+		Where(sq.Eq{"t.id": tenantID})
 	recursive := sq.Select("t.id", "t.parent_tenant_id").From("tenants t").
 		RightJoin("hierarchy h ON t.id = h.parent_tenant_id")
-	cte := anchor.SuffixExpr(sq.ConcatExpr(" UNION ", recursive)).Prefix("WITH RECURSIVE hierarchy AS (").Suffix(")")
+	cte := anchor.SuffixExpr(sq.ConcatExpr(" UNION ", recursive)).
+		Prefix("WITH RECURSIVE hierarchy AS (").
+		Suffix(")")
 	q := sq.Select("count(id)").From("hierarchy h").
 		InnerJoin("tenant_members m ON m.tenant_id = h.id AND m.user_id = ?", userID).
 		PrefixExpr(cte)
@@ -353,7 +391,10 @@ func (store *PSQLTenantStore) IsMember(tenantID int64, userID string, explicit b
 	return count > 0, nil
 }
 
-func (store *PSQLTenantStore) GetImplicitMemberPermissions(tenantID int64, userID string) (auth.Permissions, error) {
+func (store *PSQLTenantStore) GetImplicitMemberPermissions(
+	tenantID int64,
+	userID string,
+) (auth.Permissions, error) {
 	// This is a cool query
 	// It starts at tenant with id=tenantID, then recursively finds its parent
 	// and its parent's parent, etc...
@@ -376,7 +417,10 @@ func (store *PSQLTenantStore) GetImplicitMemberPermissions(tenantID int64, userI
 		tenantID, userID,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("in GetTenantMember PSQL Store, could not query member permissions: %w", err)
+		return nil, fmt.Errorf(
+			"in GetTenantMember PSQL Store, could not query member permissions: %w",
+			err,
+		)
 	}
 	if err := permissions.Validate(); err != nil {
 		return nil, err
@@ -412,7 +456,10 @@ func (s *PSQLTenantStore) createMember(tenantID int64, member *tenants.Member) e
 }
 
 func (s *PSQLTenantStore) updateMember(tenantID int64, member *tenants.Member) error {
-	rows, err := pq.Update("tenant_members").Set("permissions", member.Permissions).RunWith(s.db).Exec()
+	rows, err := pq.Update("tenant_members").
+		Set("permissions", member.Permissions).
+		RunWith(s.db).
+		Exec()
 	if err != nil {
 		return err
 	}
