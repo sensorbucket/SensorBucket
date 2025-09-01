@@ -109,7 +109,7 @@ func TestServiceShouldAddSensor(t *testing.T) {
 		ArchiveTime: ptr(1000),
 	}
 	store := &DeviceStoreMock{
-		SaveFunc: func(ctx context.Context, dev *devices.Device) error {
+		AddSensorFunc: func(ctx context.Context, dev *devices.Device, sensor *devices.Sensor) error {
 			return nil
 		},
 	}
@@ -120,8 +120,8 @@ func TestServiceShouldAddSensor(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert
-	require.Len(t, store.calls.Save, 1)
-	calledDev := store.calls.Save[0].Dev
+	require.Len(t, store.calls.AddSensor, 1)
+	calledDev := store.calls.AddSensor[0].Dev
 	require.Len(t, calledDev.Sensors, 1)
 	dto := calledDev.Sensors[0]
 	assert.Equal(t, sensorDTO.Code, dto.Code)
