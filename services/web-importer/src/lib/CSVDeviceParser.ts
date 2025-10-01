@@ -83,6 +83,12 @@ parser.addColumn(/^device code$/, (_) => (ctx, value) => {
 parser.addColumn(/^device description$/, (_) => (ctx, value) => {
     ctx.userData.device.description = value
 })
+parser.addColumn(/^device longitude$/, (_) => (ctx, value) => {
+    ctx.userData.device.longitude = parseFloat(value)
+})
+parser.addColumn(/^device latitude$/, (_) => (ctx, value) => {
+    ctx.userData.device.latitude = parseFloat(value)
+})
 parser.addColumn(/^device properties/, (field) => (ctx, value) => {
     if (ctx.userData.device.properties === undefined) ctx.userData.device.properties = {}
     ctx.userData.device.properties[field.substring(18).replaceAll(" ", "__")] = value
