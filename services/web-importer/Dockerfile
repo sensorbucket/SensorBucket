@@ -15,4 +15,4 @@ COPY . .
 RUN bun run build
 
 FROM caddy:alpine AS production
-COPY --from=build /workspace/build/ /usr/share/caddy/
+COPY --from=build /workspace/dist/ /usr/share/caddy/
