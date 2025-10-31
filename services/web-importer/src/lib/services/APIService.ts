@@ -2,8 +2,9 @@ import * as API from "$lib/sensorbucket";
 import type { Reconciliation, ReconciliationDevice, ReconciliationSensor } from "$lib/reconciliation";
 import type { With } from "$lib/types";
 import type { CSVFeatureOfInterest } from "$lib/CSVFeatureOfInterestParser";
-import { type Client, createClient } from "@hey-api/client-fetch";
-import { Device, ListDevicesResponse } from "$lib/sensorbucket/index";
+import { type Device } from "$lib/sensorbucket/index";
+import { createClient, type Client, type ResponseStyle } from "$lib/sensorbucket/client";
+import type { RequestResult, TDataShape } from "@hey-api/client-fetch";
 
 /**
  * Service for handling API operations related to devices and sensors
@@ -180,36 +181,23 @@ export class _ApiService {
    * @returns Array of devices
    */
   async listDevicesByCodes(codes: string[]): Promise<API.Device[] | Error> {
-    const devices: Device[] = []
-
-    let cursor: string | null = null 
-    do {
-      const { data, error } = await API.listDevices({
-        client: this.client,
-        query: {
-          code: codes,
-        }
-      });
-
-      if (data === undefined) return new Error("Error listing devices: " + error);
-
-      devices.push(...data.data)
-      cursor = URL.parse(data.links.next).searchParams.get("cursor") || null;
-    } while (cursor != null);
-
-    return devices;
+    return collect((cursor) => API.listDevices({
+      client: this.client,
+      query: {
+        cursor,
+        code: codes,
+      }
+    }))
   }
 
   async listFeaturesOfInterestByName(names: string[]): Promise<API.FeatureOfInterest[] | Error> {
-    const { data, error } = await API.listFeaturesOfInterest({
+    return collect((cursor) => API.listFeaturesOfInterest({
       client: this.client,
       query: {
         name: names,
+        cursor,
       }
-    });
-
-    if (data === undefined) return new Error("Error listing devices: " + error);
-    return data.data;
+    }))
   }
 
   async createFeatureOfInterest(feature: Reconciliation<CSVFeatureOfInterest>) {
@@ -273,7 +261,7 @@ export class _ApiService {
     const { data, error } = await API.listFeaturesOfInterest({
       client: this.client,
       query: {
-        name: feature.name,
+        name: [feature.name!],
         properties: JSON.stringify(feature.properties),
       }
     })
@@ -282,6 +270,52 @@ export class _ApiService {
     if (data.data.length > 1) return new Error("Multiple feature of interest found");
     return data.data[0] as API.FeatureOfInterest;
   }
+}
+
+// interface TDataShape {
+//     body?: unknown;
+//     headers?: unknown;
+//     path?: unknown;
+//     query?: unknown;
+//     url: string;
+// }
+// type OmitKeys<T, K> = Pick<T, Exclude<keyof T, K>>;
+// type API.Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponseStyle extends ResponseStyle = 'fields'> = OmitKeys<RequestOptions<TResponseStyle, ThrowOnError>, 'body' | 'path' | 'query' | 'url'> & Omit<TData, 'url'>;
+
+// type RequestResult<TData = unknown, TError = unknown, ThrowOnError extends boolean = boolean, TResponseStyle extends ResponseStyle = 'fields'> = ThrowOnError extends true ? Promise<TResponseStyle extends 'data' ? TData extends Record<string, unknown> ? TData[keyof TData] : TData : {
+//     data: TData extends Record<string, unknown> ? TData[keyof TData] : TData;
+//     request: Request;
+//     response: Response;
+// }> : Promise<TResponseStyle extends 'data' ? (TData extends Record<string, unknown> ? TData[keyof TData] : TData) | undefined : ({
+//     data: TData extends Record<string, unknown> ? TData[keyof TData] : TData;
+//     error: undefined;
+// } | {
+//     data: undefined;
+//     error: TError extends Record<string, unknown> ? TError[keyof TError] : TError;
+// }) & {
+//     request: Request;
+//     response: Response;
+// }>;
+
+const collect = async <Data, TData extends Record<number, API.PaginatedResponse & { data: Data[] }>, TError extends Record<number, unknown>, ThrowOnError extends boolean = false>(call: (cursor?: string) => RequestResult<TData, TError, ThrowOnError>) => {
+  const devices: Data[] = []
+
+  let cursor: string | undefined;
+  do {
+    const res = await call(cursor);
+
+    if (res.data === undefined) return new Error("Error listing devices: " + (res as any).error);
+
+    devices.push(...res.data.data as Data[])
+
+    if (res.data.links?.next)
+      cursor = URL.parse(res.data.links?.next)?.searchParams.get("cursor") || undefined;
+    else
+      cursor = undefined
+  } while (cursor);
+
+  return devices;
+
 }
 
 // Export a singleton instance
