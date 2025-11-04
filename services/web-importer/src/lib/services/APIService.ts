@@ -2,9 +2,8 @@ import * as API from "$lib/sensorbucket";
 import type { Reconciliation, ReconciliationDevice, ReconciliationSensor } from "$lib/reconciliation";
 import type { With } from "$lib/types";
 import type { CSVFeatureOfInterest } from "$lib/CSVFeatureOfInterestParser";
-import { type Device } from "$lib/sensorbucket/index";
-import { createClient, type Client, type ResponseStyle } from "$lib/sensorbucket/client";
-import type { RequestResult, TDataShape } from "@hey-api/client-fetch";
+import { createClient, type Client } from "$lib/sensorbucket/client";
+import type { RequestResult } from "@hey-api/client-fetch";
 
 /**
  * Service for handling API operations related to devices and sensors
@@ -272,46 +271,18 @@ export class _ApiService {
   }
 }
 
-// interface TDataShape {
-//     body?: unknown;
-//     headers?: unknown;
-//     path?: unknown;
-//     query?: unknown;
-//     url: string;
-// }
-// type OmitKeys<T, K> = Pick<T, Exclude<keyof T, K>>;
-// type API.Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponseStyle extends ResponseStyle = 'fields'> = OmitKeys<RequestOptions<TResponseStyle, ThrowOnError>, 'body' | 'path' | 'query' | 'url'> & Omit<TData, 'url'>;
-
-// type RequestResult<TData = unknown, TError = unknown, ThrowOnError extends boolean = boolean, TResponseStyle extends ResponseStyle = 'fields'> = ThrowOnError extends true ? Promise<TResponseStyle extends 'data' ? TData extends Record<string, unknown> ? TData[keyof TData] : TData : {
-//     data: TData extends Record<string, unknown> ? TData[keyof TData] : TData;
-//     request: Request;
-//     response: Response;
-// }> : Promise<TResponseStyle extends 'data' ? (TData extends Record<string, unknown> ? TData[keyof TData] : TData) | undefined : ({
-//     data: TData extends Record<string, unknown> ? TData[keyof TData] : TData;
-//     error: undefined;
-// } | {
-//     data: undefined;
-//     error: TError extends Record<string, unknown> ? TError[keyof TError] : TError;
-// }) & {
-//     request: Request;
-//     response: Response;
-// }>;
-
-const collect = async <Data, TData extends Record<number, API.PaginatedResponse & { data: Data[] }>, TError extends Record<number, unknown>, ThrowOnError extends boolean = false>(call: (cursor?: string) => RequestResult<TData, TError, ThrowOnError>) => {
+export const collect = async <Data, TData extends Record<number, API.PaginatedResponse & { data: Data[] }>, TError extends Record<number, unknown>, ThrowOnError extends boolean = false>(call: (cursor?: string) => RequestResult<TData, TError, ThrowOnError>) => {
   const devices: Data[] = []
 
   let cursor: string | undefined;
   do {
     const res = await call(cursor);
 
-    if (res.data === undefined) return new Error("Error listing devices: " + (res as any).error);
+    if (res.data === undefined || (res as any).error !== undefined) return new Error("Error listing devices: " + (res as any).error);
 
     devices.push(...res.data.data as Data[])
 
-    if (res.data.links?.next)
-      cursor = URL.parse(res.data.links?.next)?.searchParams.get("cursor") || undefined;
-    else
-      cursor = undefined
+    cursor = URL.parse(res.data?.links?.next ?? '')?.searchParams.get("cursor") || undefined;
   } while (cursor);
 
   return devices;
