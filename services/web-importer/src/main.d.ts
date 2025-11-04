@@ -2,6 +2,7 @@
 // for information about these interfaces
 /// <reference types="svelte" />
 /// <reference types="vite/client" />
+/// <reference types="bun-types/test-globals" />
 
 declare global {
     namespace App {

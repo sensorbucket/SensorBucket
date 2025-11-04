@@ -140,6 +140,16 @@ paths:
             items:
               type: integer
               format: int64
+        - in: query
+          name: code
+          description: Used to filter devices by their code.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
         - name: sensor_group
           description: |
             Filter by device group
@@ -694,6 +704,23 @@ paths:
             The maximum amount of items per page. Not applicable if `cursor` parameter is given. System limits are in place.
           schema:
             type: integer
+        - in: query
+          name: name
+          description: Used to filter features by their name.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - in: query
+          name: properties
+          description: Used to filter features by its properties. This filters devices on whether their property contains the provided value. The value must be a JSON string and depending on your client should be URL Escaped
+          required: false
+          schema:
+            type: string
+            example: '{ "external_id": "1122" }'
       responses:
         '200':
           description: OK
