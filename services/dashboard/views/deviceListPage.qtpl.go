@@ -322,8 +322,8 @@ func StreamRenderDeviceTableRows(qw422016 *qt422016.Writer, devices []api.Device
 		if nextPage != "" && ix == len(devices)-1 {
 //line views/deviceListPage.qtpl:98
 			qw422016.N().S(`
-        hx-trigger="revealed"
-        hx-target="this"
+        hx-trigger="intersect once"
+        hx-target="closest tr"
         hx-swap="afterend"
         hx-get="`)
 //line views/deviceListPage.qtpl:102

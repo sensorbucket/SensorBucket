@@ -46,8 +46,16 @@ func streamstartHTML(qw422016 *qt422016.Writer) {
 	qw422016.E().S(U("/static/style.css"))
 //line transports/webui/views/layout.qtpl:13
 	qw422016.N().S(`" />
-        <script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4"></script>
-        <script type="text/javascript" src="https://unpkg.com/hyperscript.org@0.9.11"></script>
+        <script type="text/javascript" src="`)
+//line transports/webui/views/layout.qtpl:14
+	qw422016.E().S(U("static/htmx.js"))
+//line transports/webui/views/layout.qtpl:14
+	qw422016.N().S(`"></script>
+        <script type="text/javascript" src="`)
+//line transports/webui/views/layout.qtpl:15
+	qw422016.E().S(U("static/hyperscript.js"))
+//line transports/webui/views/layout.qtpl:15
+	qw422016.N().S(`"></script>
         <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
     </head>
     <body>

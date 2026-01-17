@@ -61,6 +61,8 @@ type BasePage struct {
     <script type="text/javascript" src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.25/dist/uPlot.min.css" />
     <script type="text/javascript" src="https://unpkg.com/uplot@1.6.25/dist/uPlot.iife.min.js"></script>
+    <script type="text/javascript" src="{%s U("static/htmx.js") %}"></script>
+    <script type="text/javascript" src="{%s U("static/hyperscript.js") %}"></script>
     <script type="text/javascript" src="{%s U("static/uplot.htmx.js") %}"></script>
     <script type="text/javascript" src="{%s U("static/leaflet.htmx.js") %}"></script>
     <script type="text/javascript">
@@ -222,9 +224,6 @@ type BasePage struct {
 
 // These are for debugging only. In production the tailwind and icons should be bundled with the dashboard
 {% func debugHeaders() %}
-<script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4"></script>
-<script type="text/javascript" src="https://unpkg.com/htmx.org@1.9.4/dist/ext/ws.js"></script>
-<script type="text/javascript" src="https://unpkg.com/hyperscript.org@0.9.11"></script>
 <script type="text/javascript" src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
 {% endfunc %}
 

@@ -96,8 +96,8 @@
     <tr
         class="hover:bg-slate-50 group"
         {% if nextPage != "" && ix == len(devices)-1 %}
-        hx-trigger="revealed"
-        hx-target="this"
+        hx-trigger="intersect once"
+        hx-target="closest tr"
         hx-swap="afterend"
         hx-get="{%s nextPage %}"
         {% endif %}
