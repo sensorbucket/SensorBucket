@@ -61,6 +61,7 @@ var (
 	HTTP_ENDPOINT = env.Must("HTTP_ENDPOINT")
 	MAX_RETRIES   = env.CouldInt("MAX_RETRIES", 3)
 	METRICS_ADDR  = env.Could("METRICS_ADDR", ":2112")
+	HTTP_TIMEOUT  = time.Duration(env.CouldInt("HTTP_TIMEOUT", 120)) * time.Second
 )
 
 func Run(cleanup cleanupper.Cleanupper) error {
@@ -119,7 +120,7 @@ func setupMetrics(cleanup cleanupper.Cleanupper) error {
 func buildProcessor(publish chan<- mq.PublishMessage) mq.ProcessorFuncBuilder {
 	return func() mq.ProcessorFunc {
 		client := &http.Client{
-			Timeout: 10 * time.Second,
+			Timeout: HTTP_TIMEOUT,
 		}
 		return func(incoming amqp091.Delivery) error {
 			opsReceived.Inc()

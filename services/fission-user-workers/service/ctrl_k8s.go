@@ -310,6 +310,10 @@ func (ctrl *KubernetesController) workerToMessageQueueTrigger(worker UserWorker)
 									Name:  "EXCHANGE",
 									Value: ctrl.mqtExchange,
 								},
+								{
+									Name:  "HTTP_TIMEOUT",
+									Value: env.Could("CTRL_K8S_MQT_HTTP_TIMEOUT", ""),
+								},
 							},
 						},
 					},
