@@ -68,6 +68,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	jwks := auth.NewJWKSHttpClient(AUTH_JWKS_URL)
 	router.Use(
 		middleware.Logger,
+		middleware.Recoverer,
 		auth.ForwardRequestAuthentication(),
 		auth.Authenticate(jwks),
 		auth.Protect(),
@@ -107,7 +108,6 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	))
 	csrfWrappedHandler := nosurf.New(router)
 	csrfWrappedHandler.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("nosurf.Reason(r): %v\n", nosurf.Reason(r))
 		layout.WithSnackbarError(w, "CSRF Token was invalid, try reloading the page")
 		//nolint
 		w.Write([]byte("A CSRF error occured. Reload the previous page and try again"))

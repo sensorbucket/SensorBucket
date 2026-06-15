@@ -84,7 +84,8 @@
             </div>
         </div>
     </template>
-    <div 
+    {% if p.Pipeline != nil %}
+    <div
         class="bg-white border rounded-md lg:col-span-3 xl:col-span-3"
     >
         <header class="flex border-b py-2 px-4 text-sm text-slate-700">
@@ -94,6 +95,7 @@
         <div>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endfunc %}
 
