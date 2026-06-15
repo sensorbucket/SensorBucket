@@ -240,34 +240,18 @@ func (h *PipelinePageHandler) updatePipeline(next http.Handler) http.Handler {
 
 		_, resp, err := h.coreClient.PipelinesApi.UpdatePipeline(r.Context(), pipelineId).UpdatePipelineRequest(updateDto).Execute()
 		if err != nil {
-			responseBody, err := io.ReadAll(resp.Body)
-			if err != nil {
-				log.Printf("in createPipeline, err reading response body: %s\n", err)
-			} else {
-				log.Printf("in createPipeline, err: %s\n", string(responseBody))
+			if resp != nil && resp.Body != nil {
+				if body, readErr := io.ReadAll(resp.Body); readErr == nil {
+					log.Printf("in updatePipeline, err: %s\n", string(body))
+				}
+			}
+			var apiErr *web.APIError
+			if errors.As(err, &apiErr) {
+				layout.WithSnackbarError(w, apiErr.Message)
+				w.WriteHeader(apiErr.HTTPStatus)
+				return
 			}
 			layout.SnackbarSomethingWentWrong(w)
-			return
-		}
-
-		// TODO: API returns status created instead of found for some reason
-		if resp.StatusCode != http.StatusCreated {
-			if resp.StatusCode == http.StatusInternalServerError {
-				responseBody, err := io.ReadAll(resp.Body)
-				if err != nil {
-					log.Printf("in createPipeline, err reading response body: %s\n", err)
-				} else {
-					log.Printf("in createPipeline, err: %s\n", string(responseBody))
-				}
-				layout.SnackbarSomethingWentWrong(w)
-			} else {
-				var apierror *web.APIError
-				if errors.As(err, &apierror) {
-					layout.WithSnackbarError(w, apierror.Message)
-					w.WriteHeader(apierror.HTTPStatus)
-					return
-				}
-			}
 			return
 		}
 
@@ -491,8 +475,6 @@ func (h *PipelinePageHandler) getWorkersForSteps(r *http.Request, steps []string
 	workers := res.GetData()
 	workers = append(workers, createPlaceholderWorkers(missingWorkers)...)
 
-	fmt.Printf("workers: %v\n", workers)
-	fmt.Printf("steps: %v\n", steps)
 	if len(workers) != len(steps) {
 		return nil, fmt.Errorf("some pipeline workers not found")
 	}
