@@ -98,7 +98,15 @@ func (t *OverviewRoute) createSensorGroup() http.HandlerFunc {
 		w.Header().Set("hx-push-url", views.U("/overview?%s", r.URL.Query().Encode()))
 		w.Header().Set("hx-trigger-after-settle", "newDeviceList")
 		views.WriteRenderFilters(w, sg, true)
-		views.WriteRenderDeviceTable(w, res.Data, getCursor(res.Links.GetNext()))
+		nextPage := ""
+		if cursor := getCursor(res.Links.GetNext()); cursor != "" {
+			if sg != nil {
+				nextPage = views.U("/overview/devices/table?sensor_group=%d&cursor=%s", sg.GetId(), cursor)
+			} else {
+				nextPage = views.U("/overview/devices/table?cursor=%s", cursor)
+			}
+		}
+		views.WriteRenderDeviceTable(w, res.Data, nextPage)
 	}
 }
 
@@ -112,7 +120,11 @@ func (t *OverviewRoute) deleteSensorGroup() http.HandlerFunc {
 		w.Header().Set("hx-push-url", views.U("/overview?%s", r.URL.Query().Encode()))
 		w.Header().Set("hx-trigger-after-settle", "newDeviceList")
 		views.WriteRenderFilters(w, nil, true)
-		views.WriteRenderDeviceTable(w, res.Data, getCursor(res.Links.GetNext()))
+		nextPage := ""
+		if cursor := getCursor(res.Links.GetNext()); cursor != "" {
+			nextPage = views.U("/overview/devices/table?cursor=%s", cursor)
+		}
+		views.WriteRenderDeviceTable(w, res.Data, nextPage)
 	}
 }
 
@@ -137,8 +149,12 @@ func (t *OverviewRoute) getDevicesTable() http.HandlerFunc {
 		}
 
 		nextCursor := ""
-		if res.Links.GetNext() != "" {
-			nextCursor = views.U("/overview/devices/table?cursor=%s", getCursor(res.Links.GetNext()))
+		if cursor := getCursor(res.Links.GetNext()); cursor != "" {
+			if sg := r.URL.Query().Get("sensor_group"); sg != "" {
+				nextCursor = views.U("/overview/devices/table?sensor_group=%s&cursor=%s", sg, cursor)
+			} else {
+				nextCursor = views.U("/overview/devices/table?cursor=%s", cursor)
+			}
 		}
 		views.WriteRenderDeviceTableRows(w, res.Data, nextCursor)
 	}
@@ -187,10 +203,11 @@ func (t *OverviewRoute) deviceListPage() http.HandlerFunc {
 		}
 		page.Devices = res.Data
 
-		if res.Links.GetNext() != "" {
-			u, err := url.Parse(res.Links.GetNext())
-			if err == nil {
-				page.DevicesNextPage = views.U("/overview/devices/table?cursor=%s", u.Query().Get("cursor"))
+		if cursor := getCursor(res.Links.GetNext()); cursor != "" {
+			if page.SensorGroup != nil {
+				page.DevicesNextPage = views.U("/overview/devices/table?sensor_group=%d&cursor=%s", page.SensorGroup.GetId(), cursor)
+			} else {
+				page.DevicesNextPage = views.U("/overview/devices/table?cursor=%s", cursor)
 			}
 		}
 
@@ -290,12 +307,12 @@ func (t *OverviewRoute) devicesStreamMap() http.HandlerFunc {
 						log.Printf("cannot open writer for ws: %v\n", err)
 						return
 					}
-					defer writer.Close()
 					frame := fmt.Sprintf(`{"device_id": %d, "device_code": "%s", "coordinates": [%f,%f]}`, dev.Id, dev.Code, dev.GetLatitude(), dev.GetLongitude())
 					if _, err := writer.Write([]byte(frame)); err != nil {
 						log.Printf("Failed to write to websocket: %v\n", err)
 						return
 					}
+					writer.Close()
 				}
 				nextCursor = getCursor(res.Links.GetNext())
 				if nextCursor == "" {
@@ -369,10 +386,12 @@ func (t *OverviewRoute) overviewDatastreamStream() http.HandlerFunc {
 		start, err := time.Parse(time.RFC3339, r.URL.Query().Get("start"))
 		if err != nil {
 			web.HTTPError(w, web.NewError(http.StatusBadRequest, "Start parameter is not ISO8601/RFC3339", ""))
+			return
 		}
 		end, err := time.Parse(time.RFC3339, r.URL.Query().Get("end"))
 		if err != nil {
 			web.HTTPError(w, web.NewError(http.StatusBadRequest, "End parameter is not ISO8601/RFC3339", ""))
+			return
 		}
 
 		ws, err := upgrader.Upgrade(w, r, nil)
