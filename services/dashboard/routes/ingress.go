@@ -75,22 +75,22 @@ func (h *TracesPageHandler) listPartial() http.HandlerFunc {
 
 func formatSince(t time.Time) string {
 	d := time.Since(t)
-	if d.Hours() > 24 {
+	switch {
+	case d.Hours() > 24:
 		return "More than a day ago"
-	}
-	if int(d.Hours()) > 1 {
+	case int(d.Hours()) >= 1:
+		if int(d.Hours()) == 1 {
+			return "About 1 hour ago"
+		}
 		return fmt.Sprintf("About %d hours ago", int(d.Hours()))
-	}
-	if int(d.Hours()) > 0 {
-		return fmt.Sprintf("About %d hours ago", int(d.Hours()))
-	}
-	if int(d.Minutes()) > 1 {
+	case int(d.Minutes()) >= 1:
+		if int(d.Minutes()) == 1 {
+			return "About 1 minute ago"
+		}
 		return fmt.Sprintf("About %d minutes ago", int(d.Minutes()))
+	default:
+		return fmt.Sprintf("About %d seconds ago", int(d.Seconds()))
 	}
-	if int(d.Minutes()) > 0 {
-		return fmt.Sprintf("About %d minute ago", int(d.Minutes()))
-	}
-	return fmt.Sprintf("About %d seconds ago", int(d.Seconds()))
 }
 
 func (h *TracesPageHandler) createViewData(ctx context.Context, traces []api.Trace) ([]views.Trace, error) {
@@ -138,7 +138,7 @@ func (h *TracesPageHandler) createViewData(ctx context.Context, traces []api.Tra
 			viewModels[i].Steps = append(viewModels[i].Steps, step)
 
 			// update last worker with duration
-			if j > 0 {
+			if j > 0 && j < len(trace.WorkerTimes) {
 				viewModels[i].Steps[j-1].Label = trace.WorkerTimes[j].Sub(trace.WorkerTimes[j-1]).String()
 			}
 
