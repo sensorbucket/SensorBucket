@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -314,6 +315,31 @@ func (ctrl *KubernetesController) workerToMessageQueueTrigger(worker UserWorker)
 									Name:  "HTTP_TIMEOUT",
 									Value: env.Could("CTRL_K8S_MQT_HTTP_TIMEOUT", ""),
 								},
+								{
+									Name:  "HEALTH_ADDR",
+									Value: ":8081",
+								},
+							},
+							// Restart a connector that loses its broker connection
+							// and stops consuming (queue ends up with no consumer).
+							// The probe reports the AMQP connection state and is
+							// lenient (~2m) so a brief reconnect — which the
+							// connector self-heals — does not cause churn, while a
+							// wedged/long-disconnected pod is replaced.
+							// NOTE: requires a connector image that serves
+							// /liveness (HEALTH_ADDR); ship the image bump and this
+							// change together.
+							LivenessProbe: &v1.Probe{
+								ProbeHandler: v1.ProbeHandler{
+									HTTPGet: &v1.HTTPGetAction{
+										Path: "/liveness",
+										Port: intstr.FromInt(8081),
+									},
+								},
+								InitialDelaySeconds: 15,
+								PeriodSeconds:       15,
+								TimeoutSeconds:      3,
+								FailureThreshold:    8,
 							},
 						},
 					},

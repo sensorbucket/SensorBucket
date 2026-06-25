@@ -20,6 +20,7 @@ import (
 	"sensorbucket.nl/sensorbucket/internal/cleanupper"
 	"sensorbucket.nl/sensorbucket/internal/env"
 	"sensorbucket.nl/sensorbucket/internal/web"
+	"sensorbucket.nl/sensorbucket/pkg/healthchecker"
 	"sensorbucket.nl/sensorbucket/pkg/mq"
 )
 
@@ -62,9 +63,13 @@ var (
 	MAX_RETRIES   = env.CouldInt("MAX_RETRIES", 3)
 	METRICS_ADDR  = env.Could("METRICS_ADDR", ":2112")
 	HTTP_TIMEOUT  = time.Duration(env.CouldInt("HTTP_TIMEOUT", 120)) * time.Second
+	HEALTH_ADDR   = env.Could("HEALTH_ADDR", ":8081")
 )
 
 func Run(cleanup cleanupper.Cleanupper) error {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
 	stopProfiler, err := web.RunProfiler()
 	if err != nil {
 		logger.Warn("could not setup profiler server", "error", err)
@@ -85,9 +90,11 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	publish := conn.Publisher(AMQP_XCHG)
 	go mq.StartQueueProcessor(conn, AMQP_QUEUE, AMQP_XCHG, AMQP_TOPIC, buildProcessor(publish))
 
+	// Expose liveness/readiness backed by the AMQP connection state. 
+	healthShutdown := healthchecker.Create().WithAddress(HEALTH_ADDR).WithMessagQueue(conn).Start(ctx)
+	cleanup.Add(healthShutdown)
+
 	logger.Info("Connector is ready")
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
 	<-ctx.Done()
 	logger.Info("Connector shutting down")
 	return nil
