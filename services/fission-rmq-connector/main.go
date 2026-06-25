@@ -55,10 +55,13 @@ func main() {
 }
 
 var (
-	AMQP_HOST     = env.Must("AMQP_HOST")
-	AMQP_QUEUE    = env.Must("QUEUE_NAME")
-	AMQP_TOPIC    = env.Must("TOPIC")
-	AMQP_XCHG     = env.Must("EXCHANGE")
+	AMQP_HOST  = env.Must("AMQP_HOST")
+	AMQP_QUEUE = env.Must("QUEUE_NAME")
+	AMQP_TOPIC = env.Must("TOPIC")
+	// EXCHANGE used to be injected via the MessageQueueTrigger PodSpec env, but
+	// Fission >=1.24 allowlists MQT PodSpec fields and drops user-supplied env.
+	// It is a deployment-wide constant, so default it here instead.
+	AMQP_XCHG     = env.Could("EXCHANGE", "pipeline.messages")
 	HTTP_ENDPOINT = env.Must("HTTP_ENDPOINT")
 	MAX_RETRIES   = env.CouldInt("MAX_RETRIES", 3)
 	METRICS_ADDR  = env.Could("METRICS_ADDR", ":2112")
@@ -90,7 +93,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	publish := conn.Publisher(AMQP_XCHG)
 	go mq.StartQueueProcessor(conn, AMQP_QUEUE, AMQP_XCHG, AMQP_TOPIC, buildProcessor(publish))
 
-	// Expose liveness/readiness backed by the AMQP connection state. 
+	// Expose liveness/readiness backed by the AMQP connection state.
 	healthShutdown := healthchecker.Create().WithAddress(HEALTH_ADDR).WithMessagQueue(conn).Start(ctx)
 	cleanup.Add(healthShutdown)
 

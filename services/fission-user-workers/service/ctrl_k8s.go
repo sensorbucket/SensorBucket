@@ -11,11 +11,9 @@ import (
 	"github.com/fission/fission/pkg/generated/clientset/versioned"
 	"github.com/google/uuid"
 	"github.com/samber/lo"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -36,17 +34,14 @@ func init() {
 }
 
 type KubernetesController struct {
-	store              Store
-	fission            versioned.Interface
-	workerNamespace    string
-	prefix             string
-	mqtImage           string
-	mqtImagePullSecret string
-	mqtSecret          string
-	mqtExchange        string
+	store           Store
+	fission         versioned.Interface
+	workerNamespace string
+	prefix          string
+	mqtSecret       string
 }
 
-func CreateKubernetesController(store Store, xchg string) (*KubernetesController, error) {
+func CreateKubernetesController(store Store) (*KubernetesController, error) {
 	var cfg *rest.Config
 	var err error
 	kcfg := env.Could("CTRL_K8S_CONFIG", "")
@@ -63,14 +58,11 @@ func CreateKubernetesController(store Store, xchg string) (*KubernetesController
 		return nil, fmt.Errorf("error creating fission client: %w", err)
 	}
 	return &KubernetesController{
-		store:              store,
-		fission:            fission,
-		workerNamespace:    env.Must("CTRL_K8S_WORKER_NAMESPACE"),
-		prefix:             "worker",
-		mqtImage:           env.Must("CTRL_K8S_MQT_IMAGE"),
-		mqtImagePullSecret: env.Could("CTRL_K8S_PULL_SECRET", ""),
-		mqtSecret:          env.Must("CTRL_K8S_MQT_SECRET"),
-		mqtExchange:        xchg,
+		store:           store,
+		fission:         fission,
+		workerNamespace: env.Must("CTRL_K8S_WORKER_NAMESPACE"),
+		prefix:          "worker",
+		mqtSecret:       env.Must("CTRL_K8S_MQT_SECRET"),
 	}, nil
 }
 
@@ -269,11 +261,9 @@ func (ctrl *KubernetesController) workerToPackage(worker UserWorker) Package {
 }
 
 func (ctrl *KubernetesController) workerToMessageQueueTrigger(worker UserWorker) MessageQueueTrigger {
-	var pullSecrets []v1.LocalObjectReference
-	if ctrl.mqtImagePullSecret != "" {
-		pullSecrets = append(pullSecrets, v1.LocalObjectReference{Name: ctrl.mqtImagePullSecret})
-	}
-
+	// No PodSpec: Fission >=1.24 allowlists MQT PodSpec fields (image/env/probe
+	// are dropped/rejected). The connector image now comes from the chart's
+	// mqt_keda.connector_images.rabbitmq value.
 	return MessageQueueTrigger{
 		ID:       worker.ID,
 		Revision: worker.Revision,
@@ -298,51 +288,6 @@ func (ctrl *KubernetesController) workerToMessageQueueTrigger(worker UserWorker)
 				Secret:           ctrl.mqtSecret,
 				Metadata: map[string]string{
 					"queueName": ctrl.resourceName(worker.ID),
-				},
-				PodSpec: &v1.PodSpec{
-					ImagePullSecrets: pullSecrets,
-					Containers: []v1.Container{
-						{
-							Name:            ctrl.resourceName(worker.ID),
-							Image:           ctrl.mqtImage,
-							ImagePullPolicy: v1.PullIfNotPresent,
-							Env: []v1.EnvVar{
-								{
-									Name:  "EXCHANGE",
-									Value: ctrl.mqtExchange,
-								},
-								{
-									Name:  "HTTP_TIMEOUT",
-									Value: env.Could("CTRL_K8S_MQT_HTTP_TIMEOUT", ""),
-								},
-								{
-									Name:  "HEALTH_ADDR",
-									Value: ":8081",
-								},
-							},
-							// Restart a connector that loses its broker connection
-							// and stops consuming (queue ends up with no consumer).
-							// The probe reports the AMQP connection state and is
-							// lenient (~2m) so a brief reconnect — which the
-							// connector self-heals — does not cause churn, while a
-							// wedged/long-disconnected pod is replaced.
-							// NOTE: requires a connector image that serves
-							// /liveness (HEALTH_ADDR); ship the image bump and this
-							// change together.
-							LivenessProbe: &v1.Probe{
-								ProbeHandler: v1.ProbeHandler{
-									HTTPGet: &v1.HTTPGetAction{
-										Path: "/liveness",
-										Port: intstr.FromInt(8081),
-									},
-								},
-								InitialDelaySeconds: 15,
-								PeriodSeconds:       15,
-								TimeoutSeconds:      3,
-								FailureThreshold:    8,
-							},
-						},
-					},
 				},
 			},
 		},

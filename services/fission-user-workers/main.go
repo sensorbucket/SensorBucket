@@ -24,12 +24,10 @@ import (
 )
 
 var (
-	HTTP_ADDR = env.Could("HTTP_ADDR", ":3000")
-	HTTP_BASE = env.Could("HTTP_BASE", "http://127.0.0.1:3000/api/workers")
-	CTRL_TYPE = env.Could("CTRL_TYPE", "k8s")
-	DB_DSN    = env.Must("DB_DSN")
-	// The exchange to which workers will bind to
-	AMQP_XCHG     = env.Could("AMQP_XCHG", "pipeline.messages")
+	HTTP_ADDR     = env.Could("HTTP_ADDR", ":3000")
+	HTTP_BASE     = env.Could("HTTP_BASE", "http://127.0.0.1:3000/api/workers")
+	CTRL_TYPE     = env.Could("CTRL_TYPE", "k8s")
+	DB_DSN        = env.Must("DB_DSN")
 	AUTH_JWKS_URL = env.Could("AUTH_JWKS_URL", "http://oathkeeper:4456/.well-known/jwks.json")
 )
 
@@ -96,7 +94,7 @@ func Run(cleanup cleanupper.Cleanupper) error {
 
 	switch CTRL_TYPE {
 	case "k8s":
-		ctrl, err = userworkers.CreateKubernetesController(store, AMQP_XCHG)
+		ctrl, err = userworkers.CreateKubernetesController(store)
 		if err != nil {
 			return err
 		}
