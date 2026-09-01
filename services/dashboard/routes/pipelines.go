@@ -2,9 +2,9 @@ package routes
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 
@@ -109,18 +109,7 @@ func (h *PipelinePageHandler) createPipeline() http.HandlerFunc {
 
 		_, resp, err := h.coreClient.PipelinesApi.CreatePipeline(r.Context()).CreatePipelineRequest(dto).Execute()
 		if err != nil {
-			web.HTTPError(w, fmt.Errorf("could not create pipeline: %w", err))
-			return
-		}
-
-		if resp.StatusCode != http.StatusCreated {
-			responseBody, err := io.ReadAll(resp.Body)
-			if err != nil {
-				log.Printf("in createPipeline, err reading response body: %s\n", err)
-			} else {
-				log.Printf("in createPipeline, err: %s\n", string(responseBody))
-			}
-			layout.SnackbarSomethingWentWrong(w)
+			handleAPIClientError(w, "createPipeline", resp, err)
 			return
 		}
 
@@ -240,18 +229,7 @@ func (h *PipelinePageHandler) updatePipeline(next http.Handler) http.Handler {
 
 		_, resp, err := h.coreClient.PipelinesApi.UpdatePipeline(r.Context(), pipelineId).UpdatePipelineRequest(updateDto).Execute()
 		if err != nil {
-			if resp != nil && resp.Body != nil {
-				if body, readErr := io.ReadAll(resp.Body); readErr == nil {
-					log.Printf("in updatePipeline, err: %s\n", string(body))
-				}
-			}
-			var apiErr *web.APIError
-			if errors.As(err, &apiErr) {
-				layout.WithSnackbarError(w, apiErr.Message)
-				w.WriteHeader(apiErr.HTTPStatus)
-				return
-			}
-			layout.SnackbarSomethingWentWrong(w)
+			handleAPIClientError(w, "updatePipeline", resp, err)
 			return
 		}
 
@@ -496,6 +474,29 @@ func createPlaceholderWorkers(steps []string) []api.UserWorker {
 	return lo.Map(steps, func(step string, _ int) api.UserWorker {
 		return placeholderWorker(step, step)
 	})
+}
+
+// handleAPIClientError surfaces an API client error as a snackbar. If the API
+// returned a structured error body its message is shown to the user, otherwise
+// a generic snackbar is set. The error is always logged.
+func handleAPIClientError(w http.ResponseWriter, op string, resp *http.Response, err error) {
+	log.Printf("in %s, api client error: %v\n", op, err)
+	var genErr *api.GenericOpenAPIError
+	if errors.As(err, &genErr) && len(genErr.Body()) > 0 {
+		log.Printf("in %s, api response body: %s\n", op, genErr.Body())
+		var apiErr web.APIError
+		if json.Unmarshal(genErr.Body(), &apiErr) == nil && apiErr.Message != "" {
+			layout.WithSnackbarError(w, apiErr.Message)
+			if resp != nil && resp.StatusCode >= http.StatusBadRequest {
+				w.WriteHeader(resp.StatusCode)
+			} else {
+				w.WriteHeader(http.StatusBadRequest)
+			}
+			return
+		}
+	}
+	layout.SnackbarSomethingWentWrong(w)
+	w.WriteHeader(http.StatusInternalServerError)
 }
 
 func placeholderWorker(name string, description string) api.UserWorker {

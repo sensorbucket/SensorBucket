@@ -98,15 +98,7 @@ func (t *OverviewRoute) createSensorGroup() http.HandlerFunc {
 		w.Header().Set("hx-push-url", views.U("/overview?%s", r.URL.Query().Encode()))
 		w.Header().Set("hx-trigger-after-settle", "newDeviceList")
 		views.WriteRenderFilters(w, sg, true)
-		nextPage := ""
-		if cursor := getCursor(res.Links.GetNext()); cursor != "" {
-			if sg != nil {
-				nextPage = views.U("/overview/devices/table?sensor_group=%d&cursor=%s", sg.GetId(), cursor)
-			} else {
-				nextPage = views.U("/overview/devices/table?cursor=%s", cursor)
-			}
-		}
-		views.WriteRenderDeviceTable(w, res.Data, nextPage)
+		views.WriteRenderDeviceTable(w, res.Data, devicesTableNextPage(res.Links.GetNext(), sgIDStr))
 	}
 }
 
@@ -120,11 +112,7 @@ func (t *OverviewRoute) deleteSensorGroup() http.HandlerFunc {
 		w.Header().Set("hx-push-url", views.U("/overview?%s", r.URL.Query().Encode()))
 		w.Header().Set("hx-trigger-after-settle", "newDeviceList")
 		views.WriteRenderFilters(w, nil, true)
-		nextPage := ""
-		if cursor := getCursor(res.Links.GetNext()); cursor != "" {
-			nextPage = views.U("/overview/devices/table?cursor=%s", cursor)
-		}
-		views.WriteRenderDeviceTable(w, res.Data, nextPage)
+		views.WriteRenderDeviceTable(w, res.Data, devicesTableNextPage(res.Links.GetNext(), ""))
 	}
 }
 
@@ -148,15 +136,7 @@ func (t *OverviewRoute) getDevicesTable() http.HandlerFunc {
 			return
 		}
 
-		nextCursor := ""
-		if cursor := getCursor(res.Links.GetNext()); cursor != "" {
-			if sg := r.URL.Query().Get("sensor_group"); sg != "" {
-				nextCursor = views.U("/overview/devices/table?sensor_group=%s&cursor=%s", sg, cursor)
-			} else {
-				nextCursor = views.U("/overview/devices/table?cursor=%s", cursor)
-			}
-		}
-		views.WriteRenderDeviceTableRows(w, res.Data, nextCursor)
+		views.WriteRenderDeviceTableRows(w, res.Data, devicesTableNextPage(res.Links.GetNext(), r.URL.Query().Get("sensor_group")))
 	}
 }
 
@@ -203,13 +183,7 @@ func (t *OverviewRoute) deviceListPage() http.HandlerFunc {
 		}
 		page.Devices = res.Data
 
-		if cursor := getCursor(res.Links.GetNext()); cursor != "" {
-			if page.SensorGroup != nil {
-				page.DevicesNextPage = views.U("/overview/devices/table?sensor_group=%d&cursor=%s", page.SensorGroup.GetId(), cursor)
-			} else {
-				page.DevicesNextPage = views.U("/overview/devices/table?cursor=%s", cursor)
-			}
-		}
+		page.DevicesNextPage = devicesTableNextPage(res.Links.GetNext(), sensorGroupIDStr)
 
 		if isHX(r) {
 			page.WriteBody(w)
@@ -467,6 +441,20 @@ func getCursor(next string) string {
 		return ""
 	}
 	return u.Query().Get("cursor")
+}
+
+// devicesTableNextPage builds the URL for the next page of the overview device
+// table from the API's next link, preserving the sensor_group filter. It
+// returns an empty string when there is no next page.
+func devicesTableNextPage(next, sensorGroupID string) string {
+	cursor := getCursor(next)
+	if cursor == "" {
+		return ""
+	}
+	if sensorGroupID != "" {
+		return views.U("/overview/devices/table?sensor_group=%s&cursor=%s", sensorGroupID, cursor)
+	}
+	return views.U("/overview/devices/table?cursor=%s", cursor)
 }
 
 func (t *OverviewRoute) resolveDevice(next http.Handler) http.Handler {

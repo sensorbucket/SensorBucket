@@ -108,7 +108,10 @@ func Run(cleanup cleanupper.Cleanupper) error {
 	))
 	csrfWrappedHandler := nosurf.New(router)
 	csrfWrappedHandler.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// nosurf bypasses the chi middleware chain, so log here or the rejection is invisible
+		log.Printf("CSRF failure on %s %s: %v\n", r.Method, r.URL.Path, nosurf.Reason(r))
 		layout.WithSnackbarError(w, "CSRF Token was invalid, try reloading the page")
+		w.WriteHeader(http.StatusBadRequest)
 		//nolint
 		w.Write([]byte("A CSRF error occured. Reload the previous page and try again"))
 	}))

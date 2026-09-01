@@ -74,23 +74,24 @@ func (h *TracesPageHandler) listPartial() http.HandlerFunc {
 }
 
 func formatSince(t time.Time) string {
-	d := time.Since(t)
+	d := max(time.Since(t), 0)
 	switch {
 	case d.Hours() > 24:
 		return "More than a day ago"
 	case int(d.Hours()) >= 1:
-		if int(d.Hours()) == 1 {
-			return "About 1 hour ago"
-		}
-		return fmt.Sprintf("About %d hours ago", int(d.Hours()))
+		return about(int(d.Hours()), "hour")
 	case int(d.Minutes()) >= 1:
-		if int(d.Minutes()) == 1 {
-			return "About 1 minute ago"
-		}
-		return fmt.Sprintf("About %d minutes ago", int(d.Minutes()))
+		return about(int(d.Minutes()), "minute")
 	default:
-		return fmt.Sprintf("About %d seconds ago", int(d.Seconds()))
+		return about(int(d.Seconds()), "second")
 	}
+}
+
+func about(n int, unit string) string {
+	if n == 1 {
+		return fmt.Sprintf("About 1 %s ago", unit)
+	}
+	return fmt.Sprintf("About %d %ss ago", n, unit)
 }
 
 func (h *TracesPageHandler) createViewData(ctx context.Context, traces []api.Trace) ([]views.Trace, error) {
