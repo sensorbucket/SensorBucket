@@ -76,17 +76,16 @@ func (c *AMQPConnection) Start() {
 		c.state = AMQP_RECONNECTING
 		connection, err := amqp.Dial(c.amqpHost)
 		if err != nil {
-			log.Printf("AMQPConnection connect failed: %v\n", err)
-			if retries > c.maximumRetries {
+			// Never give up on reconnecting, the host should act on the not-ready / not-alive state.
+			if retries >= c.maximumRetries {
 				c.state = AMQP_UNREACHABLE
-				log.Printf("AMQPConnection maximum retries of %d reached, quitting...\n", retries)
-				return
 			}
-			log.Printf("AMQPConnection retry in %d seconds...\n", retries*3)
+			backoff := time.Duration(min(retries, c.maximumRetries)) * 3 * time.Second
+			log.Printf("AMQPConnection connect failed (attempt %d): %v; retry in %s\n", retries+1, err, backoff)
 			select {
 			case <-c.done:
 				return
-			case <-time.After(time.Duration(retries) * time.Second * 3):
+			case <-time.After(backoff):
 				retries++
 				continue
 			}
@@ -99,7 +98,7 @@ func (c *AMQPConnection) Start() {
 		// Notify connection users of new connection
 		c.usersLock.Lock()
 		for _, user := range c.users {
-			user <- c.connection
+			notifyUser(user, c.connection)
 		}
 		c.state = AMQP_CONNECTED
 		c.usersLock.Unlock()
@@ -132,14 +131,24 @@ func (c *AMQPConnection) Shutdown() {
 }
 
 func (c *AMQPConnection) UseConnection() <-chan *amqp.Connection {
-	user := make(chan *amqp.Connection)
+	// Channel must have a 1 buffer, otherwise this gets stuck.
+	user := make(chan *amqp.Connection, 1)
 	c.usersLock.Lock()
 	c.users = append(c.users, user)
 	if c.state == AMQP_CONNECTED {
-		user <- c.connection
+		notifyUser(user, c.connection)
 	}
 	c.usersLock.Unlock()
 	return user
+}
+
+// Sends the new connection to the user, while consuming an old one if it's still there.
+func notifyUser(user AMQPConnectionUser, conn *amqp.Connection) {
+	select {
+	case <-user: // drop a stale connection the user hasn't picked up yet
+	default:
+	}
+	user <- conn
 }
 
 func (c *AMQPConnection) Consume(queue string, setup ...SetupOption) <-chan amqp.Delivery {
