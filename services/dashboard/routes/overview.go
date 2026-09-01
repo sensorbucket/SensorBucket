@@ -98,7 +98,7 @@ func (t *OverviewRoute) createSensorGroup() http.HandlerFunc {
 		w.Header().Set("hx-push-url", views.U("/overview?%s", r.URL.Query().Encode()))
 		w.Header().Set("hx-trigger-after-settle", "newDeviceList")
 		views.WriteRenderFilters(w, sg, true)
-		views.WriteRenderDeviceTable(w, res.Data, getCursor(res.Links.GetNext()))
+		views.WriteRenderDeviceTable(w, res.Data, devicesTableNextPage(res.Links.GetNext(), sgIDStr))
 	}
 }
 
@@ -112,7 +112,7 @@ func (t *OverviewRoute) deleteSensorGroup() http.HandlerFunc {
 		w.Header().Set("hx-push-url", views.U("/overview?%s", r.URL.Query().Encode()))
 		w.Header().Set("hx-trigger-after-settle", "newDeviceList")
 		views.WriteRenderFilters(w, nil, true)
-		views.WriteRenderDeviceTable(w, res.Data, getCursor(res.Links.GetNext()))
+		views.WriteRenderDeviceTable(w, res.Data, devicesTableNextPage(res.Links.GetNext(), ""))
 	}
 }
 
@@ -136,11 +136,7 @@ func (t *OverviewRoute) getDevicesTable() http.HandlerFunc {
 			return
 		}
 
-		nextCursor := ""
-		if res.Links.GetNext() != "" {
-			nextCursor = views.U("/overview/devices/table?cursor=%s", getCursor(res.Links.GetNext()))
-		}
-		views.WriteRenderDeviceTableRows(w, res.Data, nextCursor)
+		views.WriteRenderDeviceTableRows(w, res.Data, devicesTableNextPage(res.Links.GetNext(), r.URL.Query().Get("sensor_group")))
 	}
 }
 
@@ -187,12 +183,7 @@ func (t *OverviewRoute) deviceListPage() http.HandlerFunc {
 		}
 		page.Devices = res.Data
 
-		if res.Links.GetNext() != "" {
-			u, err := url.Parse(res.Links.GetNext())
-			if err == nil {
-				page.DevicesNextPage = views.U("/overview/devices/table?cursor=%s", u.Query().Get("cursor"))
-			}
-		}
+		page.DevicesNextPage = devicesTableNextPage(res.Links.GetNext(), sensorGroupIDStr)
 
 		if isHX(r) {
 			page.WriteBody(w)
@@ -290,12 +281,12 @@ func (t *OverviewRoute) devicesStreamMap() http.HandlerFunc {
 						log.Printf("cannot open writer for ws: %v\n", err)
 						return
 					}
-					defer writer.Close()
 					frame := fmt.Sprintf(`{"device_id": %d, "device_code": "%s", "coordinates": [%f,%f]}`, dev.Id, dev.Code, dev.GetLatitude(), dev.GetLongitude())
 					if _, err := writer.Write([]byte(frame)); err != nil {
 						log.Printf("Failed to write to websocket: %v\n", err)
 						return
 					}
+					writer.Close()
 				}
 				nextCursor = getCursor(res.Links.GetNext())
 				if nextCursor == "" {
@@ -369,10 +360,12 @@ func (t *OverviewRoute) overviewDatastreamStream() http.HandlerFunc {
 		start, err := time.Parse(time.RFC3339, r.URL.Query().Get("start"))
 		if err != nil {
 			web.HTTPError(w, web.NewError(http.StatusBadRequest, "Start parameter is not ISO8601/RFC3339", ""))
+			return
 		}
 		end, err := time.Parse(time.RFC3339, r.URL.Query().Get("end"))
 		if err != nil {
 			web.HTTPError(w, web.NewError(http.StatusBadRequest, "End parameter is not ISO8601/RFC3339", ""))
+			return
 		}
 
 		ws, err := upgrader.Upgrade(w, r, nil)
@@ -448,6 +441,20 @@ func getCursor(next string) string {
 		return ""
 	}
 	return u.Query().Get("cursor")
+}
+
+// devicesTableNextPage builds the URL for the next page of the overview device
+// table from the API's next link, preserving the sensor_group filter. It
+// returns an empty string when there is no next page.
+func devicesTableNextPage(next, sensorGroupID string) string {
+	cursor := getCursor(next)
+	if cursor == "" {
+		return ""
+	}
+	if sensorGroupID != "" {
+		return views.U("/overview/devices/table?sensor_group=%s&cursor=%s", sensorGroupID, cursor)
+	}
+	return views.U("/overview/devices/table?cursor=%s", cursor)
 }
 
 func (t *OverviewRoute) resolveDevice(next http.Handler) http.Handler {

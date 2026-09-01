@@ -56,7 +56,6 @@ func (h *WorkerPageHandler) listWorkers() http.HandlerFunc {
 			page.WorkersNextPage = views.U("/workers/table?cursor=%s", getCursor(res.Links.GetNext()))
 		}
 
-		fmt.Println("Cursor", res.Links.GetNext())
 		if isHX(r) {
 			page.WriteBody(w)
 			return
@@ -67,7 +66,6 @@ func (h *WorkerPageHandler) listWorkers() http.HandlerFunc {
 
 func (h *WorkerPageHandler) workersTable() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("get table")
 		req := h.workersClient.WorkersApi.ListWorkers(r.Context())
 		if r.URL.Query().Has("cursor") {
 			req = req.Cursor(r.URL.Query().Get("cursor"))
@@ -129,15 +127,12 @@ func (h *WorkerPageHandler) updateWorker() http.HandlerFunc {
 		if name := r.FormValue("name"); name != "" {
 			dto.Name = &name
 		}
-		if desc := r.FormValue("description"); desc != "" {
-			dto.Description = &desc
+		// The server keeps the stored description when the field is nil and
+		// clears it when it is empty, so only send it when the form contains it
+		if desc, ok := r.Form["description"]; ok {
+			dto.Description = &desc[0]
 		}
-		switch r.FormValue("state") {
-		case "on":
-			dto.SetState("enabled")
-		default:
-			dto.SetState("disabled")
-		}
+		dto.SetState(formState(r))
 		if userCode := r.FormValue("userCode"); userCode != "" {
 			dto.UserCode = &userCode
 		}
@@ -150,6 +145,14 @@ func (h *WorkerPageHandler) updateWorker() http.HandlerFunc {
 		w.Header().Set("HX-Redirect", views.U("/workers"))
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+// formState maps the state checkbox value to the worker state accepted by the API
+func formState(r *http.Request) string {
+	if r.FormValue("state") == "on" {
+		return "enabled"
+	}
+	return "disabled"
 }
 
 func (h *WorkerPageHandler) createWorkerPage() http.HandlerFunc {
@@ -181,6 +184,7 @@ func (h *WorkerPageHandler) createWorker() http.HandlerFunc {
 		dto.SetName(r.FormValue("name"))
 		dto.SetUserCode(r.FormValue("userCode"))
 		dto.SetDescription(r.FormValue("description"))
+		dto.SetState(formState(r))
 
 		_, _, err := h.workersClient.WorkersApi.CreateWorker(r.Context()).CreateUserWorkerRequest(dto).Execute()
 		if err != nil {
